@@ -1,0 +1,82 @@
+Brief instructions to get started developing in Oncotator (using the oncotator_svn repository):
+
+Prerequisites:
+	Exported/checked out Oncotator core repository.  You have probably already done this, since you are reading these instructions.
+		For example:
+		 ~/oncoDev$ svn export https://svn.broadinstitute.org/oncotator_svn/core/branches/oncotator_0.6_MC/oncotator/Oncotator.py oncotator_0.6_MC
+
+	All of the prerequisite libraries to run oncotator.  These are tested via unit tests.
+
+	 source /xchip/cga1/lichtens/py_env/canonical/bin/activate
+
+STEPS: 
+1) Set up your datasource repository
+	TODO: Finish this
+	See README for indexing important datasources (e.g. dbSNP, Gaf)
+	
+	Each directory must contain a unique datasource name (e.g. cosmic) with a subdirectory for each genome version.
+		E.g. cosmic/hg19/
+	The genome version directory must contain a config file named with the unique name.config.
+		E.g. cosmic/hg19/cosmic.config
+	
+	Symlinks are supported.
+	
+	Example structure of datasource repository:
+	
+	~/oncotator_ds$ tree 
+.
+├── cancer_gene_census
+│   └── hg19
+│       ├── cancer_gene_census.config
+│       ├── CancerGeneCensus_Table_1_full_2012-03-15.bin
+│       └── CancerGeneCensus_Table_1_full_2012-03-15.txt
+├── cosmic
+│   └── hg19
+│       ├── cosmic.config
+│       ├── CosmicMutantExportIncFus_v62_291112.tsv
+│       ├── CosmicMutantExportIncFus_v62_291112.tsv.tbi.gz
+│       └── CosmicMutantExportIncFus_v62_291112.tsv.tbi.gz.tbi
+├── dbsnp
+│   └── hg19
+│       ├── dbsnp_134_b37.leftAligned.vcf.gz
+│       ├── dbsnp_134_b37.leftAligned.vcf.gz.tbi
+│       └── dbsnp.config
+├── gaf
+│   └── hg19
+│       ├── gaf.config
+│       ├── transcript.genome.gaf
+│       ├── transcript.genome.gaf.idx
+│       ├── UCSCgene.Jan2012.fa
+│       └── UCSCgene.Jan2012.fa.idx
+└── ref_hg
+    └── hg19
+        ├── chr10.txt
+        ├── chr11_gl000202_random.txt
+        ├── chr11.txt
+        ├── chr12.txt
+        ├── chr13.txt
+        ├── chr14.txt
+		....
+        └── ref_hg.config
+
+2) Index any datasources that require it.  	
+	TODO: Complete this
+	Use oncotator-index
+	In the example directory above, cosmic, dbSNP, and gaf were already indexed. 
+	
+3)  Set up unit testing
+3a) Create personal test configuration:
+	cp personal-test.config.template personal-test.config
+3b) Add your dbDir to test configuration.
+	For example:
+	
+	# personal-test.config
+	#
+	# Stores my custom changes.
+	#
+	
+	[DEFAULT]
+	# My datasource repository
+	dbDir=/home/user/oncotator_ds/
+
+
