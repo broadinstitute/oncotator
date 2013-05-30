@@ -1,0 +1,2 @@
+build	chr	start	end	ref_allele	tum_allele1	tum_allele2	tumor_barcode	normal_barcode	tumor_f	init_t_lod	t_lod_fstar	t_alt_count	t_ref_count	judgement
+37	1	156104249	156104249	G	G	T	Patient0-Tumor	Patient0-Normal	0.068966	-5	7	4	54	KEEP

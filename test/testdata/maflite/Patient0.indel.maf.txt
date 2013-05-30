@@ -1,0 +1,9 @@
+build	contig	start_position	end_position	ref_allele	alt_allele1	alt_allele2	tumor_name	normal_name	tumor_f	t_ref_count	t_alt_count
+37	1	36643701	36643703	AGA	-	AGA	Patient0-Tumor	Patient0-Normal	0.62	3	5
+37	7	89748927	89748928	-	C	-	Patient0-Tumor	Patient0-Normal	0.43	4	3
+37	7	151845866	151845866	A	-	A	Patient0-Tumor	Patient0-Normal	0.40	41	27
+37	8	98828551	98828551	C	-	C	Patient0-Tumor	Patient0-Normal	0.42	7	5
+37	14	70634528	70634530	GAA	-	GAA	Patient0-Tumor	Patient0-Normal	0.12	50	7
+37	16	3119304	3119305	-	G	-	Patient0-Tumor	Patient0-Normal	0.03	245	8
+37	16	72153734	72153734	C	-	C	Patient0-Tumor	Patient0-Normal	0.16	72	14
+37	19	22002025	22002026	-	A	-	Patient0-Tumor	Patient0-Normal	0.06	115	7

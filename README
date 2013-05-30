@@ -1,0 +1,31 @@
+Oncotator requires Python 2.7 and the following python libraries installed
+
+pyvcf
+pysam
+biopython
+
+Samtools and Tabix are required if you want to create indexed vcf files for use with Oncotator.
+
+### example GAF and dbSNP index commands are below
+
+wget https://tcga-data.nci.nih.gov/docs/GAF/GAF3.0/transcript.genome.v3_0.gaf.gz
+gunzip transcript.genome.v3_0.gaf.gz
+oncotator-index.py gaf transcript.genome.v3_0.gaf
+
+wget https://tcga-data.nci.nih.gov/docs/GAF/GAF3.0/UCSCgene.Jan2012.v3_0.fa.gz
+gunzip UCSCgene.Jan2012.v3_0.fa.gz
+oncotator-index.py gaf-seqs UCSCgene.Jan2012.v3_0.fa
+
+## For dbSNP annotations
+wget ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz
+wget ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz.tbi
+
+## OR
+
+bgzip dbsnp_build_135.vcf
+tabix -p vcf dbsnp_build_135.vcf.gz
+
+## For Cosmic annotations
+wget ftp://ftp.sanger.ac.uk/pub/CGP/cosmic/data_export/CosmicMutantExportIncFus_v62_291112.tsv.gz
+gunzip CosmicMutantExportIncFus_v62_291112.tsv.gz
+oncotator-index.py cosmic CosmicMutantExportIncFus_v62_291112.tsv

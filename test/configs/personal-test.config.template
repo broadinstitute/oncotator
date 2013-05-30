@@ -1,0 +1,9 @@
+# personal-test.config.template
+#
+# Rename this file to personal-test.config and override any of the configuration set in default-test.config.
+#
+
+
+# dbDir is a common one to change...
+[DEFAULT]
+dbDir=MY_DB_DIR/

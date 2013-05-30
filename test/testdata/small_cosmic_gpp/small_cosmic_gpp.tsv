@@ -1,0 +1,5 @@
+Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA
+BRAF	1097	ES2	ovary	NS	carcinoma	clear_cell_carcinoma	1131	c.?	p.V600E
+BRAF	1097	MPSC-1	ovary	NS	carcinoma	serous_carcinoma	12647	c.?	p.V600L
+BRAF	1097	OV90	ovary	NS	carcinoma	serous_carcinoma	249913	c.?	p.N486_P490del
+CDKN2A	1787	1746855	ovary	NS	adenoma	mucinous	306134	c.?	p.A21_L32del

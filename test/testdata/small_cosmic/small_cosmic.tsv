@@ -1,0 +1,10 @@
+
+Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID
+
+A1BG	5	ME024T	NS	NS	malignant_melanoma	NS	226401	c.1132G>A	p.D378N	Substitution - Missense	unk		19:58861796-58861796	22622578
+A1BG	5	S00936	lung	NS	carcinoma	small_cell_carcinoma	308725	c.570C>T	p.G190G	Substitution - coding silent	unk		19:58863692-58863692	22941188
+A1BG	5	TCGA-05-4249-01A-01D-1105-08	lung	NS	carcinoma	adenocarcinoma	568223	c.1278C>A	p.P426P	Substitution - coding silent	unk		19:58858921-58858921	
+A1BG	5	TCGA-05-4424-01A-22D-1855-08	lung	NS	carcinoma	adenocarcinoma	568220	c.306C>A	p.T102T	Substitution - coding silent	unk		19:58864328-58864328	
+A1BG	5	TCGA-38-4631-01A-01D-1753-08	lung	NS	carcinoma	adenocarcinoma	568219	c.243C>G	p.F81L	Substitution - Missense	unk		19:58864391-58864391	
+A1BG	5	TCGA-44-6778-01A-11D-1855-08	lung	NS	carcinoma	adenocarcinoma	568218	c.27G>T	p.L9F	Substitution - Missense	unk		19:58864777-58864777	
+A1BG	5	TCGA-49-4501-01A-01D-1265-08	lung	NS	carcinoma	adenocarcinoma	568222	c.910+5G>T	p.?	Unknown	unk		19:58862752-58862752	

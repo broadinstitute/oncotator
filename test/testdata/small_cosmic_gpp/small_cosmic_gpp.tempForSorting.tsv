@@ -1,0 +1,5 @@
+Gene_name	HGNC_ID	Sample_name	Primary_site	Site_subtype	Primary_histology	Histology_subtype	Mutation_ID	Mutation_CDS	Mutation_AA	startAA	endAA
+CDKN2A	1787	1746855	ovary	NS	adenoma	mucinous	306134	c.?	p.A21_L32del	21	32
+BRAF	1097	ES2	ovary	NS	carcinoma	clear_cell_carcinoma	1131	c.?	p.V600E	600	600
+BRAF	1097	MPSC-1	ovary	NS	carcinoma	serous_carcinoma	12647	c.?	p.V600L	600	600
+BRAF	1097	OV90	ovary	NS	carcinoma	serous_carcinoma	249913	c.?	p.N486_P490del	486	490

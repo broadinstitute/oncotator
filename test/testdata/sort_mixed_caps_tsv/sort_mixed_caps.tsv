@@ -1,0 +1,11 @@
+#Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID	startAA	endAA
+ZZZ3	24523	TCGA-B0-5113-01A-01D-1421-08	kidney	NS	carcinoma	clear_cell_renal_cell_carcinoma	464960	c.1983A>G	p.K661K	Substitution - coding silent	unk		1:78045311-78045311		661	661
+ZZZ3	24523	TCGA-BT-A20O-01A-21D-A14W-08	urinary_tract	bladder	carcinoma	NS	414788	c.874G>T	p.V292F	Substitution - Missense	unk		1:78098166-78098166		292	292
+hCG_1644301		TCGA-05-4382-01A-01D-1265-08	lung	NS	carcinoma	adenocarcinoma	562280	c.110G>T	p.R37M	Substitution - Missense	unk		17:69617231-69617231		37	37
+hCG_1644301		TCGA-05-4405-01A-21D-1855-08	lung	NS	carcinoma	adenocarcinoma	562281	c.76A>G	p.K26E	Substitution - Missense	unk		17:69617197-69617197		26	26
+hCG_1644301		TCGA-05-4427-01A-21D-1855-08	lung	NS	carcinoma	adenocarcinoma	562282	c.25A>G	p.T9A	Substitution - Missense	unk		17:69617146-69617146		9	9
+hCG_1644301		TCGA-64-5779-01A-01D-1625-08	lung	NS	carcinoma	adenocarcinoma	562279	c.128C>T	p.P43L	Substitution - Missense	unk		17:69617249-69617249		43	43
+hCG_17324		HCC1954	breast	NS	carcinoma	ductal_carcinoma	51180	c.1404C>T	p.D468D	Substitution - coding silent	het	2:120121040-120121040	2:120404570-120404570	17932254	468	468
+hCG_17324		ME044T	skin	trunk	malignant_melanoma	NS	228868	c.1612G>A	p.E538K	Substitution - Missense	unk		2:120413993-120413993	22622578	538	538
+PRR12_ENST00000418929		TCGA-60-2720-01A-01D-1522-08	lung	NS	carcinoma	squamous_cell_carcinoma	713401	c.375A>T	p.P125P	Substitution - coding silent	unk		19:50097967-50097967		125	125
+PRR12_ENST00000418929		HN_62740	upper_aerodigestive_tract	pharynx	carcinoma	squamous_cell_carcinoma	121655	c.237G>A	p.A79A	Substitution - coding silent	unk		19:50097748-50097748	21798893	79	79

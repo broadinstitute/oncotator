@@ -1,0 +1,3 @@
+/test/configs/personal-test.config
+/test/out/*
+!/test/out/README.txt.1st

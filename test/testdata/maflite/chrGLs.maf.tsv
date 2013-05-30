@@ -1,0 +1,3 @@
+build	chr	start	end	ref_allele	tum_allele1	tum_allele2	tumor_barcode	normal_barcode	tumor_f	init_t_lod	t_lod_fstar	t_alt_count	t_ref_count	powered_filters	normal_artifact_power	observed_in_normals_count	failure_reasons	judgement
+37	GL000207.1	3361	3361	T	T	G	fh_RKO_LARGE_INTESTINE-Tumor	null	0.479167	62.913402	62.931897	23	25		0	0		KEEP
+37	GL000207.1	3389	3389	C	C	T	fh_RKO_LARGE_INTESTINE-Tumor	null	0.421053	47.617706	47.817655	16	22		0	0		KEEP

@@ -1,0 +1,61 @@
+((dp1
+S'TP53'
+p2
+(dp3
+S'TJ_Data_Who'
+p4
+S'Everyone'
+p5
+sS'TJ_Data_Why'
+p6
+S'Such a driver'
+p7
+ssS'PIK3CA'
+p8
+(dp9
+g4
+S'Lots of people'
+p10
+sg6
+S'Common driver'
+p11
+ssS'EGFR'
+p12
+(dp13
+g4
+S'Anyone'
+p14
+sg6
+S'No reason given'
+p15
+ssS'MAPK1'
+p16
+(dp17
+g4
+S'Lee'
+p18
+sg6
+S'What a surprise'
+p19
+ssS'TTN'
+p20
+(dp21
+g4
+S'Big people'
+p22
+sg6
+S'Too large and not a driver'
+p23
+ssS'FLG'
+p24
+(dp25
+g4
+S'Nobody'
+p26
+sg6
+S'So many false alarms'
+p27
+ss(lp28
+g4
+ag6
+at.

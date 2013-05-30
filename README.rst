@@ -39,8 +39,6 @@ Because the setup.py specifies an entry point as a console script, ``oncotator``
 Unit Tests
 ----------
 
-IMPORTANT NOTE:  As of this release, not all unit tests pass.  Please ignore the failures of any VcfOutputRendererTest class or the testDatasourceCreator test in the TranscriptToUniProtPPTDTest
-
 NOTE: Unit tests require a minimum of 4GB to run.
 
 Before running the unit tests, please perform the following steps:

@@ -1,0 +1,30 @@
+Symbol	Name	GeneID	Chr	Chr Band	Cancer Somatic Mut	Cancer Germline Mut	Tumour Types  (Somatic Mutations)	Tumour Types (Germline Mutations)	Cancer Syndrome	Tissue Type	Cancer Molecular Genetics	Mutation Type	Translocation Partner	Other Germline Mut	Other Syndrome/Disease
+ABL1	v-abl Abelson murine leukemia viral oncogene homolog 1	25	9	9q34.1 	yes		"CML, ALL, T-ALL"			L	Dom	"T, Mis"	"BCR, ETV6, NUP214"		
+ABL2	v-abl Abelson murine leukemia viral oncogene homolog 2	27	1	1q24-q25 	yes		AML			L	Dom	T	ETV6		
+ACSL3	acyl-CoA synthetase long-chain family member 3	2181	2	2q36	yes		prostate			E	Dom	T	ETV1		
+AF15Q14	AF15q14 protein	57082	15	15q14	yes		AML			L	Dom	T	MLL		
+AF1Q	ALL1-fused gene from chromosome 1q	10962	1	1q21 	yes		ALL			L	Dom	T	MLL		
+AF3p21	"SH3 protein interacting with Nck, 90 kDa (ALL1 fused gene from 3p21)"	51517	3	3p21	yes		ALL			L	Dom	T	MLL		
+AF5q31	ALL1 fused gene from 5q31	27125	5	5q31 	yes		ALL			L	Dom	T	MLL		
+AKAP9	A kinase (PRKA) anchor protein (yotiao) 9	10142	7	7q21-q22	yes		papillary thyroid			E	Dom	T	BRAF		
+AKT1	v-akt murine thymoma viral oncogene homolog 1	207	14	14q32.32	yes		"breast, colorectal, ovarian, NSCLC"			E	Dom	Mis			
+AKT2	v-akt murine thymoma viral oncogene homolog 2	208	19	19q13.1-q13.2 	yes		"ovarian, pancreatic "			E	Dom	A			
+ALDH2	aldehyde dehydrogenase 2 family (mitochondrial)	217	12	12q24.2	yes		leiomyoma			M	Dom	T	HMGA2		
+ALK	anaplastic lymphoma kinase (Ki-1)	238	2	2p23 	yes	yes	"ALCL, NSCLC, Neuroblastoma"	neuroblastoma	Familial neuroblastoma	"L, E, M"	Dom	"T, Mis, A"	"NPM1, TPM3, TFG, TPM4, ATIC, CLTC, MSN, ALO17, CARS, EML4, KIF5B, C2orf22"		
+ALO17	KIAA1618 protein	57714	17	17q25.3	yes		ALCL			L	Dom	T	ALK		
+APC	adenomatous polyposis of the colon gene	324	5	5q21	yes	yes	"colorectal, pancreatic, desmoid, hepatoblastoma, glioma, other CNS"	"colorectal, pancreatic, desmoid, hepatoblastoma, glioma, other CNS"	Adenomatous polyposis coli; Turcot syndrome	"E, M, O"	Rec	"D, Mis, N, F, S"			
+ARHGEF12	RHO guanine nucleotide exchange factor (GEF) 12 (LARG)	23365	11	11q23.3 	yes		AML			L	Dom	T	MLL		
+ARHH	"RAS homolog gene family, member H (TTF)"	399	4	4p13 	yes		NHL			L	Dom	T	BCL6		
+ARID1A	AT rich interactive domain 1A (SWI-like)	8289	1	1p35.3	yes		"clear cell ovarian carcinoma, RCC"			E	Rec	"Mis, N, F, S, D"			
+ARID2	AT rich interactive domain 2	196528	12	12q12	yes		hepatocellular carcinoma			E	Rec	"N, S, F"			
+ARNT	aryl hydrocarbon receptor nuclear translocator	405	1	1q21 	yes		AML			L	Dom	T	ETV6		
+ASPSCR1	"alveolar soft part sarcoma chromosome region, candidate 1"	79058	17	17q25	yes		alveolar soft part sarcoma			M	Dom	T	TFE3		
+ASXL1	additional sex combs like 1	171023	20	20q11.1	yes		"MDS, CMML"			L	Rec	"F, N, Mis"			
+ATF1	activating transcription factor 1	466	12	12q13 	yes		"malignant melanoma of soft parts , angiomatoid fibrous histiocytoma "			"E, M"	Dom	T	"EWSR1, FUS"		
+ATIC	5-aminoimidazole-4-carboxamide ribonucleotide formyltransferase/IMP cyclohydrolase	471	2	2q35	yes		ALCL			L	Dom	T	ALK		
+ATM	ataxia telangiectasia mutated	472	11	11q22.3 	yes	yes	T-PLL	"leukemia, lymphoma, medulloblastoma, glioma"	Ataxia-telangiectasia	"L, O"	Rec	"D, Mis, N, F, S"			
+ATRX	alpha thalassemia/mental retardation syndrome X-linked	546	X	Xq21.1	yes		"Pancreatic neuroendocrine tumors, paediatric GBM"			E	Rec	"Mis, F, N"		yes	ATR-X (alpha thalassemia/mental retardation) syndrome
+BAP1	BRCA1 associated protein-1 (ubiquitin carboxy-terminal hydrolase)	8314	3	3p21.31-p21.2	yes		"uveal melanoma, breast, NSCLC, RCC"	"mesothelioma, uveal melanoma"		E	Rec	"N, Mis, F, S, O"			
+BCL10	B-cell CLL/lymphoma 10	8915	1	1p22	yes		MALT 			L	Dom	T	IGH@		
+BCL11A	B-cell CLL/lymphoma 11A	53335	2	2p13 	yes		B-CLL			L	Dom	T	IGH@		
+BCL11B	B-cell CLL/lymphoma 11B  (CTIP2)	64919	14	14q32.1	yes		T-ALL			L	Dom	T	TLX3		

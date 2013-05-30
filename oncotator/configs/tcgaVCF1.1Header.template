@@ -1,0 +1,33 @@
+##fileformat=VCFv4.1
+##fileDate=$date
+##tcgaversion=1.1
+##reference=<ID=hg19,source="http://www.broadinstitute.org/ftp/pub//seq/references/Homo_sapiens_assembly19.fasta">
+##assembly=.
+##center="$center"
+##phasing=none
+##geneAnno=$geneAnno
+##vcfProcessLog=$vcfProcessLog
+##INDIVIDUAL=$individual_barcode
+##SAMPLE=<ID=NORMAL,SampleTCGABarcode=$normal_barcode,SampleName=$normal_barcode,Individual=$individual_barcode,Description="Normal sample",Platform=$platform,Source=$source,Accession=$normal_accession,softwareName=$softwareName,softwareVer=$softwareVersion,softwareParam=$softwareParams,File=$normal_file,SampleUUID=$normal_uuid,MetadataResource=https://tcga-data.nci.nih.gov/uuid/uuidws/mapping/xml/uuid/$normal_uuid>
+##SAMPLE=<ID=$tumor_subtype_upper,SampleTCGABarcode=$tumor_barcode,SampleName=$tumor_barcode,Individual=$individual_barcode,Description="$tumor_subtype Tumor",Platform=$platform,Source=$source,Accession=$tumor_accession,softwareName=$softwareName,softwareVer=$softwareVersion,softwareParam=$softwareParams,File=$tumor_file,SampleUUID=$tumor_uuid,MetadataResource=https://tcga-data.nci.nih.gov/uuid/uuidws/mapping/xml/uuid/$tumor_uuid>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Depth of reads supporting alleles 0/1/2/3...">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth at this position in the sample">
+##FORMAT=<ID=FA,Number=.,Type=Float,Description="Fractions of reads (excluding MQ0 from both ref and alt) supporting each reported alternative allele, per sample">
+##FORMAT=<ID=MQ0,Number=1,Type=Integer,Description="Number of Mapping Quality Zero Reads per sample">
+##FORMAT=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
+##FORMAT=<ID=BQ,Number=.,Type=Integer,Description="Average base quality for reads supporting alleles">
+##FORMAT=<ID=SSC,Number=1,Type=Integer,Description="Somatic score between 0 and 255">
+##INFO=<ID=Gene,Number=1,Type=String,Description="Hugo Gene Symbol">
+##INFO=<ID=VT,Number=1,Type=String,Description="Variant type, can be SNP, INS or DEL">
+##INFO=<ID=VC,Number=1,Type=String,Description="Somatic variant classification">
+##INFO=<ID=SS,Number=1,Type=String,Description="Somatic status of sample">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Indicates if record is a somatic mutation">
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth across samples">
+##INFO=<ID=MQ0,Number=1,Type=Integer,Description="Total Mapping Quality Zero Reads">
+##INFO=<ID=TID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=VLSC,Number=1,Type=Integer,Description="Final somatic score between 0 and 255 when multiple lines of evidence are available">
+##FILTER=<ID=mf1,Description="Filtered out by MuTect v.1">
+##FILTER=<ID=oxoG3,Description="Filtered out by OxoG Artifact Filter v3">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NORMAL	$tumor_subtype_upper
