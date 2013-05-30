@@ -1,3 +1,7 @@
 /test/configs/personal-test.config
 /test/out/*
 !/test/out/README.txt.1st
+/doc/doxygen/*
+!/doc/doxygen/README.txt
+/doc/coverage/*
+!/doc/coverage/README.1st
