@@ -48,8 +48,8 @@ Before running the unit tests, please perform the following steps:
 1) Execute the following three lines in the same directory as setup.py::
 
     $ mkdir -p out
-    $ ln -s oncotator/test/configs configs
-    $ ln -s oncotator/test/testdata testdata
+    $ ln -s test/configs configs
+    $ ln -s test/testdata testdata
 
 2) Many unit tests rely on having the standard set of hg19 datasources, which are in a separate download.  To point the unit testing framework to your datasources, you must create a personal test config::
 
