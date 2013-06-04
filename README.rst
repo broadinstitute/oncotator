@@ -3,7 +3,7 @@ Oncotator
 ======================
 
 The name of the directory, oncotator, is also the name of the **distribution**.
-This distribution contains a package called oncotator.
+This distribution contains the oncotator package.
 
 For more information:
 http://www.broadinstitute.org/cancer/cga/oncotator
@@ -18,7 +18,7 @@ If you are a researcher/employee of the Broad Institute, you can find Broad-spec
 Installation
 ------------
 
-Currently, Windows is unsupported, though this is due to the pysam being unsupported in Windows.
+Currently, Windows is unsupported, though this is due to a dependency, pysam, being unsupported in Windows.
 
 IMPORTANT:  You will need root access to your python interpreter or a python virtual environment.  More information about virtual environments can be found on the following site:
 https://pypi.python.org/pypi/virtualenv
