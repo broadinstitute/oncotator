@@ -85,7 +85,8 @@ class MutationData(collections.MutableMapping):
             Annotations can be accessed as if in a dictionary.  For example, tmp = m['my_annotation1']
             Annotations can be set as if the mutation was a dictionary, but this is not recommended.  Doing this will cause the annotation to only have a value -- no source, type, etc.
             
-    
+        MutationData is pickle-able.
+
     """
     
     """ internal annotations that will show as both annotations and attributes.   If this changes, updates should probably be made to the maflite config."""

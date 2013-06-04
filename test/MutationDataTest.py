@@ -116,6 +116,15 @@ class MutationDataTest(unittest.TestCase):
         m.addTagToAnnotation("fake1", "fakeTag")
         self.assertTrue("fakeTag" in m.getAnnotation("fake1").getTags(), "Tag was not added properly.")
 
+    def testPickleable(self):
+        """Test that a near-empty MutationData can be pickled"""
+        m = MutationData()
+        m.chr = "2"
+        m.createAnnotation("fake1", "1")
+        m.addTagToAnnotation("fake1", "fakeTag")
+        import cPickle
+        cPickle.dump(m, open("out/testMDPickle.pkl", 'w'))
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testSetValues']
     unittest.main()
