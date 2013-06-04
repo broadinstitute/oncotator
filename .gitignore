@@ -5,3 +5,9 @@
 !/doc/doxygen/README.txt
 /doc/coverage/*
 !/doc/coverage/README.1st
+/testdata
+/configs
+/out
+/Oncotator.egg-info
+/build
+/test/testdata/Saccharomyces_cerevisiae.EF4.71.cdna.all.fa

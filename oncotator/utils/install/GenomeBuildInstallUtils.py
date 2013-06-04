@@ -210,7 +210,7 @@ class GenomeBuildInstallUtils(object):
 
         in_file = ensembl_input_gtf
         in_handle = open(in_file)
-        for rec in GFF.parse(in_handle):#, base_dict=seq_dict):
-            if rec.id == "YDR529C":
-                print rec
+        for rec in GFF.parse(in_handle, base_dict=seq_dict):
+            print rec
+            print rec.id
         in_handle.close()
