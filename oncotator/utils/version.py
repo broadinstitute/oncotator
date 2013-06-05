@@ -47,30 +47,4 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 
-
-'''
-Basic utilities for obtaining dynamically generated version information.  
-
-Created on Nov 27, 2012
-
-@author: lichtens
-'''
-import re
-
-
-def determineVersion(svnString):
-    result = "Unknown"
-    if svnString.find('core/branches') <> -1:
-        branchRegex = re.compile('core/branches/(?P<branchName>[\w\.]+)/')
-        m = branchRegex.search(svnString)
-        branchName = m.group('branchName')
-        result = "Branch: " + branchName + ' $Rev: 374 $'.replace('$', '')
-    elif (svnString.find('core/trunk')) <> -1:
-        result = 'trunk $Rev: 374 $'.replace('$', '')
-    elif (svnString.find('core/tags')) <> -1:
-        tagVersion = re.compile('core/tags/(?P<tagName>[\w\.]+)/').search(svnString).group('tagName')
-        result = tagVersion
-    return result
-
-# VERSION = determineVersion('$URL: https://svn.broadinstitute.org/oncotator_svn/core/tags/v1.0.0.0rc17/oncotator/utils/version.py $')
 VERSION = "v1.0.0.0"

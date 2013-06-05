@@ -748,7 +748,8 @@ class IndexedVCF_DataSource(Datasource):
         self.output_headers = ['_'.join([self.title, h]) for h in self.vcf_headers]
             
     def annotate_mutation(self, mutation):
-        chr, start, end = mutation['Chromo'], int(mutation['Position']), int(mutation['Position']) + len(mutation['Reference'])
+        # TODO: This code needs to be changed.
+        chr, start, end = mutation.chr, int(mutation.start), int(mutation['Position']) + len(mutation['Reference'])
         chr = ''.join(['chr', chr])
         
         for header in self.output_headers:
@@ -928,6 +929,7 @@ class Cosmic(Datasource):
         
         return tabix_file.fetch(region='%s:%s-%s' % (chromosome, str(start), str(end)))
 
+
 class ReferenceDatasource(Datasource):
     """ Reference annotations.  A custom datasource initialized by genome flat files.
 
@@ -1051,7 +1053,6 @@ class Generic_GeneProteinPositionDatasource(Generic_GenomicPosition_DataSource):
         super(Generic_GenomicPosition_DataSource, self).__init__(src_file, title=title, version=version)
         self.proteinPositionAnnotation = proteinPositionAnnotation
         self.proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)")
-        self.logger = logging.getLogger(__name__)
         index_mode = 'gene_protein_pos'
         self.db_obj, self.output_headers = get_db_data(src_file, title, use_binary, index_mode, gpColumnNames)
 
@@ -1064,7 +1065,7 @@ class Generic_GeneProteinPositionDatasource(Generic_GenomicPosition_DataSource):
             if len(otList) < 2:
                 continue
             if len(otList) > 2:
-                self.logger.warn("More than one protein change detected in an other_transcript annotation.")
+                logging.getLogger(__name__).warn("More than one protein change detected in an other_transcript annotation.")
             proteinChange = otList[1]
             proteinPosition = self.proteinRegexp.match(proteinChange)
             if proteinPosition is not None:
@@ -1143,12 +1144,11 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
         self.inputAnnotationName = inputPositionAnnotationName
         self.outputAnnotationName = self.title + "_" + outputPositionAnnotationName
         self.proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)")
-        self.logger = logging.getLogger(__name__)
 
-        self.logger.info("Loading keys for aa xform uniprot...")
+        logging.getLogger(__name__).info("Loading keys for aa xform uniprot...")
         # Since this is a readonly datasource, cache all of the available keys ahead of time.  This saves a lot of time.
         self.dbKeys = self.db.keys()
-        self.logger.info("Keys loaded aa xform uniprot...")
+        logging.getLogger(__name__).info("Keys loaded aa xform uniprot...")
 
     def _parsePosition(self, position):
         """ Utility class to strip decoration from the position itself.

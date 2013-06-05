@@ -210,7 +210,7 @@ class DatasourceCreator(object):
             tmpQueue = []
             for dsTuple in datasourceTuples:
                 configParser = ConfigUtils.createConfigParser(dsTuple[0]) 
-                if configParser.get("general", "type") in ["gene_tsv", "gp_tsv", "transcript_tsv"]:
+                if configParser.get("general", "type") in ["gene_tsv", "gp_tsv", "gpp_tsv", "transcript_tsv"]:
                     tmpQueue.append(dsTuple)
                 else:
                     result.append(DatasourceCreator.createDatasourceGivenTuple(dsTuple))
