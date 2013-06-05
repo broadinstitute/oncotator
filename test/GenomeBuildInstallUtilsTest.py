@@ -112,7 +112,7 @@ class GenomeBuildInstallUtilsTest(unittest.TestCase):
         statinfo = os.stat(output_dir + "ensembl/ensembl.config")
         self.assertTrue(statinfo.st_size > 0, "generated config file (" + output_dir + "ensembl/ensembl.config) is empty.")
 
-    # @unittest.skip("Backing code not implemented yet.")
+    @unittest.skip("Backing code not implemented yet.")
     def test_build_ensembl_transcript_index(self):
         """Build the gtf portion of the ensembl transcript db
         """

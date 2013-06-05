@@ -22,6 +22,7 @@ Currently, Windows is unsupported, though this is due to a dependency, pysam, be
 
 IMPORTANT:  You will need root access to your python interpreter or a python virtual environment.  More information about virtual environments can be found on the following site:
 https://pypi.python.org/pypi/virtualenv
+
 As a reminder, virtualenv.py can be run as a standalone script, thereby bypassing superuser requirements.  Please see the above link for more details.
 
 Before installing, we recommend installing pyvcf and numpy manually, before attempting the Oncotator install.  You may need to prepend each of the following commands with sudo::

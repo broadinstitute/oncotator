@@ -58,7 +58,6 @@ import unittest
 
 import logging 
 from oncotator.utils.ConfigUtils import ConfigUtils
-logging.basicConfig(filename=('out/oncotator_unitTest_'+__name__+'.log'), level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s] %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 from oncotator.MutationData import MutationData
 from oncotator.Annotator import Annotator
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
@@ -70,12 +69,10 @@ from oncotator.DatasourceCreator import DatasourceCreator
 TestUtils.setupLogging(__file__, __name__)
 class TcgaMafOutputRendererTest(unittest.TestCase):
 
-
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
         pass
-
 
     def tearDown(self):
         pass
