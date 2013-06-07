@@ -92,6 +92,19 @@ class TsvFileSorterTest(unittest.TestCase):
         gtmd5 = hashlib.md5(file("testdata/sort_mixed_caps_tsv/sort_mixed_caps_sorted.tsv",'r').read()).hexdigest()
         self.assertTrue(guessmd5 == gtmd5)
 
+    def testMultiplePartitionSorting(self):
+        """ Test that the sorting works when the partition size is small and input file must be broken into multiple partitions
+        """
+        inputFilename = "testdata/sort_mixed_caps_tsv/sort_mixed_caps.tsv"
+        outputFilename = "out/multiple_partitions_sort_mixed_caps.tsv.sorted.out.tsv"
+        tsvFileSorter = TsvFileSorter(fieldNames = ["Gene name", "startAA", "endAA"])
+        tsvFileSorter.sortFile(inputFilename, outputFilename, length=3)
+        self.assertTrue(os.path.exists(outputFilename), "No file was generated.")
+
+        import hashlib
+        guessmd5 = hashlib.md5(file(outputFilename,'r').read()).hexdigest()
+        gtmd5 = hashlib.md5(file("testdata/sort_mixed_caps_tsv/sort_mixed_caps_sorted.tsv", 'r').read()).hexdigest()
+        self.assertTrue(guessmd5 == gtmd5)
 
 
 if __name__ == '__main__':
