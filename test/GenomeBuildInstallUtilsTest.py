@@ -51,9 +51,11 @@ import shutil
 
 import unittest
 from shove.core import Shove
+from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
+from TestUtils import TestUtils
 
-
+TestUtils.setupLogging(__file__, __name__)
 class GenomeBuildInstallUtilsTest(unittest.TestCase):
 
     def test_current_download(self):
@@ -112,23 +114,32 @@ class GenomeBuildInstallUtilsTest(unittest.TestCase):
         statinfo = os.stat(output_dir + "ensembl/ensembl.config")
         self.assertTrue(statinfo.st_size > 0, "generated config file (" + output_dir + "ensembl/ensembl.config) is empty.")
 
-    @unittest.skip("Backing code not implemented yet.")
     def test_build_ensembl_transcript_index(self):
         """Build the gtf portion of the ensembl transcript db
         """
         # cat ~/oncotator_pycharm/oncotator/test/testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf | cut -f 9 | cut -f 5 --delimiter=" " | sort | uniq | sed -r "s/;//g" | sed -r "s/\"//g"
         #  snR84, tK(UUU)K, YAL067C, YAL067W-A, YAL068C, YAL068W-A, YAL069W, YBR278W, YBR279W, YBR280C, YBR281C, YDR528W, YDR529C, YKR074W,
+        #
+        # grep -Pzo  ">(snR84|tK\(UUU\)K|YAL067C|YAL067W-A|YAL068C|YAL068W-A|YAL069W|YBR278W|YBR279W|YBR280C|YBR281C|YDR528W|YDR529C|YKR074W)([A-Za-z_0-9 \:\-\n]+)" Saccharomyces_cerevisiae.EF4.71.cdna.all.fa >Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa
+        #
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
-        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71.cdna.all.fa"
+        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
         output_filename = "out/test_ensemble_gtf.db"
         protocol = "file"
-        GenomeBuildInstallUtils.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol=protocol)
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol=protocol)
         self.assertTrue(os.path.exists(output_filename))
 
-        shove = Shove(protocol + "://" + output_filename)
+        shove = Shove(protocol + "://" + output_filename, "memory://")
         self.assertTrue(len(shove.keys()) > 0)
         self.assertTrue("YDR529C" in shove.keys())
+        t = shove["YDR529C"]
+        self.assertTrue(t.get_seq() is not None)
+        self.assertTrue(t.get_seq() is not "")
+        self.assertTrue(len(t.get_cds()) > 0)
+        self.assertTrue(len(t.get_exons()) > 0)
+        shutil.rmtree(output_filename)
 
 if __name__ == '__main__':
     unittest.main()

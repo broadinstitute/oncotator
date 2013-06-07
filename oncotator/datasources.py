@@ -1218,3 +1218,8 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 
         mutation.createAnnotation(self.outputAnnotationName, newPos, annotationSource=self.title)
         return mutation
+
+
+class EnsemblTranscriptProvider(TranscriptProvider, Datasource):
+    """ Similar to a GAF datasource, but uses ensembl transcripts.
+    """
