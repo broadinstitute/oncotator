@@ -46,7 +46,6 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-from TestUtils import TestUtils
 
 
 '''
@@ -57,10 +56,22 @@ Created on Oct 24, 2012
 import unittest
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.Annotator import Annotator
+from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
+from TestUtils import TestUtils
 import logging
+from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
+import unittest
+from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
+from oncotator.Annotator import Annotator
+from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
+from TestUtils import TestUtils
+import logging
+import pandas
+from oncotator.input.SyntaxException import SyntaxException
 import sys
-
+from TestUtils import TestUtils
+import vcf
 TestUtils.setupLogging(__file__, __name__)
 class VcfOutputRendererTest(unittest.TestCase):
 
@@ -76,14 +87,12 @@ class VcfOutputRendererTest(unittest.TestCase):
     def _createGafDataSource(self):   
         self.logger.info("Initializing gaf 3.0")
         return TestUtils.createGafDatasource(self.config)
-    
-    @unittest.skip("")
+
     def testHeaderWithExampleVcf(self):
         expected = set()
-        with open('testdata/example.vcf','r') as fp:
+        with open('testdata/vcf/example.header.vcf', 'r') as fp:
             for line in iter(fp):
-                if line.startswith('##'):
-                    expected.add(line.rstrip('\n'))
+                expected.add(line.rstrip('\n'))
         
         creator = VcfInputMutationCreator('testdata/example.vcf')
         creator.createMutations()
@@ -94,68 +103,93 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.annotate()
         
         current = set()
-        with open('testdata/example.header.vcf','r') as fp:
+        with open('testdata/vcf/example.header.vcf', 'r') as fp:
             for line in iter(fp):
-                if line.startswith('##'):
+                if line.startswith('#'):
                     current.add(line.rstrip('\n'))
         
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
-    @unittest.skip("")
-    def testVariantWithExampleVcf(self):
-        expected = None
-        with open('testdata/example.1row.vcf','r') as fp:
+    def testHeaderWithExampleVcfWithoutAnySamples(self):
+        expected = set()
+        with open('testdata/vcf/example.sampleName.removed.header.vcf', 'r') as fp:
             for line in iter(fp):
-                if not line.startswith('##'):
-                    expected = line.rstrip('\n')
-                    break
+                    expected.add(line.rstrip('\n'))
 
-        creator = VcfInputMutationCreator('testdata/example.1row.vcf')
+        creator = VcfInputMutationCreator('testdata/example.sampleName.removed.vcf')
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.1row.out.vcf')
+        renderer = VcfOutputRenderer('out/example.sampleName.removed.header.vcf')
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
-        
-        current = None
-        with open('out/example.1row.out.vcf','r') as fp:
-            for line in iter(fp):
-                if not line.startswith('##'):
-                    current = line.rstrip('\n')
-                    break
-        
-        self.assertTrue(current == expected, "First line does not match.")
 
-    @unittest.skip("Not finished")
-    def testSortingVariantsWithExampleVcf(self):
-        expected = None
-        '''with open('testdata/example.unsorted.vcf','r') as fp:
+        current = set()
+        with open('testdata/vcf/example.sampleName.removed.header.vcf', 'r') as fp:
             for line in iter(fp):
-                if not line.startswith('##'):
-                    expected = line.rstrip('\n')
-                    break
-'''
-        #sys.exit()
-        creator = VcfInputMutationCreator('testdata/example.unsorted.vcf')
+                if line.startswith('#'):
+                    current.add(line.rstrip('\n'))
+
+        self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
+
+    def testHeaderWithExampleVcfWithoutAnySamplesOrVariants(self):
+        expected = set()
+        with open('testdata/vcf/example.sampleName.variants.removed.header.vcf', 'r') as fp:
+            for line in iter(fp):
+                    expected.add(line.rstrip('\n'))
+
+        creator = VcfInputMutationCreator('testdata/example.sampleName.variants.removed.vcf')
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.unsorted.out.vcf')
+        renderer = VcfOutputRenderer('out/example.sampleName.variants.removed.header.vcf')
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
-        sys.exit()
-        current = None
-        with open('out/example.1row.out.vcf','r') as fp:
-            for line in iter(fp):
-                print line
-                if not line.startswith('##'):
-                    current = line.rstrip('\n')
-                    break
-        print current
-        print expected
-        self.assertTrue(current == expected, "First line does not match.")
 
+        current = set()
+        with open('testdata/vcf/example.sampleName.variants.removed.header.vcf', 'r') as fp:
+            for line in iter(fp):
+                if line.startswith('#'):
+                    current.add(line.rstrip('\n'))
+
+        self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
+
+    def testContentofExampleVcf(self):
+        creator = VcfInputMutationCreator('testdata/example.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.variants.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/example.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/example.variants.vcf', strict_whitespace=True)
+
+        for expectedRecord in expectedVcfReader:
+            currentRecord = currentVcfReader.next()
+            self.assertTrue(expectedRecord.CHROM == currentRecord.CHROM, "Should have the same chromosome")
+            self.assertTrue(expectedRecord.POS == currentRecord.POS, "Should have the same position")
+            self.assertTrue(expectedRecord.ID == currentRecord.ID, "Should have the same ID")
+            self.assertTrue(expectedRecord.REF == currentRecord.REF, "Should have the same reference allele")
+            self.assertTrue(expectedRecord.QUAL == currentRecord.QUAL, "Should have the same qual")
+            self.assertTrue(len(set(expectedRecord.FILTER).symmetric_difference(currentRecord.FILTER)) == 0,
+                            "Should have the same alternate alleles")
+            for entry in expectedRecord.INFO:
+                self.assertTrue(entry in currentRecord.INFO, "Missing INFO field %s" % entry)
+
+            #for entry in expectedRecord.INFO:
+            #    self.assertTrue()
+
+            for entry in currentRecord.INFO:
+                if not entry in expectedRecord.INFO:
+                    self.assertTrue(len(filter(None, currentRecord.INFO[entry])) == 0, "")
+
+            #x = set(expectedRecord.ALT).symmetric_difference(currentRecord.ALT)
+            #self.assertTrue(len(set(expectedRecord.ALT).symmetric_difference(currentRecord.ALT)) == 0,
+            #                "Should have the same alternate alleles")
+            #self.assertTrue(len(set(expectedRecord.FILTER).symmetric_difference(currentRecord.FILTER)) == 0,
+            #                "Should have the same alternate alleles")
 
 
 if __name__ == "__main__":

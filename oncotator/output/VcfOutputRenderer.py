@@ -67,215 +67,356 @@ import operator
 import string
 import vcf
 import heapq
-
+from oncotator.utils.MutUtils import MutUtils
 from oncotator.input.ConfigInputIncompleteException import ConfigInputIncompleteException
 from oncotator.utils.TsvFileSorter import TsvFileSorter
 
 
-class _OutputAnnotation:
-    def __init__(self, name):
-        self.name = name
-        self.id = None
-        self.dataType = "String"
-        self.description = "Unknown"
-        self.columnName = "FORMAT"
-        self.number = "."
+class VCFOutputDataManager:
+    comments = None
 
-    def __str__(self):
-        s = ''
-        if self.columnName == "INFO":
-            s = "INFO=<ID=" + self.id + ",Number=" + str(self.number) + ",Type=" + self.dataType + ",Description=\"" + self.description + "\">"
-        elif self.columnName == "FORMAT":
-            s = "FORMAT=<ID=" + self.id + ",Number=" + str(self.number) + ",Type=" + self.dataType + ",Description=\"" + self.description + "\">"
-        elif self.columnName == "FILTER":
-            s = "FILTER=<ID=" + self.name + ",Description=\"" + self.description + "\">"
-        return s
+    def __init__(self, configTable, comments=[], metadata=[], mut=None):
+        comments = comments
+        self.annotationTable = dict()
+        self.table = configTable
+        pass
 
-    def setColumnName(self, colName):
-        self.columnName = colName
-   
-    def setDataType(self, dt):
-        self.dataType = dt
-    
-    def setDescription(self, desc):
-        self.description = desc
+    def _resolveFieldType(self, name, tags):
+        fieldType = None
+        if fieldType is None:
+            value = None
+            if isinstance(tags, list) and (len(tags) > 0):
+                value = tags[0]  # we assume that the first tag corresponds to field type
+            if value == "aggregate":
+                fieldType = "INFO"
+            elif value == "variant":
+                fieldType = "FORMAT"
+            elif value == "filter":
+                fieldType = "FILTER"
+            elif value == "identifier":
+                fieldType = "ID"
+            elif value == "quality":
+                fieldType = "QUAL"
 
-    def setID(self, ID):
-        self.id = ID
-    
-    def setNumber(self, num):
-        self.number = num
+        if fieldType is None:
+            if name in self.table["INFO"]:
+                fieldType = "INFO"
+            elif name in self.table["FORMAT"]:
+                fieldType = "FORMAT"
+            elif name in self.table["OTHER"]:
+                fieldType = self.table["OTHER"][name]
 
-    def getColumnName(self):
-        return self.columnName
-    
-    def getDataType(self):
-        return self.dataType
+        if fieldType is None:
+            if name.upper() in vcf.parser.RESERVED_INFO:
+                fieldType = "INFO"
+            elif name.upper() in vcf.parser.RESERVED_FORMAT:
+                fieldType = "FORMAT"
 
-    def getDescription(self):
-        return self.description
+        if fieldType is None:
+            fieldType = "FORMAT"
 
-    def getID(self):
-        return self.id
-    
-    def getName(self):
-        return self.name
-    
-    def getNumber(self):
-        return self.number
+        return fieldType
+
+    def _resolveFieldID(self, fieldType, name):
+        ID = None
+        if (fieldType in self.table) and (name in self.table[fieldType]):
+            ID = self.table[fieldType][ID]
+        if ID is None:
+            ID = name
+        return ID
+
+    def _resolveFieldDataType(self, fieldType, ID, dataType):
+        if (dataType == "String") or (dataType == ".") or (dataType == ""):
+            if fieldType == "FILTER":
+                if ID in vcf.parser.RESERVED_INFO:
+                    dataType = vcf.parser.RESERVED_INFO[ID]
+            elif fieldType == "FORMAT":
+                if ID in vcf.parser.RESERVED_FORMAT:
+                    dataType = vcf.parser.RESERVED_FORMAT[ID]
+            else:
+                dataType = "String"
+        return dataType
+
+    def _resolveFieldDescription(self, fieldType, ID, desc):
+        # description in the config files overwrite the description in the mutation
+        if (fieldType == "FILTER") and (ID in self.table["FILTER_DESCRIPTION"]):
+            desc = self.table["FILTER_DESCRIPTION"][ID]
+        elif (fieldType == "FORMAT") and (ID in self.table["FORMAT_DESCRIPTION"]):
+            desc = self.table["FORMAT_DESCRIPTION"][ID]
+        elif (fieldType == "INFO") and (ID in self.table["INFO_DESCRIPTION"]):
+            desc = self.table["INFO_DESCRIPTION"][ID]
+        if desc == "":
+            desc = "Unknown"
+        return desc
+
+    def _annotation2str(self, fieldType, ID, desc="Unknown", dataType="String", num="."):
+        if (fieldType == "FORMAT") or (fieldType == "INFO"):
+            return "%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (fieldType, ID, num, dataType, desc)
+        elif fieldType == "FILTER":
+            return "%s=<ID=%s,Description=\"%s\">" % (fieldType, ID, desc)
+        return ""
+
+    def createMetaInfoHeader(self, names):
+        headers = []
+        flg = False
+        if (not self.comments is None) and (len(self.comments) > 0):
+            for idx in xrange(len(self.comments)):
+                comment = self.comments[idx]
+                if comment.startswith("fileformat=VCFv4."):
+                    headers = [string.join(["##", comment], "")]
+                    del self.comments[idx]
+                    flg = True
+                    break
+        if not flg:
+            headers = ["##fileformat=VCFv4.1"]
+        if (not self.comments is None) and (len(self.comments) > 0):
+            headers += self.comments[0:len(self.comments)-1]
+
+        if len() == 0:
+                annotationNames = metadata.keys()
+
+        for annotationName in annotationNames:
+            annotation = metadata[annotationName]
+            field = self.__determineField(annotationName=annotationName, annotationTags=annotation.getTags())
+            if (field != "ID") and (field != "QUAL"):
+                ID = self.__determineFieldID(annotationName=annotationName, field=field)
+                num = annotation.getNumber()
+                dataType = self.__determineDataType(field=field, ID=ID, annotation=annotation)
+                desc = self.__determineDescription(field=field, ID=ID, annotation=annotation)
+                headers += [self.__annotation2str(field=field, ID=ID, desc=desc, dataType=dataType, num=num)]
+
+        headers += [string.join(['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT'],
+                                self.delimiter)]
+        return headers
+
+
 
 class VcfOutputRenderer(OutputRenderer):
-    '''
+    """
     The SimpleOutputRenderer renders a basic tsv file from the given mutations.  All annotations are included with real names as column headers.
     
     Header is determined by the first mutation given.
     
     No attention is paid to order of the headers.    
-    '''
-    _Annotation = collections.namedtuple(typename="Annotation", field_names=["ID","description","type","num"]) # use annotationName as key
-    _tsvTuple = collections.namedtuple(typename="tsvTuple", field_names=["chrom","pos","sampleName","line"])
-    _Pair = collections.namedtuple(typename="Pair", field_names=["key","value"])
-
-    def __getRecordTuple(self,line,delimiter=','):
-        tokens = line.split(delimiter)
-        chrom = int(tokens[0]) 
-        pos = int(tokens[1])
-        sampleName = tokens[2]
-        return self.Record(chrom=chrom,pos=pos,sampleName=sampleName,line=line)
+    """
+    _vcfAnnotation = collections.namedtuple(typename="Annotation", field_names=["field", "ID", "num", "type"])
 
     def __init__(self,filename, datasources=[], configFile='vcf.out.config'):
-        '''
+        """
         Constructor
-        '''
+        """
         self._filename = filename
         self.logger = logging.getLogger(__name__)
         self._datasources = datasources
         self.config = ConfigUtils.createConfigParser(configFile,ignoreCase=False)
-        self.annotationTable = dict()
         self.chromHashCodeTable = None
         self.configTable = dict()
         self.delimiter = '\t'
-        self.reservedAnnotationNames = ['chr', 'start', 'sampleName', 'ref_allele', 'alt_allele', 'end', 'build', 'altAlleleSeen']
-        
-    def __setOutputAnnotationID(self, annotation):
-        ID = None
-        name = annotation.getName()
-        if name in self.configTable["INFO"]:
-            ID = self.configTable["INFO"][name]
-        elif name in self.configTable["FORMAT"]:
-            ID = self.configTable["FORMAT"][name]
-        elif name in self.configTable["OTHER"]:
-            ID = self.configTable["OTHER"][name]
-        if ID is None:
-            ID = name
-        annotation.setID(ID=ID)
-        return annotation
-        
-    def __setOutputAnnotationColumnName(self, annotation, mutation):
-        columnName = ''
-        name = annotation.getName()
-        if not columnName: # (a) tags 
-            tags = mutation.getAnnotation(name).getTags()
-            if isinstance(tags,list) and len(tags) > 0:
-                columnName = tags.pop(0)
-            if columnName and columnName == "aggregate":
-                columnName = "INFO"
-            elif columnName and columnName == "variant":
-                columnName = "FORMAT"
-            elif columnName and columnName == "filter":
-                columnName = "FILTER"
-    
-        if not columnName: # (b) config
-            if name in self.configTable["INFO"]:
-                columnName = "INFO"
-            elif name in self.configTable["FORMAT"]:
-                name = "FORMAT"
-            elif name in self.configTable["OTHER"]:
-                columnName = self.configTable["OTHER"][name]
 
-        if not columnName: # (c) PyVCF defaults
-            if name.upper() in vcf.parser.RESERVED_INFO:
-                columnName = "INFO"
-            elif name.upper() in vcf.parser.RESERVED_FORMAT:
-                columnName = "FORMAT"
+        self.reservedAnnotationNames = ['chr', 'start', 'sampleName', 'ref_allele', 'alt_allele', 'end', 'build',
+                                        'altAlleleSeen']
 
-        if not columnName: # (d) default: FORMAT
-            columnName = "FORMAT"
-        annotation.setColumnName(colName=columnName)
-        return annotation
+    # def __determineField(self, annotationName, annotationTags):
+    #     field = None
+    #     if field is None: # first, determine field ID using annotation's tags field
+    #         if isinstance(annotationTags, list) and (len(annotationTags) > 0):
+    #             field = annotationTags[0]
+    #         if (not field is None) and (field == "aggregate"):
+    #             field = "INFO"
+    #         elif (not field is None) and (field == "variant"):
+    #             field = "FORMAT"
+    #         elif (not field is None) and (field == "filter"):
+    #             field = "FILTER"
+    #         elif (not field is None) and (field == "identifier"):
+    #             field = "ID"
+    #         elif (not field is None) and (field == "quality"):
+    #             field = "QUAL"
+    #
+    #     if field is None: # second, determine field ID using config file
+    #         if annotationName in self.configTable["INFO"]:
+    #             field = "INFO"
+    #         elif annotationName in self.configTable["FORMAT"]:
+    #             field = "FORMAT"
+    #         elif annotationName in self.configTable["OTHER"]:
+    #             field = self.configTable["OTHER"][annotationName]
+    #
+    #     if field is None: # third, determine field ID using PyVCF defaults
+    #         if annotationName.upper() in vcf.parser.RESERVED_INFO:
+    #             field = "INFO"
+    #         elif annotationName.upper() in vcf.parser.RESERVED_FORMAT:
+    #             field = "FORMAT"
+    #
+    #     if field is None: # default: FORMAT
+    #         field = "FORMAT"
+    #
+    #     return field
 
-    def __setOutputAnnotationDescription(self, annotation, mutation):
-        name = annotation.getName()
-        columnName = annotation.getColumnName()
-        description = mutation.getAnnotation(name).getDescription()
-               
-        # description in the config files overwrite the description in the mutation
-        if (columnName == "FILTER") and ("FILTER_DESCRIPTION" in self.configTable) and (columnName in self.configTable["FILTER_DESCRIPTION"]):
-            description = self.configTable["FILTER_DESCRIPTION"][columnName]
-        elif (columnName == "FORMAT") and ("FORMAT_DESCRIPTION" in self.configTable) and (columnName in self.configTable["FORMAT_DESCRIPTION"]):
-            description = self.configTable["FORMAT_DESCRIPTION"][columnName]
-        elif (columnName == "INFO") and ("INFO_DESCRIPTION" in self.configTable) and (columnName in self.configTable["INFO_DESCRIPTION"]):
-            description = self.configTable["INFO_DESCRIPTION"][columnName]
-            
-        if not description: 
-            description = "Unknown"
-        annotation.setDescription(desc=description)
-        return annotation
+    # def __determineFieldID(self, annotationName, field):
+    #     ID = annotationName
+    #     if (field in self.configTable) and (annotationName in self.configTable[field]):
+    #         ID = self.configTable[field][annotationName]
+    #     return ID
 
-    def __setOutputAnnotationDataType(self, annotation, mutation):
-        name = annotation.getName()
-        columnName = annotation.getColumnName()
-        ID = annotation.getID()
-        dataType = mutation.getAnnotation(name).getDataType()
-        
-        if not dataType or dataType == ".": # data type was not specified
-            if columnName == "FILTER":
-                if ID in vcf.parser.RESERVED_INFO:
-                    dataType = vcf.parser.RESERVED_INFO[ID]
-            elif columnName == "FORMAT":
-                if ID in vcf.parser.RESERVED_FORMAT:
-                    dataType = vcf.parser.RESERVED_FORMAT[ID]
-        annotation.setDataType(dt=dataType)
-        return annotation
-    
-    def __setOutputAnnotationNumber(self, annotation, mutation):
-        name = annotation.getName()
-        number = mutation.getAnnotation(name).getNumber()
-        annotation.setNumber(num=number)
-        return annotation
-    
-    def __createOutputAnnotationTable(self, mutation, annotationNames):
-        for annotationName in annotationNames: # iterate over annotations
-            if annotationName not in self.reservedAnnotationNames:
-                annotation = _OutputAnnotation(name=annotationName)
-                annotation = self.__setOutputAnnotationID(annotation=annotation)
-                annotation = self.__setOutputAnnotationColumnName(annotation=annotation, mutation=mutation)
-                annotation = self.__setOutputAnnotationDescription(annotation=annotation, mutation=mutation)
-                annotation = self.__setOutputAnnotationDataType(annotation=annotation, mutation=mutation)
-                annotation = self.__setOutputAnnotationNumber(annotation=annotation, mutation=mutation)
-            
-                columnName = annotation.getColumnName()
-                if columnName not in self.annotationTable:
-                    self.annotationTable[columnName] = dict()
-                self.annotationTable[columnName][annotationName] = annotation
-        
-        # sort each dictionary by ID
-        for columnName in self.annotationTable:
-            self.annotationTable[columnName] = collections.OrderedDict(sorted(self.annotationTable[columnName].iteritems(), key=lambda annotation: annotation[1].getID()))
-    
-    def __getAnnotationNames(self, mutation):
-        # Parse header for the intermediate tsv file
-        annotationNames = copy.copy(self.reservedAnnotationNames) # fixed annotationNames (shallow copy)
-        for annotationName in mutation.keys():
-            if annotationName not in annotationNames:
-                annotationNames.append(annotationName)
-        return annotationNames
-    
-    def renderMutations(self, mutations, comments=[]):
+    # def __determineDataType(self, field, ID, annotation):
+    #     dataType = annotation.getDataType()
+    #
+    #     if (dataType == "String") or (dataType == ".") or (not dataType):
+    #         if field == "FILTER":
+    #             if ID in vcf.parser.RESERVED_INFO:
+    #                 dataType = vcf.parser.RESERVED_INFO[ID]
+    #         elif field == "FORMAT":
+    #             if ID in vcf.parser.RESERVED_FORMAT:
+    #                 dataType = vcf.parser.RESERVED_FORMAT[ID]
+    #         else:
+    #             dataType = "String"
+    #
+    #     return dataType
+    #
+    # def __determineDescription(self, field, ID, annotation):
+    #     desc = annotation.getDescription()
+    #
+    #     # description in the config files overwrite the description in the mutation
+    #     if (field == "FILTER") and \
+    #             ("FILTER_DESCRIPTION" in self.configTable and ID in self.configTable["FILTER_DESCRIPTION"]):
+    #         desc = self.configTable["FILTER_DESCRIPTION"][ID]
+    #     elif (field == "FORMAT") and \
+    #             ("FORMAT_DESCRIPTION" in self.configTable and ID in self.configTable["FORMAT_DESCRIPTION"]):
+    #         desc = self.configTable["FORMAT_DESCRIPTION"][ID]
+    #     elif (field == "INFO") and \
+    #             ("INFO_DESCRIPTION" in self.configTable and ID in self.configTable["INFO_DESCRIPTION"]):
+    #         desc = self.configTable["INFO_DESCRIPTION"][ID]
+    #
+    #     if desc == "":
+    #         desc = "Unknown"
+    #     return desc
+
+    def __createAnnotationTableFromMetaData(self, metadata, mutation):
+        annotationNames = set(mutation.keys()).intersection(metadata.keys())
+        annotationTable = dict()
+        for annotationName in annotationNames:
+            annotation = metadata[annotationName]
+            field = self.__determineField(annotationName=annotationName, annotationTags=annotation.getTags())
+            ID = self.__determineFieldID(annotationName=annotationName, field=field)
+            dataType = self.__determineDataType(field=field, ID=ID, annotation=annotation)
+            num = annotation.getNumber()
+            annotationTable[annotationName] = self._vcfAnnotation(field=field, ID=ID, num=num, type=dataType)
+        return annotationTable
+
+    def __createMetaInformationHeader(self, metadata, comments, annotationNames):
+        headers = []
+        flg = False
+        if (not comments is None) and (len(comments) > 0):
+            for idx in xrange(len(comments)):
+                comment = comments[idx]
+                if comment.startswith("fileformat=VCFv4."):
+                    headers = [string.join(["##", comment], "")]
+                    del comments[idx]
+                    flg = True
+                    break
+        if not flg:
+            headers = ["##fileformat=VCFv4.1"]
+        if (not comments is None) and (len(comments) > 0):
+            headers += comments[0:len(comments)-1]
+
+        if len(annotationNames) == 0:
+                annotationNames = metadata.keys()
+
+        for annotationName in annotationNames:
+            annotation = metadata[annotationName]
+            field = self.__determineField(annotationName=annotationName, annotationTags=annotation.getTags())
+            if (field != "ID") and (field != "QUAL"):
+                ID = self.__determineFieldID(annotationName=annotationName, field=field)
+                num = annotation.getNumber()
+                dataType = self.__determineDataType(field=field, ID=ID, annotation=annotation)
+                desc = self.__determineDescription(field=field, ID=ID, annotation=annotation)
+                headers += [self.__annotation2str(field=field, ID=ID, desc=desc, dataType=dataType, num=num)]
+
+        headers += [string.join(['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT'],
+                                self.delimiter)]
+        return headers
+
+    # def __annotation2str(self, field, ID, desc="Unknown", dataType="String", num="."):
+    #     if (field == "FORMAT") or (field == "INFO"):
+    #         return "%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (field, ID, num, dataType, desc)
+    #     elif field == "FILTER":
+    #         return "%s=<ID=%s,Description=\"%s\">" % (field, ID, desc)
+    #     return ""
+
+    def __writeMutationsToFile(self, filename, mutations, metadata):
+        sampleNames = set()
+        chroms = set()
+        annotationTable = dict()
+        annotationNames = []
+
+        fp = open(filename, 'w')
+        dw = None
+        for mut in mutations:
+            # Sample names (set)
+            if "sampleName" in mut:
+                sampleName = mut.getAnnotation('sampleName').getValue()
+                if not sampleName in sampleNames:
+                    sampleNames.add(sampleName)
+
+            # Parse chromosome
+            chrom = mut.getAnnotation('chr').getValue()
+            if not chrom in chroms:
+                chroms.add(chrom)
+
+            if (len(annotationTable) == 0) and (len(annotationNames) == 0):
+                annotationTable = self.__createAnnotationTableFromMetaData(metadata=metadata, mutation=mut)
+                annotationNames = self.reservedAnnotationNames + annotationTable.keys()
+
+            if dw is None: # initialize the CSV dictionary writer
+                dw = csv.DictWriter(fp, annotationNames, delimiter=self.delimiter, lineterminator="\n")
+                dw.writeheader()
+
+            dw.writerow(mut)
+        fp.close()
+
+        return sampleNames, chroms, annotationTable
+
+    def __getAnnotationNamesByField(self, tbl, fld):
+        names = []
+        for name in tbl:
+            annotation = tbl[name]
+            if annotation.field == fld:
+                names.append(name)
+        return names
+
+    def __map(self, func, iterable, bad="."):
+        return [func(x) if x != bad else None
+                for x in iterable]
+
+    def __parseValue(self, val, dt, num):
+        vals = val.split(",")
+        vals = ["." if not x else x
+                for x in vals]
+        if dt == "Integer":
+            try:
+                val = self.__map(int, vals)
+            except ValueError:
+                val = self.__map(float, vals)
+        elif dt == "Float":
+            val = self.__map(float, vals)
+        elif (dt == "Flag") or (dt == "Numeric"):
+            val = self.__map(MutUtils.str2bool, vals)
+            val = val[0]
+        elif dt == 'String':
+            try:
+                val = self.__map(str, vals)
+            except IndexError:
+                val = True
+        try:
+            if (num == 1) and (not dt in ("Flag",)):
+                val = val[0]
+        except KeyError:
+            pass
+
+        return val
+
+    def renderMutations(self, mutations, metadata=[], comments=[]):
         ''' Generate a simple tsv file based on the incoming mutations.
-        
         Assumes that all mutations have the same annotations, even if some are not populated.
-        
         Returns a file name. '''
         
         # Parse the config file
@@ -290,116 +431,221 @@ class VcfOutputRenderer(OutputRenderer):
                 self.configTable[sectionKey] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(configParser=self.config, sectionKey=sectionKey)
                 for ID in self.configTable[sectionKey]:
                     self.configTable[sectionKey][ID] = string.join(words=self.configTable[sectionKey][ID], sep=",")
-       
+
+        self.configTable["NOT_SPLIT_TAGS"] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(
+            configParser=self.config, sectionKey="NOT_SPLIT_TAGS")
+
         path = os.getcwd()
-        temp = tempfile.NamedTemporaryFile(dir=path) # create a temporary file to write tab-separated file
-        
+
         self.logger.info("Rendering VCF output file: " + self._filename)
         self.logger.info("Data sources included: " + str(self._datasources))
         self.logger.info("Render starting...")
-        
-        flg = False
-        for comment in comments: 
-            if comment.startswith('fileformat=VCFv4.'):
-                comments[0] = '##' + comments[0]
-                flg = True
-                break
-        if not flg:
-            comments.insert(0,'##fileformat=VCFv4.1')
-        
-        ctr = 0
-        headers = comments[0:len(comments)-1] if (comments is not None) and (len(comments) > 0) else list()
-        header = None
-        sampleNames = set()
-        annotationNames = None
-        chroms = set()
-                
-        fp = open(temp.name,'w') # output to a tab-delimited file 
-        dw = None
-        # Write mutation data to a temporary tab-delimited file
-        for m in mutations:           
-            if header is None: # first mutation contains all the required information
-                annotationNames = self.__getAnnotationNames(mutation=m)
-                self.__createOutputAnnotationTable(mutation=m, annotationNames=annotationNames)
-                columnNames = ["INFO","FORMAT","FILTER"]
-                for columnName in columnNames:
-                    annotations = self.annotationTable[columnName]
-                    for annotation in annotations:
-                        headers.append(str(self.annotationTable[columnName][annotation]))
-                header = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
 
-            # Sample names (set)
-            sampleName = m.getAnnotation('sampleName').getValue()
-            if sampleName not in sampleNames:
-                sampleNames.add(sampleName)
-
-            # Parse chromosome
-            chrom = m.getAnnotation('chr').getValue()
-            if chrom not in chroms:
-                chroms.add(chrom)
-            
-            if dw is None: # initialize the CSV dictionary writer
-                dw = csv.DictWriter(fp,annotationNames,delimiter=self.delimiter,lineterminator="\n")
-                dw.writeheader()
-                
-            dw.writerow(m)
-            ctr = ctr + 1
-        fp.close() # writing to intermediate TSV file was complete
-        
-        # Sort the temporary tab-delimited file first by sampleName, then by start, and lastly by chr
-        if self.chromHashCodeTable is None:
-            self.chromHashCodeTable = self.__createChromHashCodeTable(chroms=chroms)
-        temp = self.__sort(readfilename=temp.name, path=path)  
-
+        temp = tempfile.NamedTemporaryFile(dir=path) # create a temporary file to write tab-separated file
+        sampleNames, chroms, annotationTable = self.__writeMutationsToFile(filename=temp.name, mutations=mutations,
+                                                                           metadata=metadata)
+        headers = self.__createMetaInformationHeader(metadata=metadata, comments=comments,
+                                                     annotationNames=annotationTable.keys())
+        header = headers.pop(len(headers)-1)
+        # add sampleNames to the header
         if len(sampleNames) > 0:
             sampleNames = list(sampleNames) # convert to list to preserve ordering
             sampleNames.sort() # lexicographic ordering of sampleNames
-            header = header.append(sampleNames)
-        
-        # Build VCF record each variant at a time
-        sampleNameIndexes = None
-        if len(sampleNames) > 0:
-            sampleNameIndexes = dict([(sampleName,index) for (index,sampleName) in enumerate(sampleNames)])
-        with open(temp.name,'r') as fp:
+            header = string.join([header] + sampleNames, self.delimiter)
+
+        infos = self.__getAnnotationNamesByField(tbl=annotationTable, fld="INFO")
+        fmts = self.__getAnnotationNamesByField(tbl=annotationTable, fld="FORMAT")
+        filts = self.__getAnnotationNamesByField(tbl=annotationTable, fld="FILTER")
+        ids = self.__getAnnotationNamesByField(tbl=annotationTable, fld="ID")
+        quals = self.__getAnnotationNamesByField(tbl=annotationTable, fld="QUAL")
+
+        # detect genotype (or GT information)
+        for i in xrange(len(fmts)):
+            annotation = annotationTable[fmts[i]]
+            if annotation.ID == "GT":
+                tmp = fmts[0]
+                fmts[0] = fmts[i]
+                fmts[i] = tmp
+                break
+
+        fp = file(self._filename,'w')
+        fp.write(string.join([string.join(headers,'\n##'), header], "\n#"))
+        fp.close()
+
+        temp_vcf_reader = vcf.Reader(filename=self._filename, strict_whitespace=True)
+
+        fp = file(self._filename,'w')
+        vcf_writer = vcf.Writer(fp, temp_vcf_reader)
+
+        with open(temp.name, "r") as fp:
             chrom = None
             pos = None
-            varData = list()
-            dr = csv.DictReader(fp,delimiter=self.delimiter)
-            for data in dr:
-                if (chrom != data['chr']) or ((chrom == data['chr']) and (pos != data['start'])): # new position either on a different chromosome or on the same chromosome
-                    chrom = data['chr']
-                    pos = data['start']
-                    #if len(varData) > 0:
-                        # create record
-                        #record = self.__createRecord(varData=varData)
-                    varData = list()
-                    varData.append(data)
-                else: 
-                    varData.append(data)
-        
-        if len(varData) > 0:
-            varData
-        
-        fp = file(self._filename,'w')
-        fp.write(string.join(headers,'\n##'))
-        fp.close()
+            ref = None
+            alts = []
+            ID = None # default: None
+            qual = "."
+            filt = []
+            info = collections.OrderedDict()
+            fmt = dict()
+            sampleIndexes = dict([(x,i) for (i,x) in enumerate(sampleNames)])
+            index = 0
+
+            nfmts = len(fmts)
+            dr = csv.DictReader(fp, delimiter=self.delimiter)
+            for row in dr:
+                # new (chromosome, position) pair is encountered; write pair and re-initialize data structures
+                if (chrom != row["chr"]) or (pos != int(row["start"])):
+                    # write existing data
+                    if (not chrom is None) and (not pos is None):
+                        record = self.__getRecord(chrom=chrom, pos=pos, ID=ID, ref=ref, alts=alts, qual=qual, filt=filt,
+                                                  info=info, infos=infos, fmt=fmt, fmts=fmts,
+                                                  sampleIndexes=sampleIndexes, sampleNames=sampleNames,
+                                                  annotationTable=annotationTable)
+                        vcf_writer.write_record(record)
+
+                        index += 1
+                        if index % 1000 == 0:
+                            vcf_writer.flush()
+
+                    # chromosome
+                    chrom = row["chr"]
+                    # position
+                    pos = int(row["start"])
+                    # reference allele
+                    ref = row["ref_allele"]
+
+                    # alternate allele
+                    alts = [row["alt_allele"]]
+
+                    # semi-colon separated list of unique identifiers
+                    ID = None  # default: None
+                    if len(ids) > 0:
+                        ID = []
+                        for i in xrange(len(ids)):
+                            ID.append(row[ids[i]])
+
+                    # phred-scaled quality score for the assertion made in ALT
+                    qual = None  # default: None
+                    if len(quals) == 1:
+                        val = row[quals[0]]
+                        if val.isdigit():
+                            qual = int(val)
+
+                    filt = []  # parse PASS or list of the names of filter that have failed
+                    for i in xrange(len(filts)):
+                        if (row[filts[i]] != "PASS") and (row[filts[i]] != "."):
+                            annotation = annotationTable[filts[i]]
+                            filt.append(annotation.ID)
+
+                    info = collections.OrderedDict()
+                    for i in xrange(len(infos)):  # only parsed when a new alternate arrives
+                        annotation = annotationTable[infos[i]]
+                        info[annotation.ID] = row[infos[i]]
+
+                    fmt = collections.OrderedDict()
+                    sampleName = row["sampleName"]
+                    fmt[sampleName] = [None]*nfmts
+                    for i in xrange(nfmts):
+                        fmt[sampleName][i] = row[fmts[i]]
+                else:
+                    for i in xrange(len(ids)):
+                        if not row[ids[i]] in ID:
+                            ID.append(row[ids[i]])
+
+                    if len(quals) == 1:
+                        val = row[quals[0]]
+                        if val.isdigit():
+                            if qual != int(val):
+                                raise Exception()
+
+                    for i in xrange(len(filts)):
+                        if (row[filts[i]] != "PASS") and (row[filts[i]] != "."):
+                            annotation = annotationTable[filts[i]]
+                            if not annotation.ID in filt:
+                                filt.append(annotation.ID)
+
+                    if row["alt_allele"] not in alts:
+                        alts.append(row["alt_allele"])
+                        for i in xrange(len(infos)):  # only parsed when a new alternate allele is detected
+                            annotation = annotationTable[infos[i]]
+                            if annotation.ID in self.configTable["SPLIT_TAGS"]["INFO"]:
+                                info[annotation.ID] += "," + row[infos[i]]
+
+                    sampleName = row["sampleName"]
+                    if sampleName not in fmt:
+                        fmt[sampleName] = [None]*nfmts
+                        for i in xrange(nfmts):
+                            fmt[sampleName][i] = row[fmts[i]]
+                    else:
+                        for i in xrange(nfmts):
+                            annotation = annotationTable[fmts[i]]
+                            if annotation.ID in self.configTable["SPLIT_TAGS"]["FORMAT"]:
+                                fmt[sampleName][i] += "," + row[fmts[i]]
+
+        record = self.__getRecord(chrom=chrom, pos=pos, ID=ID, ref=ref, alts=alts, qual=qual, filt=filt, info=info,
+                                  infos=infos, fmt=fmt, fmts=fmts, sampleIndexes=sampleIndexes, sampleNames=sampleNames,
+                                  annotationTable=annotationTable)
+        vcf_writer.write_record(record)
+        vcf_writer.close()
         return self._filename
-            
-        '''
-                
-        f = open(temp.name,'r')
-        for line in f.readlines():
-            print line.rstrip('\n')
-        
-        print "Rendered " + str(ctr) + " mutations"'''
-    
-       
 
+    def __getRecord(self, chrom, pos, ID, ref, alts, qual, filt, info, infos, fmt, fmts, sampleIndexes, sampleNames,
+                    annotationTable):
+        if not ID is None:
+            ID = string.join(ID, ";")
 
-    def __sort(self, readfilename, path):
-        writefile = tempfile.NamedTemporaryFile(dir=path)
-        TsvFileSorter.sortFile(readfilename, writefile.name)
-        return writefile
+        if qual is None:
+            qual = "."
+            self.logger.warn("")
+
+        nalts = len(alts)
+        nfmts = len(fmts)
+
+        samples = [None]*len(sampleNames)
+        sampflds = [None]*nfmts # field names for the sample
+        samptypes = [None]*nfmts
+        sampnums = [None]*nfmts
+        for sampleName in sampleNames:
+            if not sampleName in fmt:
+                fmt[sampleName] = [None]*nfmts
+                for i in xrange(nfmts):
+                    annotation = annotationTable[fmts[i]]
+                    if (annotation.num == ".") and (annotation.ID in self.configTable["SPLIT_TAGS"]["FORMAT"]):
+                        fmt[sampleName][i] = string.join(["."]*nalts, ",")
+                    elif annotation.num == ".":
+                        fmt[sampleName][i] = "."
+                    else:
+                        if annotation.num == 1:
+                            fmt[sampleName][i] = "."
+                        else:
+                            fmt[sampleName][i] = string.join(["."]*annotation.num, ",")
+
+            for i in xrange(nfmts):
+                annotation = annotationTable[fmts[i]]
+                sampflds[i] = annotation.ID
+                sampnums[i] = annotation.num
+                samptypes[i] = annotation.type
+                fmt[sampleName][i] = self.__parseValue(val=fmt[sampleName][i], dt=annotation.type, num=annotation.num)
+
+            calldata = vcf.model.make_calldata_tuple(sampflds)
+            calldata._types = samptypes
+            calldata._nums = sampnums
+            samples[sampleIndexes[sampleName]] = calldata(*fmt[sampleName])
+
+        for i in xrange(len(infos)):
+            annotation = annotationTable[infos[i]]
+            info[annotation.ID] = self.__parseValue(val=info[annotation.ID], dt=annotation.type, num=annotation.num)
+
+        record = vcf.model._Record(chrom, pos, ID, ref, alts, qual, filt, info, string.join(sampflds, ":"),
+                                   sampleIndexes)
+
+        for sampleName in sampleNames:
+            calldata = samples[sampleIndexes[sampleName]]
+            samples[sampleIndexes[sampleName]] = vcf.model._Call(record, sampleName, calldata)
+
+        record.samples = samples
+
+        return record
 
     def __createChromHashCodeTable(self, chroms):
         chromHashCodeTable = dict()
@@ -413,14 +659,13 @@ class VcfOutputRenderer(OutputRenderer):
         index = 0
         for chrom in sorted(chroms):
             if chromHashCodeTable[chrom] is None:
-                if chrom.upper() == 'X': # X chromosome
+                if chrom.upper() == 'X':  # X chromosome
                     chromHashCodeTable[chrom] = highestHashCode + 1
-                elif chrom.upper() == 'Y': # Y chrmomosome
+                elif chrom.upper() == 'Y':  # Y chromosome
                     chromHashCodeTable[chrom] = highestHashCode + 2
-                elif (chrom.upper() == 'M') or (chrom.upper() == 'MT'): # mitochondrial chrmomosome
+                elif (chrom.upper() == 'M') or (chrom.upper() == 'MT'):  # mitochondrial chromosome
                     chromHashCodeTable[chrom] = highestHashCode + 3
                 else:
                     index += 1
                     chromHashCodeTable[chrom] = highestHashCode + index + 3
         return chromHashCodeTable
-        

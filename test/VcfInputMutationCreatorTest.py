@@ -46,7 +46,6 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-from TestUtils import TestUtils
 
 
 '''
@@ -58,6 +57,7 @@ import unittest
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.Annotator import Annotator
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
+from TestUtils import TestUtils
 import logging
 import pandas
 from oncotator.input.SyntaxException import SyntaxException
@@ -66,8 +66,11 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceCreator import DatasourceCreator
+import vcf
+from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
+
 class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def setUp(self):
@@ -83,7 +86,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testBasicCreationWithExampleVcf(self):
-        inputFilename = 'testdata/example.vcf'
+        inputFilename = 'testdata/vcf/example.vcf'
         
         creator = VcfInputMutationCreator(inputFilename)
         muts = creator.createMutations()
@@ -91,7 +94,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         # You cannot use len(muts), since muts is a generator.
         ctr = 0
         for m in muts:
-            ctr += 1
+            ctr = ctr +1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
         self.assertTrue((m.chr == "21") and (m.start == 1234567), "Last mutation was not correct: " + str(m))
         
@@ -106,12 +109,12 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testSimpleAnnotationWithExampleVcf(self):
         ''' Tests the ability to do a simple Gaf 3.0 annotation. '''
-        inputFilename = 'testdata/example.vcf'
+        inputFilename = 'testdata/vcf/example.vcf'
         outputFilename = 'out/simpleVCF.Gaf.annotated.out.tsv'
         
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = SimpleOutputRenderer(outputFilename)
+        renderer = SimpleOutputRenderer(outputFilename, [])
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
@@ -120,12 +123,12 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testSimpleAnnotationWithGermlineVcf(self):
         ''' Tests the ability to parse Germline vcf. '''
-        inputFilename = 'testdata/random.vcf'
+        inputFilename = 'testdata/vcf/random.vcf'
         outputFilename = 'out/random.tsv'
         
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = SimpleOutputRenderer(outputFilename)
+        renderer = SimpleOutputRenderer(outputFilename, [])
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
@@ -149,7 +152,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testTCGAMAFRendering(self):
         ''' Test the ability to render a germline vcf as a TCGA MAF '''
-        creator = VcfInputMutationCreator('testdata/example.vcf')
+        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
         renderer = TcgaMafOutputRenderer('out/example.vcf.maf.annotated')
         annotator = Annotator()
@@ -205,12 +208,12 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testSwitchedFieldsWithExampleVcf(self):
         '''Test whether the switched tags are detected or not.'''
-        inputFilename = 'testdata/example.bad.switched.fields.vcf'
+        inputFilename = 'testdata/vcf/example.bad.switched.fields.vcf'
         outputFilename = 'out/example.out.tsv'
         
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = SimpleOutputRenderer(outputFilename)
+        renderer = SimpleOutputRenderer(outputFilename, [])
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
@@ -221,9 +224,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testAnnotationWithExampleVcf(self):
         ''' Test whether parsed annotations match the actual annotations. '''
-        inputFilename = 'testdata/example.vcf'
+        inputFilename = 'testdata/vcf/example.vcf'
         outputFilename = 'out/example.out.tsv'
-        expOutputFilename = 'testdata/example.expected.out.tsv'
+        expOutputFilename = 'testdata/vcf/example.expected.out.tsv'
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -254,7 +257,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testAnnotationWithNoSampleNameExampleVcf(self):
         """ Test whether parsed annotations match the actual annotations. """
-        inputFilename = 'testdata/example.sampleName.removed.vcf'
+        inputFilename = 'testdata/vcf/example.sampleName.removed.vcf'
         outputFilename = 'out/example.sampleName.removed.out.tsv'
 
         creator = VcfInputMutationCreator(inputFilename)
@@ -266,15 +269,72 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testGetMetaDataWithNoSampleNameExampleVcf(self):
         """ Make sure that we can retrieve metadata, even before createMutations has been called """
-        inputFilename = 'testdata/example.sampleName.removed.vcf'
+        inputFilename = 'testdata/vcf/example.sampleName.removed.vcf'
 
         creator = VcfInputMutationCreator(inputFilename)
         gtKeys = set(['genotype', 'read_depth', 'genotype_quality', 'haplotype_quality', 'q10', 's50', 'samples_number',
-                      'depth_across_samples', 'allele_frequency', 'ancestral_allele', 'dbSNP_membership'])
+                      'depth_across_samples', 'allele_frequency', 'ancestral_allele', 'dbSNP_membership', 'id', 'qual',
+                      'hapmap2_membership'])
         md = creator.getMetadata()
         ks = set(md.keys())
-        diff = gtKeys.difference(ks)
+        diff = gtKeys.symmetric_difference(ks)
         self.assertTrue(len(diff) == 0, "Missing keys that should have been seen in the metadata: " + str(diff))
+
+    def testSplitByNumberOfAltsWithFile(self):
+        """ Test whether we properly determine that a field is split ... using an actual file"""
+        inputFilename = 'testdata/vcf/example.split.tags.vcf'
+        creator = VcfInputMutationCreator(inputFilename)
+        isSplit = dict()
+        isSplit['read_depth'] = False
+        isSplit['ESP_MAF'] = False
+        isSplit['allele_frequency'] = True
+
+        mapVcfFields2Tsv = dict()
+        mapVcfFields2Tsv['read_depth'] = 'DP'
+        mapVcfFields2Tsv['ESP_MAF'] = 'ESP_MAF'
+        mapVcfFields2Tsv['allele_frequency'] = 'AF'
+
+        muts = creator.createMutations()
+
+        vcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+
+        chrom = None
+        pos = None
+        variant = None
+        for m in muts:
+            if (chrom != m['chr']) or (pos != m['start']):
+                chrom = m['chr']
+                pos = m['start']
+                variant = vcfReader.next()
+                if len(variant.ALT) > 1:
+                    isSplit['allele_frequency'] = True
+                else:
+                    isSplit['allele_frequency'] = False
+
+            for annotationName in isSplit.keys():
+                if mapVcfFields2Tsv[annotationName] in variant.INFO:
+                    a = m.getAnnotation(annotationName)
+                    self.assertTrue(('SPLIT' in a.getTags()) == isSplit[annotationName],
+                                    annotationName + " is split? " + str(isSplit[annotationName]) + ", but saw: " +
+                                    str('SPLIT' in a.getTags()))
+
+    def testSplitByNumberOfAlts(self):
+        """ Test whether we properly determine that a field is split"""
+        inputFilename = 'testdata/vcf/example.split.tags.vcf'
+        creator = VcfInputMutationCreator(inputFilename)
+
+        # We do this to make sure that the internal state is correct
+        md = creator.getMetadata()
+
+        test = creator._determineIsSplit('read_depth', ["G", "T"], ["6"], "INFO")
+        self.assertTrue(test is False)
+
+        # Test with an exception in the config file
+        test = creator._determineIsSplit('ESP_MAF', ["G", "T"], ["6", "5"], "INFO")
+        self.assertTrue(test is False)
+
+        test = creator._determineIsSplit('allele_frequency', ["G", "T"], ["6", "5"], "INFO")
+        self.assertTrue(test is True)
 
 if __name__ == "__main__":
     unittest.main()
