@@ -89,12 +89,23 @@ class TsvFileSorter(object):
 
         :param partitions:
         """
-        iterables = [(self._Pair(key=self.__createLineDict(hdrList=self.headerList, line=line), value=line) for line in partition)
-                     for partition in partitions]
+        # iterables = [(self._Pair(key=, value=line) for line in partition)
+        #              for partition in partitions]
+        iterables = []
+        for partition in partitions:
+            partitionList = []
+            for line in partition:
+                d = self.__createLineDict(hdrList=self.headerList, line=line)
+                # TODO: key_list is not quite correct.  Modify to specify a callable (dict to tuple)
+                key_list = [d[self.fieldNames[0]].lower(), int(d[self.fieldNames[1]]), int(d[self.fieldNames[2]])]
+                partitionList.append(self._Pair(key=tuple(key_list), value=line))
+            iterables.append(partitionList)
+
         # Merge multiple sorted inputs
-        ctr = 0
         for pair in heapq.merge(*iterables):
+            print pair.value
             yield pair.value
+
 
     def sortFile(self,readfilename, outputFilename, iswriteHeader=True, length=1280000):
         tempdirs = list([tempfile.gettempdir()])
@@ -125,6 +136,7 @@ class TsvFileSorter(object):
                     if not lines:
                         break
                     # lines = sorted(lines, key=operator.attrgetter('chrom', 'pos', 'sampleName')) # sort the list of lines
+                    # TODO: Determine type of the input columns and then convert to lowercase str or use int/float
                     lines = sorted(lines, key=lambda t: (t[self.fieldNames[0]].lower(), int(t[self.fieldNames[1]]), int(t[self.fieldNames[2]]))) # sort the list of lines
                     partition = open(name=os.path.join(tempdir, '%06i' % len(partitions)), mode='w+b',
                                      buffering=64 * 1024)

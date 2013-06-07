@@ -46,7 +46,7 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-
+import logging
 
 import subprocess
 import os
@@ -55,6 +55,7 @@ import re
 import tarfile
 import subprocess
 from shove.core import Shove
+from oncotator.Transcript import Transcript
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 
 VALID_ENSEMBL_SPECIES = [
@@ -182,35 +183,3 @@ class GenomeBuildInstallUtils(object):
 
         return gtf_version
 
-    @staticmethod
-    def build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol="file"):
-        """Create the transcript index (using shove) for ensembl.  Key is transcript ID
-        :param ensembl_input_gtf:
-        :param ensembl_input_fasta: sequence data for transcripts corresponding to what is in the gtf
-        :param output_filename:
-        :param protocol: shove protocol.  Usually "file" or "sqlite"
-        """
-        shove = Shove(protocol + "://" + output_filename)
-
-        # # 15	protein_coding	exon	235912	236850	.	-	.	 gene_id "ENSCAFG00000002484"; transcript_id "ENSCAFT00000026823"; exon_number "1"; gene_biotype "protein_coding"; exon_id "ENSCAFE00000026787";
-        # field_names = ["chr", "transcript_type", "transcript_unit", "start", "end", "score", "transcript_strand", "frame", "attributes"]
-        # gtfReader = GenericTsvReader(ensembl_input_gtf, fieldNames=field_names)
-        # current_transcript_id = "nothing yet"
-        # for line in gtfReader:
-        #     pass
-
-        # Example code taken from http://biopython.org/wiki/GFF_Parsing
-        from BCBio import GFF
-        from Bio import SeqIO
-
-        in_seq_file = ensembl_input_fasta
-        in_seq_handle = open(in_seq_file)
-        seq_dict = SeqIO.to_dict(SeqIO.parse(in_seq_handle, "fasta"))
-        in_seq_handle.close()
-
-        in_file = ensembl_input_gtf
-        in_handle = open(in_file)
-        for rec in GFF.parse(in_handle, base_dict=seq_dict):
-            print rec
-            print rec.id
-        in_handle.close()
