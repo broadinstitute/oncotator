@@ -63,6 +63,7 @@ import logging
 import re
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
+from oncotator.utils.so_mappings import so_term_mappings, so_accession_mappings
 
 try:
     import pysam
@@ -156,7 +157,6 @@ class Datasource(object):
         # The default implementation raise a NotImplementedError
         # to ensure that any subclasses must override this method.
         raise NotImplementedError
-
 
 class Gaf(Datasource, TranscriptProvider):
     """
@@ -623,6 +623,18 @@ class Gaf(Datasource, TranscriptProvider):
 
         raise Exception('Variant Type cannot be inferred from reference and observed allele: (%s, %s)' % (reference_allele, observed_allele))
 
+class Gaf_ICGC(Gaf):
+    def annotate_mutation(self, mutation, upstream_padding=3000, downstream_padding=0):
+        annotated_mutation = super(Gaf_ICGC, self).annotate_mutation(mutation, upstream_padding, downstream_padding)
+
+        vc_value = annotated_mutation.annotations['variant_classification'].getValue()
+        so_term_value = so_term_mappings.get(vc_value, '')
+        so_accession_value = so_accession_mappings.get(so_term_value, '')
+
+        annotated_mutation.createAnnotation('SO_term', so_term_value, annotationSource="ICGC_MUCOPA")
+        annotated_mutation.createAnnotation('SO_accession', so_accession_value, annotationSource="ICGC_MUCOPA")
+
+        return annotated_mutation
 
 class GenericGeneDataSourceException(Exception):
     def __init__(self, str):
