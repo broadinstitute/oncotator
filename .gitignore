@@ -1,3 +1,7 @@
+*.pyc
+oncotator.log
+Oncotator_profile.bin
+profile_stats.txt
 /test/configs/personal-test.config
 /test/out/*
 !/test/out/README.txt.1st
@@ -11,3 +15,4 @@
 /Oncotator.egg-info
 /build
 /test/testdata/Saccharomyces_cerevisiae.EF4.71.cdna.all.fa
+.DS_Store
