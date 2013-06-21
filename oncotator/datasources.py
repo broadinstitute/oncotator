@@ -623,19 +623,6 @@ class Gaf(Datasource, TranscriptProvider):
 
         raise Exception('Variant Type cannot be inferred from reference and observed allele: (%s, %s)' % (reference_allele, observed_allele))
 
-class Gaf_ICGC(Gaf):
-    def annotate_mutation(self, mutation, upstream_padding=3000, downstream_padding=0):
-        annotated_mutation = super(Gaf_ICGC, self).annotate_mutation(mutation, upstream_padding, downstream_padding)
-
-        vc_value = annotated_mutation.annotations['variant_classification'].getValue()
-        so_term_value = so_term_mappings.get(vc_value, '')
-        so_accession_value = so_accession_mappings.get(so_term_value, '')
-
-        annotated_mutation.createAnnotation('SO_term', so_term_value, annotationSource="ICGC_MUCOPA")
-        annotated_mutation.createAnnotation('SO_accession', so_accession_value, annotationSource="ICGC_MUCOPA")
-
-        return annotated_mutation
-
 class GenericGeneDataSourceException(Exception):
     def __init__(self, str):
         """
@@ -683,6 +670,27 @@ class Generic_Gene_DataSource(Datasource):
                 mutation.createAnnotation(h, '', annotationSource=self.title)
 
         return mutation
+
+#class Gaf_ICGC(Gaf):
+#    def annotate_mutation(self, mutation, upstream_padding=3000, downstream_padding=0):
+#        annotated_mutation = super(Gaf_ICGC, self).annotate_mutation(mutation, upstream_padding, downstream_padding)
+#
+#        vc_value = annotated_mutation.annotations['variant_classification'].getValue()
+#        so_term_value = so_term_mappings.get(vc_value, '')
+#        so_accession_value = so_accession_mappings.get(so_term_value, '')
+#
+#        annotated_mutation.createAnnotation('SO_term', so_term_value, annotationSource="ICGC_MUCOPA")
+#        annotated_mutation.createAnnotation('SO_accession', so_accession_value, annotationSource="ICGC_MUCOPA")
+#
+#        return annotated_mutation
+
+class Generic_VariantClassification_Datasource(Generic_Gene_DataSource):
+    """ Used for generic TSV that is indexed by variant classification. """
+    def __init__(self, src_file, title='', version=None, use_binary=True, geneColumnName='variant_classification'):
+        super(Generic_VariantClassification_Datasource,self).__init__(src_file, title, version, use_binary, geneColumnName)
+
+    def annotate_mutation(self, mutation):
+        return super(Generic_VariantClassification_Datasource,self).annotate_mutation(mutation,'variant_classification')
 
 class Generic_Transcript_Datasource(Generic_Gene_DataSource):
     """ Used for generic TSV that is indexed by transcript ID. """

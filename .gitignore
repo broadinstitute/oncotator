@@ -1,4 +1,5 @@
 *.pyc
+oncotator.log
 Oncotator_profile.bin
 profile_stats.txt
 /test/configs/personal-test.config
