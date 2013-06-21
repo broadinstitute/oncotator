@@ -505,8 +505,8 @@ def identify_best_effect_transcript(data, gaf):
         'Splice_Site':4,
         'miRNA':4,
         'Silent':5,
-           "3'UTR":6,
-           "5'UTR":6,
+        "3'UTR":6,
+        "5'UTR":6,
         'Intron':7,
         "5'Flank":8,
         "3'Flank":8,
@@ -775,9 +775,6 @@ def find_mut_in_gaf(data, gaf):
         
 def correct_transcript_coordinates(data, gaf):
     for d in data:
-        #from pprint import pprint as pp
-        #pp(d)
-        #pdb.set_trace()
         
         if 'transcripts' in d:
             for t in d['transcripts']:
