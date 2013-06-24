@@ -53,6 +53,7 @@ Created on Jan 9, 2013
 
 @author: mgupta
 """
+
 class SyntaxException(Exception):
     """
     Exception class arising when input VCF has syntax errors.

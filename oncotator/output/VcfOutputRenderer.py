@@ -55,355 +55,251 @@ Created on Nov 7, 2012
 '''
 from OutputRenderer import OutputRenderer
 from oncotator.utils.ConfigUtils import ConfigUtils
-import copy
 import csv
 import collections
 import logging
 import os
-import sys
 import tempfile
 import itertools
-import operator
 import string
 import vcf
-import heapq
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.input.ConfigInputIncompleteException import ConfigInputIncompleteException
 from oncotator.utils.TsvFileSorter import TsvFileSorter
+from oncotator.utils.GenericTsvReader import GenericTsvReader
 
 
-class VCFOutputDataManager:
-    comments = None
-
-    def __init__(self, configTable, comments=[], metadata=[], mut=None):
-        comments = comments
-        self.annotationTable = dict()
+class OutputDataManager:
+    def __init__(self, configTable, comments=[], md=[], mut=None, sampleNames=[]):
+        self.delimiter = "\t"
+        self.lineterminator = "\n"
+        self.comments = comments
         self.table = configTable
-        pass
+        self.metadata = md
+        self.mutation = mut
+        self.sampleNames = sampleNames
+        self.sampleNames.sort()
+        # TODO: convert to annotation class
+        self._Annotation = collections.namedtuple(typename="Annotation", field_names=["ft", "ID", "num", "dt", "desc"])
+        self.annotationTable, self.reverseAnnotationTable = self._createTables(self.metadata, self.mutation)
+
+    def getHeader(self):
+        return self._createHeader(self.comments, self.delimiter, self.lineterminator)
+
+    def getFieldType(self, name):
+        ft = "FORMAT"
+        if name in self.annotationTable:
+            annotation = self.annotationTable[name]
+            ft = annotation.ft
+        return ft
+
+    def getFieldID(self, name):
+        ID = name
+        if name in self.annotationTable:
+            annotation = self.annotationTable[name]
+            ID = annotation.ID
+        return ID
+
+    def getFieldDataType(self, name):
+        dataType = "String"
+        if name in self.annotationTable:
+            annotation = self.annotationTable[name]
+            dataType = annotation.dt
+        return dataType
+
+    def getFieldNum(self, name):
+        num = "."
+        if name in self.annotationTable:
+            annotation = self.annotationTable[name]
+            num = annotation.num
+        return num
+
+    def getFieldDesc(self, name):
+        desc = "Unknown"
+        if name in self.annotationTable:
+            annotation = self.annotationTable[name]
+            desc = annotation.desc
+        return desc
+
+    def getAnnotationNames(self, fieldType):
+        name = []
+        if fieldType in self.reverseAnnotationTable:
+            name = self.reverseAnnotationTable[fieldType]
+        return name
+
+    def _createHeader(self, comments=[], delimiter="\t", lineterminator="\n"):
+        headers = ["##fileformat=VCFv4.1"]
+        if (comments is not None) and (len(comments) > 0):
+            for i in xrange(len(comments)):
+                comment = comments[i]
+                if comment.startswith("fileformat=VCFv4."):
+                    comments.pop(i)
+                    break
+        # Last line of the comments ("Oncotator v1.0.0.0rc20|") is NOT included in the header
+        headers += [string.join(["##", comment], "") for comment in comments[0:len(comments)-1]]
+
+        annotations = self.annotationTable.values()
+        for annotation in annotations:
+            headers += [self._annotation2str(annotation.ft, annotation.ID, annotation.desc, annotation.dt,
+                                             annotation.num)]
+        headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT'] +
+                                self.sampleNames, delimiter)]
+        header = string.join(filter(None, headers), lineterminator)
+        return header
+
+    def _createTables(self, md, mut):
+        """
+        TODO: comments
+        """
+        if mut is not None:
+            names = set(md.keys())
+            names = names.union(mut.keys())
+            names = names.difference(['chr', 'start', 'end', 'ref_allele', 'alt_allele', 'altAlleleSeen', 'sampleName',
+                                      'build'])
+        else:
+            names = md.keys()
+
+        table = dict()
+        revTable = dict()
+        for name in names:
+            annotation = None
+            num = "."
+            tags = []
+            dt = "String"
+            desc = "Unknown"
+
+            if name in md:
+                annotation = md[name]
+            elif name in mut:
+                annotation = mut.getAnnotation(name)
+
+            if annotation is not None:
+                num = annotation.getNumber()
+                tags = annotation.getTags()
+                dt = annotation.getDataType()
+                desc = annotation.getDescription()
+
+            ft = self._resolveFieldType(name, tags)
+            ID = self._resolveFieldID(ft, name)
+            dt = self._resolveFieldDataType(ft, ID, dt)
+            desc = self._resolveFieldDescription(ft, ID, desc)
+            table[name] = self._Annotation(ft, ID, num, dt, desc)
+            if ft not in revTable:
+                revTable[ft] = [name]
+            else:
+                revTable[ft] += [name]
+
+        return table, revTable
 
     def _resolveFieldType(self, name, tags):
-        fieldType = None
-        if fieldType is None:
-            value = None
+        ft = None
+
+        if ft is None:
+            m = {"aggregate": "INFO", "variant": "FORMAT", "filter": "FILTER", "identifier": "ID", "quality": "QUAL"}
             if isinstance(tags, list) and (len(tags) > 0):
-                value = tags[0]  # we assume that the first tag corresponds to field type
-            if value == "aggregate":
-                fieldType = "INFO"
-            elif value == "variant":
-                fieldType = "FORMAT"
-            elif value == "filter":
-                fieldType = "FILTER"
-            elif value == "identifier":
-                fieldType = "ID"
-            elif value == "quality":
-                fieldType = "QUAL"
+                if tags[0] in m:
+                    ft = m[tags[0]]  # we assume that the first tag corresponds to field type
 
-        if fieldType is None:
+        if ft is None:
             if name in self.table["INFO"]:
-                fieldType = "INFO"
+                ft = "INFO"
             elif name in self.table["FORMAT"]:
-                fieldType = "FORMAT"
+                ft = "FORMAT"
             elif name in self.table["OTHER"]:
-                fieldType = self.table["OTHER"][name]
+                ft = self.table["OTHER"][name]
 
-        if fieldType is None:
+        if ft is None:
             if name.upper() in vcf.parser.RESERVED_INFO:
-                fieldType = "INFO"
+                ft = "INFO"
             elif name.upper() in vcf.parser.RESERVED_FORMAT:
-                fieldType = "FORMAT"
+                ft = "FORMAT"
 
-        if fieldType is None:
-            fieldType = "FORMAT"
+        if ft is None:
+            ft = "FORMAT"
 
-        return fieldType
+        return ft
 
-    def _resolveFieldID(self, fieldType, name):
+    def _resolveFieldID(self, ft, name):
         ID = None
-        if (fieldType in self.table) and (name in self.table[fieldType]):
-            ID = self.table[fieldType][ID]
+        if (ft in self.table) and (name in self.table[ft]):
+            ID = self.table[ft][name]
         if ID is None:
             ID = name
         return ID
 
-    def _resolveFieldDataType(self, fieldType, ID, dataType):
-        if (dataType == "String") or (dataType == ".") or (dataType == ""):
-            if fieldType == "FILTER":
+    def _resolveFieldDataType(self, ft, ID, dt):
+        if dt in ("String", ".", "",):
+            if ft == "FILTER":
                 if ID in vcf.parser.RESERVED_INFO:
-                    dataType = vcf.parser.RESERVED_INFO[ID]
-            elif fieldType == "FORMAT":
+                    dt = vcf.parser.RESERVED_INFO[ID]
+            elif ft == "FORMAT":
                 if ID in vcf.parser.RESERVED_FORMAT:
-                    dataType = vcf.parser.RESERVED_FORMAT[ID]
+                    dt = vcf.parser.RESERVED_FORMAT[ID]
             else:
-                dataType = "String"
-        return dataType
+                dt = "String"
+        return dt
 
-    def _resolveFieldDescription(self, fieldType, ID, desc):
-        # description in the config files overwrite the description in the mutation
-        if (fieldType == "FILTER") and (ID in self.table["FILTER_DESCRIPTION"]):
+    def _resolveFieldDescription(self, ft, ID, desc):
+        # description in the config file overwrite the description in the mutation
+        if (ft == "FILTER") and (ID in self.table["FILTER_DESCRIPTION"]):
             desc = self.table["FILTER_DESCRIPTION"][ID]
-        elif (fieldType == "FORMAT") and (ID in self.table["FORMAT_DESCRIPTION"]):
+        elif (ft == "FORMAT") and (ID in self.table["FORMAT_DESCRIPTION"]):
             desc = self.table["FORMAT_DESCRIPTION"][ID]
-        elif (fieldType == "INFO") and (ID in self.table["INFO_DESCRIPTION"]):
+        elif (ft == "INFO") and (ID in self.table["INFO_DESCRIPTION"]):
             desc = self.table["INFO_DESCRIPTION"][ID]
-        if desc == "":
+        if (desc is None) or (desc == ""):
             desc = "Unknown"
         return desc
 
-    def _annotation2str(self, fieldType, ID, desc="Unknown", dataType="String", num="."):
-        if (fieldType == "FORMAT") or (fieldType == "INFO"):
-            return "%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (fieldType, ID, num, dataType, desc)
-        elif fieldType == "FILTER":
-            return "%s=<ID=%s,Description=\"%s\">" % (fieldType, ID, desc)
+    def _annotation2str(self, ft, ID, desc="Unknown", dt="String", num="."):
+        if ft in ("FORMAT", "INFO",):
+            return "##%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (ft, ID, num, dt, desc)
+        elif ft in ("FILTER",):
+            return "##%s=<ID=%s,Description=\"%s\">" % (ft, ID, desc)
         return ""
 
-    def createMetaInfoHeader(self, names):
-        headers = []
-        flg = False
-        if (not self.comments is None) and (len(self.comments) > 0):
-            for idx in xrange(len(self.comments)):
-                comment = self.comments[idx]
-                if comment.startswith("fileformat=VCFv4."):
-                    headers = [string.join(["##", comment], "")]
-                    del self.comments[idx]
-                    flg = True
-                    break
-        if not flg:
-            headers = ["##fileformat=VCFv4.1"]
-        if (not self.comments is None) and (len(self.comments) > 0):
-            headers += self.comments[0:len(self.comments)-1]
 
-        if len() == 0:
-                annotationNames = metadata.keys()
+class RecordFactory:
+    def __init__(self, chrom, pos, ref, sampleNames):
+        self._logger = logging.getLogger(__name__)
+        self._chrom = chrom
+        self._pos = pos
+        self._ID = None  # semi-colon separated list of unique identifiers where available
+        self._refAllele = ref  # reference base(s)
+        self._alts = []  # comma separated list of alternate non-reference alleles called on at least one of the samples
+        self._qual = None  # phred-scaled quality score for the assertion made in ALT
+        self._filt = []  # PASS if this position has passed all filters
+        self._info = collections.OrderedDict()  # additional information
+        self._infoFieldProperty = collections.OrderedDict()
+        self._fmt = [None]*len(sampleNames)
+        self._fmtIDs = []
+        self._fmtFieldProperty = collections.OrderedDict()
+        self._sampleNames = sampleNames
+        self._sampleNameIndexes = dict([(x, i) for (i, x) in enumerate(sampleNames)])
+        self._fieldProperty = collections.namedtuple(typename="Property", field_names=["num", "dt"])
 
-        for annotationName in annotationNames:
-            annotation = metadata[annotationName]
-            field = self.__determineField(annotationName=annotationName, annotationTags=annotation.getTags())
-            if (field != "ID") and (field != "QUAL"):
-                ID = self.__determineFieldID(annotationName=annotationName, field=field)
-                num = annotation.getNumber()
-                dataType = self.__determineDataType(field=field, ID=ID, annotation=annotation)
-                desc = self.__determineDescription(field=field, ID=ID, annotation=annotation)
-                headers += [self.__annotation2str(field=field, ID=ID, desc=desc, dataType=dataType, num=num)]
+    def getAlts(self):
+        return self._alts
 
-        headers += [string.join(['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT'],
-                                self.delimiter)]
-        return headers
+    def _map(self, func, iterable, bad="."):
+        return [func(v) if v != bad else None for v in iterable]
 
+    def _determineVal(self, val, dt, num):
+        vals = ["." if (not v or v == "None") else v for v in val.split(",")]
 
-
-class VcfOutputRenderer(OutputRenderer):
-    """
-    The SimpleOutputRenderer renders a basic tsv file from the given mutations.  All annotations are included with real names as column headers.
-    
-    Header is determined by the first mutation given.
-    
-    No attention is paid to order of the headers.    
-    """
-    _vcfAnnotation = collections.namedtuple(typename="Annotation", field_names=["field", "ID", "num", "type"])
-
-    def __init__(self,filename, datasources=[], configFile='vcf.out.config'):
-        """
-        Constructor
-        """
-        self._filename = filename
-        self.logger = logging.getLogger(__name__)
-        self._datasources = datasources
-        self.config = ConfigUtils.createConfigParser(configFile,ignoreCase=False)
-        self.chromHashCodeTable = None
-        self.configTable = dict()
-        self.delimiter = '\t'
-
-        self.reservedAnnotationNames = ['chr', 'start', 'sampleName', 'ref_allele', 'alt_allele', 'end', 'build',
-                                        'altAlleleSeen']
-
-    # def __determineField(self, annotationName, annotationTags):
-    #     field = None
-    #     if field is None: # first, determine field ID using annotation's tags field
-    #         if isinstance(annotationTags, list) and (len(annotationTags) > 0):
-    #             field = annotationTags[0]
-    #         if (not field is None) and (field == "aggregate"):
-    #             field = "INFO"
-    #         elif (not field is None) and (field == "variant"):
-    #             field = "FORMAT"
-    #         elif (not field is None) and (field == "filter"):
-    #             field = "FILTER"
-    #         elif (not field is None) and (field == "identifier"):
-    #             field = "ID"
-    #         elif (not field is None) and (field == "quality"):
-    #             field = "QUAL"
-    #
-    #     if field is None: # second, determine field ID using config file
-    #         if annotationName in self.configTable["INFO"]:
-    #             field = "INFO"
-    #         elif annotationName in self.configTable["FORMAT"]:
-    #             field = "FORMAT"
-    #         elif annotationName in self.configTable["OTHER"]:
-    #             field = self.configTable["OTHER"][annotationName]
-    #
-    #     if field is None: # third, determine field ID using PyVCF defaults
-    #         if annotationName.upper() in vcf.parser.RESERVED_INFO:
-    #             field = "INFO"
-    #         elif annotationName.upper() in vcf.parser.RESERVED_FORMAT:
-    #             field = "FORMAT"
-    #
-    #     if field is None: # default: FORMAT
-    #         field = "FORMAT"
-    #
-    #     return field
-
-    # def __determineFieldID(self, annotationName, field):
-    #     ID = annotationName
-    #     if (field in self.configTable) and (annotationName in self.configTable[field]):
-    #         ID = self.configTable[field][annotationName]
-    #     return ID
-
-    # def __determineDataType(self, field, ID, annotation):
-    #     dataType = annotation.getDataType()
-    #
-    #     if (dataType == "String") or (dataType == ".") or (not dataType):
-    #         if field == "FILTER":
-    #             if ID in vcf.parser.RESERVED_INFO:
-    #                 dataType = vcf.parser.RESERVED_INFO[ID]
-    #         elif field == "FORMAT":
-    #             if ID in vcf.parser.RESERVED_FORMAT:
-    #                 dataType = vcf.parser.RESERVED_FORMAT[ID]
-    #         else:
-    #             dataType = "String"
-    #
-    #     return dataType
-    #
-    # def __determineDescription(self, field, ID, annotation):
-    #     desc = annotation.getDescription()
-    #
-    #     # description in the config files overwrite the description in the mutation
-    #     if (field == "FILTER") and \
-    #             ("FILTER_DESCRIPTION" in self.configTable and ID in self.configTable["FILTER_DESCRIPTION"]):
-    #         desc = self.configTable["FILTER_DESCRIPTION"][ID]
-    #     elif (field == "FORMAT") and \
-    #             ("FORMAT_DESCRIPTION" in self.configTable and ID in self.configTable["FORMAT_DESCRIPTION"]):
-    #         desc = self.configTable["FORMAT_DESCRIPTION"][ID]
-    #     elif (field == "INFO") and \
-    #             ("INFO_DESCRIPTION" in self.configTable and ID in self.configTable["INFO_DESCRIPTION"]):
-    #         desc = self.configTable["INFO_DESCRIPTION"][ID]
-    #
-    #     if desc == "":
-    #         desc = "Unknown"
-    #     return desc
-
-    def __createAnnotationTableFromMetaData(self, metadata, mutation):
-        annotationNames = set(mutation.keys()).intersection(metadata.keys())
-        annotationTable = dict()
-        for annotationName in annotationNames:
-            annotation = metadata[annotationName]
-            field = self.__determineField(annotationName=annotationName, annotationTags=annotation.getTags())
-            ID = self.__determineFieldID(annotationName=annotationName, field=field)
-            dataType = self.__determineDataType(field=field, ID=ID, annotation=annotation)
-            num = annotation.getNumber()
-            annotationTable[annotationName] = self._vcfAnnotation(field=field, ID=ID, num=num, type=dataType)
-        return annotationTable
-
-    def __createMetaInformationHeader(self, metadata, comments, annotationNames):
-        headers = []
-        flg = False
-        if (not comments is None) and (len(comments) > 0):
-            for idx in xrange(len(comments)):
-                comment = comments[idx]
-                if comment.startswith("fileformat=VCFv4."):
-                    headers = [string.join(["##", comment], "")]
-                    del comments[idx]
-                    flg = True
-                    break
-        if not flg:
-            headers = ["##fileformat=VCFv4.1"]
-        if (not comments is None) and (len(comments) > 0):
-            headers += comments[0:len(comments)-1]
-
-        if len(annotationNames) == 0:
-                annotationNames = metadata.keys()
-
-        for annotationName in annotationNames:
-            annotation = metadata[annotationName]
-            field = self.__determineField(annotationName=annotationName, annotationTags=annotation.getTags())
-            if (field != "ID") and (field != "QUAL"):
-                ID = self.__determineFieldID(annotationName=annotationName, field=field)
-                num = annotation.getNumber()
-                dataType = self.__determineDataType(field=field, ID=ID, annotation=annotation)
-                desc = self.__determineDescription(field=field, ID=ID, annotation=annotation)
-                headers += [self.__annotation2str(field=field, ID=ID, desc=desc, dataType=dataType, num=num)]
-
-        headers += [string.join(['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT'],
-                                self.delimiter)]
-        return headers
-
-    # def __annotation2str(self, field, ID, desc="Unknown", dataType="String", num="."):
-    #     if (field == "FORMAT") or (field == "INFO"):
-    #         return "%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (field, ID, num, dataType, desc)
-    #     elif field == "FILTER":
-    #         return "%s=<ID=%s,Description=\"%s\">" % (field, ID, desc)
-    #     return ""
-
-    def __writeMutationsToFile(self, filename, mutations, metadata):
-        sampleNames = set()
-        chroms = set()
-        annotationTable = dict()
-        annotationNames = []
-
-        fp = open(filename, 'w')
-        dw = None
-        for mut in mutations:
-            # Sample names (set)
-            if "sampleName" in mut:
-                sampleName = mut.getAnnotation('sampleName').getValue()
-                if not sampleName in sampleNames:
-                    sampleNames.add(sampleName)
-
-            # Parse chromosome
-            chrom = mut.getAnnotation('chr').getValue()
-            if not chrom in chroms:
-                chroms.add(chrom)
-
-            if (len(annotationTable) == 0) and (len(annotationNames) == 0):
-                annotationTable = self.__createAnnotationTableFromMetaData(metadata=metadata, mutation=mut)
-                annotationNames = self.reservedAnnotationNames + annotationTable.keys()
-
-            if dw is None: # initialize the CSV dictionary writer
-                dw = csv.DictWriter(fp, annotationNames, delimiter=self.delimiter, lineterminator="\n")
-                dw.writeheader()
-
-            dw.writerow(mut)
-        fp.close()
-
-        return sampleNames, chroms, annotationTable
-
-    def __getAnnotationNamesByField(self, tbl, fld):
-        names = []
-        for name in tbl:
-            annotation = tbl[name]
-            if annotation.field == fld:
-                names.append(name)
-        return names
-
-    def __map(self, func, iterable, bad="."):
-        return [func(x) if x != bad else None
-                for x in iterable]
-
-    def __parseValue(self, val, dt, num):
-        vals = val.split(",")
-        vals = ["." if not x else x
-                for x in vals]
         if dt == "Integer":
             try:
-                val = self.__map(int, vals)
+                val = self._map(int, vals)
             except ValueError:
-                val = self.__map(float, vals)
-        elif dt == "Float":
-            val = self.__map(float, vals)
-        elif (dt == "Flag") or (dt == "Numeric"):
-            val = self.__map(MutUtils.str2bool, vals)
+                val = self._map(float, vals)
+        elif (dt == "Float") or (dt == "Numeric"):
+            val = self._map(float, vals)
+        elif dt == "Flag":
+            val = self._map(MutUtils.str2bool, vals)
             val = val[0]
-        elif dt == 'String':
+        elif dt == "String":
             try:
-                val = self.__map(str, vals)
+                val = self._map(str, vals)
             except IndexError:
                 val = True
         try:
@@ -412,260 +308,441 @@ class VcfOutputRenderer(OutputRenderer):
         except KeyError:
             pass
 
+        if isinstance(val, list):
+            if num != ".":
+                if len(val) >= num:
+                    val = val[0:num]
+                else:
+                    val = val + [None]*(num-len(val))
+
         return val
 
-    def renderMutations(self, mutations, metadata=[], comments=[]):
-        ''' Generate a simple tsv file based on the incoming mutations.
-        Assumes that all mutations have the same annotations, even if some are not populated.
-        Returns a file name. '''
-        
-        # Parse the config file
-        for sectionKey in ["INFO","FORMAT","OTHER"]: # required sections for annotations
-            if ConfigUtils.hasSectionKey(configParser=self.config, sectionKey=sectionKey):
-                self.configTable[sectionKey] = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(configParser=self.config, sectionKey=sectionKey)
+    def _resolveInfo(self):
+        nalts = len(self._alts)
+        nsamples = len(self._sampleNames)  # note:
+
+        IDs = self._info.keys()
+        info = collections.OrderedDict()
+        for ID in IDs:
+            prop = self._infoFieldProperty[ID]
+            val = self._info[ID]
+            num = prop.num
+            dataType = prop.dt
+            if isinstance(val, list):
+                if nalts > len(val):
+                    val = val[0:nalts]
+                elif nalts < len(val):
+                    val += [None]*(nalts-len(val))
+                val = string.join(map(str, val), ",")
+
+            val = self._determineVal(val, dataType, num)
+
+            if isinstance(val, bool):
+                if val is True:
+                    info[ID] = val
+            elif isinstance(val, list):
+                if len(filter(None, val)) != 0:
+                    info[ID] = val
+            elif val is None:
+                pass
             else:
-                raise ConfigInputIncompleteException("Missing %s section in the output config file." % sectionKey)
+                info[ID] = val
 
-        for sectionKey in ["INFO_DESCRIPTION","FILTER_DESCRIPTION","FORMAT_DESCRIPTION"]: # optional sections for specifying description
-            if ConfigUtils.hasSectionKey(configParser=self.config, sectionKey=sectionKey):
-                self.configTable[sectionKey] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(configParser=self.config, sectionKey=sectionKey)
-                for ID in self.configTable[sectionKey]:
-                    self.configTable[sectionKey][ID] = string.join(words=self.configTable[sectionKey][ID], sep=",")
+        return info
 
-        self.configTable["NOT_SPLIT_TAGS"] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(
-            configParser=self.config, sectionKey="NOT_SPLIT_TAGS")
+    def _resolveSamples(self, record):
+        nalts = len(self._alts)
+        samples = [None]*len(self._sampleNames)
 
-        path = os.getcwd()
+        IDs = [None]*len(self._fmtIDs)
+        dataTypes = [None]*len(self._fmtFieldProperty)
+        nums = [None]*len(self._fmtFieldProperty)
 
+        for sampleName in self._sampleNames:
+            sampleData = [None]*len(self._fmtIDs)
+            sampleIndex = self._sampleNameIndexes[sampleName]
+            data = self._fmt[sampleIndex]
+            for i in xrange(len(self._fmtIDs)):
+                ID = self._fmtIDs[i]
+                IDs[i] = self._fmtIDs[i]
+                prop = self._fmtFieldProperty[ID]
+                dataTypes[i] = prop.dt
+                nums[i] = prop.num
+                val = None
+                if (data is not None) and (ID in data):
+                    val = data[ID]
+                    if isinstance(val, list):
+                        if nalts != len(val):
+                            raise Exception("")
+                        val = string.join(map(str, val), ",")
+
+                val = self._determineVal(val, dataTypes[i], nums[i])
+                if ID == "GT":
+                    if isinstance(val, list):
+                        val = val[0]
+                sampleData[i] = val
+
+            calldata = vcf.model.make_calldata_tuple(IDs)
+            calldata._types = dataTypes
+            calldata._nums = nums
+            samples[self._sampleNameIndexes[sampleName]] = calldata(*sampleData)
+
+        for sampleName in self._sampleNames:
+            samples[self._sampleNameIndexes[sampleName]] = \
+                vcf.model._Call(record, sampleName, samples[self._sampleNameIndexes[sampleName]])
+        return samples
+
+    def createRecord(self):
+        chrom = self._chrom
+        pos = self._pos
+        refAllele = self._refAllele
+        alts = self._alts
+        if len(alts) == 0:
+            alts = ["."]
+
+        ID = self._ID
+        if ID is not None:
+            ID = string.join(ID, ";")
+
+        qual = self._qual
+        if qual is None:
+            self._logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score.")
+
+        filt = self._filt
+        info = self._resolveInfo()
+        fmt = string.join(self._fmtIDs, ":")
+        record = vcf.model._Record(chrom, pos, ID, refAllele, alts, qual, filt, info, fmt, self._sampleNameIndexes)
+        record.samples = self._resolveSamples(record)
+
+        return record
+
+    def addFormat(self, sampleName, ID, num=".", dt="String", val=None, split=False):
+        nalts = len(self._alts)
+        if sampleName in self._sampleNames:
+            sampleIndex = self._sampleNameIndexes[sampleName]
+            if self._fmt[sampleIndex] is None:
+                self._fmt[sampleIndex] = collections.OrderedDict()
+                self._fmt[sampleIndex]["GT"] = None
+                self._fmtIDs = ["GT"]
+                self._fmtFieldProperty["GT"] = self._fieldProperty(1, "String")
+
+            if (nalts == 1) or (split is False):
+                self._fmt[sampleIndex][ID] = val
+            elif (nalts > 1) and (split is True):
+                if not isinstance(self._fmt[sampleIndex][ID], list):
+                    self._fmt[sampleIndex][ID] = [self._fmt[sampleIndex][ID], val]
+                else:
+                    if len(self._fmt[sampleIndex][ID]) < nalts:
+                        self._fmt[sampleIndex][ID] += [val]
+
+        if ID not in self._fmtIDs:
+            self._fmtIDs += [ID]
+
+        if ID not in self._fmtFieldProperty:
+            self._fmtFieldProperty[ID] = self._fieldProperty(num, dt)
+
+    def addInfo(self, ID, num=".", dt="String", val=None, split=False):
+        nalts = len(self._alts)
+
+        if (nalts == 1) or (split is False):
+            self._info[ID] = val
+        elif (nalts > 1) and (split is True):
+            if not isinstance(self._info[ID], list):
+                self._info[ID] = [self._info[ID], val]
+            else:
+                if len(self._info[ID]) < nalts:
+                        self._info[ID] += [val]
+
+        if ID not in self._infoFieldProperty:
+            self._infoFieldProperty[ID] = self._fieldProperty(num, dt)
+
+    def addQual(self, qual):
+        try:
+            self._qual = int(qual)
+        except ValueError:
+            try:
+                self._qual = float(qual)
+            except ValueError:
+                self._qual = None
+
+    def addID(self, ID):
+        if ID not in (".", "",):
+            if self._ID is None:
+                self._ID = [ID]
+            else:
+                if ID not in self._ID:
+                    self._ID += [ID]
+
+    def addAlt(self, alt):
+        if alt in ("",):
+            alt = "."
+        if alt not in self._alts:
+            self._alts += [alt]
+
+    def addFilter(self, filt, val):
+        if val not in ("PASS", ".",):
+            if filt not in self._filt:
+                self._filt += [filt]
+
+    def setChrom(self, chrom):
+        self._chrom = chrom
+
+    def setPos(self, pos):
+        self._pos = pos
+
+    def setReferenceAllele(self, ref):
+        self._refAllele = ref
+
+    def setSampleNames(self, sampleNames):
+        self._sampleNames = sampleNames
+        self._sampleNameIndex = dict([(x, i) for (i, x) in enumerate(sampleNames)])
+
+
+class VcfOutputRenderer(OutputRenderer):
+    """
+    The SimpleOutputRenderer renders a basic tsv file from the given mutations.  All annotations are included with real names as column headers.
+
+    Header is determined by the first mutation given.
+
+    No attention is paid to order of the headers.
+    """
+    _vcfAnnotation = collections.namedtuple(typename="Annotation", field_names=["field", "ID", "num", "type"])
+
+    def __init__(self, filename, datasources=[], configFile='vcf.out.config'):
+        """
+        Constructor
+        """
+        self._filename = filename
+        self.logger = logging.getLogger(__name__)
+        self._datasources = datasources
+        self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
+        self.chromHashCodeTable = None  # maps every chromosome in the mutations to a sortable integer
+        self.configTable = dict()
+        self.delimiter = "\t"
+        self.lineterminator = "\n"
+        self.sampleNames = []  # all sample names in the mutations
+        self.chroms = []  # all chromosomes in the mutations
+        self.reservedAnnotationNames = ['chr', 'start', 'ref_allele', 'alt_allele', 'end']
+
+    def _writeMuts2Tsv(self, filename, fieldnames, muts):
+        sampleNames = set()
+        chroms = set()
+
+        with open(filename, 'w') as fptr:
+            writer = csv.DictWriter(fptr, fieldnames, extrasaction='ignore', delimiter=self.delimiter,
+                                    lineterminator=self.lineterminator)
+            writer.writeheader()
+            for mut in muts:
+                if "sampleName" in mut:
+                    sampleName = mut.getAnnotation('sampleName').getValue()
+                    if not sampleName in sampleNames:
+                        sampleNames.add(sampleName)
+
+                # Parse chromosome
+                chrom = mut.getAnnotation('chr').getValue()
+                if chrom not in chroms:
+                    chroms.add(chrom)
+
+                writer.writerow(mut)
+
+        if len(sampleNames) > 0:
+            self.sampleNames = list(sampleNames)
+            self.sampleNames.sort()
+
+        if len(chroms) > 0:
+            self.chroms = list(chroms)
+
+    def _getFieldnames(self, mut, md):
+        fieldnames = self.reservedAnnotationNames
+        if mut is not None:
+            fieldnames = set(fieldnames).union(md.keys())
+            fieldnames = fieldnames.union(mut.keys())
+            fieldnames = fieldnames.difference(["end", "sampleName", "build"])
+            if "sampleName" in mut:
+                fieldnames = fieldnames.union(["sampleName"])
+        return list(fieldnames)
+
+    def _doFieldsExist(self, sect, fields):
+        tbl = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, sect)
+        ks = set(tbl.keys())
+        for fld in fields:
+            if fld not in ks:
+                raise ConfigInputIncompleteException("Missing %s field in %s section in the output config file."
+                                                     % (fld, sect))
+
+    def _parseConfig(self):
+        sects = ["INFO", "FORMAT", "OTHER", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
+                 "FORMAT_DESCRIPTION"]
+        for sect in sects:
+            if not ConfigUtils.hasSectionKey(self.config, sect):
+                raise ConfigInputIncompleteException("Missing %s section in the output config file." % sect)
+            if sect == "OTHER":
+                reqKs = ["ID", "QUAL", "FILTER"]
+                self._doFieldsExist(sect, reqKs)
+            elif sect == "NOT_SPLIT_TAGS":
+                reqKs = ["INFO", "FORMAT"]
+                self._doFieldsExist(sect, reqKs)
+
+        table = dict()
+        for sect in sects:
+            if sect in ("INFO", "FORMAT", "OTHER",):
+                table[sect] = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, sect)
+            elif sect in ("INFO_DESCRIPTION", "FILTER_DESCRIPTION", "FORMAT_DESCRIPTION",):
+                table[sect] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, sect)
+                for k, v in table[sect].items():
+                    table[sect][k] = string.join(v, ",")
+            elif sect in ("NOT_SPLIT_TAGS",):
+                table[sect] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, sect)
+
+        return table
+
+    def renderMutations(self, mutations, metadata=[], comments=[]):
+        """ Generate a simple tsv file based on the incoming mutations.
+        Assumes that all mutations have the same annotations, even if some are not populated.
+        Returns a file name. """
         self.logger.info("Rendering VCF output file: " + self._filename)
         self.logger.info("Data sources included: " + str(self._datasources))
         self.logger.info("Render starting...")
 
-        temp = tempfile.NamedTemporaryFile(dir=path) # create a temporary file to write tab-separated file
-        sampleNames, chroms, annotationTable = self.__writeMutationsToFile(filename=temp.name, mutations=mutations,
-                                                                           metadata=metadata)
-        headers = self.__createMetaInformationHeader(metadata=metadata, comments=comments,
-                                                     annotationNames=annotationTable.keys())
-        header = headers.pop(len(headers)-1)
-        # add sampleNames to the header
-        if len(sampleNames) > 0:
-            sampleNames = list(sampleNames) # convert to list to preserve ordering
-            sampleNames.sort() # lexicographic ordering of sampleNames
-            header = string.join([header] + sampleNames, self.delimiter)
+        # Initialize config table
+        self.configTable = self._parseConfig()
 
-        infos = self.__getAnnotationNamesByField(tbl=annotationTable, fld="INFO")
-        fmts = self.__getAnnotationNamesByField(tbl=annotationTable, fld="FORMAT")
-        filts = self.__getAnnotationNamesByField(tbl=annotationTable, fld="FILTER")
-        ids = self.__getAnnotationNamesByField(tbl=annotationTable, fld="ID")
-        quals = self.__getAnnotationNamesByField(tbl=annotationTable, fld="QUAL")
+        # Initialize the data manager
+        mut = None
+        for mutation in mutations:
+            mut = mutation
+            lst = [(mut for mut in [mut]), mutations]
+            mutations = itertools.chain(*lst)
+            break
 
-        # detect genotype (or GT information)
-        for i in xrange(len(fmts)):
-            annotation = annotationTable[fmts[i]]
-            if annotation.ID == "GT":
-                tmp = fmts[0]
-                fmts[0] = fmts[i]
-                fmts[i] = tmp
-                break
+        fieldnames = self._getFieldnames(mut, metadata)
 
-        fp = file(self._filename,'w')
-        fp.write(string.join([string.join(headers,'\n##'), header], "\n#"))
-        fp.close()
+        path = os.getcwd()
+        tempTsvFile = tempfile.NamedTemporaryFile(dir=path)  # create a temporary file to write tab-separated file
+        self._writeMuts2Tsv(tempTsvFile.name, fieldnames, mutations)
+        dm = OutputDataManager(self.configTable, comments, metadata, mut, self.sampleNames)
 
-        temp_vcf_reader = vcf.Reader(filename=self._filename, strict_whitespace=True)
+        # Sort the tsv file
+        chrom2HashCode = self._createChrom2HashCodeTable(self.chroms)
+        tsvFileSorter = TsvFileSorter(tempTsvFile.name)
+        sortedTempTsvFile = tempfile.NamedTemporaryFile(dir=path)
+        func = lambda val: (chrom2HashCode[val["chr"]], int(val["start"]), val["alt_allele"])
+        tsvFileSorter.sortFile(sortedTempTsvFile.name, func)
 
-        fp = file(self._filename,'w')
-        vcf_writer = vcf.Writer(fp, temp_vcf_reader)
+        # Write the header
+        filePointer = file(self._filename, 'w')
+        header = dm.getHeader()
+        filePointer.write(header)
+        filePointer.close()
 
-        with open(temp.name, "r") as fp:
-            chrom = None
-            pos = None
-            ref = None
-            alts = []
-            ID = None # default: None
-            qual = "."
-            filt = []
-            info = collections.OrderedDict()
-            fmt = dict()
-            sampleIndexes = dict([(x,i) for (i,x) in enumerate(sampleNames)])
-            index = 0
+        self._renderSortedTsv(self._filename, sortedTempTsvFile.name, self.sampleNames, dm)
 
-            nfmts = len(fmts)
-            dr = csv.DictReader(fp, delimiter=self.delimiter)
-            for row in dr:
-                # new (chromosome, position) pair is encountered; write pair and re-initialize data structures
-                if (chrom != row["chr"]) or (pos != int(row["start"])):
-                    # write existing data
-                    if (not chrom is None) and (not pos is None):
-                        record = self.__getRecord(chrom=chrom, pos=pos, ID=ID, ref=ref, alts=alts, qual=qual, filt=filt,
-                                                  info=info, infos=infos, fmt=fmt, fmts=fmts,
-                                                  sampleIndexes=sampleIndexes, sampleNames=sampleNames,
-                                                  annotationTable=annotationTable)
-                        vcf_writer.write_record(record)
-
-                        index += 1
-                        if index % 1000 == 0:
-                            vcf_writer.flush()
-
-                    # chromosome
-                    chrom = row["chr"]
-                    # position
-                    pos = int(row["start"])
-                    # reference allele
-                    ref = row["ref_allele"]
-
-                    # alternate allele
-                    alts = [row["alt_allele"]]
-
-                    # semi-colon separated list of unique identifiers
-                    ID = None  # default: None
-                    if len(ids) > 0:
-                        ID = []
-                        for i in xrange(len(ids)):
-                            ID.append(row[ids[i]])
-
-                    # phred-scaled quality score for the assertion made in ALT
-                    qual = None  # default: None
-                    if len(quals) == 1:
-                        val = row[quals[0]]
-                        if val.isdigit():
-                            qual = int(val)
-
-                    filt = []  # parse PASS or list of the names of filter that have failed
-                    for i in xrange(len(filts)):
-                        if (row[filts[i]] != "PASS") and (row[filts[i]] != "."):
-                            annotation = annotationTable[filts[i]]
-                            filt.append(annotation.ID)
-
-                    info = collections.OrderedDict()
-                    for i in xrange(len(infos)):  # only parsed when a new alternate arrives
-                        annotation = annotationTable[infos[i]]
-                        info[annotation.ID] = row[infos[i]]
-
-                    fmt = collections.OrderedDict()
-                    sampleName = row["sampleName"]
-                    fmt[sampleName] = [None]*nfmts
-                    for i in xrange(nfmts):
-                        fmt[sampleName][i] = row[fmts[i]]
-                else:
-                    for i in xrange(len(ids)):
-                        if not row[ids[i]] in ID:
-                            ID.append(row[ids[i]])
-
-                    if len(quals) == 1:
-                        val = row[quals[0]]
-                        if val.isdigit():
-                            if qual != int(val):
-                                raise Exception()
-
-                    for i in xrange(len(filts)):
-                        if (row[filts[i]] != "PASS") and (row[filts[i]] != "."):
-                            annotation = annotationTable[filts[i]]
-                            if not annotation.ID in filt:
-                                filt.append(annotation.ID)
-
-                    if row["alt_allele"] not in alts:
-                        alts.append(row["alt_allele"])
-                        for i in xrange(len(infos)):  # only parsed when a new alternate allele is detected
-                            annotation = annotationTable[infos[i]]
-                            if annotation.ID in self.configTable["SPLIT_TAGS"]["INFO"]:
-                                info[annotation.ID] += "," + row[infos[i]]
-
-                    sampleName = row["sampleName"]
-                    if sampleName not in fmt:
-                        fmt[sampleName] = [None]*nfmts
-                        for i in xrange(nfmts):
-                            fmt[sampleName][i] = row[fmts[i]]
-                    else:
-                        for i in xrange(nfmts):
-                            annotation = annotationTable[fmts[i]]
-                            if annotation.ID in self.configTable["SPLIT_TAGS"]["FORMAT"]:
-                                fmt[sampleName][i] += "," + row[fmts[i]]
-
-        record = self.__getRecord(chrom=chrom, pos=pos, ID=ID, ref=ref, alts=alts, qual=qual, filt=filt, info=info,
-                                  infos=infos, fmt=fmt, fmts=fmts, sampleIndexes=sampleIndexes, sampleNames=sampleNames,
-                                  annotationTable=annotationTable)
-        vcf_writer.write_record(record)
-        vcf_writer.close()
+        self.logger.info("Rendered all mutation...")
         return self._filename
 
-    def __getRecord(self, chrom, pos, ID, ref, alts, qual, filt, info, infos, fmt, fmts, sampleIndexes, sampleNames,
-                    annotationTable):
-        if not ID is None:
-            ID = string.join(ID, ";")
+    def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos):
+        isNew = False
+        if curChrom != prevChrom:
+            isNew = True
+        if curPos != prevPos:
+            isNew = True
+        return isNew
 
-        if qual is None:
-            qual = "."
-            self.logger.warn("")
-
-        nalts = len(alts)
-        nfmts = len(fmts)
-
-        samples = [None]*len(sampleNames)
-        sampflds = [None]*nfmts # field names for the sample
-        samptypes = [None]*nfmts
-        sampnums = [None]*nfmts
-        for sampleName in sampleNames:
-            if not sampleName in fmt:
-                fmt[sampleName] = [None]*nfmts
-                for i in xrange(nfmts):
-                    annotation = annotationTable[fmts[i]]
-                    if (annotation.num == ".") and (annotation.ID in self.configTable["SPLIT_TAGS"]["FORMAT"]):
-                        fmt[sampleName][i] = string.join(["."]*nalts, ",")
-                    elif annotation.num == ".":
-                        fmt[sampleName][i] = "."
-                    else:
-                        if annotation.num == 1:
-                            fmt[sampleName][i] = "."
-                        else:
-                            fmt[sampleName][i] = string.join(["."]*annotation.num, ",")
-
-            for i in xrange(nfmts):
-                annotation = annotationTable[fmts[i]]
-                sampflds[i] = annotation.ID
-                sampnums[i] = annotation.num
-                samptypes[i] = annotation.type
-                fmt[sampleName][i] = self.__parseValue(val=fmt[sampleName][i], dt=annotation.type, num=annotation.num)
-
-            calldata = vcf.model.make_calldata_tuple(sampflds)
-            calldata._types = samptypes
-            calldata._nums = sampnums
-            samples[sampleIndexes[sampleName]] = calldata(*fmt[sampleName])
-
-        for i in xrange(len(infos)):
-            annotation = annotationTable[infos[i]]
-            info[annotation.ID] = self.__parseValue(val=info[annotation.ID], dt=annotation.type, num=annotation.num)
-
-        record = vcf.model._Record(chrom, pos, ID, ref, alts, qual, filt, info, string.join(sampflds, ":"),
-                                   sampleIndexes)
-
-        for sampleName in sampleNames:
-            calldata = samples[sampleIndexes[sampleName]]
-            samples[sampleIndexes[sampleName]] = vcf.model._Call(record, sampleName, calldata)
-
-        record.samples = samples
-
-        return record
-
-    def __createChromHashCodeTable(self, chroms):
-        chromHashCodeTable = dict()
-        highestHashCode = 0
-        for chrom in chroms:
-            chromHashCodeTable[chrom] = None
-            if chrom.isdigit():
-                chromHashCodeTable[chrom] = int(chrom)
-                if highestHashCode < chromHashCodeTable[chrom]:
-                    highestHashCode = chromHashCodeTable[chrom]
+    def _renderSortedTsv(self, vcfFilename, tsvFilename, sampleNames, dataManager):
+        tempVcfReader = vcf.Reader(filename=vcfFilename, strict_whitespace=True)
+        pointer = file(vcfFilename, "w")
+        vcfWriter = vcf.Writer(pointer, tempVcfReader)
+        tsvReader = GenericTsvReader(tsvFilename, delimiter=self.delimiter)
         index = 0
-        for chrom in sorted(chroms):
-            if chromHashCodeTable[chrom] is None:
+        nrecords = 1000
+        chrom = None
+        pos = None
+        recordFactory = None
+        for m in tsvReader:
+            isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"])
+            if isNewRecord:
+                if recordFactory is not None:
+                    record = recordFactory.createRecord()
+                    vcfWriter.write_record(record)
+                    index += 1
+                    if index % nrecords == 0:
+                        vcfWriter.flush()
+
+                chrom = m["chr"]
+                pos = m["start"]
+                refAllele = m["ref_allele"]
+
+                recordFactory = RecordFactory(chrom, int(pos), refAllele, sampleNames)
+
+            recordFactory = self._parseRecordFactory(m, recordFactory, dataManager)
+
+        if recordFactory is not None:
+            record = recordFactory.createRecord()
+            vcfWriter.write_record(record)
+        vcfWriter.close()
+
+    def _parseRecordFactory(self, m, recordFactory, dataManager):
+        IDs = dataManager.getAnnotationNames("ID")
+        quals = dataManager.getAnnotationNames("QUAL")
+        filts = dataManager.getAnnotationNames("FILTER")
+        infos = dataManager.getAnnotationNames("INFO")
+        formats = dataManager.getAnnotationNames("FORMAT")
+
+        altAllele = m["alt_allele"]
+        recordFactory.addAlt(altAllele)
+
+        for name in IDs:
+            val = m[name] if name in m else ""
+            recordFactory.addID(val)
+
+        qual = quals[0]
+        recordFactory.addQual(m[qual])
+
+        for name in filts:
+            ID = dataManager.getFieldID(name)
+            val = m[name] if name in m else ""
+            recordFactory.addFilter(ID, val)
+
+        for name in infos:
+            ID = dataManager.getFieldID(name)
+            num = dataManager.getFieldNum(name)
+            dt = dataManager.getFieldDataType(name)
+            val = m[name] if name in m else ""
+            isSplit = ID not in self.configTable["NOT_SPLIT_TAGS"]["INFO"]
+            recordFactory.addInfo(ID, num, dt, val, isSplit)
+
+        for name in formats:
+            ID = dataManager.getFieldID(name)
+            num = dataManager.getFieldNum(name)
+            dt = dataManager.getFieldDataType(name)
+            sampleName = m["sampleName"] if "sampleName" in m else None
+            val = m[name] if name in m else ""
+            isSplit = ID not in self.configTable["NOT_SPLIT_TAGS"]["FORMAT"]
+            recordFactory.addFormat(sampleName, ID, num, dt, val, isSplit)
+
+        return recordFactory
+
+    def _createChrom2HashCodeTable(self, chroms):
+        table = dict()
+        highestHashCode = 0
+        sorted(chroms)
+        for chrom in chroms:
+            table[chrom] = None
+            if chrom.isdigit():
+                table[chrom] = int(chrom)
+                if highestHashCode < table[chrom]:
+                    highestHashCode = table[chrom]
+        index = 0
+        for chrom in chroms:
+            if table[chrom] is None:
                 if chrom.upper() == 'X':  # X chromosome
-                    chromHashCodeTable[chrom] = highestHashCode + 1
+                    table[chrom] = highestHashCode + 1
                 elif chrom.upper() == 'Y':  # Y chromosome
-                    chromHashCodeTable[chrom] = highestHashCode + 2
+                    table[chrom] = highestHashCode + 2
                 elif (chrom.upper() == 'M') or (chrom.upper() == 'MT'):  # mitochondrial chromosome
-                    chromHashCodeTable[chrom] = highestHashCode + 3
+                    table[chrom] = highestHashCode + 3
                 else:
                     index += 1
-                    chromHashCodeTable[chrom] = highestHashCode + index + 3
-        return chromHashCodeTable
+                    table[chrom] = highestHashCode + index + 3
+        return table
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               

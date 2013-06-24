@@ -166,9 +166,9 @@ class TabixIndexer(object):
         fp = file(intermediateFilename, 'w')
         tsvWriter = csv.DictWriter(fp, outputHeaders, delimiter='\t', lineterminator='\n')
 
+        # If the headers have a leading '#', get rid of it.
         if outputHeaders[0][0] == "#":
             outputHeaders[0] = outputHeaders[0].replace("#", "")
-        fp.write("#")
 
         tsvWriter.writeheader()
 
@@ -196,7 +196,8 @@ class TabixIndexer(object):
         fp.flush()
         fp.close()
 
-        tsvSorter = TsvFileSorter(fieldNames=['Gene name', 'startAA', 'endAA'])
-        tsvSorter.sortFile(intermediateFilename, intermediateFilename + ".sorted.tsv", iswriteHeader=True)
+        tsvSorter = TsvFileSorter(intermediateFilename)
+        func = lambda val: ((val["Gene name"]).lower(), int(val["startAA"]), int(val["endAA"]))
+        tsvSorter.sortFile(intermediateFilename + ".sorted.tsv", func)
         shutil.copy(intermediateFilename + ".sorted.tsv", intermediateFilename + ".sorted.tsv.bkup")
         return TabixIndexer.index([gene_i,startAA_i,endAA_i], intermediateFilename + ".sorted.tsv")

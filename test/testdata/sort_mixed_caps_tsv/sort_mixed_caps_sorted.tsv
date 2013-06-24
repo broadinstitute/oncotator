@@ -1,4 +1,4 @@
-#Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID	startAA	endAA
+Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID	startAA	endAA
 hCG_1644301		TCGA-05-4427-01A-21D-1855-08	lung	NS	carcinoma	adenocarcinoma	562282	c.25A>G	p.T9A	Substitution - Missense	unk		17:69617146-69617146		9	9
 hCG_1644301		TCGA-05-4405-01A-21D-1855-08	lung	NS	carcinoma	adenocarcinoma	562281	c.76A>G	p.K26E	Substitution - Missense	unk		17:69617197-69617197		26	26
 hCG_1644301		TCGA-05-4382-01A-01D-1265-08	lung	NS	carcinoma	adenocarcinoma	562280	c.110G>T	p.R37M	Substitution - Missense	unk		17:69617231-69617231		37	37

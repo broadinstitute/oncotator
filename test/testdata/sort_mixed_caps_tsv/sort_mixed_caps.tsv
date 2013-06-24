@@ -1,4 +1,4 @@
-#Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID	startAA	endAA
+Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID	startAA	endAA
 ZZZ3	24523	TCGA-B0-5113-01A-01D-1421-08	kidney	NS	carcinoma	clear_cell_renal_cell_carcinoma	464960	c.1983A>G	p.K661K	Substitution - coding silent	unk		1:78045311-78045311		661	661
 ZZZ3	24523	TCGA-BT-A20O-01A-21D-A14W-08	urinary_tract	bladder	carcinoma	NS	414788	c.874G>T	p.V292F	Substitution - Missense	unk		1:78098166-78098166		292	292
 hCG_1644301		TCGA-05-4382-01A-01D-1265-08	lung	NS	carcinoma	adenocarcinoma	562280	c.110G>T	p.R37M	Substitution - Missense	unk		17:69617231-69617231		37	37

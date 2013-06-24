@@ -132,35 +132,35 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         if record.FORMAT is not None:
             for ID in IDs:
-                value = ""
+                val = ""
                 dataType = self.vcf_reader.formats[ID].type
 
-                number = "."
-                if not self.vcf_reader.formats[ID].num is None:
-                    number = self.vcf_reader.formats[ID].num
+                num = "."
+                if self.vcf_reader.formats[ID].num is not None:
+                    num = self.vcf_reader.formats[ID].num
 
                 tags = copy.copy(self.tags["FORMAT"])
 
                 if (genotypeData is not None) and (ID in genotypeData.data._fields):
                     isSplitTag = self._determineIsSplit(ID, record.ALT, genotypeData[ID], "FORMAT")
                     if isSplitTag:
-                        value = genotypeData[ID][index]
-                        tags.append("SPLIT")
+                        val = genotypeData[ID][index]
                     else:
-                        value = genotypeData[ID]
+                        val = genotypeData[ID]
 
-                if (value is None) or (value == ""):
+                if (val is None) or (val == ""):
                     if dataType == "Flag":
-                        value = "False"
+                        val = "False"
                     else:
-                        value = ""
-                elif isinstance(value, list):
-                    value = string.join(["" if v is None else str(v) for v in value], ",")
+                        val = ""
+                elif isinstance(val, list):
+                    val = string.join(["" if v is None else str(v) for v in val], ",")
                 else:
-                    value = str(value)
+                    val = str(val)
 
-                mutation.createAnnotation(self._getAnnotationName("FORMAT", ID), value, "INPUT", dataType,
-                                          self.vcf_reader.formats[ID].desc, number, tags)
+                name = self._getAnnotationName("FORMAT", ID)
+                mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.formats[ID].desc, tags=tags,
+                                          number=num)
 
         return mutation
 
@@ -177,35 +177,35 @@ class VcfInputMutationCreator(InputMutationCreator):
             IDs = self.configTable["INFO"].keys()
 
         for ID in IDs:
-            value = ""
+            val = ""
             dataType = self.vcf_reader.infos[ID].type
 
-            number = "."
-            if not self.vcf_reader.infos[ID].num is None:
-                number = self.vcf_reader.infos[ID].num
+            num = "."
+            if self.vcf_reader.infos[ID].num is not None:
+                num = self.vcf_reader.infos[ID].num
 
             tags = copy.copy(self.tags["INFO"])
 
             if ID in record.INFO:
                 isSplitTag = self._determineIsSplit(ID, record.ALT, record.INFO[ID], "INFO")
                 if isSplitTag:
-                    value = record.INFO[ID][index]
-                    tags.append("SPLIT")
+                    val = record.INFO[ID][index]
                 else:
-                    value = record.INFO[ID]
+                    val = record.INFO[ID]
 
-            if (value is None) or (value == ""):
+            if (val is None) or (val == ""):
                 if dataType == "Flag":
-                    value = "False"
+                    val = "False"
                 else:
-                    value = ""
-            elif isinstance(value, list):
-                value = string.join(["" if v is None else str(v) for v in value], ",")
+                    val = ""
+            elif isinstance(val, list):
+                val = string.join(["" if v is None else str(v) for v in val], ",")
             else:
-                value = str(value)
+                val = str(val)
 
-            mutation.createAnnotation(self._getAnnotationName("INFO", ID), value, "INPUT", dataType,
-                                      self.vcf_reader.infos[ID].desc, number, tags)
+            name = self._getAnnotationName("INFO", ID)
+            mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.infos[ID].desc, tags=tags,
+                                      number=num)
 
         return mutation
 
@@ -299,8 +299,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         for annotationName in mutation.annotations:
             annotation = mutation.getAnnotation(annotationName)
             mut.createAnnotation(annotationName, annotation.getValue(), annotation.getDatasource(),
-                                 annotation.getDataType(), annotation.getDescription(), annotation.getNumber(),
-                                 annotation.getTags())
+                                 annotation.getDataType(), annotation.getDescription(), True, annotation.getTags(),
+                                 annotation.getNumber())
         return mut
 
     def _createMutation(self, record, index):
@@ -319,16 +319,18 @@ class VcfInputMutationCreator(InputMutationCreator):
         ID = record.ID
         if ID is None:
             ID = ""
-        mut.createAnnotation("id", ID, "INPUT", copy.copy(self.tags["ID"]))
+        mut.createAnnotation("id", ID, "INPUT", tags=copy.copy(self.tags["ID"]))
 
-        mut.createAnnotation("qual", str(record.QUAL), "INPUT", copy.copy(self.tags["QUAL"]))
-        for flt in self.vcf_reader.filters:  # for each filter in the header
-            description = self.vcf_reader.filters[flt].desc  # parse the description
+        mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=copy.copy(self.tags["QUAL"]))
+        for filt in self.vcf_reader.filters:  # for each filter in the header
+            description = self.vcf_reader.filters[filt].desc  # parse the description
             if (len(record.FILTER) != 0) and \
-                    (flt in record.FILTER):  # if the filter is mentioned for this variant, then it failed
-                mut.createAnnotation(flt, "FAIL", "INPUT", description, copy.copy(self.tags["FILTER"]))
+                    (filt in record.FILTER):  # if the filter is mentioned for this variant, then it failed
+                mut.createAnnotation(filt, "FAIL", "INPUT", annotationDescription=description,
+                                     tags=copy.copy(self.tags["FILTER"]))
             else:
-                mut.createAnnotation(flt, "PASS", "INPUT", description, copy.copy(self.tags["FILTER"]))
+                mut.createAnnotation(filt, "PASS", "INPUT", annotationDescription=description,
+                                     tags=copy.copy(self.tags["FILTER"]))
         mut.createAnnotation("altAlleleSeen", str(True), "INPUT")
         mut = self._addInfoDataToMutation(mut, record, index)
         return mut
@@ -353,29 +355,32 @@ class VcfInputMutationCreator(InputMutationCreator):
             comments.append(comment)
         return comments
 
-    def _addFormatMetadata(self, metadata):
+    def _addFormatFields2Metadata(self, metadata):
         for ID, annotationName in self.configTable["FORMAT"].iteritems():
-            number = "."
-            if not self.vcf_reader.formats[ID].num is None:
-                number = self.vcf_reader.formats[ID].num
+            num = "."
+            if self.vcf_reader.formats[ID].num is not None:
+                num = self.vcf_reader.formats[ID].num
+
             metadata[annotationName] = Annotation("", "INPUT", self.vcf_reader.formats[ID].type,
-                                                  self.vcf_reader.formats[ID].desc, number,
-                                                  copy.copy(self.tags["FORMAT"]))
+                                                  self.vcf_reader.formats[ID].desc, tags=copy.copy(self.tags["FORMAT"]),
+                                                  number=num)
         return metadata
 
-    def _addInfoMetadata(self, metadata):
+    def _addInfoFields2Metadata(self, metadata):
         for ID, annotationName in self.configTable["INFO"].iteritems():
-            number = "."
-            if not self.vcf_reader.infos[ID].num is None:
-                number = self.vcf_reader.infos[ID].num
+            num = "."
+            if self.vcf_reader.infos[ID].num is not None:
+                num = self.vcf_reader.infos[ID].num
+
             metadata[annotationName] = Annotation("", "INPUT", self.vcf_reader.infos[ID].type,
-                                                  self.vcf_reader.infos[ID].desc, number, copy.copy(self.tags["INFO"]))
+                                                  self.vcf_reader.infos[ID].desc, tags=copy.copy(self.tags["INFO"]),
+                                                  number=num)
         return metadata
 
-    def _addFilterMetadata(self, metadata):
-        for flt in self.vcf_reader.filters:  # for each filter in the header
-            metadata[flt] = Annotation("", "INPUT", "String", self.vcf_reader.filters[flt].desc,
-                                       copy.copy(self.tags["FILTER"]))
+    def _addFilterFields2Metadata(self, metadata):
+        for filt in self.vcf_reader.filters:  # for each filter in the header
+            metadata[filt] = Annotation("", "INPUT", "String", self.vcf_reader.filters[filt].desc,
+                                        tags=copy.copy(self.tags["FILTER"]))
         return metadata
 
     def _determineIsSplit(self, ID, alts, values, fieldType):
@@ -407,9 +412,9 @@ class VcfInputMutationCreator(InputMutationCreator):
             self._createConfigTable()
 
         metadata = Metadata()
-        metadata = self._addFilterMetadata(metadata)
-        metadata = self._addFormatMetadata(metadata)
-        metaData = self._addInfoMetadata(metadata)
+        metadata = self._addFilterFields2Metadata(metadata)
+        metadata = self._addFormatFields2Metadata(metadata)
+        metaData = self._addInfoFields2Metadata(metadata)
 
         metaData["id"] = Annotation("", "INPUT", "String", "", copy.copy(self.tags["ID"]))
         metaData["qual"] = Annotation("", "INPUT", "String", "", copy.copy(self.tags["QUAL"]))
