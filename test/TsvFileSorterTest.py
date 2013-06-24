@@ -49,10 +49,11 @@
 
 import os
 import unittest
+from oncotator.utils import GenericTsvReader
 
 from oncotator.utils.TsvFileSorter import TsvFileSorter
 from TestUtils import TestUtils
-
+from oncotator.utils.CallbackException import CallbackException
 
 TestUtils.setupLogging(__file__, __name__)
 class TsvFileSorterTest(unittest.TestCase):
@@ -62,19 +63,19 @@ class TsvFileSorterTest(unittest.TestCase):
         ''' Test sorting a file on the filesystem.'''
         inputFilename = "testdata/small_cosmic_gpp/small_cosmic_gpp.tempForSorting.tsv"
         outputFilename = "out/small_cosmic_gpp.tempForSorting.out.tsv"
-        tsvFileSorter = TsvFileSorter(fieldNames = ["Gene_name","startAA","endAA"])
-        tsvFileSorter.sortFile(inputFilename,outputFilename)
+        tsvFileSorter = TsvFileSorter(inputFilename)
+        func = lambda val: ((val["Gene_name"]).lower(), int(val["startAA"]), int(val["endAA"]))
+        tsvFileSorter.sortFile(outputFilename, func)
 
         self.assertTrue(os.path.exists(outputFilename), "No file was generated.")
-
-
 
     def testSortFileWithSpaces(self):
         ''' Test sorting a file with spaces in the headers on the filesystem.'''
         inputFilename = "testdata/small_cosmic_with_gp_and_gpp/small_cosmic_trimmed_for_sorting.txt.tbi.byAA"
         outputFilename = "out/small_cosmic_trimmed_for_sorting.txt.byAA.sorted.tsv"
-        tsvFileSorter = TsvFileSorter(fieldNames = ["Gene name","startAA","endAA"])
-        tsvFileSorter.sortFile(inputFilename,outputFilename)
+        tsvFileSorter = TsvFileSorter(inputFilename)
+        func = lambda val: ((val["Gene name"]).lower(), int(val["startAA"]), int(val["endAA"]))
+        tsvFileSorter.sortFile(outputFilename, func)
 
         self.assertTrue(os.path.exists(outputFilename), "No file was generated.")
 
@@ -83,12 +84,14 @@ class TsvFileSorterTest(unittest.TestCase):
         # tmp = ["ZZZ3","hCG_1644301","hCG_1644301","hCG_1644301","hCG_1644301","hCG_17324","hCG_17324"]
         inputFilename = "testdata/sort_mixed_caps_tsv/sort_mixed_caps.tsv"
         outputFilename = "out/sort_mixed_caps.tsv.sorted.out.tsv"
-        tsvFileSorter = TsvFileSorter(fieldNames = ["Gene name","startAA","endAA"])
-        tsvFileSorter.sortFile(inputFilename,outputFilename)
+        tsvFileSorter = TsvFileSorter(inputFilename)
+        func = lambda val: ((val["Gene name"]).lower(), int(val["startAA"]), int(val["endAA"]))
+        tsvFileSorter.sortFile(outputFilename, func)
+
         self.assertTrue(os.path.exists(outputFilename), "No file was generated.")
 
         import hashlib
-        guessmd5 = hashlib.md5(file(outputFilename,'r').read()).hexdigest()
+        guessmd5 = hashlib.md5(file(outputFilename, 'r').read()).hexdigest()
         gtmd5 = hashlib.md5(file("testdata/sort_mixed_caps_tsv/sort_mixed_caps_sorted.tsv",'r').read()).hexdigest()
         self.assertTrue(guessmd5 == gtmd5)
 
@@ -97,8 +100,9 @@ class TsvFileSorterTest(unittest.TestCase):
         """
         inputFilename = "testdata/sort_mixed_caps_tsv/sort_mixed_caps.tsv"
         outputFilename = "out/multiple_partitions_sort_mixed_caps.tsv.sorted.out.tsv"
-        tsvFileSorter = TsvFileSorter(fieldNames = ["Gene name", "startAA", "endAA"])
-        tsvFileSorter.sortFile(inputFilename, outputFilename, length=3)
+        tsvFileSorter = TsvFileSorter(inputFilename)
+        func = lambda val: ((val["Gene name"]).lower(), int(val["startAA"]), int(val["endAA"]))
+        tsvFileSorter.sortFile(outputFilename, func, 3)
         self.assertTrue(os.path.exists(outputFilename), "No file was generated.")
 
         import hashlib
@@ -106,6 +110,16 @@ class TsvFileSorterTest(unittest.TestCase):
         gtmd5 = hashlib.md5(file("testdata/sort_mixed_caps_tsv/sort_mixed_caps_sorted.tsv", 'r').read()).hexdigest()
         self.assertTrue(guessmd5 == gtmd5)
 
+    def testCallbackExceptionIncorrectType(self):
+        inputFilename = "testdata/sort_mixed_caps_tsv/sort_mixed_caps.tsv"
+        outputFilename = "out/multiple_partitions_sort_mixed_caps.tsv.sorted.out.tsv"
+        tsvFileSorter = TsvFileSorter(inputFilename)
+        func = lambda val: (val["Gene name"]).lower()
+        try:
+            tsvFileSorter.sortFile(outputFilename, func, 3)
+        except CallbackException as msg:
+            self.assertTrue(msg.value == "The value returned by the callback must be a tuple. Instead, a value of "
+                                         "<type 'str'> was returned.", "Error msg is different.")
 
 if __name__ == '__main__':
     unittest.main()

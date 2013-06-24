@@ -46,107 +46,24 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-from TestUtils import TestUtils
 
 
-'''
-Created on Jan 10, 2013
+"""
+Created on Jan 9, 2013
 
-@author: lichtens
-'''
-import shutil
-import unittest
-import os
-import logging
-from oncotator.index.TabixIndexer import TabixIndexer
-import pysam
+@author: mgupta
+"""
 
-TestUtils.setupLogging(__file__, __name__)
-class TabixIndexerTest(unittest.TestCase):
+class CallbackException(Exception):
+    """
+    Exception class arising when input VCF has syntax errors.
+    """
 
-
-    def setUp(self):
-        self.logger = logging.getLogger(__name__)
-        self.config = TestUtils.createUnitTestConfig()
-
-    def tearDown(self):
-        pass
-    
-    @unittest.skip("The underlying functionality is not yet implemented fully for this test case, and the functionality will not be included until a later release.")
-    def testBasicGenomicPositionIndexCreation(self):
-        ''' Creates a tabix index based on a small tsv file.'''
-        inputFilename = 'testdata/small_genome_position_tsv_ds/oreganno_trim.hg19.txt'
-        outputFilename = 'out/' + os.path.basename(inputFilename) + ".tbi"
-        TabixIndexer.indexGenomicPositionTSV(['hg19.oreganno.chrom', 'hg19.oreganno.chromStart', 'hg19.oreganno.chromEnd'], inputFilename, outputFilename)
-        
-        # Check that the file exists and has reasonable content.
-        self.assertTrue(os.path.exists(outputFilename), "Index file was not created.")
-        chr = '1'
-        start = '873498'
-        end = '873500'
-        tabixFile = pysam.Tabixfile(inputFilename)
-        results = tabixFile.fetch(region='%s:%s-%s' % ('chr'+chr, str(start), str(end))) 
-        
-        # Should have one result
-        self.assertTrue(len(results) <> 1, "Returned wrong number of results.")
-        self.assertTrue(results[0]['hg19.oreganno.id'] <> 'OREG0012989', "Returned wrong result.")
-
-    def testBasicGeneProteinPositionIndexCreationMixedCaps(self):
-        """ Test that the mixed caps (or underscore) in gene name does not throw off the indexing.
+    def __init__(self, value):
         """
+        
+        """
+        self.value = value
 
-        inputFilename = "testdata/sort_mixed_caps_tsv/sort_mixed_caps.tsv"
-        # sortedFilename = "out/sort_mixed_caps.tsv.sorted_forIndexing.out.tsv"
-        # tsvFileSorter = TsvFileSorter(fieldNames = ["Gene name","startAA","endAA"])
-        # tsvFileSorter.sortFile(inputFilename,sortedFilename)
-        # self.assertTrue(os.path.exists(sortedFilename), "No file was generated.")
-
-        # Copy the inputFilename into output dir, since the indexing rewrites the input file
-        copyFilename = "out/sort_mixed_caps.tsv"
-        shutil.copy(inputFilename, copyFilename)
-
-        outFile = copyFilename + ".indexed.tsv"
-        resultIndexedFile = TabixIndexer.indexGeneProteinPosition("Gene name", "Mutation AA", copyFilename, outFile)
-
-        self.assertTrue(os.path.exists(resultIndexedFile), "No index file was generated.")
-
-    def testBasicGeneProteinPositionIndexCreation(self):
-        ''' Creates a tabix index based on a small tsv file.
-        '''
-        inFile = "testdata/small_cosmic_gpp/small_cosmic_gpp.tsv"
-        outFile = "out/small_cosmic_gpp.out.tsv"
-        TabixIndexer.indexGeneProteinPosition("Gene name", "Mutation AA", inFile, outFile)
-        self.assertTrue(os.path.exists(outFile + ".sorted.tsv.gz.tbi"), "Index file was not created.")
-        tabixFile = pysam.Tabixfile(outFile + ".sorted.tsv.gz")
-
-        gene = "BRAF"
-        startAA = 599
-        endAA = 600
-        results = tabixFile.fetch(reference=gene, start=startAA, end=endAA)
-        ctr = 0
-        try:
-            while results.next():
-                ctr += 1
-        except StopIteration:
-            pass
-
-        self.assertTrue(ctr == 2, "Returned wrong number of results (gt: 2): " + str(ctr))
-
-        gene = "CDKN2A"
-        startAA = 29
-        endAA = 30
-
-        results = tabixFile.fetch(reference=gene, start=startAA, end=endAA)
-        ctr = 0
-        try:
-            while results.next():
-                ctr += 1
-        except StopIteration:
-            pass
-
-        # Should have one result
-        self.assertTrue(ctr == 1, "Returned wrong number of results (gt: 1): " + str(ctr))
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testBasicGeneIndexCreation']
-    unittest.main()
+    def __str__(self):
+        return repr(self.value)

@@ -167,6 +167,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         self._validateTcgaMafContents(testOutputFilename)
 
     def testFullIndelOutput(self):
+    def testFullIndelOutput(self):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
         

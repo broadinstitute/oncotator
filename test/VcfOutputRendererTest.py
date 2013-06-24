@@ -56,26 +56,13 @@ Created on Oct 24, 2012
 import unittest
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.Annotator import Annotator
-from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 from TestUtils import TestUtils
 import logging
-from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
-import unittest
-from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
-from oncotator.Annotator import Annotator
-from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
-from TestUtils import TestUtils
-import logging
-import pandas
-from oncotator.input.SyntaxException import SyntaxException
-import sys
-from TestUtils import TestUtils
 import vcf
 TestUtils.setupLogging(__file__, __name__)
+
 class VcfOutputRendererTest(unittest.TestCase):
-
-
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
@@ -90,11 +77,11 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testHeaderWithExampleVcf(self):
         expected = set()
-        with open('testdata/vcf/example.header.vcf', 'r') as fp:
+        with open('testdata/vcf/example.header.txt', 'r') as fp:
             for line in iter(fp):
                 expected.add(line.rstrip('\n'))
         
-        creator = VcfInputMutationCreator('testdata/example.vcf')
+        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
         renderer = VcfOutputRenderer('out/example.header.vcf')
         annotator = Annotator()
@@ -103,20 +90,21 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.annotate()
         
         current = set()
-        with open('testdata/vcf/example.header.vcf', 'r') as fp:
+        with open('out/example.header.vcf', 'r') as fp:
             for line in iter(fp):
-                if line.startswith('#'):
+                if line.startswith('##'):
                     current.add(line.rstrip('\n'))
-        
+
+        self.assertTrue(len(current) == len(expected), "Number of lines are not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamples(self):
         expected = set()
-        with open('testdata/vcf/example.sampleName.removed.header.vcf', 'r') as fp:
+        with open('testdata/vcf/example.sampleName.removed.header.txt', 'r') as fp:
             for line in iter(fp):
                     expected.add(line.rstrip('\n'))
 
-        creator = VcfInputMutationCreator('testdata/example.sampleName.removed.vcf')
+        creator = VcfInputMutationCreator('testdata/vcf/example.sampleName.removed.vcf')
         creator.createMutations()
         renderer = VcfOutputRenderer('out/example.sampleName.removed.header.vcf')
         annotator = Annotator()
@@ -125,20 +113,21 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.annotate()
 
         current = set()
-        with open('testdata/vcf/example.sampleName.removed.header.vcf', 'r') as fp:
+        with open('out/example.sampleName.removed.header.vcf', 'r') as fp:
             for line in iter(fp):
                 if line.startswith('#'):
                     current.add(line.rstrip('\n'))
 
+        self.assertTrue(len(current) == len(expected), "Number of lines are not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamplesOrVariants(self):
         expected = set()
-        with open('testdata/vcf/example.sampleName.variants.removed.header.vcf', 'r') as fp:
+        with open('testdata/vcf/example.sampleName.variants.removed.header.txt', 'r') as fp:
             for line in iter(fp):
                     expected.add(line.rstrip('\n'))
 
-        creator = VcfInputMutationCreator('testdata/example.sampleName.variants.removed.vcf')
+        creator = VcfInputMutationCreator('testdata/vcf/example.sampleName.variants.removed.vcf')
         creator.createMutations()
         renderer = VcfOutputRenderer('out/example.sampleName.variants.removed.header.vcf')
         annotator = Annotator()
@@ -147,15 +136,13 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.annotate()
 
         current = set()
-        with open('testdata/vcf/example.sampleName.variants.removed.header.vcf', 'r') as fp:
+        with open('out/example.sampleName.variants.removed.header.vcf', 'r') as fp:
             for line in iter(fp):
                 if line.startswith('#'):
                     current.add(line.rstrip('\n'))
 
-        self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
-
     def testContentofExampleVcf(self):
-        creator = VcfInputMutationCreator('testdata/example.vcf')
+        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
         renderer = VcfOutputRenderer('out/example.variants.vcf')
         annotator = Annotator()
@@ -163,33 +150,132 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/example.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.vcf', strict_whitespace=True)
         currentVcfReader = vcf.Reader(filename='out/example.variants.vcf', strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    def testContentofExampleWithESP_MAFVcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.withESP_MAF.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.variants.withESP_MAF.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.withESP_MAF.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/example.variants.withESP_MAF.vcf', strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    # @unittest.skip("skip for now")
+    def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.withESP_MAF.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.variants.gaf_annotated.withESP_MAF.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createGafDatasource(self.config))
+        annotator.annotate()
+
+    def _compareGenotypeFields(self, currentSampleFields, expectedSampleFields):
+        self.assertTrue("GT" in currentSampleFields, "Rendered vcf should have the field, GT.")
+        self.assertTrue("GT" in expectedSampleFields, "Input vcf should have the field, GT")
+        self.assertTrue("GT" == currentSampleFields[0], "Rendered vcf should have the GT field in the front of FORMAT.")
+        self.assertTrue("GT" == expectedSampleFields[0], "Input vcf should have the GT field in the front of FORMAT.")
+        self.assertTrue(len(set(currentSampleFields).symmetric_difference(expectedSampleFields)) >= 0,
+                        "Should at least have all common fields")
+
+    def _compareVcfs(self, expectedVcfReader, currentVcfReader):
         for expectedRecord in expectedVcfReader:
             currentRecord = currentVcfReader.next()
             self.assertTrue(expectedRecord.CHROM == currentRecord.CHROM, "Should have the same chromosome")
             self.assertTrue(expectedRecord.POS == currentRecord.POS, "Should have the same position")
             self.assertTrue(expectedRecord.ID == currentRecord.ID, "Should have the same ID")
             self.assertTrue(expectedRecord.REF == currentRecord.REF, "Should have the same reference allele")
+
+            expectedAlts = [alt.sequence if alt is not None else None for alt in expectedRecord.ALT]
+            currentAlts = [alt.sequence if alt is not None else None for alt in currentRecord.ALT]
+            self.assertTrue(len(set(expectedAlts).symmetric_difference(currentAlts)) == 0,
+                            "Should have the same alternate alleles")
+
             self.assertTrue(expectedRecord.QUAL == currentRecord.QUAL, "Should have the same qual")
             self.assertTrue(len(set(expectedRecord.FILTER).symmetric_difference(currentRecord.FILTER)) == 0,
-                            "Should have the same alternate alleles")
-            for entry in expectedRecord.INFO:
-                self.assertTrue(entry in currentRecord.INFO, "Missing INFO field %s" % entry)
+                            "Should have the same FILTER tags")
+            self.assertTrue(len(set(expectedRecord.INFO.keys()).symmetric_difference(currentRecord.INFO.keys())) == 0,
+                            "Should have the same INFO keys")
+            keys = currentRecord.INFO.keys()
+            for key in keys:
+                expectedVal = expectedRecord.INFO[key]
+                currentVal = currentRecord.INFO[key]
+                if not isinstance(expectedVal, list):
+                    expectedVal = [expectedVal]
+                if not isinstance(currentVal, list):
+                    currentVal = [currentVal]
+                self.assertTrue(len(set(expectedVal).symmetric_difference(currentVal)) == 0,
+                                "Should have the same value for INFO key, %s." % key)
 
-            #for entry in expectedRecord.INFO:
-            #    self.assertTrue()
+            expectedSampleNames = [sample.sample for sample in expectedRecord.samples]
+            currentSampleNames = [sample.sample for sample in currentRecord.samples]
+            self.assertTrue(len(set(expectedSampleNames).symmetric_difference(currentSampleNames)) == 0,
+                            "Should have the same number of sample names")
+            self.assertTrue(len(expectedSampleNames) ==
+                            sum([1 for i, j in zip(expectedSampleNames, currentSampleNames) if i == j]),
+                            "Should have the sample names in the same order")
 
-            for entry in currentRecord.INFO:
-                if not entry in expectedRecord.INFO:
-                    self.assertTrue(len(filter(None, currentRecord.INFO[entry])) == 0, "")
+            # Current, by the way VCF is rendered, will have more fields than expected
+            for i in xrange(len(currentSampleNames)):
+                currentSample = currentRecord.samples[i]
+                expectedSample = expectedRecord.samples[i]
 
-            #x = set(expectedRecord.ALT).symmetric_difference(currentRecord.ALT)
-            #self.assertTrue(len(set(expectedRecord.ALT).symmetric_difference(currentRecord.ALT)) == 0,
-            #                "Should have the same alternate alleles")
-            #self.assertTrue(len(set(expectedRecord.FILTER).symmetric_difference(currentRecord.FILTER)) == 0,
-            #                "Should have the same alternate alleles")
+                currentSampleFields = currentSample.data._fields
+                expectedSampleFields = expectedSample.data._fields
+
+                self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
+
+                currentGenotypeData = currentRecord.genotype(currentSampleNames[i])
+                expectedGenotypeData = expectedRecord.genotype(currentSampleNames[i])
+
+                for currentSampleField in currentSampleFields:
+                    currentGenotypeVal = currentGenotypeData[currentSampleField]
+                    if not isinstance(currentGenotypeVal, list):
+                        currentGenotypeVal = [currentGenotypeVal]
+
+                    if currentSampleField in expectedSampleFields:
+                        expectedGenotypeVal = expectedGenotypeData[currentSampleField]
+                        if not isinstance(expectedGenotypeVal, list):
+                            expectedGenotypeVal = [expectedGenotypeVal]
+                        self.assertTrue(len(set(expectedGenotypeVal).symmetric_difference(currentGenotypeVal)) == 0,
+                                        "Should have the same value for genotype field, %s." % currentSampleField)
+                    else:
+                        self.assertTrue(len(filter(None, currentGenotypeVal)) == 0,
+                                        "Rendered vcf should have missing value for genotype field, %s."
+                                        % currentSampleField)
+
+            currentSampleFields = currentRecord.FORMAT.split(":")
+            expectedSampleFields = expectedRecord.FORMAT.split(":")
+            self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
+
+    def testChrom2HashCodeTable(self):
+        chroms = ["1", "X", "3", "contig1", "Y", "25", "mt"]
+        renderer = VcfOutputRenderer("")
+        h = renderer._createChrom2HashCodeTable(chroms)
+        self.assertTrue(h["1"] == 1, "For chrom 1, hash code should be 1 but it was %s." % h["1"])
+        self.assertTrue(h["3"] == 3, "For chrom 3, hash code should be 3 but it was %s." % h["3"])
+        self.assertTrue(h["25"] == 25, "For chrom 25, hash code should be 25 but it was %s." % h["25"])
+        self.assertTrue(h["X"] == 26, "For chrom X, hash code should be 26 but it was %s." % h["X"])
+        self.assertTrue(h["Y"] == 27, "For chrom Y, hash code should be 27 but it was %s." % h["Y"])
+        self.assertTrue(h["mt"] == 28, "For chrom mt, hash code should be 28 but it was %s." % h["mt"])
+        self.assertTrue(h["contig1"] == 29, "For chrom contig1, hash code should be 29 but it was %s." % h["contig1"])
+
+        chroms = ["contig1", "mt"]
+        h = renderer._createChrom2HashCodeTable(chroms)
+        self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
+        self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
+
+    def testCorrectVal(self):
+        renderer = VcfOutputRenderer("")
+
 
 
 if __name__ == "__main__":

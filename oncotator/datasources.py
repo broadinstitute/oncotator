@@ -438,6 +438,9 @@ class Gaf(Datasource, TranscriptProvider):
             m.createAnnotation('transcript_description', transcript.get('description', ''), self.title)
             m.createAnnotation('transcript_protein_position_start', str(transcript.get('protein_position_start', '')), self.title)
             m.createAnnotation('transcript_protein_position_end', str(transcript.get('protein_position_end', '')), self.title)
+
+            # TODO: Low Priority -- rename transcripts to _transcripts instead of deleting
+            del m['transcripts']
             yield m
 
     def determineGenomeChange(self, variant_type, chrom, start, end, ref, alt):

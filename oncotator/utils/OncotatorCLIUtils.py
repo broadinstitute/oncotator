@@ -47,6 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
+from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 
 
 """
@@ -225,7 +226,7 @@ class OncotatorCLIUtils(object):
     def createOutputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
         more output formats."""
-        return {'TCGAMAF':(TcgaMafOutputRenderer, 'tcgaMAF2.4_output.config'),"SIMPLE_TSV":(SimpleOutputRenderer, ''),'SIMPLE_BED':(SimpleBedOutputRenderer, ""),'TCGAVCF':(TcgaVcfOutputRenderer, 'tcgaVCF1.1_output.config')}
+        return {'TCGAMAF':(TcgaMafOutputRenderer, 'tcgaMAF2.4_output.config'),"SIMPLE_TSV":(SimpleOutputRenderer, ''),'SIMPLE_BED':(SimpleBedOutputRenderer, ""),'TCGAVCF':(TcgaVcfOutputRenderer, 'tcgaVCF1.1_output.config'), 'VCF':(VcfOutputRenderer, 'vcf.out.config')}
 
     @staticmethod
     def getSupportedOutputFormats():

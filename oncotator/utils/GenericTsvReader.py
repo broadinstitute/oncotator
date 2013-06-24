@@ -73,7 +73,7 @@ class GenericTsvReader(object):
     '''
 
     
-    def __init__(self, filename, commentPrepend='#', fieldNames=None):
+    def __init__(self, filename, commentPrepend='#', fieldNames=None, delimiter='\t'):
         '''
         Constructor
         '''
@@ -85,7 +85,7 @@ class GenericTsvReader(object):
         # The comment lines must be loaded before the dict reader is initialized.
         self._loadCommentLines()
         
-        self.dictReader = csv.DictReader(self.inputContentFP, delimiter='\t', fieldnames=fieldNames)
+        self.dictReader = csv.DictReader(self.inputContentFP, delimiter=delimiter, fieldnames=fieldNames)
 
     def _loadCommentLines(self):
         resetLocation = self.inputContentFP.tell()
@@ -117,6 +117,9 @@ class GenericTsvReader(object):
     def getCommentsAsList(self):
         ''' Return each comment line as an entry in a list '''
         return self.commentLines.strip().split('\n')
-    
+
+    def getInputContentFP(self):
+        return self.inputContentFP
+
     def __iter__(self):
         return self        

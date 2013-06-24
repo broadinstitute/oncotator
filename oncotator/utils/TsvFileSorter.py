@@ -49,11 +49,13 @@
 
 
 import collections
-from collections import OrderedDict
 import heapq
-import os
-import tempfile
 import itertools
+from oncotator.utils.GenericTsvReader import GenericTsvReader
+import operator
+import string
+from oncotator.utils.CallbackException import CallbackException
+from oncotator.utils.MutUtils import MutUtils
 
 __author__ = 'lichtens'
 
@@ -63,100 +65,69 @@ class TsvFileSorter(object):
     This code is an adaptation of the cookbook code found at:
     http://code.activestate.com/recipes/576755-sorting-big-files-the-python-26-way/
     """
-
-
-
-    def __init__(self, fieldNames = ["chrom","pos","sampleName"], delimiter = '\t'):
-        self.fieldNames = fieldNames
-        self.fieldNames.append("line")
-        self._Pair = collections.namedtuple(typename="Pair", field_names=["key","value"])
+    def __init__(self, filename, commentPrepend='#', delimiter='\t', lineterminator='\n'):
+        self.readfilename = filename
+        self._Pair = collections.namedtuple(typename="Pair", field_names=["key", "value"])
         self.delimiter = delimiter
-        self.headerList = None
-        self.columnPos = dict()
+        self.lineterminator = lineterminator
+        self.commentPrepend = commentPrepend
 
-    def __createLineDict(self, hdrList, line):
-        toks = line.split(self.delimiter)
-        result = OrderedDict()
-        ctr = 0
-        for hdr in hdrList:
-            result[hdr] = toks[ctr]
-            ctr += 1
-        result['line'] = line
-        return result
-
-    def __merge(self, *partitions):
+    def __merge(self, partitions):
         """
 
         :param partitions:
         """
-        # iterables = [(self._Pair(key=, value=line) for line in partition)
-        #              for partition in partitions]
-        iterables = []
-        for partition in partitions:
-            partitionList = []
-            for line in partition:
-                d = self.__createLineDict(hdrList=self.headerList, line=line)
-                # TODO: key_list is not quite correct.  Modify to specify a callable (dict to tuple)
-                key_list = [d[self.fieldNames[0]].lower(), int(d[self.fieldNames[1]]), int(d[self.fieldNames[2]])]
-                partitionList.append(self._Pair(key=tuple(key_list), value=line))
-            iterables.append(partitionList)
-
-        # Merge multiple sorted inputs
-        for pair in heapq.merge(*iterables):
-            print pair.value
+        for pair in heapq.merge(*partitions):
             yield pair.value
 
+    def _yieldPartitions(self, iterable, func, fieldnameIndexes, length):
+        isKeyTuple = False
+        lines = list(itertools.islice(iterable, length))
+        data = collections.OrderedDict()
 
-    def sortFile(self,readfilename, outputFilename, iswriteHeader=True, length=1280000):
-        tempdirs = list([tempfile.gettempdir()])
-        partitions = list()
-        isHashHeader = False
-        try:
-            header = None
-            partitionCtr = 0
-            with open(name=readfilename, mode='rb', buffering=64 * 1024) as fp:
-                iterable = iter(fp)
-                for tempdir in itertools.cycle(tempdirs):
-                    lines = list(itertools.islice(iterable, length)) # returns an iterator of size length
-                    if header is None:
-                        header = lines[0].rstrip() # first line is the header
-                        if header.find("#") == 0:
-                            header = header.replace("#", "")
-                            isHashHeader = True
-                        self.headerList = header.split(self.delimiter)
-                        print(self.fieldNames[0])
-                        for f in self.fieldNames:
-                            if f == "line":
-                                continue
-                            self.columnPos[f] = self.headerList.index(f)
-                        lines = lines[1:len(lines)]
-                    for index in range(len(lines)):
-                        lines[index] = self.__createLineDict(hdrList=self.headerList, line=lines[index].rstrip('\n'))
+        while len(lines) > 0:
+            pairs = [None]*len(lines)
 
-                    if not lines:
-                        break
-                    # lines = sorted(lines, key=operator.attrgetter('chrom', 'pos', 'sampleName')) # sort the list of lines
-                    # TODO: Determine type of the input columns and then convert to lowercase str or use int/float
-                    lines = sorted(lines, key=lambda t: (t[self.fieldNames[0]].lower(), int(t[self.fieldNames[1]]), int(t[self.fieldNames[2]]))) # sort the list of lines
-                    partition = open(name=os.path.join(tempdir, '%06i' % len(partitions)), mode='w+b',
-                                     buffering=64 * 1024)
-                    partitions.append(partition)
-                    partition.write('\n'.join([record['line'] for record in lines]) + '\n')
-                    partition.flush()
-                    partition.seek(0)
-                    partitionCtr += 1
-                    print(str(partitionCtr))
-            with open(name=outputFilename, mode='wb', buffering=64 * 1024) as fp:
-                if iswriteHeader:
-                    if isHashHeader:
-                        fp.write("#")
-                    fp.write(header + "\n")
-                print("Merging...")
-                fp.writelines(self.__merge(*partitions)) # generators are allowed as inputs to writelines funtion
-        finally:
-            for partition in partitions:
-                try:
-                    partition.close()
-                    os.remove(path=partition.name)
-                except Exception:
-                    pass
+            # Create a list of (key, value) pairs
+            # Each key consists of a tuple, value is the corresponding text
+            # Note: CSV dictionary reader is NOT used because a chunk of text is parsed at a time, rather than a
+            # line of text
+            for i in xrange(len(lines)):
+                # Note: CSV dictionary reader is NOT used because a chunk of text is parsed at a time, rather than a
+                # line of text
+                line = lines[i]
+                tokens = MutUtils.getTokens(line, self.delimiter, self.lineterminator)
+
+                for fieldname, index in fieldnameIndexes.items():
+                    data[fieldname] = tokens[index]
+
+                key = func(data)
+
+                if not isKeyTuple:
+                    isKeyTuple = isinstance(key, tuple)
+                    if not isKeyTuple:
+                        raise CallbackException("The value returned by the callback must be a tuple. Instead, a value "
+                                                "of %s was returned." % (type(key)))
+
+                pairs[i] = self._Pair(key, line)
+
+            partition = sorted(pairs, key=operator.attrgetter("key"))
+
+            lines = list(itertools.islice(iterable, length))
+
+            yield partition
+
+    def sortFile(self, filename, func, length=50000):
+        reader = GenericTsvReader(filename=self.readfilename, commentPrepend=self.commentPrepend,
+                                  delimiter=self.delimiter)
+        comments = reader.getComments()
+        fieldnames = reader.getFieldNames()
+        fieldnameIndexes = collections.OrderedDict([(x, i) for (i, x) in enumerate(fieldnames)])
+
+        iterable = iter(reader.getInputContentFP())
+        partitions = self._yieldPartitions(iterable, func, fieldnameIndexes, length)
+
+        with open(name=filename, mode='wb', buffering=64 * 1024) as writer:
+            writer.write(comments)
+            writer.write(string.join(fieldnames, self.delimiter) + '\n')
+            writer.writelines(self.__merge(partitions))  # generators are allowed as inputs to writelines function

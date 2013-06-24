@@ -125,6 +125,12 @@ class MutationData(collections.MutableMapping):
         else:
             if not isinstance(tags,list):
                 tags = tags[str(tags)]
+            isTagged = False
+            for tag in tags:
+                if tag in ("aggregate", "variant", "filter", "identifier", "quality",):
+                    isTagged = True
+            if not isTagged:
+                tags = ["aggregate"] + tags
             self.annotations[annotationName] = Annotation(annotationValue, annotationSource, annotationDataType, annotationDescription, tags=tags, number=number)
 #        self.lock.release()
         

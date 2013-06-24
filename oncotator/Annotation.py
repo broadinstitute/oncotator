@@ -70,8 +70,12 @@ class Annotation(object):
         self.dataType = dataType
         self.description = description
         self.tags = tags
-        self.number = number
-    
+
+        if number is None:
+            self.number = "."
+        else:
+            self.number = number
+
     def setValue(self, val):
         self.value = val
     

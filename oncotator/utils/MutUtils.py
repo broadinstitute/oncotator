@@ -74,7 +74,24 @@ class MutUtils(object):
         """ Given an input string, v, returns whether the input string is a boolean 
             or not. """
         return v.lower() in ("yes", "true", "t", "1", "y")
-    
+
+    @staticmethod
+    def enum(*sequential, **named):
+        enums = dict(zip(sequential, range(len(sequential))), **named)
+        reverse = dict((value, key) for key, value in enums.iteritems())
+        enums['reverse_mapping'] = reverse
+        return type('Enum', (), enums)
+
+    @staticmethod
+    def getTokens(text, delimiter="\t", lineterminator="\n"):
+        lines = text.split(lineterminator)
+        if not lines[len(lines)-1]:
+            lines = lines[0:len(lines)-1]
+        toks = []
+        for line in lines:
+            toks += line.split(delimiter)
+        return toks
+
     @staticmethod
     def convertChromosomeStringToMutationDataFormat(chrom, build="hg19"):
         """ This method only covers strings.  This method does not check that the chromosome exists for a given genome build. 
