@@ -63,7 +63,6 @@ import logging
 import re
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
-from oncotator.utils.so_mappings import so_term_mappings, so_accession_mappings
 
 try:
     import pysam
@@ -670,19 +669,6 @@ class Generic_Gene_DataSource(Datasource):
                 mutation.createAnnotation(h, '', annotationSource=self.title)
 
         return mutation
-
-#class Gaf_ICGC(Gaf):
-#    def annotate_mutation(self, mutation, upstream_padding=3000, downstream_padding=0):
-#        annotated_mutation = super(Gaf_ICGC, self).annotate_mutation(mutation, upstream_padding, downstream_padding)
-#
-#        vc_value = annotated_mutation.annotations['variant_classification'].getValue()
-#        so_term_value = so_term_mappings.get(vc_value, '')
-#        so_accession_value = so_accession_mappings.get(so_term_value, '')
-#
-#        annotated_mutation.createAnnotation('SO_term', so_term_value, annotationSource="ICGC_MUCOPA")
-#        annotated_mutation.createAnnotation('SO_accession', so_accession_value, annotationSource="ICGC_MUCOPA")
-#
-#        return annotated_mutation
 
 class Generic_VariantClassification_Datasource(Generic_Gene_DataSource):
     """ Used for generic TSV that is indexed by variant classification. """
