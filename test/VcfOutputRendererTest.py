@@ -60,7 +60,9 @@ from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 from TestUtils import TestUtils
 import logging
 import vcf
+from StringIO import StringIO
 TestUtils.setupLogging(__file__, __name__)
+
 
 class VcfOutputRendererTest(unittest.TestCase):
     def setUp(self):
@@ -141,6 +143,41 @@ class VcfOutputRendererTest(unittest.TestCase):
                 if line.startswith('#'):
                     current.add(line.rstrip('\n'))
 
+    def testContentofExampleVcfwith1Variant(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.1row.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.variants.1row.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.1row.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/example.variants.1row.vcf', strict_whitespace=True)
+
+        self.assertEquals(expectedVcfReader.samples, currentVcfReader.samples, "Sample names do not match.")
+        self.assertEquals(dict(expectedVcfReader.formats), dict(currentVcfReader.formats),
+                          "Format meta-information does not match.")
+        self.assertEquals(dict(expectedVcfReader.infos), dict(currentVcfReader.infos),
+                          "Info meta-information does not match.")
+
+        for expectedRecord, currentRecord in zip(expectedVcfReader, currentVcfReader):
+            self.assertEqual(dict(expectedRecord.INFO), dict(currentRecord.INFO))
+            self.assertEquals(expectedRecord.samples, currentRecord.samples)
+
+            for expectedCall, currentCall in zip(expectedRecord.samples, currentRecord.samples):
+                for field in expectedCall.data._fields:
+                    self.assertIn(field, currentCall.data._fields, "Format field %s is missing in output vcf." % field)
+                    self.assertEqual(getattr(expectedCall.data, field), getattr(currentCall.data, field),
+                                     "Format field %s values do not match." % field)
+
+                for field in currentCall.data._fields:
+                    if not hasattr(expectedCall.data, field):
+                        val = getattr(currentCall.data, field)
+                        if not isinstance(val, list):
+                            val = [val]
+                        self.assertEqual(filter(None, val), [], "Format field %s values do not match." % field)
+
     def testContentofExampleVcf(self):
         creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
@@ -167,7 +204,6 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename='out/example.variants.withESP_MAF.vcf', strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
-    # @unittest.skip("skip for now")
     def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
         creator = VcfInputMutationCreator('testdata/vcf/example.withESP_MAF.vcf')
         creator.createMutations()
@@ -223,7 +259,7 @@ class VcfOutputRendererTest(unittest.TestCase):
                             sum([1 for i, j in zip(expectedSampleNames, currentSampleNames) if i == j]),
                             "Should have the sample names in the same order")
 
-            # Current, by the way VCF is rendered, will have more fields than expected
+            # Current, as a consequence of the way VCF is rendered, will have more fields than expected
             for i in xrange(len(currentSampleNames)):
                 currentSample = currentRecord.samples[i]
                 expectedSample = expectedRecord.samples[i]
@@ -272,11 +308,6 @@ class VcfOutputRendererTest(unittest.TestCase):
         h = renderer._createChrom2HashCodeTable(chroms)
         self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
         self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
-
-    def testCorrectVal(self):
-        renderer = VcfOutputRenderer("")
-
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -141,8 +141,8 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                 tags = copy.copy(self.tags["FORMAT"])
 
-                if (genotypeData is not None) and (ID in genotypeData.data._fields):
-                    isSplitTag = self._determineIsSplit(ID, record.ALT, genotypeData[ID], "FORMAT")
+                if (genotypeData is not None) and (hasattr(genotypeData.data, ID)):
+                    isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
                     if isSplitTag:
                         val = genotypeData[ID][index]
                     else:
@@ -187,7 +187,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             tags = copy.copy(self.tags["INFO"])
 
             if ID in record.INFO:
-                isSplitTag = self._determineIsSplit(ID, record.ALT, record.INFO[ID], "INFO")
+                isSplitTag = self._determineIsSplit(ID, num, "INFO")
                 if isSplitTag:
                     val = record.INFO[ID][index]
                 else:
@@ -209,25 +209,49 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         return mutation
 
+    def _determineIsSplit(self, ID, num, fieldType):
+        if num in (-2,):  # by the number of samples
+            split = False
+            if ID in self.configTable["SPLIT_TAGS"]["FORMAT"]:  # override the default using the config file
+                split = True
+        elif num in (-1,):  # by the number of alternates
+            split = True
+            if ID in self.configTable["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
+                split = False
+        elif num in (".",):
+            split = False
+            if ID in self.configTable["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+                split = True
+        else:
+            split = False
+
+        return split
+
     def _createConfigTableKeys(self):
         # Parse fields from INFO section of the config file
         if not ConfigUtils.hasSectionKey(self.config, "INFO"):
-            raise ConfigInputIncompleteException("Missing %s section in input config file for input file %s."
+            raise ConfigInputIncompleteException("Missing %s section in input config file for the input vcf file %s."
                                                  % ("INFO", self.filename))
         self.configTable["INFO"] = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
 
         # Parse fields from FORMAT section of the config file
         if not ConfigUtils.hasSectionKey(self.config, "FORMAT"):
-            raise ConfigInputIncompleteException("Missing %s section in input config file for input file %s."
+            raise ConfigInputIncompleteException("Missing %s section in input config file for the input vcf file %s."
                                                  % ("FORMAT", self.filename))
         self.configTable["FORMAT"] = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
 
         # Parse fields from NOT_SPLIT_TAGS section of the config file
         if not ConfigUtils.hasSectionKey(self.config, "NOT_SPLIT_TAGS"):
-            raise ConfigInputIncompleteException("Missing %s section in input config file for input file %s."
+            raise ConfigInputIncompleteException("Missing %s section in input config file for the input vcf file %s."
                                                  % ("NOT_SPLIT_TAGS", self.filename))
         self.configTable["NOT_SPLIT_TAGS"] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config,
                                                                                                "NOT_SPLIT_TAGS")
+
+        # Parse fields from SPLIT_TAGS section of the config file
+        if not ConfigUtils.hasSectionKey(self.config, "SPLIT_TAGS"):
+            raise ConfigInputIncompleteException("Missing %s section in input config file for the input vcf file %s."
+                                                 % ("SPLIT_TAGS", self.filename))
+        self.configTable["SPLIT_TAGS"] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
 
     def _createConfigTable(self):
         # Iterate over the input VCF file and parse all possible fields in INFO and FORMAT section (excluding the
@@ -255,10 +279,10 @@ class VcfInputMutationCreator(InputMutationCreator):
 
             TODO: Complete documentation
         """
-        if self.configTable is None:
-            self.configTable = dict()
-            self._createConfigTableKeys()
-            self._createConfigTable()
+        self.reset()
+        self.configTable = dict()
+        self._createConfigTableKeys()
+        self._createConfigTable()
 
         self.reset()
         for record in self.vcf_reader:
@@ -278,7 +302,6 @@ class VcfInputMutationCreator(InputMutationCreator):
                         # TODO: move this to deep copy
                         sampleMut = self._createMutationCopy(mut)
                         sampleMut.createAnnotation("sampleName", sample.sample, "INPUT")
-                        # Check if the alt allele is actually seen
                         genotype = "GT"
                         if genotype in sample.data._fields:
                             if (sample.data.GT is None) or (sample.data.GT.find("1") == -1):
@@ -360,10 +383,12 @@ class VcfInputMutationCreator(InputMutationCreator):
             num = "."
             if self.vcf_reader.formats[ID].num is not None:
                 num = self.vcf_reader.formats[ID].num
-
+            tags = copy.copy(self.tags["FORMAT"])
+            isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
+            if isSplitTag:
+                tags += ["SPLIT"]
             metadata[annotationName] = Annotation("", "INPUT", self.vcf_reader.formats[ID].type,
-                                                  self.vcf_reader.formats[ID].desc, tags=copy.copy(self.tags["FORMAT"]),
-                                                  number=num)
+                                                  self.vcf_reader.formats[ID].desc, tags=tags, number=num)
         return metadata
 
     def _addInfoFields2Metadata(self, metadata):
@@ -371,10 +396,12 @@ class VcfInputMutationCreator(InputMutationCreator):
             num = "."
             if self.vcf_reader.infos[ID].num is not None:
                 num = self.vcf_reader.infos[ID].num
-
+            tags = copy.copy(self.tags["INFO"])
+            isSplitTag = self._determineIsSplit(ID, num, "INFO")
+            if isSplitTag:
+                tags += ["SPLIT"]
             metadata[annotationName] = Annotation("", "INPUT", self.vcf_reader.infos[ID].type,
-                                                  self.vcf_reader.infos[ID].desc, tags=copy.copy(self.tags["INFO"]),
-                                                  number=num)
+                                                  self.vcf_reader.infos[ID].desc, tags=tags, number=num)
         return metadata
 
     def _addFilterFields2Metadata(self, metadata):
@@ -383,33 +410,10 @@ class VcfInputMutationCreator(InputMutationCreator):
                                         tags=copy.copy(self.tags["FILTER"]))
         return metadata
 
-    def _determineIsSplit(self, ID, alts, values, fieldType):
-        """
-
-        :param ID: name of the annotation in the input vcf file
-        :param fieldType: INFO or FORMAT
-        :param alts: a list of alternates in the variant
-        :param values: values is a list
-        """
-        if len(alts) == 1:
-            return False
-
-        if not isinstance(values, list):
-            values = [values]
-
-        if len(alts) != len(values):
-            return False
-
-        if ID in self.configTable["NOT_SPLIT_TAGS"][fieldType]:
-            return False
-
-        return True
-
-    def getMetadata(self):
-        if self.configTable is None:
-            self.configTable = dict()
-            self._createConfigTableKeys()
-            self._createConfigTable()
+    def _createMetadata(self):
+        self.configTable = dict()
+        self._createConfigTableKeys()
+        self._createConfigTable()
 
         metadata = Metadata()
         metadata = self._addFilterFields2Metadata(metadata)
@@ -419,4 +423,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         metaData["id"] = Annotation("", "INPUT", "String", "", copy.copy(self.tags["ID"]))
         metaData["qual"] = Annotation("", "INPUT", "String", "", copy.copy(self.tags["QUAL"]))
 
-        return metaData
+        return metadata
+
+    def getMetadata(self):
+        metadata = self._createMetadata()
+        return metadata

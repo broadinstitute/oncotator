@@ -253,7 +253,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue(len(current.index) == len(expected.index), "Should have the same number of rows")
 
         for colName in currentColNames:
-            self.assertTrue(sum((current[colName] == expected[colName]) | (pandas.isnull(current[colName]) & pandas.isnull(expected[colName]))) == len(current.index), "Should have the same values in column " + colName)
+            self.assertTrue(sum((current[colName] == expected[colName]) | (pandas.isnull(current[colName]) &
+                                                                           pandas.isnull(expected[colName]))) ==
+                            len(current.index), "Should have the same values in column " + colName)
 
     def testAnnotationWithNoSampleNameExampleVcf(self):
         """ Test whether parsed annotations match the actual annotations. """
@@ -295,6 +297,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         mapVcfFields2Tsv['allele_frequency'] = 'AF'
 
         muts = creator.createMutations()
+        md = creator.getMetadata()
 
         vcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
 
@@ -306,14 +309,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                 chrom = m['chr']
                 pos = m['start']
                 variant = vcfReader.next()
-                if len(variant.ALT) > 1:
-                    isSplit['allele_frequency'] = True
-                else:
-                    isSplit['allele_frequency'] = False
 
             for annotationName in isSplit.keys():
                 if mapVcfFields2Tsv[annotationName] in variant.INFO:
-                    a = m.getAnnotation(annotationName)
+                    a = md[annotationName]
                     self.assertTrue(('SPLIT' in a.getTags()) == isSplit[annotationName],
                                     annotationName + " is split? " + str(isSplit[annotationName]) + ", but saw: " +
                                     str('SPLIT' in a.getTags()))
@@ -326,14 +325,15 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         # We do this to make sure that the internal state is correct
         md = creator.getMetadata()
 
-        test = creator._determineIsSplit('read_depth', ["G", "T"], ["6"], "INFO")
+        test = creator._determineIsSplit('DP', 1, "FORMAT")
         self.assertTrue(test is False)
 
         # Test with an exception in the config file
-        test = creator._determineIsSplit('ESP_MAF', ["G", "T"], ["6", "5"], "INFO")
+        test = creator._determineIsSplit('ESP_MAF', ".", "INFO")
         self.assertTrue(test is False)
 
-        test = creator._determineIsSplit('allele_frequency', ["G", "T"], ["6", "5"], "INFO")
+        test = creator._determineIsSplit('AF', ".", "INFO")
+        print test
         self.assertTrue(test is True)
 
 if __name__ == "__main__":
