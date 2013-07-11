@@ -66,3 +66,9 @@ Version Information
 Once Oncotator is installed, run it with the -V flag to get version information::
 
     $ oncotator -V
+
+
+Help
+-------------------
+
+Email oncotator@broadinstitute.org with issues and feature requests.

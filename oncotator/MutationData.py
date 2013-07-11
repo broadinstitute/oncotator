@@ -118,7 +118,7 @@ class MutationData(collections.MutableMapping):
             if annotationValue == self.annotations[annotationName].value:
                 logging.getLogger(__name__).warn("Attempting to create an annotation multiple times, but with the same value: " + annotationName +  "  :  " + annotationValue)
             else:
-                raise DuplicateAnnotationException('Attempting to create an annotation multiple times: ' + annotationName)
+                raise DuplicateAnnotationException('Attempting to create an annotation multiple times (' + annotationName + ') with old, new values of (' + self.annotations[annotationName].value + ", " + annotationValue + ")")
         if annotationName in MutationData.attributes:
             logging.getLogger(__name__).debug("Attempting to create an attribute with createAnnotation.  Should be using instance attribute setting.  x." + str(annotationName) + " = " + str(annotationValue) + " ... Ignoring annotationSource, but setting attribute.")
             self[annotationName] = annotationValue

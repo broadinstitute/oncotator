@@ -110,6 +110,7 @@ class Annotator(object):
         self._datasources = []
         self.logger = logging.getLogger(__name__)
         self._manualAnnotations = dict()
+        self._defaultAnnotations = dict()
         self._isMulticore = None
         self._numCores = None
         pass
@@ -138,6 +139,9 @@ class Annotator(object):
     
     def setManualAnnotations(self, value):
         self._manualAnnotations = value
+
+    def setDefaultAnnotations(self, value):
+        self._defaultAnnotations = value
            
                
     def initialize(self,runSpec):
@@ -146,9 +150,11 @@ class Annotator(object):
         self.setInputCreator(runSpec.inputCreator)
         self.setOutputRenderer(runSpec.outputRenderer)
         self.setManualAnnotations(runSpec.manualAnnotations)
+        self.setDefaultAnnotations(runSpec.defaultAnnotations)
         self._datasources = runSpec.datasources
         self.setIsMulticore(runSpec.get_is_multicore())
         self.setNumCores(runSpec.get_num_cores())
+
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)
@@ -182,8 +188,12 @@ class Annotator(object):
             self.logger.warn("Mutation list points to None after annotation.")
         
         mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
-        if mutations is None: 
+        if mutations is None:
             self.logger.warn("Mutation list points to None after manual annotations.")
+
+        mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after default annotations.")
 
         comments = self._createComments()
         metadata = self._createMetadata()
@@ -197,6 +207,17 @@ class Annotator(object):
         for m in mutations:
             for k in manualAnnotationKeys:
                 m.createAnnotation(k, manualAnnotations[k], annotationSource="MANUAL")
+            yield m
+
+    def _applyDefaultAnnotations(self, mutations, defaultAnnotations):
+        # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
+        #TODO: Need unit test
+        defaultAnnotationsKeys = defaultAnnotations.keys()
+        for m in mutations:
+            mKeys = m.keys()
+            for k in defaultAnnotationsKeys:
+                if k not in mKeys:
+                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="MANUAL")
             yield m
 
     def _createManualAnnotationsForMetadata(self, manualAnnotations):

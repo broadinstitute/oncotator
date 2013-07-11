@@ -70,6 +70,7 @@ TestUtils.setupLogging(__file__, __name__)
 class MafliteInputMutationCreatorTest(unittest.TestCase):
 
     def setUp(self):
+        self.config = TestUtils.createUnitTestConfig()
         pass
 
     def tearDown(self):

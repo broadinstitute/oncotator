@@ -6,7 +6,9 @@ from BCBio import GFF
 from Bio import SeqIO
 
 class GenomeBuildFactory(object):
-
+    """ Responsible for creating indices for genome builds (through ENSEMBL) and creating a set of datasource files.
+        The methods in this class would typically be run in datasource creation, not during annotation.
+    """
     def __init__(self):
         self._transcript_index = dict()
 
@@ -58,3 +60,38 @@ class GenomeBuildFactory(object):
             shove[transcript_id] = self._convertGFFRecordToTranscript(rec, seq_dict)
         shove.close()
         in_handle.close()
+
+    def build_ensembl_transcripts_by_gene_index(self, ensembl_transcript_index_fname, output_filename, protocol="file"):
+        """ Create an index for gene --> transcripts using a transcript index created in build_ensembl_transcript_index
+        :param ensembl_transcript_index_fname: file/dir location for ensembl transcript db
+        :return:
+        """
+
+        #TODO: This may need to be moved to the init of the transcript datasource as that may be faster.
+
+        transcript_db = Shove(protocol + "://" + ensembl_transcript_index_fname, "memory://")
+        output_db = Shove(protocol + "://" + output_filename, "memory://")
+
+        transcript_keys = transcript_db.keys()
+
+        for tx_id in transcript_keys:
+            tx = transcript_db[tx_id]
+            if tx.gene not in output_db:
+                output_db[tx.gene] = [tx]
+            else:
+                output_db[tx.gene].append(tx)
+
+        output_db.close()
+        transcript_db.close()
+
+    def build_ensembl_transcripts_by_genomic_location_index(self, ensembl_transcript_index_fname, output_filename, protocol="file"):
+        """Create an index for genomic position to transcripts index, using a transcript index created in
+            build_ensembl_transcript_index
+        """
+        transcript_db = Shove(protocol + "://" + ensembl_transcript_index_fname, "memory://")
+        output_db = Shove(protocol + "://" + output_filename, "memory://")
+
+        transcript_keys = transcript_db.keys()
+
+        raise NotImplementedError("This method is not finished.")
+

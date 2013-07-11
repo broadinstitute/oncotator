@@ -47,114 +47,13 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 
-
-import collections
-from collections import OrderedDict
-import heapq
-import os
-import tempfile
-import itertools
-
-__author__ = 'lichtens'
-
-class TsvFileSorter(object):
-    """ Static class for sorting a tsv file in place.
-
-    This code is an adaptation of the cookbook code found at:
-    http://code.activestate.com/recipes/576755-sorting-big-files-the-python-26-way/
-    """
-
-    def __init__(self, fieldNames = ["chrom","pos","sampleName"], delimiter = '\t'):
-        self.fieldNames = fieldNames
-        self.fieldNames.append("line")
-        self._Pair = collections.namedtuple(typename="Pair", field_names=["key","value"])
-        self.delimiter = delimiter
-        self.headerList = None
-        self.columnPos = dict()
-
-    def __createLineDict(self, hdrList, line):
-        toks = line.split(self.delimiter)
-        result = OrderedDict()
-        ctr = 0
-        for hdr in hdrList:
-            result[hdr] = toks[ctr]
-            ctr += 1
-        result['line'] = line
-        return result
-
-    def __merge(self, *partitions):
-        """
-
-        :param partitions:
-        """
-        # iterables = [(self._Pair(key=, value=line) for line in partition)
-        #              for partition in partitions]
-        iterables = []
-        for partition in partitions:
-            partitionList = []
-            for line in partition:
-                d = self.__createLineDict(hdrList=self.headerList, line=line)
-                # TODO: key_list is not quite correct.  Modify to specify a callable (dict to tuple)
-                key_list = [d[self.fieldNames[0]].lower(), int(d[self.fieldNames[1]]), int(d[self.fieldNames[2]])]
-                partitionList.append(self._Pair(key=tuple(key_list), value=line))
-            iterables.append(partitionList)
-
-        # Merge multiple sorted inputs
-        for pair in heapq.merge(*iterables):
-            print pair.value
-            yield pair.value
+import unittest
 
 
-    def sortFile(self,readfilename, outputFilename, iswriteHeader=True, length=1280000):
-        tempdirs = list([tempfile.gettempdir()])
-        partitions = list()
-        isHashHeader = False
-        try:
-            header = None
-            partitionCtr = 0
-            with open(name=readfilename, mode='rb', buffering=64 * 1024) as fp:
-                iterable = iter(fp)
-                for tempdir in itertools.cycle(tempdirs):
-                    lines = list(itertools.islice(iterable, length)) # returns an iterator of size length
-                    if header is None:
-                        header = lines[0].rstrip() # first line is the header
-                        if header.find("#") == 0:
-                            header = header.replace("#", "")
-                            isHashHeader = True
-                        self.headerList = header.split(self.delimiter)
-                        print(self.fieldNames[0])
-                        for f in self.fieldNames:
-                            if f == "line":
-                                continue
-                            self.columnPos[f] = self.headerList.index(f)
-                        lines = lines[1:len(lines)]
-                    for index in range(len(lines)):
-                        lines[index] = self.__createLineDict(hdrList=self.headerList, line=lines[index].rstrip('\n'))
+class EnsemblTranscriptDatasourceTest(unittest.TestCase):
+    def test_something(self):
+        self.assertEqual(True, False)
 
-                    if not lines:
-                        break
-                    # lines = sorted(lines, key=operator.attrgetter('chrom', 'pos', 'sampleName')) # sort the list of lines
-                    # TODO: Determine type of the input columns and then convert to lowercase str or use int/float
-                    lines = sorted(lines, key=lambda t: (t[self.fieldNames[0]].lower(), int(t[self.fieldNames[1]]), int(t[self.fieldNames[2]]))) # sort the list of lines
-                    partition = open(name=os.path.join(tempdir, '%06i' % len(partitions)), mode='w+b',
-                                     buffering=64 * 1024)
-                    partitions.append(partition)
-                    partition.write('\n'.join([record['line'] for record in lines]) + '\n')
-                    partition.flush()
-                    partition.seek(0)
-                    partitionCtr += 1
-                    print(str(partitionCtr))
-            with open(name=outputFilename, mode='wb', buffering=64 * 1024) as fp:
-                if iswriteHeader:
-                    if isHashHeader:
-                        fp.write("#")
-                    fp.write(header + "\n")
-                print("Merging...")
-                fp.writelines(self.__merge(*partitions)) # generators are allowed as inputs to writelines funtion
-        finally:
-            for partition in partitions:
-                try:
-                    partition.close()
-                    os.remove(path=partition.name)
-                except Exception:
-                    pass
+
+if __name__ == '__main__':
+    unittest.main()
