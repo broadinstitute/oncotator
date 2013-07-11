@@ -322,14 +322,11 @@ class RecordFactory:
         return [func(v) if v != bad else None for v in iterable]
 
     def _replace_chrs(self, text, skipList=[]):
-        if not isinstance(text, str):
-            return text
-
         dic = {",": "|", "=": "~", ";": "|", "\n": "#", "\t": "_", " ": "_", ":": ">"}
-        for i, j in dic.iteritems():
-            if i not in skipList:
-                text = text.replace(i, j)
-
+        keys = dic.keys()
+        for key in keys:
+            if key not in skipList:
+                text = text.replace(key, dic[key])
         return text
 
     def _determineVal(self, val, dt, num):
@@ -403,7 +400,7 @@ class RecordFactory:
                 elif num > len(val):
                     val += [None]*(num-len(val))
 
-            val = map(str, val)
+            #val = map(str, val)
             val = self._determineVal(val, dataType, num)
 
             # TODO: Remove isinstance calls here and for the FORMAT field
