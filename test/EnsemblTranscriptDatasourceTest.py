@@ -51,6 +51,7 @@ import unittest
 
 
 class EnsemblTranscriptDatasourceTest(unittest.TestCase):
+    @unittest.skip("Not implemented yet")
     def test_something(self):
         self.assertEqual(True, False)
 
