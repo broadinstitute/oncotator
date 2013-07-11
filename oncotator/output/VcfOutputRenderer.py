@@ -231,9 +231,11 @@ class OutputDataManager:
 
         if ft is None:
             m = {"aggregate": "INFO", "variant": "FORMAT", "filter": "FILTER", "identifier": "ID", "quality": "QUAL"}
-            if isinstance(tags, list) and (len(tags) > 0):
-                if tags[0] in m:
-                    ft = m[tags[0]]  # we assume that the first tag corresponds to field type
+            m_keys = m.keys()
+
+            for tag in tags:
+                if tags in m_keys:
+                    ft = m[tag]
 
         if ft is None:
             if name in self.table["INFO"]:
@@ -250,7 +252,7 @@ class OutputDataManager:
                 ft = "FORMAT"
 
         if ft is None:
-            ft = "FORMAT"
+            ft = "INFO"
 
         return ft
 
@@ -331,7 +333,7 @@ class RecordFactory:
         return text
 
     def _determineVal(self, val, dt, num):
-        vals = ["." if (not v or v == "None") else v for v in val.split(",")]
+        vals = ["." if (not v or v == "None") else v for v in val]
 
         if dt == "Integer":
             try:
@@ -366,9 +368,9 @@ class RecordFactory:
             val = self._info[ID]
             num = prop.num
             dataType = prop.dt
-            split = prop.split
+            isSplit = prop.split
 
-            if num in (-2,):  # num is the number of samples
+            if num == -2:  # num is the number of samples
                 if nsamples < len(val):
                     tmp = [None]*nsamples
                     for sampleName in self._sampleNames:
@@ -382,15 +384,15 @@ class RecordFactory:
                         if sampleNameIndex < len(val):
                             tmp[sampleNameIndex] = val[sampleNameIndex]
                     val = tmp
-            elif num in (-1,):  # num is the number of alternative alleles
+            elif num == -1:  # num is the number of alternative alleles
                 if nalts < len(val):
                     val = val[0:nalts]
                 elif nalts > len(val):
                     val += [None]*(nalts-len(val))
-            elif num in (0,):
+            elif num == 0:
                 val = val[0]
-            elif num in (".",):  # num is unknown
-                if split:  # now, num is the number of alternative alleles
+            elif num == ".":  # num is unknown
+                if isSplit:  # now, num is the number of alternative alleles
                     if nalts < len(val):
                         val = val[0:nalts]
                     elif nalts > len(val):
@@ -401,9 +403,10 @@ class RecordFactory:
                 elif num > len(val):
                     val += [None]*(num-len(val))
 
-            val = string.join(map(str, val), ",")
+            val = map(str, val)
             val = self._determineVal(val, dataType, num)
 
+            # TODO: Remove isinstance calls here and for the FORMAT field
             if isinstance(val, bool):
                 if val is True:
                     info[ID] = val
@@ -687,18 +690,20 @@ class VcfOutputRenderer(OutputRenderer):
             writer = csv.DictWriter(fptr, fieldnames, extrasaction='ignore', delimiter=self.delimiter,
                                     lineterminator=self.lineterminator)
             writer.writeheader()
+            ctr = 0
             for mut in muts:
                 if "sampleName" in mut:
-                    sampleName = mut.getAnnotation('sampleName').getValue()
-                    if not sampleName in sampleNames:
-                        sampleNames.add(sampleName)
+                    sampleName = mut['sampleName']
+                    sampleNames.add(sampleName)
 
                 # Parse chromosome
-                chrom = mut.getAnnotation('chr').getValue()
-                if chrom not in chroms:
-                    chroms.add(chrom)
+                chroms.add(mut.chr)
 
                 writer.writerow(mut)
+
+                ctr += 1
+                if (ctr % 1000) == 0:
+                    self.logger.info("Wrote " + str(ctr) + " mutations to tsv.")
 
         if len(sampleNames) > 0:
             self.sampleNames = list(sampleNames)
@@ -756,8 +761,6 @@ class VcfOutputRenderer(OutputRenderer):
         Assumes that all mutations have the same annotations, even if some are not populated.
         Returns a file name. """
         self.logger.info("Rendering VCF output file: " + self._filename)
-        self.logger.info("Data sources included: " + str(self._datasources))
-
 
         # Initialize config table
         self.configTable = self._parseConfig()
@@ -774,6 +777,7 @@ class VcfOutputRenderer(OutputRenderer):
 
         path = os.getcwd()
         tempTsvFile = tempfile.NamedTemporaryFile(dir=path)  # create a temporary file to write tab-separated file
+        self.logger.info("Creating intermediate tsv file...")
         self._writeMuts2Tsv(tempTsvFile.name, fieldnames, mutations)
         dm = OutputDataManager(self.configTable, comments, metadata, mut, self.sampleNames)
 
@@ -795,7 +799,7 @@ class VcfOutputRenderer(OutputRenderer):
 
         self.logger.info("Render starting...")
         self._renderSortedTsv(self._filename, sortedTempTsvFile.name, self.sampleNames, dm)
-        self.logger.info("Rendered all mutation...")
+        self.logger.info("Rendered all mutations.")
         return self._filename
 
     def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos):
@@ -824,7 +828,7 @@ class VcfOutputRenderer(OutputRenderer):
                     vcfWriter.write_record(record)
                     index += 1
                     if index % nrecords == 0:
-                        self.logger.info("Rendered " + index + " vcf records.")
+                        self.logger.info("Rendered " + str(index) + " vcf records.")
                         vcfWriter.flush()
 
                 chrom = m["chr"]
@@ -840,7 +844,7 @@ class VcfOutputRenderer(OutputRenderer):
             vcfWriter.write_record(record)
 
         vcfWriter.close()
-        self.logger.info("Rendered all " + index + " vcf records.")
+        self.logger.info("Rendered all " + str(index) + " vcf records.")
 
     def _parseRecordFactory(self, m, recordFactory, dataManager):
         IDs = dataManager.getAnnotationNames("ID")

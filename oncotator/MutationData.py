@@ -123,14 +123,6 @@ class MutationData(collections.MutableMapping):
             logging.getLogger(__name__).debug("Attempting to create an attribute with createAnnotation.  Should be using instance attribute setting.  x." + str(annotationName) + " = " + str(annotationValue) + " ... Ignoring annotationSource, but setting attribute.")
             self[annotationName] = annotationValue
         else:
-            if not isinstance(tags,list):
-                tags = tags[str(tags)]
-            isTagged = False
-            for tag in tags:
-                if tag in ("aggregate", "variant", "filter", "identifier", "quality",):
-                    isTagged = True
-            if not isTagged:
-                tags = ["aggregate"] + tags
             self.annotations[annotationName] = Annotation(annotationValue, annotationSource, annotationDataType, annotationDescription, tags=tags, number=number)
 #        self.lock.release()
         
