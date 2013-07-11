@@ -854,7 +854,7 @@ class VcfOutputRenderer(OutputRenderer):
         formats = dataManager.getAnnotationNames("FORMAT")
 
         altAllele = m["alt_allele"]
-        sampleName = m["sampleName"] if "sampleName" in m else None
+        sampleName = m.get("sampleName", None)
         recordFactory.addAlt(altAllele)
 
         for name in IDs:
@@ -866,7 +866,7 @@ class VcfOutputRenderer(OutputRenderer):
 
         for name in filts:
             ID = dataManager.getFieldID(name)
-            val = m[name] if name in m else ""
+            val = m.get(name, "")
             recordFactory.addFilter(ID, val)
 
         for name in infos:
