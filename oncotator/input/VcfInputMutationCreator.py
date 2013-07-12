@@ -135,10 +135,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                 val = ""
                 dataType = self.vcf_reader.formats[ID].type
 
-                num = "."
-                if self.vcf_reader.formats[ID].num is not None:
-                    num = self.vcf_reader.formats[ID].num
-
+                num = self.vcf_reader.formats[ID].num
                 tags = copy.copy(self.tags["FORMAT"])
 
                 if (genotypeData is not None) and (hasattr(genotypeData.data, ID)):
@@ -180,10 +177,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             val = ""
             dataType = self.vcf_reader.infos[ID].type
 
-            num = "."
-            if self.vcf_reader.infos[ID].num is not None:
-                num = self.vcf_reader.infos[ID].num
-
+            num = self.vcf_reader.infos[ID].num
             tags = copy.copy(self.tags["INFO"])
 
             if ID in record.INFO:
@@ -210,15 +204,17 @@ class VcfInputMutationCreator(InputMutationCreator):
         return mutation
 
     def _determineIsSplit(self, ID, num, fieldType):
-        if num in (-2,):  # by the number of samples
+        if num == -2:  # by the number of samples
             split = False
             if ID in self.configTable["SPLIT_TAGS"]["FORMAT"]:  # override the default using the config file
                 split = True
-        elif num in (-1,):  # by the number of alternates
+        elif num == -1:  # by the number of alternates
             split = True
             if ID in self.configTable["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 split = False
-        elif num in (".",):
+        elif num == 0:
+            split = False
+        elif num is None:
             split = False
             if ID in self.configTable["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 split = True
@@ -371,18 +367,18 @@ class VcfInputMutationCreator(InputMutationCreator):
     def getComments(self):
         """ Comments often need to be passed into the output.  Get the comments from the input file."""
         comments = list()
-        for key, value in self.vcf_reader.metadata.items():
-            if isinstance(value, list):
-                value = ";".join(str(key) for key in value)
-            comment = key + "=" + value
+        keys = self.vcf_reader.metadata.keys()
+        for key in keys:
+            val = self.vcf_reader.metadata[key]
+            if isinstance(val, list):
+                val = string.join(map(str, val), ";")
+            comment = string.join([key, val], "=")
             comments.append(comment)
         return comments
 
     def _addFormatFields2Metadata(self, metadata):
         for ID, annotationName in self.configTable["FORMAT"].iteritems():
-            num = "."
-            if self.vcf_reader.formats[ID].num is not None:
-                num = self.vcf_reader.formats[ID].num
+            num = self.vcf_reader.formats[ID].num
             tags = copy.copy(self.tags["FORMAT"])
             isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
             if isSplitTag:
@@ -393,9 +389,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def _addInfoFields2Metadata(self, metadata):
         for ID, annotationName in self.configTable["INFO"].iteritems():
-            num = "."
-            if self.vcf_reader.infos[ID].num is not None:
-                num = self.vcf_reader.infos[ID].num
+            num = self.vcf_reader.infos[ID].num
             tags = copy.copy(self.tags["INFO"])
             isSplitTag = self._determineIsSplit(ID, num, "INFO")
             if isSplitTag:

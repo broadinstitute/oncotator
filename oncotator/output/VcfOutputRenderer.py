@@ -82,17 +82,30 @@ class OutputDataManager:
     def getHeader(self):
         return self._createHeader(self.comments, self.delimiter, self.lineterminator)
 
+    def _getDefaultOutputAnnotation(self, name):
+        fieldType = "FORMAT"
+        ID = name
+        dataType = "String"
+        desc = "Unknown"
+        num = None
+        src = "INPUT"
+        isSplit = False
+        return self._Annotation(fieldType, ID, dataType, desc, num, src, isSplit)
+
+    def getOutputAnnotation(self, name):
+        return self.annotationTable.get(name, self._getDefaultOutputAnnotation(name))
+
     def getFieldType(self, name):
-        ft = "FORMAT"
-        if name in self.annotationTable:
-            annotation = self.annotationTable[name]
-            ft = annotation.ft
-        return ft
+        fieldType = "FORMAT"
+        annotation = self.annotationTable.get(name, None)
+        if annotation is not None:
+            fieldType = annotation.ft
+        return fieldType
 
     def getFieldID(self, name):
         ID = name
-        if name in self.annotationTable:
-            annotation = self.annotationTable[name]
+        annotation = self.annotationTable.get(name, None)
+        if annotation is not None:
             ID = annotation.ID
         return ID
 
@@ -104,7 +117,7 @@ class OutputDataManager:
         return dataType
 
     def getFieldNum(self, name):
-        num = "."
+        num = None
         if name in self.annotationTable:
             annotation = self.annotationTable[name]
             num = annotation.num
@@ -173,7 +186,7 @@ class OutputDataManager:
         revTable = dict()
         for name in names:
             annotation = None
-            num = "."
+            num = None
             tags = []
             dt = "String"
             desc = "Unknown"
@@ -208,16 +221,16 @@ class OutputDataManager:
         return table, revTable
 
     def _determineIsSplit(self, ID, num, fieldType, split):
-        if num in (-2,):  # by the number of samples
+        if num == -2:  # by the number of samples
             split = False
             if fieldType in ("FORMAT",):
                 if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                     split = True
-        elif num in (-1,):  # by the number of alternates
+        elif num == -1:  # by the number of alternates
             split = True
             if ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 split = False
-        elif num in (".",):
+        elif num is None:
             split = False
             if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 split = True
@@ -288,7 +301,9 @@ class OutputDataManager:
             desc = "Unknown"
         return desc
 
-    def _annotation2str(self, ft, ID, desc="Unknown", dt="String", num="."):
+    def _annotation2str(self, ft, ID, desc="Unknown", dt="String", num=None):
+        if num is None:
+            num = "."
         if ft in ("FORMAT", "INFO",):
             return "##%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (ft, ID, num, dt, desc)
         elif ft in ("FILTER",):
@@ -318,92 +333,18 @@ class RecordFactory:
     def getAlts(self):
         return self._alts
 
-    def _map(self, func, iterable, bad="."):
-        return [func(v) if v != bad else None for v in iterable]
+    def _map(self, func, iterable, bad=(".", "",)):
+        return [func(v) if v not in bad else None for v in iterable]
 
-    def _replace_chrs(self, text, skipList=[]):
-        dic = {",": "|", "=": "~", ";": "|", "\n": "#", "\t": "_", " ": "_", ":": ">"}
-        keys = dic.keys()
-        for key in keys:
-            if key not in skipList:
-                text = text.replace(key, dic[key])
-        return text
-
-    def _determineVal(self, val, dt, num):
-        vals = ["." if (not v or v == "None") else v for v in val]
-
-        if dt == "Integer":
-            try:
-                val = self._map(int, vals)
-            except ValueError:
-                val = self._map(float, vals)
-        elif (dt == "Float") or (dt == "Numeric"):
-            val = self._map(float, vals)
-        elif dt == "Flag":
-            val = self._map(MutUtils.str2bool, vals)
-            val = val[0]
-        elif dt == "String":
-            try:
-                val = self._map(str, vals)
-            except IndexError:
-                val = True
-        try:
-            if (num == 1) and (not dt in ("Flag",)):
-                val = val[0]
-        except KeyError:
-            pass
-        return val
+    def _replaceChrs(self, text, frm, to):
+        tbl = string.maketrans(frm, to)
+        return text.translate(tbl)
 
     def _resolveInfo(self):
-        nalts = len(self._alts)
-        nsamples = len(self._sampleNames)
-
         IDs = self._info.keys()
         info = collections.OrderedDict()
         for ID in IDs:
-            prop = self._infoFieldProperty[ID]
             val = self._info[ID]
-            num = prop.num
-            dataType = prop.dt
-            isSplit = prop.split
-
-            if num == -2:  # num is the number of samples
-                if nsamples < len(val):
-                    tmp = [None]*nsamples
-                    for sampleName in self._sampleNames:
-                        sampleNameIndex = self._sampleNameIndexes[sampleName]
-                        tmp[sampleNameIndex] = val[sampleNameIndex]
-                    val = tmp
-                elif nsamples > len(val):
-                    tmp = [None]*nsamples
-                    for sampleName in self._sampleNames:
-                        sampleNameIndex = self._sampleNameIndexes[sampleName]
-                        if sampleNameIndex < len(val):
-                            tmp[sampleNameIndex] = val[sampleNameIndex]
-                    val = tmp
-            elif num == -1:  # num is the number of alternative alleles
-                if nalts < len(val):
-                    val = val[0:nalts]
-                elif nalts > len(val):
-                    val += [None]*(nalts-len(val))
-            elif num == 0:
-                val = val[0]
-            elif num == ".":  # num is unknown
-                if isSplit:  # now, num is the number of alternative alleles
-                    if nalts < len(val):
-                        val = val[0:nalts]
-                    elif nalts > len(val):
-                        val += [None]*(nalts-len(val))
-            else:
-                if num < len(val):
-                    val = val[0:num]
-                elif num > len(val):
-                    val += [None]*(num-len(val))
-
-            #val = map(str, val)
-            val = self._determineVal(val, dataType, num)
-
-            # TODO: Remove isinstance calls here and for the FORMAT field
             if isinstance(val, bool):
                 if val is True:
                     info[ID] = val
@@ -434,39 +375,26 @@ class RecordFactory:
                 IDs[i] = self._fmtIDs[i]
                 prop = self._fmtFieldProperty[ID]
                 dataTypes[i] = prop.dt
-                nums[i] = prop.num
-                split = prop.split
-                val = ["None"]
+                nums[i] = prop.num if prop.num is not None else "."
+                val = [None]
 
                 if (data is not None) and (ID in data):
                     val = data[ID]
-                    if nums[i] in (-2,):
-                        if split:  # now, num is the number of alternative alleles
-                            if nalts < len(val):
-                                val = val[0:nalts]
-                            elif nalts > len(val):
-                                val += [None]*(nalts-len(val))
-                    elif nums[i] in (-1,):
-                        if nalts < len(val):
-                            val = val[0:nalts]
-                        elif nalts > len(val):
-                            val += [None]*(nalts-len(val))
-                    elif nums[i] in (0,):
-                        val = val[0]
-                    elif nums[i] in (".",):
-                        if split:  # now, num is the number of alternative alleles
-                            if nalts < len(val):
-                                val = val[0:nalts]
-                            elif nalts > len(val):
-                                val += [None]*(nalts-len(val))
+                    if prop.num == -2:
+                        pass
+                    if prop.num == -1:
+                        if len(val) != nalts:
+                            val = nalts*[None]
+                    elif prop.num == 0:
+                        pass
+                    elif prop.num is None:
+                        if prop.split:
+                            if len(val) != nalts:
+                                val = nalts*[None]
                     else:
-                        if nums[i] < len(val):
-                            val = val[0:nums[i]]
-                        elif nums[i] > len(val):
-                            val += [None]*(nums[i]-len(val))
+                        if len(val) != prop.num:
+                            val = prop.num*[None]
 
-                val = string.join(map(str, val), ",")
-                val = self._determineVal(val, dataTypes[i], nums[i])
                 if ID == "GT":
                     if isinstance(val, list):
                         val = val[0]
@@ -505,111 +433,134 @@ class RecordFactory:
         record.samples = self._resolveSamples(record)
         return record
 
-    def addFormat(self, sampleName, ID, num=".", dt="String", val=None, src="INPUT", split=True):
+    def addFormat(self, sampleName, ID, num=".", dt="String", val=None, src="INPUT", isSplit=True):
         if sampleName in self._sampleNames:
             sampleNameIndex = self._sampleNameIndexes[sampleName]
             if self._fmt[sampleNameIndex] is None:
                 self._fmt[sampleNameIndex] = collections.OrderedDict()
-                self._fmt[sampleNameIndex]["GT"] = None
                 self._fmtIDs = ["GT"]
                 self._fmtFieldProperty["GT"] = self._fieldProperty(1, "String", False)
 
-            if src not in ("INPUT",):
-                val = self._replace_chrs(val)
-            else:
-                val = self._replace_chrs(val, [","])
+            if src != "INPUT":  # implies that the annotation was included by a data source
+                val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
+            elif src == "INPUT":
+                if isSplit:
+                    val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
+                else:
+                    val = self._replaceChrs(val, "=;\n\t :", "~|#__>")  # exclude ":" and ","
 
-            if num in (-2,):  # num is the number of samples
-                if split:
+            if num == -2:  # num is the number of samples
+                if isSplit:
                     if ID not in self._fmt[sampleNameIndex]:
-                        self._fmt[sampleNameIndex][ID] = [val]
+                        self._fmt[sampleNameIndex][ID] = self._map(str, [val])
                     else:
-                        self._fmt[sampleNameIndex][ID] += [val]
+                        self._fmt[sampleNameIndex][ID] += self._map(str, [val])
                 else:
-                    self._fmt[sampleNameIndex][ID] = [val]
-            elif num in (-1,):  # num is the number of alternate alleles
-                if split:
+                    self._fmt[sampleNameIndex][ID] = self._map(str, [val])
+            elif num == -1:  # num is the number of alternate alleles
+                if isSplit:  # note: input must be sorted by alts as well for this to work
                     nalts = len(self._alts)
                     if nalts == 1:
-                        self._fmt[sampleNameIndex][ID] = [val]
+                        self._fmt[sampleNameIndex][ID] = self._map(str, [val])
                     elif nalts > 1:
                         vals = self._fmt[sampleNameIndex][ID]
                         if len(vals) < nalts:
-                            self._fmt[sampleNameIndex][ID] += [val]
+                            self._fmt[sampleNameIndex][ID] += self._map(str, [val])
                 else:
-                    self._fmt[sampleNameIndex][ID] = val.split(",")
-            elif num in (".",):  # num is unknown
-                if split:  # now, num is the number of alternate alleles
+                    if ID not in self._fmt[sampleNameIndex]:
+                        self._fmt[sampleNameIndex][ID] = self._map(str, val.split(","))
+            elif num == 0:  # num is either true or false
+                if ID not in self._fmt[sampleNameIndex]:
+                    vals = self._map(MutUtils.str2bool, val.split(","))  # convert the value to boolean
+                    self._fmt[sampleNameIndex][ID] = vals[0]
+            elif num is None:  # num is unknown
+                if isSplit:  # now, num is the number of alternate alleles
                     nalts = len(self._alts)
                     if nalts == 1:
-                        self._fmt[sampleNameIndex][ID] = [val]
+                        self._fmt[sampleNameIndex][ID] = self._map(str, [val])
                     elif nalts > 1:
                         vals = self._fmt[sampleNameIndex][ID]
                         if len(vals) < nalts:
-                            self._fmt[sampleNameIndex][ID] += [val]
+                            self._fmt[sampleNameIndex][ID] += self._map(str, [val])
                 else:
-                    self._fmt[sampleNameIndex][ID] = val.split(",")
+                    if ID not in self._fmt[sampleNameIndex]:
+                        self._fmt[sampleNameIndex][ID] = self._map(str, val.split(","))
             else:
-                if split:
+                if isSplit:
                     if ID not in self._fmt[sampleNameIndex]:
-                        self._fmt[sampleNameIndex][ID] = [val]
+                        self._fmt[sampleNameIndex][ID] = self._map(str, [val])
                     else:
-                        self._fmt[sampleNameIndex][ID] += [val]
+                        vals = self._fmt[sampleNameIndex][ID]
+                        if len(vals) < num:
+                            self._fmt[sampleNameIndex][ID] += self._map(str, [val])
                 else:
-                    self._fmt[sampleNameIndex][ID] = val.split(",")
+                    if ID not in self._fmt[sampleNameIndex]:
+                        self._fmt[sampleNameIndex][ID] = self._map(str, val.split(","))
 
             if ID not in self._fmtIDs:
                 self._fmtIDs += [ID]
 
             if ID not in self._fmtFieldProperty:
-                self._fmtFieldProperty[ID] = self._fieldProperty(num, dt, split)
+                self._fmtFieldProperty[ID] = self._fieldProperty(num, dt, isSplit)
 
-    def addInfo(self, sampleName, ID, num=".", dt="String", val=None, src="INPUT", split=True):
-        if src not in ("INPUT",):
-            val = self._replace_chrs(val, [":"])
-        else:
-            val = self._replace_chrs(val, [":", ","])
+    def addInfo(self, sampleName, ID, num=".", dt="String", val=None, src="INPUT", isSplit=True):
+        if src != "INPUT":  # implies that the annotation was included by a data source
+            val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
+        elif src == "INPUT":
+            if isSplit:
+                val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
+            else:
+                val = self._replaceChrs(val, "=;\n\t :", "~|#__>")  # exclude ":" and ","
 
-        if num in (-2,):  # num is the number of samples
+        if num == -2:  # num is the number of samples
             nsamples = len(self._sampleNames)
             if sampleName in self._sampleNames:
                 if ID not in self._info:
                     self._info[ID] = [None]*nsamples
                 sampleNameIndex = self._sampleNameIndexes[sampleName]
-                self._info[ID][sampleNameIndex] = val
-        elif num in (-1,):  # num is the number of alternate alleles
-            if split:
+                self._info[ID][sampleNameIndex] = val if val != "." else None
+        elif num == -1:  # num is the number of alternate alleles
+            if isSplit:  # note: input must be sorted by alts as well for this to work
                 nalts = len(self._alts)
                 if nalts == 1:
-                    self._info[ID] = [val]
+                    self._info[ID] = self._map(str, [val])
                 elif nalts > 1:
                     vals = self._info[ID]
                     if len(vals) < nalts:
-                        self._info[ID] += [val]
+                        self._info[ID] += self._map(str, [val])
             else:
-                self._info[ID] = val.split(",")
-        elif num in (".",):  # num is unknown
-            if split:  # now, num is the number of alternate alleles
-                nalts = len(self._alts)
-                if nalts == 1:
-                    self._info[ID] = [val]
-                elif nalts > 1:
-                    vals = self._info[ID]
-                    if len(vals) < nalts:
-                        self._info[ID] += [val]
-            else:
-                self._info[ID] = val.split(",")
-        else:
-            if split:
                 if ID not in self._info:
-                    self._info[ID] = [val]
-                else:
-                    self._info[ID] += [val]
+                    self._info[ID] = self._map(str, val.split(","))
+        elif num == 0:  # num is either true or false
+            if ID not in self._info:
+                vals = self._map(MutUtils.str2bool, val.split(","))  # convert the value to boolean
+                self._info[ID] = vals[0]
+        elif num is None:  # num is unknown
+            if isSplit:  # now, num is the number of alternate alleles
+                nalts = len(self._alts)
+                if nalts == 1:
+                    self._info[ID] = self._map(str, [val])
+                elif nalts > 1:
+                    vals = self._info[ID]
+                    if len(vals) < nalts:
+                        self._info[ID] += self._map(str, [val])
             else:
-                self._info[ID] = val.split(",")
+                if ID not in self._info:
+                    self._info[ID] = self._map(str, val.split(","))
+        else:
+            if isSplit:
+                if ID not in self._info:
+                    self._info[ID] = self._map(str, [val])
+                else:
+                    vals = self._info[ID]
+                    if len(vals) < num:
+                        self._info[ID] += self._map(str, [val])
+            else:
+                if ID not in self._info:
+                    self._info[ID] = self._map(str, val.split(","))
 
         if (ID in self._info) and (ID not in self._infoFieldProperty):
-            self._infoFieldProperty[ID] = self._fieldProperty(num, dt, split)
+            self._infoFieldProperty[ID] = self._fieldProperty(num, dt, isSplit)
 
     def addQual(self, qual):
         try:
@@ -855,7 +806,7 @@ class VcfOutputRenderer(OutputRenderer):
         recordFactory.addAlt(altAllele)
 
         for name in IDs:
-            val = m[name] if name in m else ""
+            val = m.get(name, "")
             recordFactory.addID(val)
 
         qual = quals[0]
@@ -867,22 +818,24 @@ class VcfOutputRenderer(OutputRenderer):
             recordFactory.addFilter(ID, val)
 
         for name in infos:
-            ID = dataManager.getFieldID(name)
-            num = dataManager.getFieldNum(name)
-            dt = dataManager.getFieldDataType(name)
-            src = dataManager.getFieldDatasource(name)
-            isSplit = dataManager.isFieldSplit(name)
-            val = m[name] if name in m else ""
-            recordFactory.addInfo(sampleName, ID, num, dt, val, src, isSplit)
+            annotation = dataManager.getOutputAnnotation(name)
+            ID = annotation.ID
+            num = annotation.num
+            dataType = annotation.dt
+            src = annotation.src
+            isSplit = annotation.split
+            val = m.get(name, "")
+            recordFactory.addInfo(sampleName, ID, num, dataType, val, src, isSplit)
 
         for name in formats:
-            ID = dataManager.getFieldID(name)
-            num = dataManager.getFieldNum(name)
-            dt = dataManager.getFieldDataType(name)
-            src = dataManager.getFieldDatasource(name)
-            isSplit = dataManager.isFieldSplit(name)
-            val = m[name] if name in m else ""
-            recordFactory.addFormat(sampleName, ID, num, dt, val, src, isSplit)
+            annotation = dataManager.getOutputAnnotation(name)
+            ID = annotation.ID
+            num = annotation.num
+            dataType = annotation.dt
+            src = annotation.src
+            isSplit = annotation.split
+            val = m.get(name, "")
+            recordFactory.addFormat(sampleName, ID, num, dataType, val, src, isSplit)
 
         return recordFactory
 

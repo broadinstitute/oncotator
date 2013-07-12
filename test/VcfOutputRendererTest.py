@@ -178,6 +178,27 @@ class VcfOutputRendererTest(unittest.TestCase):
                             val = [val]
                         self.assertEqual(filter(None, val), [], "Format field %s values do not match." % field)
 
+    def testInfoContentofExampleVcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.variants.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/example.variants.vcf', strict_whitespace=True)
+
+        self.assertEquals(expectedVcfReader.samples, currentVcfReader.samples, "Sample names do not match.")
+        self.assertEquals(dict(expectedVcfReader.formats), dict(currentVcfReader.formats),
+                          "Format meta-information does not match.")
+        self.assertEquals(dict(expectedVcfReader.infos), dict(currentVcfReader.infos),
+                          "Info meta-information does not match.")
+
+        for expectedRecord, currentRecord in zip(expectedVcfReader, currentVcfReader):
+            self.assertEqual(dict(expectedRecord.INFO), dict(currentRecord.INFO))
+
     def testContentofExampleVcf(self):
         creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
