@@ -118,6 +118,8 @@ class DatasourceCreator(object):
             result = Generic_Transcript_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'transcript_col'))
         elif dsType == 'vc_tsv':
             result = Generic_VariantClassification_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'vc_col'))
+        elif dsType == 'vt_tsv':
+            result = Generic_VariantType_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'vt_col'))
         elif dsType == 'gp_tsv':
             result = Generic_GenomicPosition_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
         elif dsType == 'gpp_tsv':
