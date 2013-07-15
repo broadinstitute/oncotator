@@ -674,17 +674,21 @@ class Generic_VariantClassification_Datasource(Generic_Gene_DataSource):
     """ Used for generic TSV that is indexed by variant classification. """
     def __init__(self, src_file, title='', version=None, use_binary=True, geneColumnName='variant_classification'):
         super(Generic_VariantClassification_Datasource,self).__init__(src_file, title, version, use_binary, geneColumnName)
+        self.column_name = geneColumnName
 
     def annotate_mutation(self, mutation):
-        return super(Generic_VariantClassification_Datasource,self).annotate_mutation(mutation,'variant_classification')
+        column_name = self.column_name
+        return super(Generic_VariantClassification_Datasource,self).annotate_mutation(mutation, column_name)
 
 class Generic_Transcript_Datasource(Generic_Gene_DataSource):
     """ Used for generic TSV that is indexed by transcript ID. """
     def __init__(self, src_file, title='', version=None, use_binary=True, geneColumnName='transcript_id'):
         super(Generic_Transcript_Datasource,self).__init__(src_file, title, version, use_binary, geneColumnName)
+        self.column_name = geneColumnName
 
     def annotate_mutation(self, mutation):
-        return super(Generic_Transcript_Datasource,self).annotate_mutation(mutation,'transcript_id')
+        column_name = self.column_name
+        return super(Generic_Transcript_Datasource,self).annotate_mutation(mutation, column_name)
         
 class Generic_GenomicPosition_DataSource(Datasource):
     """
