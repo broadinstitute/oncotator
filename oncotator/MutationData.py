@@ -105,7 +105,7 @@ class MutationData(collections.MutableMapping):
 
 #        self.lock = Lock()
         
-    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=[], number='.'):
+    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=[], number=None):
         """ 
         newRequired implies that this cannot update an existing value.  If a value exists, throw an exception.
         

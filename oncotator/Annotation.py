@@ -61,7 +61,7 @@ class Annotation(object):
     datasource should be a string
     """
 
-    def __init__(self,value, datasourceName="Unknown", dataType="String", description="", tags=list(), number=None):
+    def __init__(self, value, datasourceName="Unknown", dataType="String", description="", tags=list(), number=None):
         """
         
         """

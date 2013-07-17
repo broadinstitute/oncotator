@@ -1,0 +1,19 @@
+##fileformat=VCFv4.1
+##fileDate=20090805
+##source=myImputationProgramV3.1
+##reference=1000GenomesPilot-NCBI36
+##phasing=partial
+##INFO=<ID=H2,Number=0,Type=Flag,Description="HapMap2 membership">
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership, build 129">
+##INFO=<ID=AF,Number=.,Type=Float,Description="Allele Frequency">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral Allele">
+##FILTER=<ID=q10,Description="Quality below 10">
+##FILTER=<ID=s50,Description="Less than 50% of samples have data">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+20	17330	.	T	A	3	q10	DP=11;AF=0.017;NS=3
+20	1110696	rs6040355	A	G,T	67	PASS	DB;DP=10;AF=0.333,0.667;NS=2;AA=T
+20	1230237	.	T	.	47	PASS	DP=13;NS=3;AA=T
+20	1234567	microsat1	GTCT	G,GTACT	50	PASS	DP=9;NS=3;AA=G
+21	1234567	microsat1	GTCT	G,GTACT	50	PASS	DP=9;NS=3;AA=G
