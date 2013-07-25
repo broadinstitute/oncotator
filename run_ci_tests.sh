@@ -14,5 +14,6 @@ set +e
 nosetests --all-modules --exe --with-xunit -w test -v --processes=4 --process-timeout=480  --process-restartworker
 set -e
 
+echo "Deactivating and deleting test python virtual environment"
 deactivate
 rm -Rf $VENV
