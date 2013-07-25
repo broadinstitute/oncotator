@@ -57,7 +57,7 @@ from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
 class GenomeBuildInstallUtilsTest(unittest.TestCase):
-
+    _multiprocess_can_split_ = True
     def test_current_download(self):
         """Download a current ensembl transcript package.  This test needs an internet connection and can be slow."""
 

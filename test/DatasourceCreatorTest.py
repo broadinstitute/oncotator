@@ -64,6 +64,8 @@ from oncotator.datasources import Datasource
 TestUtils.setupLogging(__file__, __name__)
 class DatasourceCreatorTest(unittest.TestCase):
 
+    _multiprocess_can_split_ = True
+
     # HACK: Allow config to be viewed by unittest decorators.
     globalConfig = TestUtils.createUnitTestConfig()
 

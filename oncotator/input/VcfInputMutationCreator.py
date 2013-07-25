@@ -306,7 +306,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                                                    annotationSource="INPUT")
                         # Check if the alt allele is actually seen
                         genotype = "GT"
-                        if genotype in sample.data._fields:
+                        if hasattr(sample.data, genotype):
                             if (sample.data.GT is None) or (sample.data.GT.find("1") == -1):
                                 sampleMut["altAlleleSeen"] = False
                         sampleMut = self.__addGenotypeDataToMutation(mutation=sampleMut, record=record, index=index)

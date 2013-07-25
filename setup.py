@@ -132,7 +132,7 @@ setup(
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env/build/pyvcf/vcf$ cython cparse.pyx
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
-  install_requires=[ 'bcbio-gff', 'pyvcf >= 0.6.3', 'pysam', 'pandas', 'biopython','numpy', 'cython', 'shove', 'sqlalchemy'],
+  install_requires=[ 'bcbio-gff', 'pyvcf >= 0.6.3', 'pysam', 'pandas', 'biopython','numpy', 'cython', 'shove', 'sqlalchemy', 'nose'],
   
   # For future reference... how to specify required libraries.
     #  scripts=['scripts/vcf_melt', 'scripts/vcf_filter.py'],

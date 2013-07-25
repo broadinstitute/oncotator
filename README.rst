@@ -60,6 +60,16 @@ Unit tests are run from the ``test`` target in setup.py::
     $ python setup.py test
 
 
+Automated Unit Tests
+--------------------
+The automated unit tests (```run_ci_tests.sh```) require 6 GB to run and are designed to run on a multicore (4) machine.
+
+The steps outlined in the Unit Test section above are still required.
+Execute the following three lines in the same directory as setup.py::
+
+    $ bash run_ci_tests.sh
+
+
 Version Information
 -------------------
 

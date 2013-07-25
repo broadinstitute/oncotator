@@ -61,6 +61,7 @@ from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
 class TcgaVcfOutputRendererTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)

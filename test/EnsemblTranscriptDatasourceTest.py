@@ -51,6 +51,8 @@ import unittest
 
 
 class EnsemblTranscriptDatasourceTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     @unittest.skip("Not implemented yet")
     def test_something(self):
         self.assertEqual(True, False)
