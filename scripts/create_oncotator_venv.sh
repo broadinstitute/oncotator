@@ -20,6 +20,8 @@ source $1/bin/activate
 # Manual installations (third party automatic download in pypi is broken)
 #################################################
 echo "Attempting to install packages that cannot be installed properly from pypi."
+echo "nose =========================="
+pip install nose
 
 echo "numpy ========================="
 pip install numpy
