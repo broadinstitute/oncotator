@@ -63,11 +63,17 @@ Unit tests are run from the ``test`` target in setup.py::
 Automated Unit Tests
 --------------------
 The automated unit tests (```run_ci_tests.sh```) require 6 GB to run and are designed to run on a multicore (4) machine.
+This can take a fair amount of time, since a full install into a new virtual environment is performed.
 
 Execute the following line in the same directory as setup.py (provide the appropriate path to the db dir with your datasources)::
 
     $ bash run_ci_tests.sh <DB_DIR>
 
+You can simply run the unit tests in the currently active python environment, which takes a lot less time, but requires
+all dependencies to be installed.  However, you must follow the instructions for Unit Tests above (Steps 1 and 2), if
+not already performed.  Then run::
+
+    $ nosetests --all-modules --exe --with-xunit -w test -v --processes=4 --process-timeout=480  --process-restartworker
 
 Version Information
 -------------------
