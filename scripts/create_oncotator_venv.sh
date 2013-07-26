@@ -20,19 +20,22 @@ source $1/bin/activate
 # Manual installations (third party automatic download in pypi is broken)
 #################################################
 echo "Attempting to install packages that cannot be installed properly from pypi."
+echo " "
 echo "nose =========================="
 pip install nose
 
+echo " "
 echo "numpy ========================="
 pip install numpy
 
+echo " "
 echo "PyVCF ========================="
 # This one is a little more complicated
 echo "Retrieving mgupta (aka elephanthunter) fork of PyVCF"
 wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
-unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm master.*
+unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
 
-
+echo " "
 echo "BioPython  ========================="
 pip install biopython
 

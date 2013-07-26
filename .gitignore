@@ -20,3 +20,4 @@
 /nosetests.xml
 /oncotator_nosetest_env_auto
 /test/nosetests.xml
+/test/configs/personal-test.config.bkup

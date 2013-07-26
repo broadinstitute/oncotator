@@ -64,10 +64,9 @@ Automated Unit Tests
 --------------------
 The automated unit tests (```run_ci_tests.sh```) require 6 GB to run and are designed to run on a multicore (4) machine.
 
-The steps outlined in the Unit Test section above are still required.
-Execute the following three lines in the same directory as setup.py::
+Execute the following line in the same directory as setup.py (provide the appropriate path to the db dir with your datasources)::
 
-    $ bash run_ci_tests.sh
+    $ bash run_ci_tests.sh <DB_DIR>
 
 
 Version Information
