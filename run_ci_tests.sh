@@ -10,6 +10,7 @@ source $VENV/bin/activate
 
 # nosetests will return a non-zero error code if any unit test fails, so we do not want to stop this script
 #   So we remove the error catching temporarily
+python setup.py install
 set +e
 nosetests --all-modules --exe --with-xunit -w test -v --processes=4 --process-timeout=480  --process-restartworker
 set -e
