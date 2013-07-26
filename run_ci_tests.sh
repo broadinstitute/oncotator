@@ -12,8 +12,6 @@ if [ -z "$1" ]
     DB_DIR=${1}
 fi
 
-# Create a proper config file
-sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" configs/personal-test.config.template >configs/personal-test.config
 
 echo "This script must be run from the same directory as setup.py"
 
@@ -41,6 +39,8 @@ else
     ln -s test/testdata testdata
 fi
 
+# Create a proper config file
+sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" configs/personal-test.config.template >configs/personal-test.config
 
 set +e
 nosetests --all-modules --exe --with-xunit -w test -v --processes=4 --process-timeout=480  --process-restartworker
