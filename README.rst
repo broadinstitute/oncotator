@@ -73,7 +73,7 @@ You can simply run the unit tests in the currently active python environment, wh
 all dependencies to be installed.  However, you must follow the instructions for Unit Tests above (Steps 1 and 2), if
 not already performed.  Then run::
 
-    $ nosetests --all-modules --exe --with-xunit -w test -v --processes=4 --process-timeout=480  --process-restartworker
+    $ nosetests --all-modules --exe -w test -v --processes=4 --process-timeout=480  --process-restartworker
 
 Version Information
 -------------------

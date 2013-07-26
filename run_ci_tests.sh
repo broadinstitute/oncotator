@@ -30,7 +30,9 @@ mkdir -p out
 sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" configs/personal-test.config.template >configs/personal-test.config
 
 set +e
-nosetests --all-modules --exe --with-xunit --xunit-file=nosetests.xml -w test -v --processes=4 --process-timeout=480  --process-restartworker
+# Do not use multiprocess mode with profiling or coverage.  Bug in nosetests also disallows --processes and --with-xunit
+#  --processes=4 --process-timeout=480  --process-restartworker
+nosetests --all-modules --exe --with-xunit --xunit-file=nosetests.xml -w test -v
 set -e
 
 echo "Deactivating and deleting test python virtual environment"
