@@ -42,7 +42,7 @@ Unit Tests
 
 NOTE: Unit tests require a minimum of 4GB to run.
 
-Before running the unit tests, please perform the following steps:
+Before running the unit tests for the first time, please perform the following steps:
 
 1) Execute the following three lines in the same directory as setup.py::
 

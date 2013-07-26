@@ -25,25 +25,12 @@ source $VENV/bin/activate
 python setup.py install
 
 mkdir -p out
-if [ -d "configs" ]
-then
-	echo "configs exists, doing nothing"
-else
-    ln -s test/configs configs
-fi
-
-if [ -d "testdata" ]
-then
-	echo "testdata exists, doing nothing"
-else
-    ln -s test/testdata testdata
-fi
 
 # Create a proper config file
 sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" configs/personal-test.config.template >configs/personal-test.config
 
 set +e
-nosetests --all-modules --exe --with-xunit -w test -v --processes=4 --process-timeout=480  --process-restartworker
+nosetests --all-modules --exe --with-xunit --xunit-file=nosetests.xml -w test -v --processes=4 --process-timeout=480  --process-restartworker
 set -e
 
 echo "Deactivating and deleting test python virtual environment"
