@@ -169,13 +169,15 @@ class RunSpecification(object):
     
     
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores = 4):
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict()):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
         self.manualAnnotations = manualAnnotations
         self.datasources = datasources
-        self.isMulticore=isMulticore
+        self.isMulticore = isMulticore
         self.numCores = numCores
+        self.defaultAnnotations = defaultAnnotations
+
     
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
     outputRenderer = property(get_output_renderer, set_output_renderer, del_output_renderer, "outputRenderer's docstring")
@@ -212,7 +214,7 @@ class OncotatorCLIUtils(object):
     
 
     @staticmethod
-    def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores = 4):
+    def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores = 4, defaultAnnotations=dict()):
         ds = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores)
         return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores)
     
@@ -241,7 +243,7 @@ class OncotatorCLIUtils(object):
         return tmp.keys()
     
     @staticmethod
-    def createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceList=[], genomeBuild="hg19", isMulticore=False, numCores=4):
+    def createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceList=[], genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict()):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -275,7 +277,7 @@ class OncotatorCLIUtils(object):
             outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
             
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations)
         return result
     
     @staticmethod

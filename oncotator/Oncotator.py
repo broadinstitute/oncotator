@@ -121,7 +121,7 @@ USAGE
         
         
         # Create a basic logger to a file
-        loggingFormat = '%(asctime)s %(levelname)s [%(name)s] %(message)s'
+        loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
         logging.basicConfig(filename=logFilename, level=logging.INFO, format=loggingFormat)
         
         

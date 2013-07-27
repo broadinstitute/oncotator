@@ -46,89 +46,48 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-from TestUtils import TestUtils
-
-
-'''
-Created on Jan 9, 2013
-
-@author: lichtens
-'''
+import os
+import shutil
 import unittest
+from shove.core import Shove
+from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
+from oncotator.index.gaf import region2bin
 
-from oncotator.DatasourceCreator import DatasourceCreator
-from oncotator.Annotator import Annotator
-from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator 
-from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
-from oncotator.utils.GenericTsvReader import GenericTsvReader
-from oncotator.MutationData import MutationData
-import logging
+class GenomeBuildFactoryTest(unittest.TestCase):
 
-TestUtils.setupLogging(__file__, __name__)
-class GenericGeneDataSourceTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    def test_build_ensembl_transcript_index(self):
+        """Build the gtf portion of the ensembl transcript db
+        """
+        # cat ~/oncotator_pycharm/oncotator/test/testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf | cut -f 9 | cut -f 5 --delimiter=" " | sort | uniq | sed -r "s/;//g" | sed -r "s/\"//g"
+        #  snR84, tK(UUU)K, YAL067C, YAL067W-A, YAL068C, YAL068W-A, YAL069W, YBR278W, YBR279W, YBR280C, YBR281C, YDR528W, YDR529C, YKR074W,
+        #
+        # grep -Pzo  ">(snR84|tK\(UUU\)K|YAL067C|YAL067W-A|YAL068C|YAL068W-A|YAL069W|YBR278W|YBR279W|YBR280C|YBR281C|YDR528W|YDR529C|YKR074W)([A-Za-z_0-9 \:\-\n]+)" Saccharomyces_cerevisiae.EF4.71.cdna.all.fa >Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa
+        #
+        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
+        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
-    def setUp(self):
-        self.logger = logging.getLogger(__name__)
-        self.config = TestUtils.createUnitTestConfig()
+        output_filename = "out/test_ensemble_gtf.db"
+        protocol = "file"
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol=protocol)
+        self.assertTrue(os.path.exists(output_filename))
+
+        shove = Shove(protocol + "://" + output_filename, "memory://")
+        self.assertTrue(len(shove.keys()) > 0)
+        self.assertTrue("YDR529C" in shove.keys())
+        t = shove["YDR529C"]
+        self.assertTrue(t.get_seq() is not None)
+        self.assertTrue(t.get_seq() is not "")
+        self.assertTrue(len(t.get_cds()) > 0)
+        self.assertTrue(len(t.get_exons()) > 0)
+        shutil.rmtree(output_filename)
+
+    def test_region2bin(self):
+        """Simple test that the region2bin works for genomic position indexing """
+
+        # Footprint for PIK3CA transcript chr3:178,866,311-178,952,497  uc003fjk.3
+        guess = region2bin(178866311, 178952497)
+
+        self.assertTrue(guess == 243)
 
 
-    def tearDown(self):
-        pass
-
-
-        
-    def testBasicAnnotation(self):
-        ''' Annotate from a basic tsv gene file.  Use the Gaf to annotate before trying the tsv -- required since the gene annotation must be populated.
-        Using trimmed CancerGeneCensus as basis for this test.
-        ''' 
-        
-        # cut -f 1 oncotator/test/testdata/small_tsv_ds/CancerGeneCensus_Table_1_full_2012-03-15_trim.txt | egrep -v Symbol | sed -r "s/^/'/g" | sed ':a;N;$!ba;s/\n/,/g' | sed -r "s/,'/','/g"
-        genesAvailable = ['ABL1','ABL2','ACSL3','AF15Q14','AF1Q','AF3p21','AF5q31','AKAP9','AKT1','AKT2','ALDH2','ALK','ALO17','APC','ARHGEF12','ARHH','ARID1A','ARID2','ARNT','ASPSCR1','ASXL1','ATF1','ATIC','ATM','ATRX','BAP1','BCL10','BCL11A','BCL11B']
-        
-        # We need a gaf data source to annotate gene
-
-        gafDatasource = TestUtils.createGafDatasource(config=self.config)
-        geneDS = DatasourceCreator.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
-        outputFilename = 'out/genericGeneTest.out.tsv'
-        
-        annotator = Annotator()
-        annotator.setInputCreator(MafliteInputMutationCreator('testdata/maflite/Patient0.snp.maf.txt'))
-        annotator.setOutputRenderer(SimpleOutputRenderer(outputFilename))
-        annotator.addDatasource(gafDatasource)
-        annotator.addDatasource(geneDS)
-        annotator.annotate()
-        
-        # Check that there were actual annotations performed.
-        tsvReader = GenericTsvReader(outputFilename)
-        
-        fields = tsvReader.getFieldNames()
-        self.assertTrue('CGC_Abridged_Other Syndrome/Disease' in fields, "'CGC_Other Syndrome/Disease' was not present in the header")
-        self.assertTrue('CGC_Abridged_Mutation Type' in fields, "'CGC_Abridged_Mutation Type' was not present in the header")
-        
-        ctr = 1
-        linesThatShouldBeAnnotated = 0
-        for lineDict in tsvReader:
-            self.assertTrue('gene' in lineDict.keys())
-            if lineDict['gene'] in genesAvailable:
-                self.assertTrue(lineDict['CGC_Abridged_GeneID'] <> '', "'CGC_Abridged_GeneID' was missing on a row that should have been populated.  Line: " + str(ctr))
-                linesThatShouldBeAnnotated = linesThatShouldBeAnnotated + 1
-            ctr = ctr + 1
-        self.assertTrue((linesThatShouldBeAnnotated) > 0, "Bad data -- cannot test missed detects.")
-    
-    def testAnnotationSourceIsPopulated(self):
-        ''' Tests that the annotation source is not blank for the example tsv datasource. '''
-        geneDS = DatasourceCreator.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
-        self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
-        
-        m = MutationData()
-        m.createAnnotation('gene',"ABL1")
-        m = geneDS.annotate_mutation(m)
-        self.assertTrue(m['CGC_Abridged_Name'] == "v-abl Abelson murine leukemia viral oncogene homolog 1","Test gene TSV datasource did not annotate properly.")
-        self.assertTrue(m.getAnnotation('CGC_Abridged_Name').getDatasource() <> "Unknown", "Annotation source was unknown")
-        self.assertTrue(m.getAnnotation('CGC_Abridged_Name').getDatasource().strip() <> "", "Annotation source was blank")
-        
-    
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

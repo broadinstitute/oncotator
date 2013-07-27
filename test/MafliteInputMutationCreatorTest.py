@@ -68,8 +68,9 @@ from TestUtils import TestUtils
 TestUtils.setupLogging(__file__, __name__)
 
 class MafliteInputMutationCreatorTest(unittest.TestCase):
-
+    _multiprocess_can_split_ = True
     def setUp(self):
+        self.config = TestUtils.createUnitTestConfig()
         pass
 
     def tearDown(self):
@@ -142,7 +143,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         tsvReaderIn = GenericTsvReader(inputFilename)
         tsvReader = GenericTsvReader(outputFilename)
         
-        self.assertTrue(tsvReader.getComments().find('#version') <> -1, "First line did not specify a version number") 
+        self.assertTrue(tsvReader.getComments().find('#version') != -1, "First line did not specify a version number")
         self.assertTrue("i_TJ_Data_Why" in tsvReader.getFieldNames(), "New field missing (i_TJ_Data_Why) from header")
         self.assertTrue("i_TJ_Data_Who" in tsvReader.getFieldNames(), "New field missing (i_TJ_Data_Who) from header")
         

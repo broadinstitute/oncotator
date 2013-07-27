@@ -124,5 +124,5 @@ class TestUtils(object):
         """
         #TODO: Low priority: Use decorator instead of TestUtils.setupLogging(...)
         curdir = os.path.dirname(filename) + '/'
-        logging.basicConfig(filemode='w', filename=(curdir + 'out/oncotator_unitTest_' + package_name + '.log'), level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s [%(name)s] %(message)s')
+        logging.basicConfig(filemode='w', filename=(curdir + 'out/oncotator_unitTest_' + package_name + '.log'),
+                            level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
