@@ -16,3 +16,8 @@
 /tmp*
 /distribute*.tar.gz
 /distribute*.egg
+/Oncotator_profile.bin
+/nosetests.xml
+/oncotator_nosetest_env_auto
+/test/nosetests.xml
+/test/configs/personal-test.config.bkup
