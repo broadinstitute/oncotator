@@ -27,7 +27,7 @@ python setup.py install
 mkdir -p out
 
 # Create a proper config file
-sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" configs/personal-test.config.template >configs/personal-test.config
+sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
 
 set +e
 # Do not use multiprocess mode with profiling or coverage.  Bug in nosetests also disallows --processes and --with-xunit
