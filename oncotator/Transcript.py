@@ -24,6 +24,7 @@ class Transcript(object):
         self._transcript_id = id
 
     def set_gene(self, gene):
+        #should be self._gene = gene ?
         self._transcript_id = id
 
     def get_transcript_id(self):

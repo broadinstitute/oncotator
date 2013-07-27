@@ -157,7 +157,6 @@ class Datasource(object):
         # to ensure that any subclasses must override this method.
         raise NotImplementedError
 
-
 class Gaf(Datasource, TranscriptProvider):
     """
     Annotate from the Gaf 3.0.
@@ -626,7 +625,6 @@ class Gaf(Datasource, TranscriptProvider):
 
         raise Exception('Variant Type cannot be inferred from reference and observed allele: (%s, %s)' % (reference_allele, observed_allele))
 
-
 class GenericGeneDataSourceException(Exception):
     def __init__(self, str):
         """
@@ -674,6 +672,14 @@ class Generic_Gene_DataSource(Datasource):
                 mutation.createAnnotation(h, '', annotationSource=self.title)
 
         return mutation
+
+class Generic_VariantClassification_Datasource(Generic_Gene_DataSource):
+    """ Used for generic TSV that is indexed by variant classification. """
+    def __init__(self, src_file, title='', version=None, use_binary=True, geneColumnName='variant_classification'):
+        super(Generic_VariantClassification_Datasource,self).__init__(src_file, title, version, use_binary, geneColumnName)
+
+    def annotate_mutation(self, mutation):
+        return super(Generic_VariantClassification_Datasource,self).annotate_mutation(mutation,'variant_classification')
 
 class Generic_Transcript_Datasource(Generic_Gene_DataSource):
     """ Used for generic TSV that is indexed by transcript ID. """
