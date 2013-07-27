@@ -11,3 +11,8 @@
 /Oncotator.egg-info
 /build
 /test/testdata/Saccharomyces_cerevisiae.EF4.71.cdna.all.fa
+/oncotator.log
+/profile_stats.txt
+/tmp*
+/distribute*.tar.gz
+/distribute*.egg
