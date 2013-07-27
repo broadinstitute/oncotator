@@ -329,10 +329,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue(test is False)
 
         # Test with an exception in the config file
-        test = creator._determineIsSplit('ESP_MAF', ".", "INFO")
+        test = creator._determineIsSplit('ESP_MAF', None, "INFO")
         self.assertTrue(test is False)
 
-        test = creator._determineIsSplit('AF', ".", "INFO")
+        test = creator._determineIsSplit('AF', None, "INFO")
         print test
         self.assertTrue(test is True)
 

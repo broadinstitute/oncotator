@@ -178,6 +178,27 @@ class VcfOutputRendererTest(unittest.TestCase):
                             val = [val]
                         self.assertEqual(filter(None, val), [], "Format field %s values do not match." % field)
 
+    def testInfoContentofExampleVcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.variants.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/example.variants.vcf', strict_whitespace=True)
+
+        self.assertEquals(expectedVcfReader.samples, currentVcfReader.samples, "Sample names do not match.")
+        self.assertEquals(dict(expectedVcfReader.formats), dict(currentVcfReader.formats),
+                          "Format meta-information does not match.")
+        self.assertEquals(dict(expectedVcfReader.infos), dict(currentVcfReader.infos),
+                          "Info meta-information does not match.")
+
+        for expectedRecord, currentRecord in zip(expectedVcfReader, currentVcfReader):
+            self.assertEqual(dict(expectedRecord.INFO), dict(currentRecord.INFO))
+
     def testContentofExampleVcf(self):
         creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
@@ -202,6 +223,19 @@ class VcfOutputRendererTest(unittest.TestCase):
 
         expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.withESP_MAF.vcf', strict_whitespace=True)
         currentVcfReader = vcf.Reader(filename='out/example.variants.withESP_MAF.vcf', strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testContentofExampleWithVcfThatHasNoFormat(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.no.format.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.no.format.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.no.format.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/example.no.format.vcf', strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
@@ -288,9 +322,11 @@ class VcfOutputRendererTest(unittest.TestCase):
                                         "Rendered vcf should have missing value for genotype field, %s."
                                         % currentSampleField)
 
-            currentSampleFields = currentRecord.FORMAT.split(":")
-            expectedSampleFields = expectedRecord.FORMAT.split(":")
-            self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
+            currentSampleFields = currentRecord.FORMAT.split(":") if currentRecord.FORMAT is not None else None
+            expectedSampleFields = expectedRecord.FORMAT.split(":") if expectedRecord.FORMAT is not None else None
+
+            if currentSampleFields is None and expectedSampleFields is not None:
+                self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
 
     def testChrom2HashCodeTable(self):
         chroms = ["1", "X", "3", "contig1", "Y", "25", "mt"]
