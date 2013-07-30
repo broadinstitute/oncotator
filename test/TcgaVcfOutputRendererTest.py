@@ -57,6 +57,8 @@ from oncotator.MutationData import MutationData
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.output.TcgaVcfOutputRenderer import TcgaVcfOutputRenderer
 from TestUtils import TestUtils
+from oncotator.utils.GenericTsvReader import GenericTsvReader
+import vcf
 
 
 TestUtils.setupLogging(__file__, __name__)
@@ -137,6 +139,22 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         annotator.annotate()
 
         self.assertTrue(os.path.exists(outputFilename))
+
+        # Check that the deletions have position decremented by one from what is present in the maflite
+        #  Checking that 1	36643701 in the maflite (a deletion) becomes 1	36643700 in the vcf, but that the others are
+        #  the same.
+        maflite_ic = MafliteInputMutationCreator("testdata/maflite/Patient0.indel.maf.txt")
+        muts = maflite_ic.createMutations()
+        vcf_reader = vcf.Reader(open(outputFilename, 'r'))
+
+        vcf_pos = [int(rec.POS) for rec in vcf_reader]
+        for m in muts:
+            # If the variant is a deletion, then the vcf position should be the same as maflite minus one.  Otherwise, the same.
+            is_variant_deletion = (m.alt_allele == "") or (m.alt_allele == "-") or (m.alt_allele == ".")
+            if is_variant_deletion:
+                self.assertTrue((int(m.start) - 1) in vcf_pos, "Deletion was not correct for " + m.chr + ":" + m.start)
+            else:
+                self.assertTrue(int(m.start) in vcf_pos, "Insertion was not correct for " + m.chr + ":" + m.start)
 
     def _testInfoField(self, filter):
         outputFilename = "out/TCGAVCFTest.indel.vcf.dummy"
