@@ -168,6 +168,15 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         diff = gtKeys.difference(ks)
         self.assertTrue(len(diff) == 0, "Missing keys that should have been seen in the metadata: " + str(diff))
 
+    def test_alt1_vs_alt2(self):
+        """Test that we pick up the alternate that is different from the reference when both are specified"""
+        ic = MafliteInputMutationCreator("testdata/maflite/alt1_vs_alt2.maflite")
+        muts = ic.createMutations()
+        ctr = 0
+        for m in muts:
+            ctr += 1
+            self.assertTrue(m.alt_allele == "C", "Did not properly populate the alternate allele in line " + str(ctr) + "  " + m.alt_allele)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
