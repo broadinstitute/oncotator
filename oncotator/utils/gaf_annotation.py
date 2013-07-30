@@ -699,7 +699,10 @@ def find_mut_in_gaf(data, gaf):
                         m['transcripts'][t_idx]['cds_codon_start'] = cds_codon_start
                         m['transcripts'][t_idx]['cds_codon_end'] = cds_codon_end
                         m['transcripts'][t_idx]['reference_codon_seq'] = reference_codon_seq
-                        m['transcripts'][t_idx]['reference_protein_allele'] = reference_aa[0]
+                        if len(reference_aa) == 0:
+                            m['transcripts'][t_idx]['reference_protein_allele'] = ""
+                        else:
+                            m['transcripts'][t_idx]['reference_protein_allele'] = reference_aa[0]
                         m['transcripts'][t_idx]['exon_affected'] = exon_affected
                     except SpliceSiteMutation as e:
                         if m['variant_type'] in ['DEL','INS']: vt = m['variant_type'][0] + m['variant_type'][1:].lower()
