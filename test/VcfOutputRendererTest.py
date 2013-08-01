@@ -156,10 +156,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename='out/example.variants.1row.vcf', strict_whitespace=True)
 
         self.assertEquals(expectedVcfReader.samples, currentVcfReader.samples, "Sample names do not match.")
-        self.assertEquals(dict(expectedVcfReader.formats), dict(currentVcfReader.formats),
-                          "Format meta-information does not match.")
-        self.assertEquals(dict(expectedVcfReader.infos), dict(currentVcfReader.infos),
-                          "Info meta-information does not match.")
+        self.assertTrue(len(set(expectedVcfReader.formats.keys()) - set(currentVcfReader.formats.keys())) == 0)
+        for k in expectedVcfReader.formats.keys():
+            self.assertTrue(expectedVcfReader.formats[k] == currentVcfReader.formats[k], "Value is not the same for format of " + k + " : " + str(expectedVcfReader.formats[k]) + " to " + str(currentVcfReader.formats[k]))
+        self.assertTrue(len(set(expectedVcfReader.infos.keys()) - set(currentVcfReader.infos.keys())) == 0)
+        for k in expectedVcfReader.infos.keys():
+            self.assertTrue(expectedVcfReader.infos[k] == currentVcfReader.infos[k], "Value is not the same for infos of " + k + " : " + str(expectedVcfReader.infos[k]) + " to " + str(currentVcfReader.infos[k]))
 
         for expectedRecord, currentRecord in zip(expectedVcfReader, currentVcfReader):
             self.assertEqual(dict(expectedRecord.INFO), dict(currentRecord.INFO))
