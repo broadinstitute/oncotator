@@ -326,10 +326,11 @@ class OutputDataManager:
         :param dataType: type (integer/float/character/string) passed in the mut object
         :return: corrected type (integer/float/character/string)
         """
-        if fieldType == "FILTER":
-            return vcf.parser.RESERVED_INFO.get(ID, dataType)
-        elif fieldType == "FORMAT":
-            return vcf.parser.RESERVED_FORMAT.get(ID, dataType)
+        if dataType == "String":
+            if fieldType == "FILTER":
+                return vcf.parser.RESERVED_INFO.get(ID, dataType)
+            elif fieldType == "FORMAT":
+                return vcf.parser.RESERVED_FORMAT.get(ID, dataType)
         return dataType
 
     def _resolveFieldDescription(self, fieldType, ID, desc):
