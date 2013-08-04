@@ -824,7 +824,19 @@ class dbSNP(IndexedVCF_DataSource):
         return mutation
 
 class dbNSFP(Datasource):
-    """ DOCUMENTATION """
+    """
+    dbNSFP datasource expecting a directory of Tabix compressed and indexed tsv files.
+
+    Example Tabix cmds:
+        bgzip dbNSFP2.0_variant.chr1
+        tabix -s 1 -b 2 -e 2 dbNSFP2.0_variant.chr1.gz
+
+    This datasource requires the following annotations to be populated:
+        variant_classification
+        protein_change
+
+    See the 'dbNSFP2.0.readme.txt' readme file in the datasource directory for field descriptions.
+    """
     def __init__(self, src_dir, title='dbNSFP', version=None):
         self.title = title
         self.prot_regexp = re.compile('p\.([A-Z])\d+([A-Z])')
