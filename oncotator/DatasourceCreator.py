@@ -54,6 +54,7 @@ from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatas
 from utils.ConfigUtils import ConfigUtils
 from datasources import Gaf, ReferenceDatasource
 from datasources import dbSNP
+from datasources import dbNSFP
 from datasources import Cosmic, Generic_Gene_DataSource, Generic_Transcript_Datasource, Generic_VariantClassification_Datasource
 from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider
 from utils.MultiprocessingUtils import LoggingPool
@@ -110,6 +111,8 @@ class DatasourceCreator(object):
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
+        elif dsType == "dbnsfp":
+            result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
             result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'gene_tsv':
