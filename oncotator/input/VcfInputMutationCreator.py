@@ -145,6 +145,11 @@ class VcfInputMutationCreator(InputMutationCreator):
                     else:
                         val = genotypeData[ID]
 
+                    if isSplitTag:
+                        tags += ["SPLIT"]
+                    else:
+                        tags += ["NOT_SPLIT"]
+
                 if (val is None) or (val == ""):
                     if dataType == "Flag":
                         val = "False"
@@ -186,6 +191,11 @@ class VcfInputMutationCreator(InputMutationCreator):
                     val = record.INFO[ID][index]
                 else:
                     val = record.INFO[ID]
+
+                if isSplitTag:
+                    tags += ["SPLIT"]
+                else:
+                    tags += ["NOT_SPLIT"]
 
             if (val is None) or (val == ""):
                 if dataType == "Flag":
@@ -379,25 +389,25 @@ class VcfInputMutationCreator(InputMutationCreator):
         return comments
 
     def _addFormatFields2Metadata(self, metadata):
-        for ID, annotationName in self.configTable["FORMAT"].iteritems():
+        for ID, name in self.configTable["FORMAT"].iteritems():
             num = self.vcf_reader.formats[ID].num
             tags = copy.copy(self.tags["FORMAT"])
             isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
             if isSplitTag:
                 tags += ["SPLIT"]
-            metadata[annotationName] = Annotation("", "INPUT", self.vcf_reader.formats[ID].type,
-                                                  self.vcf_reader.formats[ID].desc, tags=tags, number=num)
+            metadata[name] = Annotation("", "INPUT", self.vcf_reader.formats[ID].type, self.vcf_reader.formats[ID].desc,
+                                        tags=tags, number=num)
         return metadata
 
     def _addInfoFields2Metadata(self, metadata):
-        for ID, annotationName in self.configTable["INFO"].iteritems():
+        for ID, name in self.configTable["INFO"].iteritems():
             num = self.vcf_reader.infos[ID].num
             tags = copy.copy(self.tags["INFO"])
             isSplitTag = self._determineIsSplit(ID, num, "INFO")
             if isSplitTag:
                 tags += ["SPLIT"]
-            metadata[annotationName] = Annotation("", "INPUT", self.vcf_reader.infos[ID].type,
-                                                  self.vcf_reader.infos[ID].desc, tags=tags, number=num)
+            metadata[name] = Annotation("", "INPUT", self.vcf_reader.infos[ID].type, self.vcf_reader.infos[ID].desc,
+                                        tags=tags, number=num)
         return metadata
 
     def _addFilterFields2Metadata(self, metadata):

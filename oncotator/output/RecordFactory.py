@@ -44,7 +44,7 @@ class RecordFactory:
             if prop.num == -2:
                 if len(val) == nsamples and len(filter(None, val)) != 0:
                     info[ID] = val
-            if prop.num == -1:
+            elif prop.num == -1:
                 if len(val) == nalts and len(filter(None, val)) != 0:
                     info[ID] = val
             elif prop.num == 0:

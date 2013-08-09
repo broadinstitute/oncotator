@@ -31,10 +31,16 @@ class OutputDataManager:
 
         :return: header (meta-information and header lines)
         """
-        nfmts = 0
-        if "FORMAT" in self.reverseAnnotationTable:
-            nfmts = len(self.reverseAnnotationTable["FORMAT"])
-        return self._createHeader(self.comments, self.delimiter, self.lineterminator, nfmts)
+        hasFmtFlds = False
+        names = self.getAnnotationNames("FORMAT")
+        for name in names:
+            if self.mutation is None:
+                break
+            if name in self.mutation:
+                hasFmtFlds = True
+                break
+
+        return self._createHeader(self.comments, self.delimiter, self.lineterminator, hasFmtFlds)
 
     def getOutputAnnotation(self, name):
         """
@@ -144,7 +150,7 @@ class OutputDataManager:
             return self.reverseAnnotationTable[fieldType]
         return []
 
-    def _createHeader(self, comments=[], delimiter="\t", lineterminator="\n", nfmts=False):
+    def _createHeader(self, comments=[], delimiter="\t", lineterminator="\n", hasFmtFlds=False):
         """
         Constructs correctly Vcf header (meta-information and header lines).
         First, this method adds all meta-information lines as key=value pairs.
@@ -154,7 +160,7 @@ class OutputDataManager:
         :param comments: lines as key=value pairs
         :param delimiter: special character (for example, tab) that separators words
         :param lineterminator: special character (for example, newline) signifying the end of line
-        :param nfmts: number of FORMAT tags; in the case where there are none, 'FORMAT' is dropped from the header line
+        :param hasFmtFlds: has a FORMAT tag?; in the case where there is none, 'FORMAT' is dropped from the header line
         :return: correctly formatted Vcf header
         """
         headers = ["##fileformat=VCFv4.1"]  # 'fileformat' is a required field; fixed since output vcf will be v4.1
@@ -174,7 +180,7 @@ class OutputDataManager:
 
         # adds header line
         headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'], delimiter)]
-        if nfmts != 0:  # 'FORMAT' tags exist
+        if hasFmtFlds:  # 'FORMAT' tags exist
             headers[len(headers)-1] += string.join(["", 'FORMAT'] + self.sampleNames, delimiter)
 
         header = string.join(filter(None, headers), lineterminator)
@@ -221,7 +227,7 @@ class OutputDataManager:
 
             isSplit = False
             if fieldType in ("INFO", "FORMAT",):
-                isSplit = self._determineIsSplit(ID, num, fieldType)
+                isSplit = self._determineIsSplit(ID, num, fieldType, tags)
             table[name] = VcfOutputAnnotation(ID, fieldType, isSplit, src, dataType, desc, num)
             if fieldType not in revTable:
                 revTable[fieldType] = [name]
@@ -230,7 +236,7 @@ class OutputDataManager:
 
         return table, revTable
 
-    def _determineIsSplit(self, ID, num, fieldType):
+    def _determineIsSplit(self, ID, num, fieldType, tags=[]):
         """
         Determines whether a given ID's value was split by the alternate allele or not.
         This method implements the following decision tree for the number and field type corresponding to the ID:
@@ -252,18 +258,26 @@ class OutputDataManager:
         if num == -2:  # by the number of samples
             isSplit = False
             if fieldType == "FORMAT":
+                if "SPLIT" in tags:  # override the default using the tags section
+                    isSplit = True
                 if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                     isSplit = True
         elif num == -1:  # by the number of alternates
             isSplit = True
+            if "NOT_SPLIT" in tags:  # override the default using the tags section
+                isSplit = False
             if ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = False
-        elif num is None:
+        elif num is None:  # number is unknown
             isSplit = False
+            if "SPLIT" in tags:  # override the default using the tags section
+                isSplit = True
             if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = True
         else:
             isSplit = False
+            if "SPLIT" in tags:  # override the default using the tags section
+                isSplit = True
             if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = True
 
@@ -285,7 +299,7 @@ class OutputDataManager:
         """
         m = {"aggregate": "INFO", "variant": "FORMAT", "filter": "FILTER", "identifier": "ID", "quality": "QUAL"}
         for tag in tags:
-            if tags in m.keys():
+            if tag in m.keys():
                 return m[tag]
 
         if name in self.table["INFO"]:
