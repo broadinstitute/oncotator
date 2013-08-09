@@ -140,7 +140,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
         # Create a mapping between column name and annotation name
         fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary, self.config.getboolean("general", "displayAnnotations"), exposedFields=self.exposedColumns)
         fieldMapKeys = fieldMap.keys()
-        internalFields = set(fieldMapKeys).difference(headers)
+        internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
         headers.extend(internalFields)
         
         # Initialize the output file and write a header.
