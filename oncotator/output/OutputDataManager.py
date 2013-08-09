@@ -8,6 +8,8 @@ class OutputDataManager:
         """
         Initialize an instance of OutputDataManager.
 
+        This class is used by the VcfOutputRenderer, but could be used elsewhere.
+
         :param configTable: tabular representation of the config
         :param comments: lines as key=value pairs (used in the header)
         :param md: meta-data
@@ -260,25 +262,25 @@ class OutputDataManager:
             if fieldType == "FORMAT":
                 if "SPLIT" in tags:  # override the default using the tags section
                     isSplit = True
-                if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+                elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                     isSplit = True
         elif num == -1:  # by the number of alternates
             isSplit = True
             if "NOT_SPLIT" in tags:  # override the default using the tags section
                 isSplit = False
-            if ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
+            elif ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = False
         elif num is None:  # number is unknown
-            isSplit = False
+            isSplit = True
             if "SPLIT" in tags:  # override the default using the tags section
                 isSplit = True
-            if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+            elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = True
         else:
             isSplit = False
             if "SPLIT" in tags:  # override the default using the tags section
                 isSplit = True
-            if ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+            elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = True
 
         return isSplit
