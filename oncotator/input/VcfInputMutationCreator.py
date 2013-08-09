@@ -305,8 +305,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                     yield mut
                 else:
                     for sample in record.samples:
-                        # TODO: move this to deep copy
-                        sampleMut = self._createMutationCopy(mut)
+                        sampleMut = copy.deepcopy(mut)
                         sampleMut.createAnnotation("sampleName", sample.sample, "INPUT")
                         genotype = "GT"
                         if genotype in sample.data._fields:
@@ -315,22 +314,6 @@ class VcfInputMutationCreator(InputMutationCreator):
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
 
                         yield sampleMut
-
-    def _createMutationCopy(self, mutation):
-        """
-        """
-        chrom = mutation["chr"]
-        alt = mutation["alt_allele"]
-        ref = mutation["ref_allele"]
-        startPos = mutation["start"]
-        endPos = mutation["end"]
-        mut = MutationData(chrom, alt, ref, startPos, endPos, "hg19")
-        for annotationName in mutation.annotations:
-            annotation = mutation.getAnnotation(annotationName)
-            mut.createAnnotation(annotationName, annotation.getValue(), annotation.getDatasource(),
-                                 annotation.getDataType(), annotation.getDescription(), True, annotation.getTags(),
-                                 annotation.getNumber())
-        return mut
 
     def _createMutation(self, record, index):
         """
