@@ -1,7 +1,7 @@
 *.pyc
 /test/configs/personal-test.config
 /test/out/*
-!/test/out/README.txt.1st
+!/test/out/README.rst
 /doc/doxygen/*
 !/doc/doxygen/README.txt
 /doc/coverage/*
