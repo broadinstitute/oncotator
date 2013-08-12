@@ -403,40 +403,40 @@ class Gaf(Datasource, TranscriptProvider):
             transcript = m['transcripts'][transcriptIndex]
 
             if transcript['variant_classification'] == 'IGR':
-                m.createAnnotation('gene', 'Unknown', self.title)
-                m.createAnnotation('gene_id', "0", self.title)
-                m.createAnnotation('other_transcripts', transcript['nearest_genes'], self.title)
+                m.createAnnotation('gene', 'Unknown', self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('gene_id', "0", self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('other_transcripts', transcript['nearest_genes'], self.title, tags=["SPLIT"])
 
                 #TODO: Refactor to reduce duplicate code
-                m.createAnnotation('annotation_transcript', '', self.title)
-                m.createAnnotation('codon_change', '', self.title)
-                m.createAnnotation('strand', '', self.title)
-                m.createAnnotation('protein_change', '', self.title)
-                m.createAnnotation('transcript_exon', '', self.title)
-                m.createAnnotation('transcript_position', '', self.title)
-                m.createAnnotation('transcript_change', '', self.title)
-                m.createAnnotation('transcript_id', '', self.title),
-                m.createAnnotation('transcript_strand', '', self.title)
+                m.createAnnotation('annotation_transcript', '', self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('codon_change', '', self.title, tags=["SPLIT"])
+                m.createAnnotation('strand', '', self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('protein_change', '', self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_exon', '', self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_position', '', self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_change', '', self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_id', '', self.title, tags=["NOT_SPLIT"]),
+                m.createAnnotation('transcript_strand', '', self.title, tags=["NOT_SPLIT"])
 
             else:
-                m.createAnnotation('gene', transcript['gene'], self.title)
-                m.createAnnotation('gene_id', transcript['id'], self.title)
-                m.createAnnotation('annotation_transcript', transcript['transcript_id'], self.title)
-                m.createAnnotation('transcript_exon', transcript['exon_affected'], self.title)
-                m.createAnnotation('transcript_position', self._determineTranscriptPosition(transcript), self.title)
-                m.createAnnotation('transcript_change', transcript.get('transcript_change', ''), self.title)
-                m.createAnnotation('transcript_id', transcript.get('transcript_id', ''), self.title),
-                m.createAnnotation('transcript_strand', transcript.get('strand', ''), self.title),
-                m.createAnnotation('codon_change', transcript['codon_change'], self.title)
-                m.createAnnotation('protein_change', transcript['protein_change'], self.title)
-                m.createAnnotation('other_transcripts', self._renderOtherTranscripts(m, transcriptIndices), self.title)
-                m.createAnnotation('strand', transcript['strand'], self.title)
-            m.createAnnotation('tx_start', transcript.get('tx_start', ''), self.title)
-            m.createAnnotation('tx_end', transcript.get('tx_end', ''), self.title)
-            m.createAnnotation('variant_classification', transcript['variant_classification'], self.title)
-            m.createAnnotation('transcript_description', transcript.get('description', ''), self.title)
-            m.createAnnotation('transcript_protein_position_start', str(transcript.get('protein_position_start', '')), self.title)
-            m.createAnnotation('transcript_protein_position_end', str(transcript.get('protein_position_end', '')), self.title)
+                m.createAnnotation('gene', transcript['gene'], self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('gene_id', transcript['id'], self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('annotation_transcript', transcript['transcript_id'], self.title, tags=["NOT_SPLIT"])
+                m.createAnnotation('transcript_exon', transcript['exon_affected'], self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_position', self._determineTranscriptPosition(transcript), self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_change', transcript.get('transcript_change', ''), self.title, tags=["SPLIT"])
+                m.createAnnotation('transcript_id', transcript.get('transcript_id', ''), self.title, tags=["NOT_SPLIT"]),
+                m.createAnnotation('transcript_strand', transcript.get('strand', ''), self.title, tags=["NOT_SPLIT"]),
+                m.createAnnotation('codon_change', transcript['codon_change'], self.title, tags=["SPLIT"])
+                m.createAnnotation('protein_change', transcript['protein_change'], self.title, tags=["SPLIT"])
+                m.createAnnotation('other_transcripts', self._renderOtherTranscripts(m, transcriptIndices), self.title, tags=["SPLIT"])
+                m.createAnnotation('strand', transcript['strand'], self.title, tags=["NOT_SPLIT"])
+            m.createAnnotation('tx_start', transcript.get('tx_start', ''), self.title, tags=["SPLIT"])
+            m.createAnnotation('tx_end', transcript.get('tx_end', ''), self.title, tags=["SPLIT"])
+            m.createAnnotation('variant_classification', transcript['variant_classification'], self.title, tags=["SPLIT"])
+            m.createAnnotation('transcript_description', transcript.get('description', ''), self.title, tags=["SPLIT"])
+            m.createAnnotation('transcript_protein_position_start', str(transcript.get('protein_position_start', '')), self.title, tags=["SPLIT"])
+            m.createAnnotation('transcript_protein_position_end', str(transcript.get('protein_position_end', '')), self.title, tags=["SPLIT"])
 
             # TODO: Low Priority -- rename transcripts to _transcripts instead of deleting
             del m['transcripts']
@@ -666,10 +666,10 @@ class Generic_Gene_DataSource(Datasource):
         if gene in self.db_obj:
             annotations = self.db_obj[gene]
             for k in annotations.keys():
-                mutation.createAnnotation(k, self.db_obj[gene][k], annotationSource=self.title)
+                mutation.createAnnotation(k, self.db_obj[gene][k], annotationSource=self.title, tags=["NOT_SPLIT"])
         else:
             for h in self.output_headers:
-                mutation.createAnnotation(h, '', annotationSource=self.title)
+                mutation.createAnnotation(h, '', annotationSource=self.title, tags=["NOT_SPLIT"])
 
         return mutation
 
