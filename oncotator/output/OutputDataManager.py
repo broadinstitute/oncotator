@@ -271,7 +271,7 @@ class OutputDataManager:
             elif ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
                 isSplit = False
         elif num is None:  # number is unknown
-            isSplit = True
+            isSplit = False
             if "SPLIT" in tags:  # override the default using the tags section
                 isSplit = True
             elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
