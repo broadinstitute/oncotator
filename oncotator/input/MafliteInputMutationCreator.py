@@ -72,6 +72,8 @@ class MafliteInputMutationCreator(InputMutationCreator):
     See the config file maflite_input.config for aliases and required headers.
 
     Additional columns can be included and will be annotate to the mutation using the header name.
+
+    IMPORTANT NOTE: maflite will look at all aliases for alt_allele (see maflite_input.config) and choose the first that does not match the ref_allele
     """
 
 
@@ -123,6 +125,17 @@ class MafliteInputMutationCreator(InputMutationCreator):
             result[f] = Annotation("", datasourceName="INPUT")
         return result
 
+    def _find_alt_allele_in_other_field(self, raw_line_dict, ref_allele):
+        """Check all the possible alt allele columns and choose the one that does not match the reference allele. """
+
+        list_alternates = self._alternativeDict.get("alt_allele")
+
+        for candidate_field in list_alternates:
+            candidate_value = raw_line_dict.get(candidate_field, "")
+            if  candidate_value != "" and candidate_value != ref_allele:
+                return candidate_value
+        return ref_allele
+
     def createMutations(self):
         """ No inputs.
         Returns a generator of mutations built from the specified maflite file. """
@@ -154,6 +167,10 @@ class MafliteInputMutationCreator(InputMutationCreator):
                     if col == "chr":
                         val = MutUtils.convertChromosomeStringToMutationDataFormat(line[col])
                     mut.createAnnotation(col, val, 'INPUT') 
+
+            # if the alt allele == ref_allele, check that this is not a case where there is an alt_allele2 that is different.
+            if mut.alt_allele == mut.ref_allele:
+                mut.alt_allele = self._find_alt_allele_in_other_field(line, mut.ref_allele)
 
                 # FIXME: Support more than one alias in the reverse dictionary.  Then this line can be removed.
             if mut.start is not "" and mut.end is "":

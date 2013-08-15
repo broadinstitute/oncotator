@@ -103,6 +103,8 @@ class MutUtils(object):
         Strips "chr"
         If the chromosome is 23 or 24 and the build begins with "hg", then convert to "X" and "Y", respectively.
 
+        If a chromosome contains "<" or  ">", then replace those with "".
+
         TODO:  This will be changed to a framework that better supports build-specific classes that do this conversion.
         """
         result = chrom
@@ -116,6 +118,9 @@ class MutUtils(object):
                 result = "X"
             if chrom == "24":
                 result = "Y"
+
+        result = result.replace('<', '')
+        result = result.replace('>', '')
 
         return result
         

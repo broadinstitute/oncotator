@@ -202,6 +202,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         return ss, ssCode
 
     def generateAlleles(self,m):
+        updated_start = m.start
         ref_allele = m.ref_allele
         if ref_allele == "-":
             ref_allele="."
@@ -226,8 +227,9 @@ class TcgaVcfOutputRenderer(OutputRenderer):
                 print("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
                 return None
             ref_allele = ref_context[9].upper() + ref_allele
-            alt_allele =  ref_context[9].upper()
-        return ref_allele,alt_allele
+            alt_allele = ref_context[9].upper()
+            updated_start = str(int(m.start) - 1)
+        return ref_allele,alt_allele,updated_start
 
     def _generateFormatFieldWithValues(self,n_gt, n_alt, n_ref, mq0, bq='30', ss='2', ssc='.'):
         """ GT:AD:DP:FA:MQ0:BQ:SS:SSC
@@ -371,7 +373,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
         gtN, gtT = self.genotype(n_lod, t_lod)
 
-        ref,alt = self.generateAlleles(m)
+        ref,alt,new_start = self.generateAlleles(m)
 
         ss,ssCode = self.determineSomaticStatus(gtN, gtT, qual)
         if ss is None or ssCode is None:
@@ -396,7 +398,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         mutRow = dict()
 
         mutRow['CHROM'] = self._renderChrom(m.chr)
-        mutRow['POS'] = m.start
+        mutRow['POS'] = new_start
         mutRow['ID'] = self.renderID(m)
         mutRow['REF'] = ref
         mutRow['ALT'] = alt

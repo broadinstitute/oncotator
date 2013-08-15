@@ -372,6 +372,8 @@ class VcfInputMutationCreator(InputMutationCreator):
             val = self.vcf_reader.metadata[key]
             if isinstance(val, list):
                 val = string.join(map(str, val), ";")
+            if isinstance(val, dict):
+                val = string.join(map(str, val), ";")
             comment = string.join([key, val], "=")
             comments.append(comment)
         return comments

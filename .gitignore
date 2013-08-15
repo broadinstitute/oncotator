@@ -1,3 +1,5 @@
+/dist/
+*.pyc
 /test/configs/personal-test.config
 /test/out/*
 !/test/out/README.txt.1st
@@ -21,3 +23,8 @@
 /oncotator_nosetest_env_auto
 /test/nosetests.xml
 /test/configs/personal-test.config.bkup
+/oncotator/Oncotator_profile.bin
+/oncotator/oncotator.log
+/oncotator/profile_stats.txt
+/master.zip
+
