@@ -62,8 +62,6 @@ __author__ = 'lichtens'
 class TsvFileSorter(object):
     """ Static class for sorting a tsv file in place.
 
-    This code is an adaptation of the cookbook code found at:
-    http://code.activestate.com/recipes/576755-sorting-big-files-the-python-26-way/
     """
     def __init__(self, filename, commentPrepend='#', delimiter='\t', lineterminator='\n'):
         self.readfilename = filename
