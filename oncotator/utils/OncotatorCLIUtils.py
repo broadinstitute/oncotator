@@ -48,6 +48,7 @@
 #"""
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
+import logging
 
 
 """
@@ -312,4 +313,15 @@ class OncotatorCLIUtils(object):
                 opt[1] = '' 
             result[opt[0]] = opt[1]
         return result
-        
+
+    @staticmethod
+    def determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile):
+        manualOverrides = OncotatorCLIUtils.createManualAnnotationsGivenConfigFile(overrideConfigFile)
+        for clmo in commandLineManualOverrides:
+            if clmo.find(":") == -1:
+                logging.getLogger(__name__).warn("Could not parse annotation: " + str(clmo) + "   ... skipping")
+                continue
+            keyval = clmo.split(':', 1)
+            manualOverrides[keyval[0]] = keyval[1]
+
+        return manualOverrides

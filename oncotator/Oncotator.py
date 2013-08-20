@@ -62,6 +62,10 @@ def parseOptions(program_license, program_version_message):
     python Oncotator.py -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
     
     IMPORTANT NOTE:  hg19 is only supported genome build for now.
+
+    Default values specified by -d or --default_annotation_values are used when an annotation does not exist or is populated with an empty string ("")
+
+    Both default and override config files and command line specifications stack.
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
@@ -72,6 +76,8 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-o' ,'--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(),help='Output format. [default: %s]' % "TCGAMAF")
     parser.add_argument('--override_config', type=str, 
                         help="File path to manual annotations in a config file format (section is 'manual_annotations' and annotation:value pairs).")
+    parser.add_argument('--default_config', type=str,
+                        help="File path to default annotation values in a config file format (section is 'manual_annotations' and annotation:value pairs).")
     parser.add_argument('--no-multicore', dest="noMulticore", action='store_true', default=False, help="Disables all multicore functionality.")
     parser.add_argument('input_file', type=str,
                    help='Input file to be annotated.  Type is specified through options.')
@@ -79,10 +85,15 @@ def parseOptions(program_license, program_version_message):
                     help='Output file name of annotated file.')
     parser.add_argument('genome_build', metavar='build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
     parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
+    parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -a 'name2:value2' ")
     # Process arguments
     args = parser.parse_args()
     
     return args
+
+
+
+
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -155,20 +166,17 @@ USAGE
         datasourceDir = args.dbDir
 
         # Parse annotation overrides
-        manualOverrides = OncotatorCLIUtils.createManualAnnotationsGivenConfigFile(args.override_config)
-
         commandLineManualOverrides = args.override_cli
+        overrideConfigFile = args.override_config
+        manualOverrides = OncotatorCLIUtils.determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile)
 
-        for clmo in commandLineManualOverrides:
-            if clmo.find(":") == -1:
-                logger.warn("Could not parse manual annotation: " + str(clmo) + "   ... skipping")
-                continue
-            keyval = clmo.split(':',1)
-            manualOverrides[keyval[0]] = keyval[1]
-
+        # Parse default overrides
+        commandLineDefaultValues = args.default_cli
+        defaultConfigFile = args.default_config
+        defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore))
+        runConfig = OncotatorCLIUtils.createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues)
            
         annotator = Annotator()
         annotator.initialize(runConfig)
