@@ -754,6 +754,7 @@ class IndexedVCF_DataSource(Datasource):
         
 
         self.db_obj = vcf.Reader(filename=src_file)
+        # TODO: Annotate from the INFO columns.
         self.vcf_headers = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL',    'FILTER', 'INFO']
         self.output_headers = ['_'.join([self.title, h]) for h in self.vcf_headers]
             

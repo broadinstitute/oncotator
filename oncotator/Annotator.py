@@ -217,7 +217,10 @@ class Annotator(object):
             mKeys = m.keys()
             for k in defaultAnnotationsKeys:
                 if k not in mKeys:
-                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="MANUAL")
+                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="DEFAULT")
+                if m[k] == "":
+                    m.getAnnotation(k).setDatasource("DEFAULT")
+                    m.getAnnotation(k).setValue(defaultAnnotations[k])
             yield m
 
     def _createManualAnnotationsForMetadata(self, manualAnnotations):
