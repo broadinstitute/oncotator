@@ -47,6 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from TestUtils import TestUtils
+from oncotator.MutationData import MutationData
 
 """
 Created on Nov 7, 2012
@@ -141,6 +142,26 @@ class AnnotatorTest(unittest.TestCase):
                                     lineDict[k]) + " <> " + str(overrides[k]))
             ctr += 1
 
+    def testDefaultAnnotations(self):
+        """Test that the default annotation values populate properly. """
+        annotator = Annotator()
+        default_annotations = {"test2": "foo2"}
+        overrides = {'test3': 'foo3'}
+        m1 = MutationData()
+        m1.createAnnotation("test1", "foo1")
+        m1.createAnnotation("test2", "")
+        m1.createAnnotation("test3", "I should be gone")
+
+
+        m2 = MutationData()
+        m2.createAnnotation("test1", "")
+        m2.createAnnotation("test2", None)
+        m2.createAnnotation("test3", "I should be gone")
+
+        m3 = MutationData()
+        m3.createAnnotation("test1", "")
+        m3.createAnnotation("test2", None)
+        m3.createAnnotation("test3", "I should be gone")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']
