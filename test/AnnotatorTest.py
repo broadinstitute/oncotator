@@ -147,6 +147,7 @@ class AnnotatorTest(unittest.TestCase):
         annotator = Annotator()
         default_annotations = {"test2": "foo2"}
         overrides = {'test3': 'foo3'}
+
         m1 = MutationData()
         m1.createAnnotation("test1", "foo1")
         m1.createAnnotation("test2", "")
@@ -162,6 +163,11 @@ class AnnotatorTest(unittest.TestCase):
         m3.createAnnotation("test1", "")
         m3.createAnnotation("test2", None)
         m3.createAnnotation("test3", "I should be gone")
+
+        muts = [m1, m2, m3]
+
+        annotator._applyManualAnnotations(muts,overrides)
+        annotator._applyDefaultAnnotations(muts,default_annotations)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']
