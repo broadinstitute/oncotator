@@ -187,13 +187,13 @@ class Annotator(object):
         if mutations is None: 
             self.logger.warn("Mutation list points to None after annotation.")
         
-        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
-        if mutations is None:
-            self.logger.warn("Mutation list points to None after manual annotations.")
-
         mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
         if mutations is None:
             self.logger.warn("Mutation list points to None after default annotations.")
+
+        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after manual annotations.")
 
         comments = self._createComments()
         metadata = self._createMetadata()
