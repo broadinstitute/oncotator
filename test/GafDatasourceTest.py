@@ -156,13 +156,29 @@ class GafDatasourceTest(unittest.TestCase):
             self.assertTrue(m['gene'] != '')
 
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
+    def testMC1R(self):
+        """Test that this version of the GAF produces a MC1R, instead of TUBB gene"""
+        m = MutationData()
+        m.chr = '16'
+        m.start = '89985913'
+        m.end = '89985913'
+        m.ref_allele = 'G'
+        m.alt_allele = 'A'
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+        m = gafDatasource.annotate_mutation(m)
+
+        # At some point, we would expect this to be MC1R, not TUBB3
+        self.assertTrue(m['gene'] == "TUBB3", "Incorrect gene found: " + m['gene'] + "  If updating GAF, this may not be an error, but should be confirmed manually.")
+
+
+    @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def testAKT1(self):
         """ Test that this version of the GAF produces the up to date gene for a position given from a website user.
         """
         m = MutationData()
         m.chr = '14'
         m.start = '105246407'
-        m.end='105246407'
+        m.end = '105246407'
         m.ref_allele = 'G'
         m.alt_allele = 'A'
         gafDatasource = TestUtils.createGafDatasource(self.config)
