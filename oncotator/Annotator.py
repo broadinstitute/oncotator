@@ -211,7 +211,6 @@ class Annotator(object):
 
     def _applyDefaultAnnotations(self, mutations, defaultAnnotations):
         # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
-        #TODO: Need unit test
         defaultAnnotationsKeys = defaultAnnotations.keys()
         for m in mutations:
             mKeys = m.keys()
