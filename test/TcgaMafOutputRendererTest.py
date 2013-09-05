@@ -130,7 +130,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         dbDir = self.config.get('DEFAULT',"dbDir")
         return DatasourceCreator.createDatasources(dbDir, "hg19",isMulticore=False)
     
-    def _createTCGAMAFOverrides(self):
+    def _createTCGAMAFDefaults(self):
         """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
         These were taken from version 0.5.25.0 of Oncotator.
         """
@@ -146,7 +146,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def _annotateTest(self, inputFilename, outputFilename, datasources, inputFormat="MAFLITE", outputFormat="TCGAMAF"):
         self.logger.info("Initializing Annotator...")
         annotator = Annotator()
-        runSpec = OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, self._createTCGAMAFOverrides(), datasources)
+        runSpec = OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=self._createTCGAMAFDefaults(), datasourceList=datasources)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()

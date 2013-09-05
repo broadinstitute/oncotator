@@ -219,7 +219,7 @@ class DatasourceCreator(object):
                     tmpQueue.append(dsTuple)
                 else:
                     result.append(DatasourceCreator.createDatasourceGivenTuple(dsTuple))
-            tmpResult = p.map(createDatasource,tmpQueue)
+            tmpResult = p.map(createDatasource, tmpQueue)
             result.extend(tmpResult)
             logging.getLogger(__name__).info("Mapping complete: " + str(len(tmpResult)) + " datasources created in multiprocess")
             p.close()

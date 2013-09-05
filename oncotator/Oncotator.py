@@ -66,6 +66,15 @@ def parseOptions(program_license, program_version_message):
     Default values specified by -d or --default_annotation_values are used when an annotation does not exist or is populated with an empty string ("")
 
     Both default and override config files and command line specifications stack.
+
+    Example of an override_config file:
+
+    # Create center, source, sequencer, and score annotations, with the values broad.mit.edu, WXS, Illumina GAIIx, and <blank> for all mutations.
+    #  This will overwrite all mutations.
+    [manual_annotations]
+    override:center=broad.mit.edu,source=WXS,sequencer=Illumina GAIIx,score=
+
+
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
@@ -90,10 +99,6 @@ def parseOptions(program_license, program_version_message):
     args = parser.parse_args()
     
     return args
-
-
-
-
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
