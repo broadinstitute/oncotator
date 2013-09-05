@@ -1,7 +1,8 @@
 import string
 import vcf
 from oncotator.output.VcfOutputAnnotation import VcfOutputAnnotation
-
+from oncotator.utils.TagConstants import TagConstants
+from oncotator.utils.ConfigTable import ConfigTable
 
 class OutputDataManager:
     def __init__(self, configTable, comments=[], md=[], mut=None, sampleNames=[]):
@@ -258,32 +259,36 @@ class OutputDataManager:
         :return: whether the field ID's value was split by the alternate or not
         """
         if num == -2:  # by the number of samples
-            isSplit = False
             if fieldType == "FORMAT":
-                if "SPLIT" in tags:  # override the default using the tags section
-                    isSplit = True
+                if TagConstants.SPLIT in tags:  # override the default using the tags section
+                    return True
                 elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
-                    isSplit = True
+                    return True
+                else:
+                    return False
         elif num == -1:  # by the number of alternates
-            isSplit = True
-            if "NOT_SPLIT" in tags:  # override the default using the tags section
-                isSplit = False
+            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
+                return False
             elif ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
-                isSplit = False
+                return False
+            else:
+                return True
         elif num is None:  # number is unknown
-            isSplit = False
-            if "SPLIT" in tags:  # override the default using the tags section
-                isSplit = True
+            if TagConstants.SPLIT in tags:  # override the default using the tags section
+                return True
             elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
-                isSplit = True
+                return True
+            else:
+                return False
         else:
-            isSplit = False
-            if "SPLIT" in tags:  # override the default using the tags section
-                isSplit = True
+            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
+                return True
             elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
-                isSplit = True
+                return True
+            else:
+                return False
 
-        return isSplit
+        return False
 
     def _resolveFieldType(self, name, tags):
         """
@@ -299,7 +304,8 @@ class OutputDataManager:
         :param tags: list of keys associated passed in the mut object
         :return: type of Vcf field (for example, INFO)
         """
-        m = {"aggregate": "INFO", "variant": "FORMAT", "filter": "FILTER", "identifier": "ID", "quality": "QUAL"}
+        m = {TagConstants.INFO: "INFO", TagConstants.FORMAT: "FORMAT", TagConstants.FILTER: "FILTER",
+             TagConstants.ID: "ID", TagConstants.QUAL: "QUAL"}
         for tag in tags:
             if tag in m.keys():
                 return m[tag]

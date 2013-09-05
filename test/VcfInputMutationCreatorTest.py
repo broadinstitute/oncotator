@@ -67,6 +67,7 @@ from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceCreator import DatasourceCreator
 import vcf
+from oncotator.utils.TagConstants import TagConstants
 from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
@@ -94,7 +95,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         # You cannot use len(muts), since muts is a generator.
         ctr = 0
         for m in muts:
-            ctr = ctr +1
+            ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
         self.assertTrue((m.chr == "21") and (m.start == 1234567), "Last mutation was not correct: " + str(m))
         
@@ -103,9 +104,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         muts = creator.createMutations()
         ctr = 0
         for m in muts:
-            ctr = ctr + 1
+            ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 called mutations, but saw: " + str(ctr))
-    
 
     def testSimpleAnnotationWithExampleVcf(self):
         ''' Tests the ability to do a simple Gaf 3.0 annotation. '''
@@ -312,9 +312,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
             for annotationName in isSplit.keys():
                 if mapVcfFields2Tsv[annotationName] in variant.INFO:
                     a = m.getAnnotation(annotationName)
-                    self.assertTrue(('SPLIT' in a.getTags()) == isSplit[annotationName],
+                    self.assertTrue((TagConstants.SPLIT in a.getTags()) == isSplit[annotationName],
                                     annotationName + " is split? " + str(isSplit[annotationName]) + ", but saw: " +
-                                    str('SPLIT' in a.getTags()))
+                                    str(TagConstants.SPLIT in a.getTags()))
 
 
 if __name__ == "__main__":

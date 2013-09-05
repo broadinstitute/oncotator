@@ -62,6 +62,7 @@ from oncotator.utils.TsvFileSorter import TsvFileSorter
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordFactory import RecordFactory
 from oncotator.output.OutputDataManager import OutputDataManager
+from oncotator.utils.ConfigTable import ConfigTable
 
 class VcfOutputRenderer(OutputRenderer):
     """
@@ -82,7 +83,7 @@ class VcfOutputRenderer(OutputRenderer):
         self._datasources = datasources
         self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
         self.chromHashCodeTable = None  # maps every chromosome in the mutations to a sortable integer
-        self.configTable = dict()
+        self.configTable = ConfigTable()
         self.delimiter = "\t"
         self.lineterminator = "\n"
         self.sampleNames = []  # all sample names in the mutations
@@ -129,29 +130,29 @@ class VcfOutputRenderer(OutputRenderer):
                 fieldnames = fieldnames.union(["sampleName"])
         return list(fieldnames)
 
-    def _doFieldsExist(self, sect, fields):
-        tbl = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, sect)
-        ks = set(tbl.keys())
-        for fld in fields:
-            if fld not in ks:
+    def _doFieldsExist(self, section, fields):
+        tbl = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, section)
+        fieldSet = set(tbl.keys())
+        for field in fields:
+            if field not in fieldSet:
                 raise ConfigInputIncompleteException("Missing %s field in %s section in the output config file."
-                                                     % (fld, sect))
+                                                     % (field, section))
 
     def _parseConfig(self):
-        sects = ["INFO", "FORMAT", "OTHER", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
-                 "FORMAT_DESCRIPTION", "SPLIT_TAGS"]
-        for sect in sects:
-            if not ConfigUtils.hasSectionKey(self.config, sect):
-                raise ConfigInputIncompleteException("Missing %s section in the output config file." % sect)
-            if sect in ("OTHER",):
-                reqKs = ["ID", "QUAL", "FILTER"]
-                self._doFieldsExist(sect, reqKs)
-            elif sect in ("NOT_SPLIT_TAGS", "SPLIT_TAGS",):
-                reqKs = ["INFO", "FORMAT"]
-                self._doFieldsExist(sect, reqKs)
+        sections = ["INFO", "FORMAT", "OTHER", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
+                    "FORMAT_DESCRIPTION", "SPLIT_TAGS"]
+        for section in sections:
+            if not ConfigUtils.hasSectionKey(self.config, section):
+                raise ConfigInputIncompleteException("Missing %s section in the output config file." % section)
+            if sections in ("OTHER",):
+                reqKeys = ["ID", "QUAL", "FILTER"]
+                self._doFieldsExist(section, reqKeys)
+            elif sections in ("NOT_SPLIT_TAGS", "SPLIT_TAGS",):
+                reqKeys = ["INFO", "FORMAT"]
+                self._doFieldsExist(section, reqKeys)
 
         table = dict()
-        for sect in sects:
+        for sect in sections:
             if sect in ("INFO", "FORMAT", "OTHER",):
                 table[sect] = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, sect)
             elif sect in ("INFO_DESCRIPTION", "FILTER_DESCRIPTION", "FORMAT_DESCRIPTION",):
@@ -281,20 +282,23 @@ class VcfOutputRenderer(OutputRenderer):
             ID = annotation.getID()
             num = annotation.getNumber()
             dataType = annotation.getDataType()
-            src = annotation.getDatasource()
             isSplit = annotation.isSplit()
             val = m.get(name, "")
-            recordFactory.addInfo(sampleName, ID, num, dataType, val, src, isSplit)
+            recordFactory.addInfo(sampleName, ID, num, dataType, val, isSplit)
 
         for name in formats:
             annotation = dataManager.getOutputAnnotation(name)
             ID = annotation.getID()
             num = annotation.getNumber()
             dataType = annotation.getDataType()
-            src = annotation.getDatasource()
             isSplit = annotation.isSplit()
             val = m.get(name, "")
-            recordFactory.addFormat(sampleName, ID, num, dataType, val, src, isSplit)
+            if num == 0 or dataType == "Flag":
+                msg = "%s is of data type Flag. Only Integer, Float, Character, and String data types are permissible" \
+                      " in the Format field." % name
+                logging.warn(msg)
+            else:
+                recordFactory.addFormat(sampleName, ID, num, dataType, val, isSplit)
 
         return recordFactory
 

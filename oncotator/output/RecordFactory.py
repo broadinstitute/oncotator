@@ -140,14 +140,11 @@ class RecordFactory:
     def _correct(self, iterable, bad=(".", "",)):
         return [v if v not in bad else None for v in iterable]
 
-    def _fixVal(self, val, src, isSplit):
-        if src != "INPUT":  # implies that the annotation was included by a data source
+    def _fixVal(self, val, isSplit):
+        if isSplit:
             val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
-        elif src == "INPUT":
-            if isSplit:
-                val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
-            else:
-                val = self._replaceChrs(val, "=;\n\t :", "~|#__>")  # exclude ":" and ","
+        else:
+            val = self._replaceChrs(val, "=;\n\t :", "~|#__>")  # exclude ":" and ","
 
         if not isSplit:
             val = self._correct(val.split(","))
@@ -156,42 +153,42 @@ class RecordFactory:
 
         return val
 
-    def _appendVal2FixedNumField(self, data, ID, num, src, isSplit, val):
+    def _appendVal2FixedNumField(self, data, ID, num, isSplit, val):
         if ID not in data:
-            data[ID] = self._fixVal(val, src, isSplit)
+            data[ID] = self._fixVal(val, isSplit)
         elif isSplit and num > 1:
             vals = data[ID]
             if len(vals) < num:
-                vals += self._fixVal(val, src, isSplit)
+                vals += self._fixVal(val, isSplit)
                 data[ID] = vals
 
-    def addInfo(self, sampleName, ID, num=".", dataType="String", val=None, src="INPUT", isSplit=True):
+    def addInfo(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
         if num == -2:  # num is the number of samples
             nsamples = len(self._sampleNames)
             if sampleName in self._sampleNames:
                 if ID not in self._info:
                     self._info[ID] = [None]*nsamples
                 sampleNameIndex = self._sampleNameIndexes[sampleName]
-                val = self._fixVal(val, src, isSplit)
+                val = self._fixVal(val, isSplit)
                 self._info[ID][sampleNameIndex] = val[0]
         elif num == -1:  # num is the number of alternate alleles
             nalts = len(self._alts)
-            self._appendVal2FixedNumField(self._info, ID, nalts, src, isSplit, val)
+            self._appendVal2FixedNumField(self._info, ID, nalts, isSplit, val)
         elif num == 0:  # num is either true or false
             if ID not in self._info:
-                val = self._map(MutUtils.str2bool, self._fixVal(val, src, isSplit))  # convert the value to boolean
+                val = self._map(MutUtils.str2bool, self._fixVal(val, isSplit))  # convert the value to boolean
                 self._info[ID] = val[0]
         elif num is None:  # num is unknown
             nalts = len(self._alts)
-            self._appendVal2FixedNumField(self._info, ID, nalts, src, isSplit, val)
+            self._appendVal2FixedNumField(self._info, ID, nalts, isSplit, val)
         else:
-            self._appendVal2FixedNumField(self._info, ID, num, src, isSplit, val)
+            self._appendVal2FixedNumField(self._info, ID, num, isSplit, val)
 
         if ID not in self._infoFieldProperty:
             self._infoFieldProperty[ID] = self._fieldProperty(num, dataType, isSplit)
 
-    def addFormat(self, sampleName, ID, num=".", dataType="String", val=None, src="INPUT", isSplit=True):
-        if sampleName in self._sampleNames:
+    def addFormat(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
+        if sampleName in self._sampleNames and num != 0:
             sampleNameIndex = self._sampleNameIndexes[sampleName]
             if self._fmt[sampleNameIndex] is None:
                 self._fmt[sampleNameIndex] = collections.OrderedDict()
@@ -200,19 +197,17 @@ class RecordFactory:
 
             if num == -2:  # num is the number of samples
                 nalts = len(self._alts)
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, src, isSplit, val)
+                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
             elif num == -1:  # num is the number of alternate alleles
                 nalts = len(self._alts)
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, src, isSplit, val)
+                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
             elif num == 0:  # num is either true or false
-                if ID not in self._fmt[sampleNameIndex]:
-                    val = self._map(MutUtils.str2bool, self._fixVal(val, src, isSplit))  # convert the value to boolean
-                    self._fmt[sampleNameIndex][ID] = val[0]
+                pass
             elif num is None:  # num is unknown
                 nalts = len(self._alts)
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, src, isSplit, val)
+                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
             else:
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, num, src, isSplit, val)
+                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, num, isSplit, val)
 
             if ID not in self._fmtIDs:
                 self._fmtIDs += [ID]

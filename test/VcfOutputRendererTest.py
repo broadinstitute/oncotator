@@ -60,7 +60,6 @@ from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 from TestUtils import TestUtils
 import logging
 import vcf
-from StringIO import StringIO
 TestUtils.setupLogging(__file__, __name__)
 
 
