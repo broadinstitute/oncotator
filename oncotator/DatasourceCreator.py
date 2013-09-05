@@ -55,7 +55,7 @@ from utils.ConfigUtils import ConfigUtils
 from datasources import Gaf, ReferenceDatasource
 from datasources import dbSNP
 from datasources import Cosmic, Generic_Gene_DataSource, Generic_Transcript_Datasource, Generic_VariantClassification_Datasource
-from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider
+from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider, IndexedVCF_DataSource, IndexedTSV_Datasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -127,9 +127,26 @@ class DatasourceCreator(object):
                                                                               version=configParser.get('general', 'version'),
                                                                               src_file="file://" + filePrefix + configParser.get('general', 'src_file'), # three slashes for sqlite
                                                                               inputPositionAnnotationName=configParser.get('general', 'inputPositionAnnotationName'),
-                                                                              outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
+                                                                              outputPositionAnnotationName=configParser.get('general', 'outputPositionAnnotationName'))
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
+        elif dsType == "indexed_vcf":
+            result = IndexedVCF_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'),
+                                           title=configParser.get("general", "title"),
+                                           version=configParser.get('general', 'version'))
+        elif dsType == "indexed_tsv":
+            colnames = configParser.get("general", "column_names")
+            indexColnames = configParser.get("general", "index_columns")
+            indexColnames = indexColnames.split(",")
+            for colname in indexColnames:
+                if colname not in colnames:
+                    msg = "%s is missing from column name list." % colname
+                    logging.warn(msg)
+            result = IndexedTSV_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'),
+                                           title=configParser.get("general", "title"),
+                                           version=configParser.get('general', 'version'),
+                                           colnames=colnames.split(","),
+                                           indexColnames=indexColnames)
         return result
     
     @staticmethod
