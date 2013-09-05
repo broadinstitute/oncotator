@@ -48,6 +48,7 @@
 #"""
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
+import logging
 
 
 """
@@ -95,6 +96,7 @@ class RunSpecification(object):
         self.__inputFilename = None
         self.__outputFilename = None
         self.__manualAnnotations = None
+        self.__defaultAnnotations = None
         self.__datasources = None
         self.__isMulticore = False
         self.__numCores = None
@@ -166,8 +168,15 @@ class RunSpecification(object):
 
     def del_manual_annotations(self):
         del self.__manualAnnotations
-    
-    
+
+    def get_default_annotations(self):
+        return self.__defaultAnnotations
+
+    def set_default_annotations(self, value):
+        self.__defaultAnnotations = value
+
+    def del_default_annotations(self):
+        del self.__defaultAnnotations
 
     def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict()):
         self.inputCreator = inputCreator
@@ -182,6 +191,7 @@ class RunSpecification(object):
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
     outputRenderer = property(get_output_renderer, set_output_renderer, del_output_renderer, "outputRenderer's docstring")
     manualAnnotations = property(get_manual_annotations, set_manual_annotations, del_manual_annotations, "manualAnnotations's docstring")
+    defaultAnnotations = property(get_default_annotations, set_default_annotations, del_default_annotations, "Annotations that are populated only when the annotation does not exist or is empty ('' or None)")
     datasources = property(get_datasources, set_datasources, del_datasources, "datasources's docstring")
     isMulticore = property(get_is_multicore, set_is_multicore, del_is_multicore, "isMulticore's docstring")
     numCores = property(get_num_cores, set_num_cores, del_num_cores, "numCores's docstring")
@@ -216,7 +226,7 @@ class OncotatorCLIUtils(object):
     @staticmethod
     def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores = 4, defaultAnnotations=dict()):
         ds = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores)
-        return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores)
+        return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores, defaultAnnotations=defaultAnnotations)
     
     @staticmethod
     def createInputFormatNameToClassDict():
@@ -303,4 +313,15 @@ class OncotatorCLIUtils(object):
                 opt[1] = '' 
             result[opt[0]] = opt[1]
         return result
-        
+
+    @staticmethod
+    def determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile):
+        manualOverrides = OncotatorCLIUtils.createManualAnnotationsGivenConfigFile(overrideConfigFile)
+        for clmo in commandLineManualOverrides:
+            if clmo.find(":") == -1:
+                logging.getLogger(__name__).warn("Could not parse annotation: " + str(clmo) + "   ... skipping")
+                continue
+            keyval = clmo.split(':', 1)
+            manualOverrides[keyval[0]] = keyval[1]
+
+        return manualOverrides

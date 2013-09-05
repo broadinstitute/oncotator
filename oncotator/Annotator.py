@@ -187,13 +187,13 @@ class Annotator(object):
         if mutations is None: 
             self.logger.warn("Mutation list points to None after annotation.")
         
-        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
-        if mutations is None:
-            self.logger.warn("Mutation list points to None after manual annotations.")
-
         mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
         if mutations is None:
             self.logger.warn("Mutation list points to None after default annotations.")
+
+        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after manual annotations.")
 
         comments = self._createComments()
         metadata = self._createMetadata()
@@ -211,13 +211,15 @@ class Annotator(object):
 
     def _applyDefaultAnnotations(self, mutations, defaultAnnotations):
         # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
-        #TODO: Need unit test
         defaultAnnotationsKeys = defaultAnnotations.keys()
         for m in mutations:
             mKeys = m.keys()
             for k in defaultAnnotationsKeys:
                 if k not in mKeys:
-                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="MANUAL")
+                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="DEFAULT")
+                if m[k] == "":
+                    m.getAnnotation(k).setDatasource("DEFAULT")
+                    m.getAnnotation(k).setValue(defaultAnnotations[k])
             yield m
 
     def _createManualAnnotationsForMetadata(self, manualAnnotations):
