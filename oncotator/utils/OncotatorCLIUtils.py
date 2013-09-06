@@ -89,6 +89,7 @@ class RunSpecification(object):
         datasources -- A list of datasources (instance of Datasource).
         isMulticore -- use multicore processing, where available (True/False)
         numCores -- number of cores to use if isMulticore is True.  Otherwise, this is ignored.
+        cache_url -- if None, implies that there is no cache.
         """
     def __init__(self):
         self.__inputCreator = None
@@ -100,7 +101,27 @@ class RunSpecification(object):
         self.__datasources = None
         self.__isMulticore = False
         self.__numCores = None
+        self.__cache_url = None
+        self.__is_read_only_cache=True
         pass
+
+    def get_cache_url(self):
+        return self.__cache_url
+
+    def set_cache_url(self, value):
+        self.__cache_url = value
+
+    def del_cache_url(self):
+        del self.__cache_url
+
+    def set_is_read_only_cache(self, value):
+        self.__is_read_only_cache = value
+
+    def get_is_read_only_cache(self):
+        return self.__is_read_only_cache
+
+    def del_is_read_only_cache(self):
+        del self.__is_read_only_cache
 
     def get_is_multicore(self):
         return self.__isMulticore
@@ -178,7 +199,7 @@ class RunSpecification(object):
     def del_default_annotations(self):
         del self.__defaultAnnotations
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict()):
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
         self.manualAnnotations = manualAnnotations
@@ -186,6 +207,8 @@ class RunSpecification(object):
         self.isMulticore = isMulticore
         self.numCores = numCores
         self.defaultAnnotations = defaultAnnotations
+        self.cacheUrl = cacheUrl
+        self.isReadOnlyCache = read_only_cache
 
     
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
@@ -195,6 +218,8 @@ class RunSpecification(object):
     datasources = property(get_datasources, set_datasources, del_datasources, "datasources's docstring")
     isMulticore = property(get_is_multicore, set_is_multicore, del_is_multicore, "isMulticore's docstring")
     numCores = property(get_num_cores, set_num_cores, del_num_cores, "numCores's docstring")
+    cacheUrl = property(get_cache_url, set_cache_url, del_cache_url, "cacheUrl's docstring")
+    isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
 
 class OncotatorCLIUtils(object):
     """
@@ -224,9 +249,9 @@ class OncotatorCLIUtils(object):
     
 
     @staticmethod
-    def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores = 4, defaultAnnotations=dict()):
+    def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
         ds = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores)
-        return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores, defaultAnnotations=defaultAnnotations)
+        return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache)
     
     @staticmethod
     def createInputFormatNameToClassDict():
@@ -253,7 +278,7 @@ class OncotatorCLIUtils(object):
         return tmp.keys()
     
     @staticmethod
-    def createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceList=[], genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict()):
+    def createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceList=[], genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -287,7 +312,7 @@ class OncotatorCLIUtils(object):
             outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
             
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache)
         return result
     
     @staticmethod

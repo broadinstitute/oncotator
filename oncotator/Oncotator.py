@@ -74,7 +74,13 @@ def parseOptions(program_license, program_version_message):
     [manual_annotations]
     override:center=broad.mit.edu,source=WXS,sequencer=Illumina GAIIx,score=
 
+    Example of cache urls:
 
+    # Use a file
+    -u file://myfile.cache
+
+    # memcache
+    -u memcache://localhost:11211
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
@@ -95,6 +101,8 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('genome_build', metavar='build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
     parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
     parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -a 'name2:value2' ")
+    parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
+    parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     # Process arguments
     args = parser.parse_args()
     
@@ -169,6 +177,8 @@ USAGE
         inputFormat = args.input_format.upper()
         outputFormat = args.output_format.upper()
         datasourceDir = args.dbDir
+        cache_url = args.cache_url
+        read_only_cache = args.read_only_cache
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
@@ -181,7 +191,7 @@ USAGE
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues)
+        runConfig = OncotatorCLIUtils.createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues, cacheUrl=cache_url, read_only_cache=read_only_cache)
            
         annotator = Annotator()
         annotator.initialize(runConfig)

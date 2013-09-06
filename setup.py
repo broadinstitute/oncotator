@@ -72,7 +72,7 @@ setup(
         '': ['*.config', '*.template']
   },
   test_suite='test',
-  packages=['oncotator','oncotator.utils','oncotator.utils.install','oncotator.input','oncotator.output','oncotator.index','oncotator.configs'],
+  packages=['oncotator','oncotator.cache', 'oncotator.utils','oncotator.utils.install','oncotator.input','oncotator.output','oncotator.index','oncotator.configs'],
   license='''
 # By downloading the PROGRAM you agree to the following terms of use:
 #
@@ -132,7 +132,7 @@ setup(
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env/build/pyvcf/vcf$ cython cparse.pyx
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
-  install_requires=[ 'bcbio-gff', 'pyvcf >= 0.6.3', 'pysam', 'pandas', 'biopython','numpy', 'cython', 'shove', 'sqlalchemy', 'nose'],
+  install_requires=[ 'bcbio-gff', 'pyvcf >= 0.6.3', 'pysam', 'pandas', 'biopython','numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached'],
   
   # For future reference... how to specify required libraries.
     #  scripts=['scripts/vcf_melt', 'scripts/vcf_filter.py'],

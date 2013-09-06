@@ -47,6 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from oncotator.Annotation import Annotation
+from oncotator.cache.CacheManager import CacheManager
 
 
 """
@@ -113,6 +114,7 @@ class Annotator(object):
         self._defaultAnnotations = dict()
         self._isMulticore = None
         self._numCores = None
+        self._cacheManager = None
         pass
 
     def getIsMulticore(self):
@@ -155,6 +157,9 @@ class Annotator(object):
         self.setIsMulticore(runSpec.get_is_multicore())
         self.setNumCores(runSpec.get_num_cores())
 
+        # TODO: Update this for getting db_dir key
+        self._cacheManager = CacheManager()
+        self._cacheManager.initialize(runSpec.get_cache_url(), "dummy", is_read_only=runSpec.get_is_read_only_cache())
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)
@@ -169,6 +174,21 @@ class Annotator(object):
         comments.append(self.createHeaderString())
         return comments
 
+    def annotate_mutations(self, mutations):
+        mutations = self._annotate_mutations_using_datasources(mutations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after annotation.")
+
+        mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after default annotations.")
+
+        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after manual annotations.")
+
+        return mutations
+
     def annotate(self):
         """
         Annotate the given mutations specified in the input.
@@ -182,23 +202,17 @@ class Annotator(object):
         mutations = self._inputCreator.createMutations()
         if mutations is None: 
             self.logger.warn("Mutation list points to None after creation.")
-            
-        mutations = self._annotateMutations(mutations)
-        if mutations is None: 
-            self.logger.warn("Mutation list points to None after annotation.")
-        
-        mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
-        if mutations is None:
-            self.logger.warn("Mutation list points to None after default annotations.")
 
-        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
-        if mutations is None:
-            self.logger.warn("Mutation list points to None after manual annotations.")
+        mutations = self.annotate_mutations(mutations)
 
         comments = self._createComments()
         metadata = self._createMetadata()
 
         filename = self._outputRenderer.renderMutations(mutations, metadata=metadata, comments=comments)
+
+        self.logger.info("Closing cache")
+        self._cacheManager.close_cache()
+
         return filename
     
     def _applyManualAnnotations(self, mutations, manualAnnotations):
@@ -241,11 +255,16 @@ class Annotator(object):
         
         return "Oncotator " +  VERSION + "|" + "|".join(datasourceStrings)
     
-    def _annotateMutations(self, mutations):
+    def _annotate_mutations_using_datasources(self, mutations):
         if len(self._datasources) == 0:
             self.logger.warn("THERE ARE NO DATASOURCES REGISTERED")
         for m in mutations:
-            for datasource in self._datasources:
-                m = datasource.annotate_mutation(m)
+            annot_dict = self._cacheManager.retrieve_cached_annotations(m)
+            if annot_dict is None:
+                for datasource in self._datasources:
+                    m = datasource.annotate_mutation(m)
+                self._cacheManager.store_annotations_in_cache(m)
+            else:
+                m.addAnnotations(annot_dict)
             yield m
     

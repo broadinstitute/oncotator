@@ -47,7 +47,9 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from TestUtils import TestUtils
+from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MutationData import MutationData
+from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
 
 """
 Created on Nov 7, 2012
@@ -182,6 +184,27 @@ class AnnotatorTest(unittest.TestCase):
         self.assertTrue(muts_final[2]['test2'] == "foo2-original")
         self.assertTrue(muts_final[2]['test3'] == "foo3")
 
+    def testAnnotateListOfMutations(self):
+        """Test that we can initialize an Annotator, without an input or output and then feed mutations, one at a time... using a runspec"""
+        dbDir = self.config.get('DEFAULT',"dbDir")
+        ds = DatasourceCreator.createDatasources(dbDir)
+        runSpec = RunSpecification()
+        runSpec.initialize(None, None, datasources=ds)
+        annotator = Annotator()
+        annotator.initialize(runSpec)
+
+        m = MutationData()
+        m.chr = "1"
+        m.start = "12941796"
+        m.end = "12941796"
+        m.alt_allele = "G"
+        m.ref_allele = "T"
+
+        muts = [m]
+
+        muts = annotator.annotate_mutations(muts)
+
+        self.assertTrue(muts.next().get("gene", None) is not None)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']

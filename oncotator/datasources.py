@@ -979,7 +979,7 @@ class Cosmic(Datasource):
         try:
             results = self._fetch_from_tabix_file(db, chromosome, start, end)
         except ValueError as ve:
-            self.logger.warn(
+            self.logger.debug(
                 "Exception when looking for COSMIC records.  Empty set of records being returned: " + repr(ve))
         if results is not None:
             for res in results:

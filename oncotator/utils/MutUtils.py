@@ -225,6 +225,14 @@ class MutUtils(object):
         return result
 
     @staticmethod
+    def create_variant_key_by_mutation(m, other_info=""):
+        return MutUtils.create_variant_key(m.chr, m.start, m.end, m.ref_allele, m.alt_allele, other_info)
+
+    @staticmethod
+    def create_variant_key(chr, start, end, ref_allele, alt_allele, other_info=""):
+        return ("%s_%s_%s_%s_%s_%s" % (chr, start, end, ref_allele, alt_allele, other_info))
+
+    @staticmethod
     def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True, exposedFields=set()):
         """ Creates a dictionary of the output maf file headers to the annotations.
         Input:
