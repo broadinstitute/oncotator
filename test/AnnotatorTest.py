@@ -203,8 +203,9 @@ class AnnotatorTest(unittest.TestCase):
         muts = [m]
 
         muts = annotator.annotate_mutations(muts)
+        m2 = muts.next()
+        self.assertTrue(m2.get("gene", None) is not None)
 
-        self.assertTrue(muts.next().get("gene", None) is not None)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']
