@@ -11,6 +11,8 @@ class CacheManager(object):
     def initialize(self, url, db_dir_key, is_read_only=True):
         self.set_read_only(is_read_only)
         self.set_db_dir_key(db_dir_key)
+
+        #TODO: Double check that multiple calls to initialize will not break or leave dangling resources.
         self.__cache = CacheFactory.createCache(url)
 
     def retrieve_cached_annotations(self, m):

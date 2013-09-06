@@ -114,7 +114,8 @@ class Annotator(object):
         self._defaultAnnotations = dict()
         self._isMulticore = None
         self._numCores = None
-        self._cacheManager = None
+        self._cacheManager = CacheManager()
+        self._cacheManager.initialize(None, "never_used", True)
         pass
 
     def getIsMulticore(self):
