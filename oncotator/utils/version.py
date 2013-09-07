@@ -47,4 +47,4 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 
-VERSION = "v1.0.0.0rc21"
+VERSION = "v1.0.0.0rc23"

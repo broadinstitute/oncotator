@@ -1304,7 +1304,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
     """
-    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file", genome_build="hg19"):
+    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, genome_build, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=ensembl_index_fname, title=title, version=version)
 
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
@@ -1313,6 +1313,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         self.gene_db = shove.Shove(protocol + ':///%s' % ensembl_gene_to_transcript_index_fname, "memory://")
         self.gene_dbkeys = self.gene_db.keys()
+
+    def annotate_mutation(self, mutation):
+        pass
+
+
 
 
 
