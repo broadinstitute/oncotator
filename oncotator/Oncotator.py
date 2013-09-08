@@ -76,8 +76,9 @@ def parseOptions(program_license, program_version_message):
 
     Example of cache urls:
 
-    # Use a file
-    -u file://myfile.cache
+    # Use a file (/home/user/myfile.cache) ... note the three forward slashes after "file:" for absolute path.
+    -u file:///home/user/myfile.cache
+    -u file://relative_file.cache
 
     # memcache
     -u memcache://localhost:11211

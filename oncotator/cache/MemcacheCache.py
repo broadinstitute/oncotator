@@ -3,10 +3,14 @@ import memcache
 
 class MemcacheCache(Cache):
     """
+
+    Please note that each mutation stored in the memcache uses about 12k due to pickling, if set to default pickling protocol.
+    With the pickling protocol set here, each entry uses about 8k.
+
     """
     def __init__(self, url):
         ip_address = url.split("://")[1]
-        self.mc = memcache.Client([ip_address], debug=0)
+        self.mc = memcache.Client([ip_address], debug=0, pickleProtocol=2)
 
     def retrieve_from_cache(self, key):
         """Given a key, retrieve from the cache."""

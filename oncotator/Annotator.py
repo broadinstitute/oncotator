@@ -217,7 +217,6 @@ class Annotator(object):
         return filename
     
     def _applyManualAnnotations(self, mutations, manualAnnotations):
-        # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
         manualAnnotationKeys = manualAnnotations.keys()
         for m in mutations:
             for k in manualAnnotationKeys:
@@ -225,7 +224,6 @@ class Annotator(object):
             yield m
 
     def _applyDefaultAnnotations(self, mutations, defaultAnnotations):
-        # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
         defaultAnnotationsKeys = defaultAnnotations.keys()
         for m in mutations:
             mKeys = m.keys()
