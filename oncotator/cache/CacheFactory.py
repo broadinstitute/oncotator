@@ -24,7 +24,7 @@ class CacheFactory(object):
             cache_url = "memory://"
 
         if url.startswith("memcache"):
-            logging.getLogger(__name__).info("Using memcache: " + str(url) + ", " + str(cache_url))
+            logging.getLogger(__name__).info("Using memcache: " + str(url) )
             return MemcacheCache(url)
 
         logging.getLogger(__name__).info("Creating shove cache: " + str(url) + ", " + str(cache_url))
