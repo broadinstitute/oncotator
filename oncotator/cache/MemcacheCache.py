@@ -1,5 +1,4 @@
 from oncotator.cache.Cache import Cache
-import memcache
 
 class MemcacheCache(Cache):
     """
@@ -9,6 +8,7 @@ class MemcacheCache(Cache):
 
     """
     def __init__(self, url):
+        import memcache
         ip_address = url.split("://")[1]
         self.mc = memcache.Client([ip_address], debug=0, pickleProtocol=2)
 

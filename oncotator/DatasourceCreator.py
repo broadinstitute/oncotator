@@ -136,7 +136,7 @@ class DatasourceCreator(object):
         return result
     
     @staticmethod
-    def createDatasources(datasourceDir, genomeBuild="hg19", isMulticore=False, numCores = 4):
+    def createDatasources(datasourceDir, genomeBuild="hg19", isMulticore=False, numCores=4, tx_mode="CANONICAL"):
         """
         Scrapes a directory and creates a list of datasource instances.
         
@@ -157,7 +157,10 @@ class DatasourceCreator(object):
         type=tsv
         
         numCores is ignored if isMulticore == False
+
+
         """
+        # TODO: Note that createDatasources does not honor the tx-mode
         dsQueueList = []
         
         # Get a list of all of the directories

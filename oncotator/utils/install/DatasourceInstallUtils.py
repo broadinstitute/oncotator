@@ -81,23 +81,33 @@ class DatasourceInstallUtils(object):
         return result
 
     @staticmethod
-    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns):
-        baseDSFile = os.path.basename(ds_file)
-        shutil.copy(ds_file, destDir + "/" + baseDSFile)
-
+    def create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type, ds_version, index_columns):
         # Grab appropriate template for the ds type
         templateName = 'ds_config.template'
         sourceConfigFP = ConfigUtils.createTemplateFP(templateName)
         sTemplate = Template(sourceConfigFP.read())
         indexColumnDict = DatasourceInstallUtils.determineIndexColumns(ds_type, index_columns.split(','))
-
         # Populate template, which yields the config file.
         finalText = sTemplate.safe_substitute(sTemplate, ds_title=ds_name, ds_version=ds_version, ds_type=ds_type,
                                               src_file=baseDSFile,
                                               genomic_pos_cols=",".join(indexColumnDict['genomic_pos_cols']),
                                               gene_col=",".join(indexColumnDict['gene_col']),
                                               transcript_col=",".join(indexColumnDict['transcript_col']),
-                                              gene_protein_position_cols=",".join(indexColumnDict['gene_protein_pos_cols']))
+                                              gene_protein_position_cols=",".join(
+                                                  indexColumnDict['gene_protein_pos_cols']))
+        return finalText
+
+    @staticmethod
+    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns):
+        baseDSFile = os.path.basename(ds_file)
+        shutil.copy(ds_file, destDir + "/" + baseDSFile)
+
+        if ds_type == "indexed_vcf":
+            # TODO: Change this to be the appropriate code.
+            raise NotImplementedError("indexed_vcf not supported yet")
+        else:
+            finalText = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type,
+                                                                                     ds_version, index_columns)
         # Write the config file
         configFilename = destDir + "/" + ds_foldername + ".config"
         fp = file(configFilename, 'w')

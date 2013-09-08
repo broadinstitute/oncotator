@@ -88,6 +88,10 @@ class GafInvalidChromosomeValue(Exception):
 
 class TranscriptProvider(object):
 
+    TX_MODE_CANONICAL = "CANONICAL"
+    TX_MODE_BEST_EFFECT = "EFFECT"
+    TX_MODE_CHOICES = [TX_MODE_CANONICAL, TX_MODE_BEST_EFFECT] # Simply list the ones above here.
+
     @abc.abstractmethod
     def getTranscriptDict(self):
         """ Return a dict containing all transcripts where key is the transcript ID.
@@ -97,6 +101,11 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon in each transcript"""
+        return
+
+    @abc.abstractmethod
+    def set_tx_mode(self, tx_mode):
+        # TODO: Throw exception if not in TX_MODE_CHOICES
         return
 
 
@@ -230,6 +239,9 @@ class Gaf(Datasource, TranscriptProvider):
         self.logger.info("Datasource " + self.title + " " + self.version + " finished initialization")
 
         # TODO: Check for valid values.
+        self.tx_mode = tx_mode
+
+    def set_tx_mode(self, tx_mode):
         self.tx_mode = tx_mode
 
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):

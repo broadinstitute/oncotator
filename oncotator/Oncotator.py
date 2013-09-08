@@ -17,6 +17,8 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 import sys
+from oncotator.datasources import TranscriptProvider
+
 if not (sys.version_info[0] == 2  and sys.version_info[1] in [ 7]):
     raise "Oncotator requires Python 2.7.x : " + str(sys.version_info)
 
@@ -42,7 +44,8 @@ PROFILE = 1
 
 #TODO: This needs to be dynamic from a config file.
 # TODO: This needs to be changed.
-DEFAULT_DB_DIR = '/xchip/cga1/lichtens/oncotator_ds_tmp'
+DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_ds_tmp'
+DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
@@ -67,7 +70,7 @@ def parseOptions(program_license, program_version_message):
 
     Both default and override config files and command line specifications stack.
 
-    Example of an override_config file:
+    Example of an override_config or default_config file:
 
     # Create center, source, sequencer, and score annotations, with the values broad.mit.edu, WXS, Illumina GAIIx, and <blank> for all mutations.
     #  This will overwrite all mutations.
@@ -101,9 +104,10 @@ def parseOptions(program_license, program_version_message):
                     help='Output file name of annotated file.')
     parser.add_argument('genome_build', metavar='build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
     parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
-    parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -a 'name2:value2' ")
+    parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
+    parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
     # Process arguments
     args = parser.parse_args()
     
@@ -180,6 +184,7 @@ USAGE
         datasourceDir = args.dbDir
         cache_url = args.cache_url
         read_only_cache = args.read_only_cache
+        tx_mode = args.tx_mode
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
@@ -192,7 +197,7 @@ USAGE
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues, cacheUrl=cache_url, read_only_cache=read_only_cache)
+        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues, cacheUrl=cache_url, read_only_cache=read_only_cache, tx_mode=tx_mode)
            
         annotator = Annotator()
         annotator.initialize(runConfig)

@@ -116,6 +116,7 @@ class Annotator(object):
         self._numCores = None
         self._cacheManager = CacheManager()
         self._cacheManager.initialize(None, "never_used", True)
+        self.cache_stats = {"miss": 0, "hit":0}
         pass
 
     def getIsMulticore(self):
@@ -157,7 +158,7 @@ class Annotator(object):
         self._datasources = runSpec.datasources
         self.setIsMulticore(runSpec.get_is_multicore())
         self.setNumCores(runSpec.get_num_cores())
-
+        self.cache_stats = {"miss": 0, "hit":0}
         # TODO: Update this for getting db_dir key
         self._cacheManager = CacheManager()
         self._cacheManager.initialize(runSpec.get_cache_url(), "dummy", is_read_only=runSpec.get_is_read_only_cache())
@@ -211,7 +212,7 @@ class Annotator(object):
 
         filename = self._outputRenderer.renderMutations(mutations, metadata=metadata, comments=comments)
 
-        self.logger.info("Closing cache")
+        self.logger.info("Closing cache: (misses: " + str(self.cache_stats['miss']) + "  hits: " + str(self.cache_stats['hit']) + ")")
         self._cacheManager.close_cache()
 
         return filename
@@ -260,10 +261,12 @@ class Annotator(object):
         for m in mutations:
             annot_dict = self._cacheManager.retrieve_cached_annotations(m)
             if annot_dict is None:
+                self.cache_stats['miss'] += 1
                 for datasource in self._datasources:
                     m = datasource.annotate_mutation(m)
                 self._cacheManager.store_annotations_in_cache(m)
             else:
+                self.cache_stats['hit'] += 1
                 m.addAnnotations(annot_dict)
             yield m
     
