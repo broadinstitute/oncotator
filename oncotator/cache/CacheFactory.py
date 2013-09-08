@@ -1,5 +1,6 @@
 import logging
 from oncotator.cache.DummyCache import DummyCache
+from oncotator.cache.MemcacheCache import MemcacheCache
 from oncotator.cache.ShoveCache import ShoveCache
 
 
@@ -23,11 +24,8 @@ class CacheFactory(object):
             cache_url = "memory://"
 
         if url.startswith("memcache"):
-
-            # We should set up in memory cache as well.
-            cache_url = url
-            # url = "memory://"
+            logging.getLogger(__name__).info("Using memcache: " + str(url) + ", " + str(cache_url))
+            return MemcacheCache(url)
 
         logging.getLogger(__name__).info("Creating shove cache: " + str(url) + ", " + str(cache_url))
-
         return ShoveCache(url, cache_url)
