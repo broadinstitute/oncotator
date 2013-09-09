@@ -149,6 +149,7 @@ class Datasource(object):
         self.title = title
         self.version = str(version)
         self.output_headers = []
+        self.hashcode = ""
 
     def attach_to_class(self, cls, name, options):
         """
@@ -163,10 +164,17 @@ class Datasource(object):
             self.title = name
         options.add_datasource(self)
 
+    @abc.abstractmethod
     def annotate_mutation(self, mutation):
         # The default implementation raise a NotImplementedError
         # to ensure that any subclasses must override this method.
         raise NotImplementedError
+
+    def set_hashcode(self, value):
+        self.hashcode = value
+
+    def get_hashcode(self):
+        return self.hashcode
 
 class Gaf(Datasource, TranscriptProvider):
     """

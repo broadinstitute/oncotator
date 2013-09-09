@@ -48,6 +48,7 @@
 #"""
 from oncotator.Annotation import Annotation
 from oncotator.cache.CacheManager import CacheManager
+from oncotator.utils.Hasher import Hasher
 
 
 """
@@ -116,7 +117,7 @@ class Annotator(object):
         self._numCores = None
         self._cacheManager = CacheManager()
         self._cacheManager.initialize(None, "never_used", True)
-        self.cache_stats = {"miss": 0, "hit":0}
+        self._cache_stats = {"miss": 0, "hit":0}
         pass
 
     def getIsMulticore(self):
@@ -134,7 +135,6 @@ class Annotator(object):
     def setNumCores(self, value):
         self.__numCores = value
 
-    
     def setInputCreator(self, inputCreator):
         self._inputCreator = inputCreator
         
@@ -146,8 +146,22 @@ class Annotator(object):
 
     def setDefaultAnnotations(self, value):
         self._defaultAnnotations = value
-           
-               
+
+    def create_db_dir_key(self):
+        """Create the db_dir_key for this annotation configuration.  Requires the datasources."""
+        db_dir_key = Hasher.md5_hash(self.createHeaderString(False))
+        return db_dir_key
+
+    def initialize_cache_manager(self, runSpec):
+        """Do not bother calculating the db_dir_key if the cache is not being used. """
+        cache_url = runSpec.get_cache_url()
+        if cache_url is not None and cache_url != "":
+            db_dir_key = self.create_db_dir_key()
+        else:
+            db_dir_key = "never_used"
+        self._cacheManager = CacheManager()
+        self._cacheManager.initialize(cache_url, db_dir_key, is_read_only=runSpec.get_is_read_only_cache())
+
     def initialize(self,runSpec):
         """ Given a RunSpecification instance, initialize self properly.  Do not start annotation.
         """
@@ -158,10 +172,8 @@ class Annotator(object):
         self._datasources = runSpec.datasources
         self.setIsMulticore(runSpec.get_is_multicore())
         self.setNumCores(runSpec.get_num_cores())
-        self.cache_stats = {"miss": 0, "hit":0}
-        # TODO: Update this for getting db_dir key
-        self._cacheManager = CacheManager()
-        self._cacheManager.initialize(runSpec.get_cache_url(), "dummy", is_read_only=runSpec.get_is_read_only_cache())
+        self._cache_stats = {"miss": 0, "hit":0}
+        self.initialize_cache_manager(runSpec)
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)
@@ -212,7 +224,7 @@ class Annotator(object):
 
         filename = self._outputRenderer.renderMutations(mutations, metadata=metadata, comments=comments)
 
-        self.logger.info("Closing cache: (misses: " + str(self.cache_stats['miss']) + "  hits: " + str(self.cache_stats['hit']) + ")")
+        self.logger.info("Closing cache: (misses: " + str(self._cache_stats['miss']) + "  hits: " + str(self._cache_stats['hit']) + ")")
         self._cacheManager.close_cache()
 
         return filename
@@ -243,17 +255,21 @@ class Annotator(object):
             result[k] = Annotation(manualAnnotations[k], datasourceName="MANUAL")
         return result
 
-    def createHeaderString(self):
+    def createHeaderString(self, is_giving_oncotator_version=True):
         """
         Create a default header string that lists version of Oncotator and datasource information.
 
         :return: string
         """
+        onco_string = ""
+        if is_giving_oncotator_version:
+            onco_string = "Oncotator " +  VERSION + " |"
+
         datasourceStrings = []
         for ds in self._datasources:
             datasourceStrings.append(" " + ds.title + " " + ds.version + " ")
         
-        return "Oncotator " +  VERSION + "|" + "|".join(datasourceStrings)
+        return onco_string + "|".join(datasourceStrings)
     
     def _annotate_mutations_using_datasources(self, mutations):
         if len(self._datasources) == 0:
@@ -261,12 +277,14 @@ class Annotator(object):
         for m in mutations:
             annot_dict = self._cacheManager.retrieve_cached_annotations(m)
             if annot_dict is None:
-                self.cache_stats['miss'] += 1
+                self._cache_stats['miss'] += 1
                 for datasource in self._datasources:
                     m = datasource.annotate_mutation(m)
                 self._cacheManager.store_annotations_in_cache(m)
             else:
-                self.cache_stats['hit'] += 1
+                self._cache_stats['hit'] += 1
                 m.addAnnotations(annot_dict)
             yield m
+
+
     

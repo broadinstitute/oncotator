@@ -88,7 +88,18 @@ class DatasourceCreator(object):
         """ Calls createDatasourceFromConfigParser with a two-entry tuple using 
             exact same arguments. """
         return DatasourceCreator.createDatasource(configTuple[0], configTuple[1])
-    
+
+    @staticmethod
+    def _retrieve_hash_code(leafDir):
+        hashcode = ""
+        md5_filename = leafDir + "../" + os.path.basename(leafDir) + ".md5"
+        if os.path.exists(md5_filename):
+            logging.info("md5 found for " + leafDir)
+            md5_fp = file(md5_filename, 'r')
+            hashcode = md5_fp.read()
+            md5_fp.close()
+        return hashcode
+
     @staticmethod
     def createDatasourceFromConfigParser(configParser, leafDir):
         """
@@ -133,6 +144,9 @@ class DatasourceCreator(object):
                                                                               outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
+
+        hashcode = DatasourceCreator._retrieve_hash_code(leafDir)
+        result.set_hashcode(hashcode)
         return result
     
     @staticmethod
