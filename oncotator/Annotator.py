@@ -149,10 +149,13 @@ class Annotator(object):
 
     def create_db_dir_key(self):
         """Create the db_dir_key for this annotation configuration.  Requires the datasources."""
+        self.logger.info("Generating db-dir key from datasources...")
         hasher = Hasher()
         for ds in self._datasources:
+            self.logger.info(ds.title + " " + ds.version + " md5: " + ds.get_hashcode())
             hasher.update(ds.get_hashcode())
         db_dir_key = Hasher.md5_hash(hasher.hexdigest())
+        self.logger.info("Final db-dir md5: " + db_dir_key)
         return db_dir_key
 
     def create_db_dir_key_simple(self):

@@ -1,11 +1,12 @@
 import os
 from oncotator.utils.Hasher import Hasher
+from test.TestUtils import TestUtils
 
 __author__ = 'lichtens'
 
 import unittest
 
-
+TestUtils.setupLogging(__file__, __name__)
 class HasherTest(unittest.TestCase):
     def test_directory_hash(self):
         """Test that we can read a hashcode for a directory."""
