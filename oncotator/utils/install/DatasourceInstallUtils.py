@@ -50,6 +50,7 @@ import os
 import shutil
 from string import Template
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.Hasher import Hasher
 
 
 class DatasourceInstallUtils(object):
@@ -113,3 +114,12 @@ class DatasourceInstallUtils(object):
         fp = file(configFilename, 'w')
         fp.write(finalText)
         fp.close()
+
+        # Calculate a md5 for the genome build dir and write it
+        md5_filename = os.path.dirname(destDir) + ".md5"
+        hasher = Hasher()
+        hashcode = hasher.create_hashcode_for_dir(destDir)
+        fp = file(md5_filename, 'w')
+        fp.write(hashcode)
+        fp.close()
+
