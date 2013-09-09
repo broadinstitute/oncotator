@@ -111,12 +111,14 @@ class DatasourceInstallUtils(object):
                                                                                      ds_version, index_columns)
         # Write the config file
         configFilename = destDir + "/" + ds_foldername + ".config"
+        print("config file being written to: " + os.path.abspath(configFilename))
         fp = file(configFilename, 'w')
         fp.write(finalText)
         fp.close()
 
         # Calculate a md5 for the genome build dir and write it
-        md5_filename = os.path.dirname(destDir) + ".md5"
+        md5_filename = os.path.abspath(destDir) + ".md5"
+        print("md5 being written to: " + os.path.abspath(md5_filename))
         hasher = Hasher()
         hashcode = hasher.create_hashcode_for_dir(destDir)
         fp = file(md5_filename, 'w')

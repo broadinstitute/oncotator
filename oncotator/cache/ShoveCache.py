@@ -18,7 +18,6 @@ class ShoveCache(Cache):
         except KeyError:
             return None
 
-
     def store_into_cache(self, key, value):
         self.db[key] = value
 
