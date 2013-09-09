@@ -116,7 +116,6 @@ class Annotator(object):
         self._isMulticore = None
         self._numCores = None
         self._cacheManager = CacheManager()
-        self._cacheManager.initialize(None, "never_used", True)
         self._cache_stats = {"miss": 0, "hit":0}
         pass
 
