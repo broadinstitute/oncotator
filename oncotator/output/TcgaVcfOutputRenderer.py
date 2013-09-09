@@ -201,36 +201,6 @@ class TcgaVcfOutputRenderer(OutputRenderer):
             return None, None
         return ss, ssCode
 
-    def generateAlleles(self,m):
-        updated_start = m.start
-        ref_allele = m.ref_allele
-        if ref_allele == "-":
-            ref_allele="."
-
-        alt_allele = m.alt_allele
-        if alt_allele == "-":
-            alt_allele="."
-
-        ref_context = m['ref_context']
-
-        # Insert only
-        if ref_allele == ".":
-            if ref_context == "" or (len(ref_context) < 11):
-                print("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
-                return None
-            ref_allele = ref_context[10].upper()
-            alt_allele = ref_allele + alt_allele
-
-        # Deletion only
-        if alt_allele == ".":
-            if ref_context == "" or (len(ref_context) < 11):
-                print("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
-                return None
-            ref_allele = ref_context[9].upper() + ref_allele
-            alt_allele = ref_context[9].upper()
-            updated_start = str(int(m.start) - 1)
-        return ref_allele,alt_allele,updated_start
-
     def _generateFormatFieldWithValues(self,n_gt, n_alt, n_ref, mq0, bq='30', ss='2', ssc='.'):
         """ GT:AD:DP:FA:MQ0:BQ:SS:SSC
         0/1:17,1:18:0.056:0:30:2:255
@@ -373,7 +343,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
         gtN, gtT = self.genotype(n_lod, t_lod)
 
-        ref,alt,new_start = self.generateAlleles(m)
+        ref,alt,new_start = MutUtils.retrievePrecedingBase(m)
 
         ss,ssCode = self.determineSomaticStatus(gtN, gtT, qual)
         if ss is None or ssCode is None:

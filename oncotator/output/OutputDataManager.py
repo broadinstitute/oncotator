@@ -4,6 +4,7 @@ from oncotator.output.VcfOutputAnnotation import VcfOutputAnnotation
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.ConfigTable import ConfigTable
 
+
 class OutputDataManager:
     def __init__(self, configTable, comments=[], md=[], mut=None, sampleNames=[]):
         """
@@ -20,7 +21,7 @@ class OutputDataManager:
         self.delimiter = "\t"
         self.lineterminator = "\n"
         self.comments = comments
-        self.table = configTable
+        self.configTable = configTable
         self.metadata = md
         self.mutation = mut
         self.sampleNames = sampleNames
@@ -262,28 +263,28 @@ class OutputDataManager:
             if fieldType == "FORMAT":
                 if TagConstants.SPLIT in tags:  # override the default using the tags section
                     return True
-                elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+                elif self.configTable.isFieldSplit(ID, fieldType): # override the default using the config file
                     return True
                 else:
                     return False
         elif num == -1:  # by the number of alternates
             if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
                 return False
-            elif ID in self.table["NOT_SPLIT_TAGS"][fieldType]:  # override the default using the config file
+            elif self.configTable.isFieldNotSplit(ID, fieldType):
                 return False
             else:
                 return True
         elif num is None:  # number is unknown
             if TagConstants.SPLIT in tags:  # override the default using the tags section
                 return True
-            elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+            elif self.configTable.isFieldSplit(ID, fieldType):  # override the default using the config file
                 return True
             else:
                 return False
         else:
             if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
                 return True
-            elif ID in self.table["SPLIT_TAGS"][fieldType]:  # override the default using the config file
+            elif self.configTable.isFieldSplit(ID, fieldType):  # override the default using the config file
                 return True
             else:
                 return False
@@ -310,12 +311,12 @@ class OutputDataManager:
             if tag in m.keys():
                 return m[tag]
 
-        if name in self.table["INFO"]:
+        if name in self.configTable.getInfoFieldIDs():
             return "INFO"
-        elif name in self.table["FORMAT"]:
+        elif name in self.configTable.getFormatFieldIDs():
             return "FORMAT"
-        elif name in self.table["OTHER"]:
-            return self.table["OTHER"][name]
+        elif name in self.configTable.getOtherFieldIDs():
+            return self.configTable.getOtherFieldName(name)
 
         if name.upper() in vcf.parser.RESERVED_INFO:
             return "INFO"
@@ -334,8 +335,12 @@ class OutputDataManager:
         :param name: unmapped field ID
         :return: mapped field ID
         """
-        if (fieldType in self.table) and (name in self.table[fieldType]):
-            return self.table[fieldType][name]
+        if fieldType == "FORMAT":
+            return self.configTable.getFormatFieldName(name)
+        elif fieldType == "INFO":
+            return self.configTable.getInfoFieldName(name)
+        elif fieldType == "FILTER":
+            return self.configTable.getFormatFieldName(name)
         return name
 
     def _resolveFieldDataType(self, fieldType, ID, dataType):
@@ -366,13 +371,13 @@ class OutputDataManager:
         :param desc: description passed in mut object
         :return: description (default: 'Unknown'), must be surrounded by double-quotes
         """
-        if (fieldType == "FILTER") and (ID in self.table["FILTER_DESCRIPTION"]):
-            return self.table["FILTER_DESCRIPTION"][ID]
-        elif (fieldType == "FORMAT") and (ID in self.table["FORMAT_DESCRIPTION"]):
-            return self.table["FORMAT_DESCRIPTION"][ID]
-        elif (fieldType == "INFO") and (ID in self.table["INFO_DESCRIPTION"]):
-            return self.table["INFO_DESCRIPTION"][ID]
-        if (desc is None) or (desc == ""):
+        if fieldType == "FILTER" and ID in self.configTable.getFilterFieldIDs():
+            return self.configTable.getInfoFilterIDDesc(ID)
+        elif fieldType == "FORMAT" and ID in self.configTable.getFormatFieldIDs():
+            return self.configTable.getFormatFieldIDDesc(ID)
+        elif fieldType == "INFO" and ID in self.configTable.getInfoFieldIDs():
+            return self.configTable.getInfoFieldIDDesc(ID)
+        if desc is None or desc == "":
             return "Unknown"
         return desc
 

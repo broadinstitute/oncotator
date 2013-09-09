@@ -46,6 +46,8 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+import logging
+from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
 
 
 """
@@ -56,6 +58,7 @@ Created on Nov 13, 2012
 from oncotator.MutationData import MutationData
 from oncotator.utils.MutationValidationFailureException import MutationValidationFailureException
 import re
+
 class MutUtils(object):
     """
     Static class containing utility functions for Mutations. 
@@ -260,3 +263,38 @@ class MutUtils(object):
                         result["i_" + i] = i
 
         return result
+
+    @staticmethod
+    def retrievePrecedingBase(m):
+        updated_start = m.start
+        ref_allele = m.ref_allele
+        if ref_allele == "-":
+            ref_allele = "."
+
+        alt_allele = m.alt_allele
+        if alt_allele == "-":
+            alt_allele = "."
+
+        if "ref_context" in m:
+            ref_context = m['ref_context']
+        else:
+            raise MissingRequiredAnnotationException("Missing ref_context annotation in mutation. Please add ref_[genome_build] to your dbDir.")
+
+        # Insert only
+        if ref_allele == ".":
+            if ref_context == "" or (len(ref_context) < 11):
+                logging.getLogger(__name__).warn("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
+                return None
+            ref_allele = ref_context[10].upper()
+            alt_allele = ref_allele + alt_allele
+
+        # Deletion only
+        if alt_allele == ".":
+            if ref_context == "" or (len(ref_context) < 11):
+                logging.getLogger(__name__).warn("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
+                return None
+            ref_allele = ref_context[9].upper() + ref_allele
+            alt_allele = ref_context[9].upper()
+            updated_start = str(int(m.start) - 1)
+
+        return ref_allele, alt_allele, updated_start

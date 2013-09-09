@@ -130,39 +130,62 @@ class VcfOutputRenderer(OutputRenderer):
                 fieldnames = fieldnames.union(["sampleName"])
         return list(fieldnames)
 
-    def _doFieldsExist(self, section, fields):
-        tbl = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, section)
-        fieldSet = set(tbl.keys())
-        for field in fields:
-            if field not in fieldSet:
-                raise ConfigInputIncompleteException("Missing %s field in %s section in the output config file."
-                                                     % (field, section))
-
-    def _parseConfig(self):
-        sections = ["INFO", "FORMAT", "OTHER", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
-                    "FORMAT_DESCRIPTION", "SPLIT_TAGS"]
+    def _validateOutputConfigFile(self):
+        sections = ["INFO", "FORMAT", "OTHER", "SPLIT_TAGS", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
+                    "FORMAT_DESCRIPTION"]
         for section in sections:
             if not ConfigUtils.hasSectionKey(self.config, section):
                 raise ConfigInputIncompleteException("Missing %s section in the output config file." % section)
-            if sections in ("OTHER",):
-                reqKeys = ["ID", "QUAL", "FILTER"]
-                self._doFieldsExist(section, reqKeys)
-            elif sections in ("NOT_SPLIT_TAGS", "SPLIT_TAGS",):
-                reqKeys = ["INFO", "FORMAT"]
-                self._doFieldsExist(section, reqKeys)
 
-        table = dict()
-        for sect in sections:
-            if sect in ("INFO", "FORMAT", "OTHER",):
-                table[sect] = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, sect)
-            elif sect in ("INFO_DESCRIPTION", "FILTER_DESCRIPTION", "FORMAT_DESCRIPTION",):
-                table[sect] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, sect)
-                for k, v in table[sect].items():
-                    table[sect][k] = string.join(v, ",")
-            elif sect in ("SPLIT_TAGS", "NOT_SPLIT_TAGS",):
-                table[sect] = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, sect)
+            if section in ("OTHER",):
+                self._doFieldsExist(section, ["ID", "QUAL", "FILTER"])
+            elif section in ("NOT_SPLIT_TAGS", "SPLIT_TAGS",):
+                self._doFieldsExist(section, ["INFO", "FORMAT"])
 
-        return table
+    def _doFieldsExist(self, section, fields):
+        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, section)
+        for field in fields:
+            if field not in table:
+                raise ConfigInputIncompleteException("Missing %s field in the %s section of the output config file."
+                                                     % (field, section))
+
+    def _parseConfig(self):
+        configTable = ConfigTable()
+
+        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
+        for ID, name in table.items():
+            configTable.addInfoFieldID(ID, name)
+
+        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
+        for ID, name in table.items():
+            configTable.addFormatFieldID(ID, name)
+
+        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "OTHER")
+        for ID, name in table.items():
+            configTable.addOtherFieldID(ID, name)
+
+        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "INFO_DESCRIPTION")
+        for ID, desc in table.items():
+            configTable.addInfoFieldIDDesc(ID, string.join(desc, ","))
+
+        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FORMAT_DESCRIPTION")
+        for ID, desc in table.items():
+            configTable.addFormatFieldIDDesc(ID, string.join(desc, ","))
+
+        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FILTER_DESCRIPTION")
+        for ID, desc in table.items():
+            configTable.addFilterFieldIDDesc(ID, string.join(desc, ","))
+
+        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
+        for fieldType, IDs in table.items():
+            for ID in IDs:
+                configTable.addFieldIDToSplit(fieldType, ID)
+
+        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "NOT_SPLIT_TAGS")
+        for fieldType, IDs in table.items():
+            for ID in IDs:
+                configTable.addFieldIDToNotSplit(fieldType, ID)
+        return configTable
 
     def renderMutations(self, mutations, metadata=[], comments=[]):
         """ Generate a simple tsv file based on the incoming mutations.
@@ -171,6 +194,7 @@ class VcfOutputRenderer(OutputRenderer):
         self.logger.info("Rendering VCF output file: " + self._filename)
 
         # Initialize config table
+        self._validateOutputConfigFile()
         self.configTable = self._parseConfig()
 
         # Initialize the data manager
