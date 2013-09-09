@@ -54,6 +54,7 @@ from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatas
 from utils.ConfigUtils import ConfigUtils
 from datasources import Gaf, ReferenceDatasource
 from datasources import dbSNP
+from datasources import dbNSFP
 from datasources import Cosmic, Generic_Gene_DataSource, Generic_Transcript_Datasource, Generic_VariantClassification_Datasource
 from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider, IndexedVCF_DataSource, IndexedTSV_Datasource
 from utils.MultiprocessingUtils import LoggingPool
@@ -87,7 +88,18 @@ class DatasourceCreator(object):
         """ Calls createDatasourceFromConfigParser with a two-entry tuple using 
             exact same arguments. """
         return DatasourceCreator.createDatasource(configTuple[0], configTuple[1])
-    
+
+    @staticmethod
+    def _retrieve_hash_code(leafDir):
+        hashcode = ""
+        md5_filename = os.path.dirname(leafDir) + ".md5"
+        if os.path.exists(md5_filename):
+            logging.info("md5 found for " + leafDir)
+            md5_fp = file(md5_filename, 'r')
+            hashcode = md5_fp.read()
+            md5_fp.close()
+        return hashcode
+
     @staticmethod
     def createDatasourceFromConfigParser(configParser, leafDir):
         """
@@ -110,6 +122,8 @@ class DatasourceCreator(object):
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
+        elif dsType == "dbnsfp":
+            result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
             result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'gene_tsv':
@@ -147,10 +161,13 @@ class DatasourceCreator(object):
                                            version=configParser.get('general', 'version'),
                                            colnames=colnames.split(","),
                                            indexColnames=indexColnames)
+
+        hashcode = DatasourceCreator._retrieve_hash_code(leafDir)
+        result.set_hashcode(hashcode)
         return result
     
     @staticmethod
-    def createDatasources(datasourceDir, genomeBuild="hg19", isMulticore=False, numCores = 4):
+    def createDatasources(datasourceDir, genomeBuild="hg19", isMulticore=False, numCores=4, tx_mode="CANONICAL"):
         """
         Scrapes a directory and creates a list of datasource instances.
         
@@ -171,7 +188,10 @@ class DatasourceCreator(object):
         type=tsv
         
         numCores is ignored if isMulticore == False
+
+
         """
+        # TODO: Note that createDatasources does not honor the tx-mode
         dsQueueList = []
         
         # Get a list of all of the directories
@@ -233,7 +253,7 @@ class DatasourceCreator(object):
                     tmpQueue.append(dsTuple)
                 else:
                     result.append(DatasourceCreator.createDatasourceGivenTuple(dsTuple))
-            tmpResult = p.map(createDatasource,tmpQueue)
+            tmpResult = p.map(createDatasource, tmpQueue)
             result.extend(tmpResult)
             logging.getLogger(__name__).info("Mapping complete: " + str(len(tmpResult)) + " datasources created in multiprocess")
             p.close()

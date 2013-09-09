@@ -47,6 +47,9 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from TestUtils import TestUtils
+from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.MutationData import MutationData
+from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
 
 """
 Created on Nov 7, 2012
@@ -140,6 +143,68 @@ class AnnotatorTest(unittest.TestCase):
                                 "Value for " + k + " on line " + str(ctr) + " did not match override: " + str(
                                     lineDict[k]) + " <> " + str(overrides[k]))
             ctr += 1
+
+    def testDefaultAnnotations(self):
+        """Test that the default annotation values populate properly. """
+        annotator = Annotator()
+        default_annotations = {"test2": "foo2", "test3": "Should not be seen"}
+        overrides = {'test3': 'foo3'}
+
+        m1 = MutationData()
+        m1.createAnnotation("test1", "foo1")
+        m1.createAnnotation("test2", "")
+
+        m2 = MutationData()
+        m2.createAnnotation("test1", "")
+
+
+        m3 = MutationData()
+        m3.createAnnotation("test1", "")
+        m3.createAnnotation("test2", "foo2-original")
+
+        muts = [m1, m2, m3]
+
+        muts2 = annotator._applyManualAnnotations(muts, overrides)
+        muts_final_gen = annotator._applyDefaultAnnotations(muts2, default_annotations)
+
+        muts_final = []
+        for m in muts_final_gen:
+            self.assertTrue(m['test3'] == "foo3", "Override did not work")
+            muts_final.append(m)
+
+        self.assertTrue(muts_final[0]['test1'] == "foo1")
+        self.assertTrue(muts_final[0]['test2'] == "foo2")
+        self.assertTrue(muts_final[0]['test3'] == "foo3")
+
+        self.assertTrue(muts_final[1]['test1'] == "")
+        self.assertTrue(muts_final[1]['test2'] == "foo2")
+        self.assertTrue(muts_final[1]['test3'] == "foo3")
+
+        self.assertTrue(muts_final[2]['test1'] == "")
+        self.assertTrue(muts_final[2]['test2'] == "foo2-original")
+        self.assertTrue(muts_final[2]['test3'] == "foo3")
+
+    def testAnnotateListOfMutations(self):
+        """Test that we can initialize an Annotator, without an input or output and then feed mutations, one at a time... using a runspec"""
+        dbDir = self.config.get('DEFAULT',"dbDir")
+        ds = DatasourceCreator.createDatasources(dbDir)
+        runSpec = RunSpecification()
+        runSpec.initialize(None, None, datasources=ds)
+        annotator = Annotator()
+        annotator.initialize(runSpec)
+
+        m = MutationData()
+        m.chr = "1"
+        m.start = "12941796"
+        m.end = "12941796"
+        m.alt_allele = "G"
+        m.ref_allele = "T"
+
+        muts = [m]
+
+        muts = annotator.annotate_mutations(muts)
+        m2 = muts.next()
+        self.assertTrue(m2.get("gene", None) is not None)
 
 
 if __name__ == "__main__":

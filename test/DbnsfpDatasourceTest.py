@@ -47,85 +47,40 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 
+import unittest
+import logging
 
-import collections
-import heapq
-import itertools
-from oncotator.utils.GenericTsvReader import GenericTsvReader
-import operator
-import string
-from oncotator.utils.CallbackException import CallbackException
-from oncotator.utils.MutUtils import MutUtils
+import pysam
 
-__author__ = 'lichtens'
+from oncotator.MutationData import MutationData
+from oncotator.datasources import dbNSFP
+from TestUtils  import TestUtils
 
-class TsvFileSorter(object):
-    """ Static class for sorting a tsv file in place.
 
-    """
-    def __init__(self, filename, commentPrepend='#', delimiter='\t', lineterminator='\n'):
-        self.readfilename = filename
-        self._Pair = collections.namedtuple(typename="Pair", field_names=["key", "value"])
-        self.delimiter = delimiter
-        self.lineterminator = lineterminator
-        self.commentPrepend = commentPrepend
+TestUtils.setupLogging(__file__, __name__)
+class DbnsfpDatasourceTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
 
-    def __merge(self, partitions):
-        """
+    def setUp(self):
+        self.logger = logging.getLogger(__name__)
+        self.config = TestUtils.createUnitTestConfig()
 
-        :param partitions:
-        """
-        for pair in heapq.merge(*partitions):
-            yield pair.value
+    def testBasicAnnotate(self):
+        ds = dbNSFP('testdata/dbnsfp_ds')
 
-    def _yieldPartitions(self, iterable, func, fieldnameIndexes, length):
-        isKeyTuple = False
-        lines = list(itertools.islice(iterable, length))
-        data = collections.OrderedDict()
+        m = MutationData()
+        m.chr = 'Y'
+        m.start = '2655175'
+        m.end = '2655175'
+        m.ref_allele = 'A'
+        m.alt_allele = 'T'
+        m.createAnnotation('variant_classification', 'Missense_Mutation')
+        m.createAnnotation('protein_change', 'p.V157E')
 
-        while len(lines) > 0:
-            pairs = [None]*len(lines)
+        guess = ds.annotate_mutation(m)
+        mutation_assessor_prediction = guess['MutationAssessor_pred']
 
-            # Create a list of (key, value) pairs
-            # Each key consists of a tuple, value is the corresponding text
-            # Note: CSV dictionary reader is NOT used because a chunk of text is parsed at a time, rather than a
-            # line of text
-            for i in xrange(len(lines)):
-                # Note: CSV dictionary reader is NOT used because a chunk of text is parsed at a time, rather than a
-                # line of text
-                line = lines[i]
-                tokens = MutUtils.getTokens(line, self.delimiter, self.lineterminator)
+        self.assertTrue(mutation_assessor_prediction == 'medium', 'Unable to retrieve correct Mutation Assessor prediction')
 
-                for fieldname, index in fieldnameIndexes.items():
-                    data[fieldname] = tokens[index]
-
-                key = func(data)
-
-                if not isKeyTuple:
-                    isKeyTuple = isinstance(key, tuple)
-                    if not isKeyTuple:
-                        raise CallbackException("The value returned by the callback must be a tuple. Instead, a value "
-                                                "of %s was returned." % (type(key)))
-
-                pairs[i] = self._Pair(key, line)
-
-            partition = sorted(pairs, key=operator.attrgetter("key"))
-
-            lines = list(itertools.islice(iterable, length))
-
-            yield partition
-
-    def sortFile(self, filename, func, length=50000):
-        reader = GenericTsvReader(filename=self.readfilename, commentPrepend=self.commentPrepend,
-                                  delimiter=self.delimiter)
-        comments = reader.getComments()
-        fieldnames = reader.getFieldNames()
-        fieldnameIndexes = collections.OrderedDict([(x, i) for (i, x) in enumerate(fieldnames)])
-
-        iterable = iter(reader.getInputContentFP())
-        partitions = self._yieldPartitions(iterable, func, fieldnameIndexes, length)
-
-        with open(name=filename, mode='wb', buffering=64 * 1024) as writer:
-            writer.write(comments)
-            writer.write(string.join(fieldnames, self.delimiter) + '\n')
-            writer.writelines(self.__merge(partitions))  # generators are allowed as inputs to writelines function
+if __name__ == '__main__':
+    unittest.main()

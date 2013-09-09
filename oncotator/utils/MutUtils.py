@@ -63,7 +63,6 @@ class MutUtils(object):
     """
     Static class containing utility functions for Mutations. 
     """
-
     proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)[_]*[A-Z]{0,1}([0-9]*)")
 
     def __init__(self,params):
@@ -226,6 +225,14 @@ class MutUtils(object):
             else:
                 result[1] = m.group(2)
         return result
+
+    @staticmethod
+    def create_variant_key_by_mutation(m, other_info=""):
+        return MutUtils.create_variant_key(m.chr, m.start, m.end, m.ref_allele, m.alt_allele, other_info)
+
+    @staticmethod
+    def create_variant_key(chr, start, end, ref_allele, alt_allele, other_info=""):
+        return ("%s_%s_%s_%s_%s_%s" % (chr, start, end, ref_allele, alt_allele, other_info))
 
     @staticmethod
     def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True, exposedFields=set()):

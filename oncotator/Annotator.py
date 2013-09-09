@@ -47,6 +47,8 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from oncotator.Annotation import Annotation
+from oncotator.cache.CacheManager import CacheManager
+from oncotator.utils.Hasher import Hasher
 
 
 """
@@ -113,6 +115,8 @@ class Annotator(object):
         self._defaultAnnotations = dict()
         self._isMulticore = None
         self._numCores = None
+        self._cacheManager = CacheManager()
+        self._cache_stats = {"miss": 0, "hit":0}
         pass
 
     def getIsMulticore(self):
@@ -130,7 +134,6 @@ class Annotator(object):
     def setNumCores(self, value):
         self.__numCores = value
 
-    
     def setInputCreator(self, inputCreator):
         self._inputCreator = inputCreator
         
@@ -142,8 +145,33 @@ class Annotator(object):
 
     def setDefaultAnnotations(self, value):
         self._defaultAnnotations = value
-           
-               
+
+    def create_db_dir_key(self):
+        """Create the db_dir_key for this annotation configuration.  Requires the datasources."""
+        self.logger.info("Generating db-dir key from datasources...")
+        hasher = Hasher()
+        for ds in self._datasources:
+            self.logger.info(ds.title + " " + ds.version + " md5: " + ds.get_hashcode())
+            hasher.update(ds.get_hashcode())
+        db_dir_key = Hasher.md5_hash(hasher.hexdigest())
+        self.logger.info("Final db-dir md5: " + db_dir_key)
+        return db_dir_key
+
+    def create_db_dir_key_simple(self):
+        """Create the db_dir_key for this annotation configuration.  Requires the datasources."""
+        db_dir_key = Hasher.md5_hash(self.createHeaderString(False))
+        return db_dir_key
+
+    def initialize_cache_manager(self, runSpec):
+        """Do not bother calculating the db_dir_key if the cache is not being used. """
+        cache_url = runSpec.get_cache_url()
+        if cache_url is not None and cache_url != "":
+            db_dir_key = self.create_db_dir_key()
+        else:
+            db_dir_key = "never_used"
+        self._cacheManager = CacheManager()
+        self._cacheManager.initialize(cache_url, db_dir_key, is_read_only=runSpec.get_is_read_only_cache())
+
     def initialize(self,runSpec):
         """ Given a RunSpecification instance, initialize self properly.  Do not start annotation.
         """
@@ -154,7 +182,8 @@ class Annotator(object):
         self._datasources = runSpec.datasources
         self.setIsMulticore(runSpec.get_is_multicore())
         self.setNumCores(runSpec.get_num_cores())
-
+        self._cache_stats = {"miss": 0, "hit":0}
+        self.initialize_cache_manager(runSpec)
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)
@@ -169,6 +198,21 @@ class Annotator(object):
         comments.append(self.createHeaderString())
         return comments
 
+    def annotate_mutations(self, mutations):
+        mutations = self._annotate_mutations_using_datasources(mutations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after annotation.")
+
+        mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after default annotations.")
+
+        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
+        if mutations is None:
+            self.logger.warn("Mutation list points to None after manual annotations.")
+
+        return mutations
+
     def annotate(self):
         """
         Annotate the given mutations specified in the input.
@@ -182,27 +226,20 @@ class Annotator(object):
         mutations = self._inputCreator.createMutations()
         if mutations is None: 
             self.logger.warn("Mutation list points to None after creation.")
-            
-        mutations = self._annotateMutations(mutations)
-        if mutations is None: 
-            self.logger.warn("Mutation list points to None after annotation.")
-        
-        mutations = self._applyManualAnnotations(mutations, self._manualAnnotations)
-        if mutations is None:
-            self.logger.warn("Mutation list points to None after manual annotations.")
 
-        mutations = self._applyDefaultAnnotations(mutations, self._defaultAnnotations)
-        if mutations is None:
-            self.logger.warn("Mutation list points to None after default annotations.")
+        mutations = self.annotate_mutations(mutations)
 
         comments = self._createComments()
         metadata = self._createMetadata()
 
         filename = self._outputRenderer.renderMutations(mutations, metadata=metadata, comments=comments)
+
+        self.logger.info("Closing cache: (misses: " + str(self._cache_stats['miss']) + "  hits: " + str(self._cache_stats['hit']) + ")")
+        self._cacheManager.close_cache()
+
         return filename
     
     def _applyManualAnnotations(self, mutations, manualAnnotations):
-        # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
         manualAnnotationKeys = manualAnnotations.keys()
         for m in mutations:
             for k in manualAnnotationKeys:
@@ -210,14 +247,15 @@ class Annotator(object):
             yield m
 
     def _applyDefaultAnnotations(self, mutations, defaultAnnotations):
-        # TODO: Low priority -- Could speed this up by creating annotations ahead of time.
-        #TODO: Need unit test
         defaultAnnotationsKeys = defaultAnnotations.keys()
         for m in mutations:
             mKeys = m.keys()
             for k in defaultAnnotationsKeys:
                 if k not in mKeys:
-                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="MANUAL")
+                    m.createAnnotation(k, defaultAnnotations[k], annotationSource="DEFAULT")
+                if m[k] == "":
+                    m.getAnnotation(k).setDatasource("DEFAULT")
+                    m.getAnnotation(k).setValue(defaultAnnotations[k])
             yield m
 
     def _createManualAnnotationsForMetadata(self, manualAnnotations):
@@ -227,23 +265,36 @@ class Annotator(object):
             result[k] = Annotation(manualAnnotations[k], datasourceName="MANUAL")
         return result
 
-    def createHeaderString(self):
+    def createHeaderString(self, is_giving_oncotator_version=True):
         """
         Create a default header string that lists version of Oncotator and datasource information.
 
         :return: string
         """
+        onco_string = ""
+        if is_giving_oncotator_version:
+            onco_string = "Oncotator " +  VERSION + " |"
+
         datasourceStrings = []
         for ds in self._datasources:
             datasourceStrings.append(" " + ds.title + " " + ds.version + " ")
         
-        return "Oncotator " +  VERSION + "|" + "|".join(datasourceStrings)
+        return onco_string + "|".join(datasourceStrings)
     
-    def _annotateMutations(self, mutations):
+    def _annotate_mutations_using_datasources(self, mutations):
         if len(self._datasources) == 0:
             self.logger.warn("THERE ARE NO DATASOURCES REGISTERED")
         for m in mutations:
-            for datasource in self._datasources:
-                m = datasource.annotate_mutation(m)
+            annot_dict = self._cacheManager.retrieve_cached_annotations(m)
+            if annot_dict is None:
+                self._cache_stats['miss'] += 1
+                for datasource in self._datasources:
+                    m = datasource.annotate_mutation(m)
+                self._cacheManager.store_annotations_in_cache(m)
+            else:
+                self._cache_stats['hit'] += 1
+                m.addAnnotations(annot_dict)
             yield m
+
+
     

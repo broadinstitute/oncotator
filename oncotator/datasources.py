@@ -65,6 +65,7 @@ import copy
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
 from oncotator.utils.TagConstants import TagConstants
+from oncotator.utils.dbNSFP import dbnsfp_fieldnames
 
 try:
     import pysam
@@ -86,7 +87,12 @@ class GafInvalidChromosomeValue(Exception):
     def __str__(self):
         return repr(self.value)
 
+
 class TranscriptProvider(object):
+
+    TX_MODE_CANONICAL = "CANONICAL"
+    TX_MODE_BEST_EFFECT = "EFFECT"
+    TX_MODE_CHOICES = [TX_MODE_CANONICAL, TX_MODE_BEST_EFFECT] # Simply list the ones above here.
 
     @abc.abstractmethod
     def getTranscriptDict(self):
@@ -97,6 +103,11 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon in each transcript"""
+        return
+
+    @abc.abstractmethod
+    def set_tx_mode(self, tx_mode):
+        # TODO: Throw exception if not in TX_MODE_CHOICES
         return
 
 
@@ -140,6 +151,7 @@ class Datasource(object):
         self.title = title
         self.version = str(version)
         self.output_headers = []
+        self.hashcode = ""
 
     def attach_to_class(self, cls, name, options):
         """
@@ -154,10 +166,17 @@ class Datasource(object):
             self.title = name
         options.add_datasource(self)
 
+    @abc.abstractmethod
     def annotate_mutation(self, mutation):
         # The default implementation raise a NotImplementedError
         # to ensure that any subclasses must override this method.
         raise NotImplementedError
+
+    def set_hashcode(self, value):
+        self.hashcode = value
+
+    def get_hashcode(self):
+        return self.hashcode
 
 class Gaf(Datasource, TranscriptProvider):
     """
@@ -230,6 +249,9 @@ class Gaf(Datasource, TranscriptProvider):
         self.logger.info("Datasource " + self.title + " " + self.version + " finished initialization")
 
         # TODO: Check for valid values.
+        self.tx_mode = tx_mode
+
+    def set_tx_mode(self, tx_mode):
         self.tx_mode = tx_mode
 
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
@@ -968,6 +990,75 @@ class dbSNP(Datasource):
         
         return mutation
 
+class dbNSFP(Datasource):
+    """
+    dbNSFP datasource expecting a directory of Tabix compressed and indexed tsv files.
+
+    Example Tabix cmds:
+        bgzip dbNSFP2.0_variant.chr1
+        tabix -s 1 -b 2 -e 2 dbNSFP2.0_variant.chr1.gz
+
+    This datasource requires the following annotations to be populated:
+        variant_classification
+        protein_change
+
+    See the 'dbNSFP2.0.readme.txt' readme file in the datasource directory for field descriptions.
+    """
+    def __init__(self, src_dir, title='dbNSFP', version=None):
+        self.title = title
+        self.prot_regexp = re.compile('p\.([A-Z])\d+([A-Z])')
+        
+        super(dbNSFP, self).__init__(src_dir, title=self.title, version=version)
+        self.db_obj = self._load_tabix_file_objs(src_dir)
+        self.output_headers = [dbnsfp_fieldnames[14], dbnsfp_fieldnames[17]] + dbnsfp_fieldnames[21:] #only fields of interest
+        self.logger = logging.getLogger(__name__)
+
+    def annotate_mutation(self, mutation):
+        if mutation['variant_classification'] == 'Missense_Mutation':
+            chrn = mutation.chr
+            start = mutation.start
+            ref_allele, alt_allele = mutation.ref_allele, mutation.alt_allele
+            regex_res = self.prot_regexp.match(mutation['protein_change'])
+            ref_prot_allele, alt_prot_allele = regex_res.group(1), regex_res.group(2)
+    
+            dbnsfp_results = self._query_dbnsfp(chrn, start, start, self.db_obj)
+    
+            dbnsfp_data = None
+            for res in dbnsfp_results:
+                if all((res['ref'] == ref_allele, res['alt'] == alt_allele, res['aaref'] == ref_prot_allele, res['aaalt'] == alt_prot_allele)):
+                    dbnsfp_data = res
+    
+            if dbnsfp_data is not None:
+                for output_field in self.output_headers:
+                    mutation.createAnnotation(output_field, dbnsfp_data[output_field], self.title)
+            else:
+                for output_field in self.output_headers:
+                    mutation.createAnnotation(output_field, '', self.title)
+        else:
+            for output_field in self.output_headers:
+                mutation.createAnnotation(output_field, '', self.title)
+
+        return mutation
+
+    def _load_tabix_file_objs(self, dbnsfp_dir):
+        """ Returns dictionary of Tabixfile objects keyed by chromosome. """
+        tabix_fnames = [f for f in os.listdir(dbnsfp_dir) if f.endswith('.gz')]
+        tabix_objs = dict()
+        for tabix_fname in tabix_fnames:
+            contig = tabix_fname.replace('.gz', '').replace('dbNSFP2.0_variant.chr', '')
+            tabix_objs[contig] = pysam.Tabixfile(os.path.join(dbnsfp_dir, tabix_fname))
+    
+        return tabix_objs
+
+    def _get_dbnsfp_data_from_rows(self, dbnsfp_rows):
+        return [dict(zip(dbnsfp_fieldnames, r.strip().split('\t'))) for r in dbnsfp_rows]
+    
+    def _query_dbnsfp(self, chromosome, start, end, tabix_objs):
+        tabix_file = tabix_objs[chromosome]
+        query_str = '{}:{}-{}'.format(chromosome, start, end)
+        res = tabix_file.fetch(region=query_str)
+        return self._get_dbnsfp_data_from_rows(res)
+
 class Cosmic(Datasource):
     """
     Cosmic Datasource expecting a tabix compressed tsv file from Cosmic.
@@ -1053,7 +1144,7 @@ class Cosmic(Datasource):
         try:
             results = self._fetch_from_tabix_file(db, chromosome, start, end)
         except ValueError as ve:
-            self.logger.warn(
+            self.logger.debug(
                 "Exception when looking for COSMIC records.  Empty set of records being returned: " + repr(ve))
         if results is not None:
             for res in results:
@@ -1378,7 +1469,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
     """
-    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file", genome_build="hg19"):
+    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, genome_build, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=ensembl_index_fname, title=title, version=version)
 
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
@@ -1387,6 +1478,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         self.gene_db = shove.Shove(protocol + ':///%s' % ensembl_gene_to_transcript_index_fname, "memory://")
         self.gene_dbkeys = self.gene_db.keys()
+
+    def annotate_mutation(self, mutation):
+        pass
+
+
 
 
 

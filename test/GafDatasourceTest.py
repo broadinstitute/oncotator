@@ -57,7 +57,7 @@ from oncotator.Metadata import Metadata
 from oncotator.MutationData import MutationData
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
-from oncotator.datasources import Gaf
+from oncotator.datasources import Gaf, TranscriptProvider
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.MultiprocessingUtils import LoggingPool
 from oncotator.utils.MutUtils import MutUtils
@@ -156,18 +156,62 @@ class GafDatasourceTest(unittest.TestCase):
             self.assertTrue(m['gene'] != '')
 
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
+    def testMC1R(self):
+        """Test that this version of the GAF produces a MC1R, instead of TUBB gene"""
+        m = MutationData()
+        m.chr = '16'
+        m.start = '89985913'
+        m.end = '89985913'
+        m.ref_allele = 'G'
+        m.alt_allele = 'A'
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+        m = gafDatasource.annotate_mutation(m)
+
+        # At some point, we would expect this to be MC1R, not TUBB3
+        self.assertTrue(m['gene'] == "TUBB3", "Incorrect gene found: " + m['gene'] + "  If updating GAF, this may not be an error, but should be confirmed manually.")
+
+
+    @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def testAKT1(self):
         """ Test that this version of the GAF produces the up to date gene for a position given from a website user.
         """
         m = MutationData()
         m.chr = '14'
         m.start = '105246407'
-        m.end='105246407'
+        m.end = '105246407'
         m.ref_allele = 'G'
         m.alt_allele = 'A'
         gafDatasource = TestUtils.createGafDatasource(self.config)
         m = gafDatasource.annotate_mutation(m)
         self.assertTrue(m['gene'] == "AKT1", "Incorrect gene found: " + m['gene'] + "  If updating GAF, this may not be an error, but should be confirmed manually.")
+
+    @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
+    def test_effect_tx_mode(self):
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+
+        # Canonical mutation was Intron
+        m = MutationData()
+        m.chr = '2'
+        m.start = '219137340'
+        m.end = '219137340'
+        m.ref_allele = 'G'
+        m.alt_allele = 'T'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['gene'] == "PNKD")
+        self.assertTrue(m['variant_classification'] == "Missense_Mutation")
+
+        gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        m = MutationData()
+        m.chr = '2'
+        m.start = '219137340'
+        m.end = '219137340'
+        m.ref_allele = 'G'
+        m.alt_allele = 'T'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['gene'] == "PNKD")
+        self.assertTrue(m['variant_classification'] == "Intron", "Canonical no longer is Intron.  This test is no longer valid.  This failure can come up when changing the GAF datasource.")
+
 
     @unittest.skip('This test has been disabled, since the backing implementation is incomplete.')
     def testBasicInitWithENSEMBL(self):

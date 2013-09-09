@@ -26,5 +26,6 @@
 /oncotator/Oncotator_profile.bin
 /oncotator/oncotator.log
 /oncotator/profile_stats.txt
-/master.zip
+/master.zip*
+/md5_dir.py
 

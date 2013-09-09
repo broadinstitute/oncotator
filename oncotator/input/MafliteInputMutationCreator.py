@@ -114,7 +114,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
         self.logger.info("Initializing a maflite file with the following header: " + str(self._tsvReader.getFieldNames()))
         if len(missingRequiredHeaders) > 0:
             raise MafliteMissingRequiredHeaderException("Specified maflite file (" + filename + ") missing required headers: " + ",".join(missingRequiredHeaders)  )
-    
+
     def getComments(self):
         return self._tsvReader.getCommentsAsList()
 

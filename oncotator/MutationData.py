@@ -91,7 +91,7 @@ class MutationData(collections.MutableMapping):
     
     """ internal annotations that will show as both annotations and attributes.   If this changes, updates should probably be made to the maflite config."""
     attributes = set(["chr", "start", "end", "ref_allele", "alt_allele", "build"])
-    
+
     def __init__(self, chr="", start="", end="",ref_allele="", alt_allele="", build=""):
         """
         Constructor
@@ -131,7 +131,18 @@ class MutationData(collections.MutableMapping):
         if annotationName in MutationData.attributes:
             return Annotation(self.__dict__[annotationName], "__ATTR__")
         return self.annotations[annotationName]
-    
+
+    def getAnnotations(self):
+        """Returns a list of Annotation instances."""
+        return self.annotations.values()
+
+    def addAnnotations(self, annot_dict):
+        """
+        :param annot_dict: name:Annotation dictionary
+        :return:
+        """
+        self.annotations.update(annot_dict)
+
     def addTagToAnnotation(self, annotationName, tag):
         """ Attach tag to a given annotation """
         if not (annotationName in MutationData.attributes):

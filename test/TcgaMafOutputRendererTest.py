@@ -126,11 +126,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             
             ctr += 1
 
-    def _createDatasourceCorpus(self):
-        dbDir = self.config.get('DEFAULT',"dbDir")
-        return DatasourceCreator.createDatasources(dbDir, "hg19",isMulticore=False)
+    def _determine_db_dir(self):
+        return self.config.get('DEFAULT',"dbDir")
     
-    def _createTCGAMAFOverrides(self):
+    def _createTCGAMAFDefaults(self):
         """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
         These were taken from version 0.5.25.0 of Oncotator.
         """
@@ -146,7 +145,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def _annotateTest(self, inputFilename, outputFilename, datasources, inputFormat="MAFLITE", outputFormat="TCGAMAF"):
         self.logger.info("Initializing Annotator...")
         annotator = Annotator()
-        runSpec = OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, self._createTCGAMAFOverrides(), datasources)
+        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=self._createTCGAMAFDefaults(), datasourceDir=self._determine_db_dir())
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -162,7 +161,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         """ Create a TCGA MAF from a SNP TSV file."""
         self.logger.info("Initializing Maflite SNP Test...")
         
-        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testSNP_v2.4.maf.tsv", self._createDatasourceCorpus())
+        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testSNP_v2.4.maf.tsv", self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
@@ -171,7 +170,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
         
-        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.indel.maf.txt', "out/testIndel_v2.4.maf.tsv", self._createDatasourceCorpus())
+        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.indel.maf.txt', "out/testIndel_v2.4.maf.tsv", self._determine_db_dir())
         
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
@@ -179,7 +178,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testEmptyInput(self):
         """ Create a TCGA MAF from an empty maflite file."""
 
-        testOutputFilename = self._annotateTest('testdata/maflite/empty.maflite', "out/empty.maf.tsv", self._createDatasourceCorpus())
+        testOutputFilename = self._annotateTest('testdata/maflite/empty.maflite', "out/empty.maf.tsv", self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
@@ -213,12 +212,12 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testMutationDatasources(self):
         """ Test that we can create a simple TSV output from all of the current datasources (specified in the config file).  Note that no validation is done.  Simply that the output file was created. 
         TODO: This unit test needs to be moved."""
-        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testsimpleSNP.maf.tsv", self._createDatasourceCorpus(), outputFormat="SIMPLE_TSV")
+        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testsimpleSNP.maf.tsv", self._determine_db_dir(), outputFormat="SIMPLE_TSV")
         self.assertTrue(os.path.exists(testOutputFilename))
 
     def testExposedColumns(self):
         """Test that columns listed in the config file as exposed do not get the i_ prepend"""
-        testOutputFilename = self._annotateTest('testdata/maflite/tiny_maflite.maf.txt', "out/testExposedCols.maf.tsv", self._createDatasourceCorpus())
+        testOutputFilename = self._annotateTest('testdata/maflite/tiny_maflite.maf.txt', "out/testExposedCols.maf.tsv", self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)

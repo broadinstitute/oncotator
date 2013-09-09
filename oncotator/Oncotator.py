@@ -17,6 +17,8 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 import sys
+from oncotator.datasources import TranscriptProvider
+
 if not (sys.version_info[0] == 2  and sys.version_info[1] in [ 7]):
     raise "Oncotator requires Python 2.7.x : " + str(sys.version_info)
 
@@ -42,7 +44,8 @@ PROFILE = 1
 
 #TODO: This needs to be dynamic from a config file.
 # TODO: This needs to be changed.
-DEFAULT_DB_DIR = '/xchip/cga1/lichtens/oncotator_ds_tmp'
+DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_ds_tmp'
+DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
@@ -62,6 +65,26 @@ def parseOptions(program_license, program_version_message):
     python Oncotator.py -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
     
     IMPORTANT NOTE:  hg19 is only supported genome build for now.
+
+    Default values specified by -d or --default_annotation_values are used when an annotation does not exist or is populated with an empty string ("")
+
+    Both default and override config files and command line specifications stack.
+
+    Example of an override_config or default_config file:
+
+    # Create center, source, sequencer, and score annotations, with the values broad.mit.edu, WXS, Illumina GAIIx, and <blank> for all mutations.
+    #  This will overwrite all mutations.
+    [manual_annotations]
+    override:center=broad.mit.edu,source=WXS,sequencer=Illumina GAIIx,score=
+
+    Example of cache urls:
+
+    # Use a file (/home/user/myfile.cache) ... note the three forward slashes after "file:" for absolute path.
+    -u file:///home/user/myfile.cache
+    -u file://relative_file.cache
+
+    # memcache
+    -u memcache://localhost:11211
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
@@ -72,6 +95,8 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-o' ,'--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(),help='Output format. [default: %s]' % "TCGAMAF")
     parser.add_argument('--override_config', type=str, 
                         help="File path to manual annotations in a config file format (section is 'manual_annotations' and annotation:value pairs).")
+    parser.add_argument('--default_config', type=str,
+                        help="File path to default annotation values in a config file format (section is 'manual_annotations' and annotation:value pairs).")
     parser.add_argument('--no-multicore', dest="noMulticore", action='store_true', default=False, help="Disables all multicore functionality.")
     parser.add_argument('input_file', type=str,
                    help='Input file to be annotated.  Type is specified through options.')
@@ -79,6 +104,10 @@ def parseOptions(program_license, program_version_message):
                     help='Output file name of annotated file.')
     parser.add_argument('genome_build', metavar='build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
     parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
+    parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
+    parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
+    parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
+    parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
     # Process arguments
     args = parser.parse_args()
     
@@ -153,22 +182,22 @@ USAGE
         inputFormat = args.input_format.upper()
         outputFormat = args.output_format.upper()
         datasourceDir = args.dbDir
+        cache_url = args.cache_url
+        read_only_cache = args.read_only_cache
+        tx_mode = args.tx_mode
 
         # Parse annotation overrides
-        manualOverrides = OncotatorCLIUtils.createManualAnnotationsGivenConfigFile(args.override_config)
-
         commandLineManualOverrides = args.override_cli
+        overrideConfigFile = args.override_config
+        manualOverrides = OncotatorCLIUtils.determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile)
 
-        for clmo in commandLineManualOverrides:
-            if clmo.find(":") == -1:
-                logger.warn("Could not parse manual annotation: " + str(clmo) + "   ... skipping")
-                continue
-            keyval = clmo.split(':',1)
-            manualOverrides[keyval[0]] = keyval[1]
-
+        # Parse default overrides
+        commandLineDefaultValues = args.default_cli
+        defaultConfigFile = args.default_config
+        defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore))
+        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues, cacheUrl=cache_url, read_only_cache=read_only_cache, tx_mode=tx_mode)
            
         annotator = Annotator()
         annotator.initialize(runConfig)

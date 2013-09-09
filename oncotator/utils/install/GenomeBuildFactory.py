@@ -1,6 +1,7 @@
 import logging
 from shove.core import Shove
 from oncotator.Transcript import Transcript
+from oncotator.index.gaf import region2bin
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
 from BCBio import GFF
 from Bio import SeqIO
@@ -17,7 +18,7 @@ class GenomeBuildFactory(object):
         transcript_id = quals['transcript_id'][0]
 
         if transcript_id not in self._transcript_index.keys():
-            self._transcript_index[transcript_id] = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0])
+            self._transcript_index[transcript_id] = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=gff_record['rec_id'])
 
         if gff_record['type'] == 'exon':
             self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1])
@@ -76,10 +77,10 @@ class GenomeBuildFactory(object):
 
         for tx_id in transcript_keys:
             tx = transcript_db[tx_id]
-            if tx.gene not in output_db:
-                output_db[tx.gene] = [tx]
+            if tx.get_gene() not in output_db:
+                output_db[tx.get_gene()] = [tx]
             else:
-                output_db[tx.gene].append(tx)
+                output_db[tx.get_gene()].append(tx)
 
         output_db.close()
         transcript_db.close()
@@ -93,5 +94,24 @@ class GenomeBuildFactory(object):
 
         transcript_keys = transcript_db.keys()
 
+        for tx_id in transcript_keys:
+            tx = transcript_db[tx_id]
+            start = tx.get_start()
+            end = tx.get_end()
+            genomic_location_bin = region2bin(start, end)
+            key = tx.get_contig() + "_" + str(genomic_location_bin)
+            if key not in output_db:
+                output_db[key] = [tx]
+            else:
+                output_db[key].append([tx])
+        output_db.close()
+        transcript_db.close()
+
+    def build_ensembl_sequences_by_transcript_id_index(self, ensembl_transcript_index_fname):
+        """ Create an index that returns the sequences from the fasta file given the transcript id as a key.
+        :return:
+        """
+        #TODO: This method may need different parameters.
         raise NotImplementedError("This method is not finished.")
+
 

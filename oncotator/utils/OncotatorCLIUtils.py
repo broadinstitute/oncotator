@@ -46,8 +46,10 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+from oncotator.datasources import TranscriptProvider
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
+import logging
 
 
 """
@@ -88,6 +90,7 @@ class RunSpecification(object):
         datasources -- A list of datasources (instance of Datasource).
         isMulticore -- use multicore processing, where available (True/False)
         numCores -- number of cores to use if isMulticore is True.  Otherwise, this is ignored.
+        cache_url -- if None, implies that there is no cache.
         """
     def __init__(self):
         self.__inputCreator = None
@@ -95,10 +98,31 @@ class RunSpecification(object):
         self.__inputFilename = None
         self.__outputFilename = None
         self.__manualAnnotations = None
+        self.__defaultAnnotations = None
         self.__datasources = None
         self.__isMulticore = False
         self.__numCores = None
+        self.__cache_url = None
+        self.__is_read_only_cache=True
         pass
+
+    def get_cache_url(self):
+        return self.__cache_url
+
+    def set_cache_url(self, value):
+        self.__cache_url = value
+
+    def del_cache_url(self):
+        del self.__cache_url
+
+    def set_is_read_only_cache(self, value):
+        self.__is_read_only_cache = value
+
+    def get_is_read_only_cache(self):
+        return self.__is_read_only_cache
+
+    def del_is_read_only_cache(self):
+        del self.__is_read_only_cache
 
     def get_is_multicore(self):
         return self.__isMulticore
@@ -166,10 +190,17 @@ class RunSpecification(object):
 
     def del_manual_annotations(self):
         del self.__manualAnnotations
-    
-    
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict()):
+    def get_default_annotations(self):
+        return self.__defaultAnnotations
+
+    def set_default_annotations(self, value):
+        self.__defaultAnnotations = value
+
+    def del_default_annotations(self):
+        del self.__defaultAnnotations
+
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
         self.manualAnnotations = manualAnnotations
@@ -177,14 +208,19 @@ class RunSpecification(object):
         self.isMulticore = isMulticore
         self.numCores = numCores
         self.defaultAnnotations = defaultAnnotations
+        self.cacheUrl = cacheUrl
+        self.isReadOnlyCache = read_only_cache
 
     
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
     outputRenderer = property(get_output_renderer, set_output_renderer, del_output_renderer, "outputRenderer's docstring")
     manualAnnotations = property(get_manual_annotations, set_manual_annotations, del_manual_annotations, "manualAnnotations's docstring")
+    defaultAnnotations = property(get_default_annotations, set_default_annotations, del_default_annotations, "Annotations that are populated only when the annotation does not exist or is empty ('' or None)")
     datasources = property(get_datasources, set_datasources, del_datasources, "datasources's docstring")
     isMulticore = property(get_is_multicore, set_is_multicore, del_is_multicore, "isMulticore's docstring")
     numCores = property(get_num_cores, set_num_cores, del_num_cores, "numCores's docstring")
+    cacheUrl = property(get_cache_url, set_cache_url, del_cache_url, "cacheUrl's docstring")
+    isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
 
 class OncotatorCLIUtils(object):
     """
@@ -211,13 +247,7 @@ class OncotatorCLIUtils(object):
         Constructor -- Never use this.  All methods should be called from a static context.  Throws an exception.
         """
         raise NotImplementedError('This class should not be instantiated.  All methods are static.')
-    
 
-    @staticmethod
-    def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores = 4, defaultAnnotations=dict()):
-        ds = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores)
-        return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores)
-    
     @staticmethod
     def createInputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
@@ -241,9 +271,31 @@ class OncotatorCLIUtils(object):
         """ Lists the supported input formats """
         tmp = OncotatorCLIUtils.createInputFormatNameToClassDict()
         return tmp.keys()
-    
+
     @staticmethod
-    def createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceList=[], genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict()):
+    def create_input_creator(inputFilename, inputFormat):
+        inputCreator = None
+        inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
+        if inputFormat not in inputCreatorDict.keys():
+            raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
+        else:
+            inputConfig = inputCreatorDict[inputFormat][1]
+            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig)
+        return inputCreator
+
+    @staticmethod
+    def create_output_renderer(outputFilename, outputFormat):
+        outputRenderer = None
+        outputRendererDict = OncotatorCLIUtils.createOutputFormatNameToClassDict()
+        if outputFormat not in outputRendererDict.keys():
+            raise NotImplementedError("The outputFormat specified: " + outputFormat + " is not supported.")
+        else:
+            outputConfig = outputRendererDict[outputFormat][1]
+            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
+        return outputRenderer
+
+    @staticmethod
+    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, tx_mode=TranscriptProvider.TX_MODE_CANONICAL):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -258,26 +310,21 @@ class OncotatorCLIUtils(object):
         # TODO: Support more than the default configs.
         # TODO: On error, list the supported formats (both input and output) 
         # TODO: Make sure that we can pass in both a class and a config file, not just a class.
-        inputCreator = None
-        outputRenderer = None
-        
-        # Step 2
-        inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
-        if inputFormat not in inputCreatorDict.keys():
-            raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
-        else:
-            inputConfig = inputCreatorDict[inputFormat][1]
-            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig)
 
-        outputRendererDict = OncotatorCLIUtils.createOutputFormatNameToClassDict()   
-        if outputFormat not in outputRendererDict.keys():
-            raise NotImplementedError("The outputFormat specified: " + outputFormat + " is not supported.")
-        else:
-            outputConfig = outputRendererDict[outputFormat][1]
-            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
-            
+        # Step 1 Initialize input and output
+        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat)
+        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
+
+        # Step 2 Datasources
+        datasourceList = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+
+        #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
+        for ds in datasourceList:
+            if isinstance(ds, TranscriptProvider):
+                ds.set_tx_mode(tx_mode)
+
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache)
         return result
     
     @staticmethod
@@ -303,4 +350,15 @@ class OncotatorCLIUtils(object):
                 opt[1] = '' 
             result[opt[0]] = opt[1]
         return result
-        
+
+    @staticmethod
+    def determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile):
+        manualOverrides = OncotatorCLIUtils.createManualAnnotationsGivenConfigFile(overrideConfigFile)
+        for clmo in commandLineManualOverrides:
+            if clmo.find(":") == -1:
+                logging.getLogger(__name__).warn("Could not parse annotation: " + str(clmo) + "   ... skipping")
+                continue
+            keyval = clmo.split(':', 1)
+            manualOverrides[keyval[0]] = keyval[1]
+
+        return manualOverrides

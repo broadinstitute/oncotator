@@ -19,7 +19,7 @@ source $1/bin/activate
 #################################################
 # Manual installations (third party automatic download in pypi is broken)
 #################################################
-echo "Attempting to install packages that cannot be installed properly from pypi."
+echo "Attempting to install packages that cannot be installed properly from pypi.  Any other oncotator dependencies can be installed through installing oncotator or manually"
 echo " "
 echo "nose =========================="
 pip install nose

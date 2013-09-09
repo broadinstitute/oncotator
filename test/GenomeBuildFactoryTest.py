@@ -51,7 +51,7 @@ import shutil
 import unittest
 from shove.core import Shove
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
-from oncotator.index.gaf import region2bin
+from oncotator.index.gaf import region2bin,region2bins
 
 class GenomeBuildFactoryTest(unittest.TestCase):
 
@@ -90,4 +90,43 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
         self.assertTrue(guess == 243)
 
+    def test_build_ensembl_transcripts_by_gene_index(self):
+        """Test building an index for getting a transcript given a gene."""
+        protocol = "file"
+        transcript_index_filename = "out/test_ensemble_gtf_for_gene.db"
+        output_filename = "out/test_ensemble_gtf_for_gene.db.gene.idx"
+        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
+        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, transcript_index_filename, protocol=protocol)
+        genome_build_factory.build_ensembl_transcripts_by_gene_index(transcript_index_filename, output_filename)
+
+        # Now load the index and look something up.
+        gene_index = Shove(protocol + "://" + output_filename)
+        self.assertTrue(len(gene_index['SEO1']) == 1)
+        tx = gene_index['SEO1'][0]
+
+        self.assertTrue(tx.get_transcript_id()=="YAL067C")
+
+    def test_build_ensembl_transcripts_by_genomic_location_index(self):
+        """Test that we can get an ensembl transcript from a genomic position"""
+        protocol = "file"
+        transcript_index_filename = "out/test_ensemble_gtf_for_gp.db"
+        output_filename = "out/test_ensemble_gtf_for_gp.db.idx"
+        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
+        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
+
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, transcript_index_filename, protocol=protocol)
+        genome_build_factory.build_ensembl_transcripts_by_genomic_location_index(transcript_index_filename, output_filename, protocol=protocol)
+
+        # Now load the index and look something up.
+        gp_index = Shove(protocol + "://" + output_filename)
+        gt_transcript_id = "YAL067C"
+        bins = region2bins(1496172, 1496400)
+
+        for bin in bins:
+            key = 'I_' + str(bin)
+            if key in gp_index.keys():
+                self.assertTrue(gp_index[key] == gt_transcript_id)

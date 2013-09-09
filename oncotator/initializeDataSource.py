@@ -65,8 +65,7 @@ import hashlib
 import time
 import shutil
 import os
-from string import Template
-from oncotator.utils.ConfigUtils import ConfigUtils
+
 
 supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv']
 def parseOptions():
