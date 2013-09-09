@@ -99,6 +99,22 @@ class DatasourceInstallUtils(object):
         return finalText
 
     @staticmethod
+    def create_datasource_md5_file(datasource_dir):
+        """datasource_dir should be the /db_dir/ds_name/genome_build.
+        For example,
+        create_datasource_md5_file("/home/user/my_db_dir/gaf/hg19")
+        """
+        if datasource_dir.endswith('/'):
+            datasource_dir = datasource_dir[:-1]
+        md5_filename = os.path.abspath(datasource_dir) + ".md5"
+        print("md5 being written to: " + os.path.abspath(md5_filename))
+        hasher = Hasher()
+        hashcode = hasher.create_hashcode_for_dir(datasource_dir)
+        fp = file(md5_filename, 'w')
+        fp.write(hashcode)
+        fp.close()
+
+    @staticmethod
     def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns):
         baseDSFile = os.path.basename(ds_file)
         shutil.copy(ds_file, destDir + "/" + baseDSFile)
@@ -116,12 +132,5 @@ class DatasourceInstallUtils(object):
         fp.write(finalText)
         fp.close()
 
-        # Calculate a md5 for the genome build dir and write it
-        md5_filename = os.path.abspath(destDir) + ".md5"
-        print("md5 being written to: " + os.path.abspath(md5_filename))
-        hasher = Hasher()
-        hashcode = hasher.create_hashcode_for_dir(destDir)
-        fp = file(md5_filename, 'w')
-        fp.write(hashcode)
-        fp.close()
+        DatasourceInstallUtils.create_datasource_md5_file(destDir)
 
