@@ -46,6 +46,7 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+from oncotator.datasources import TranscriptProvider
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 import logging
@@ -246,13 +247,7 @@ class OncotatorCLIUtils(object):
         Constructor -- Never use this.  All methods should be called from a static context.  Throws an exception.
         """
         raise NotImplementedError('This class should not be instantiated.  All methods are static.')
-    
 
-    @staticmethod
-    def createRunConfig(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
-        ds = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores)
-        return OncotatorCLIUtils.createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations, ds, genomeBuild, isMulticore, numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache)
-    
     @staticmethod
     def createInputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
@@ -276,9 +271,31 @@ class OncotatorCLIUtils(object):
         """ Lists the supported input formats """
         tmp = OncotatorCLIUtils.createInputFormatNameToClassDict()
         return tmp.keys()
-    
+
     @staticmethod
-    def createRunConfigGivenDatasources(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceList=[], genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
+    def create_input_creator(inputFilename, inputFormat):
+        inputCreator = None
+        inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
+        if inputFormat not in inputCreatorDict.keys():
+            raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
+        else:
+            inputConfig = inputCreatorDict[inputFormat][1]
+            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig)
+        return inputCreator
+
+    @staticmethod
+    def create_output_renderer(outputFilename, outputFormat):
+        outputRenderer = None
+        outputRendererDict = OncotatorCLIUtils.createOutputFormatNameToClassDict()
+        if outputFormat not in outputRendererDict.keys():
+            raise NotImplementedError("The outputFormat specified: " + outputFormat + " is not supported.")
+        else:
+            outputConfig = outputRendererDict[outputFormat][1]
+            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
+        return outputRenderer
+
+    @staticmethod
+    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, tx_mode=TranscriptProvider.TX_MODE_CANONICAL):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -293,24 +310,19 @@ class OncotatorCLIUtils(object):
         # TODO: Support more than the default configs.
         # TODO: On error, list the supported formats (both input and output) 
         # TODO: Make sure that we can pass in both a class and a config file, not just a class.
-        inputCreator = None
-        outputRenderer = None
-        
-        # Step 2
-        inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
-        if inputFormat not in inputCreatorDict.keys():
-            raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
-        else:
-            inputConfig = inputCreatorDict[inputFormat][1]
-            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig)
 
-        outputRendererDict = OncotatorCLIUtils.createOutputFormatNameToClassDict()   
-        if outputFormat not in outputRendererDict.keys():
-            raise NotImplementedError("The outputFormat specified: " + outputFormat + " is not supported.")
-        else:
-            outputConfig = outputRendererDict[outputFormat][1]
-            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
-            
+        # Step 1 Initialize input and output
+        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat)
+        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
+
+        # Step 2 Datasources
+        datasourceList = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+
+        #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
+        for ds in datasourceList:
+            if isinstance(ds, TranscriptProvider):
+                ds.set_tx_mode(tx_mode)
+
         result = RunSpecification()
         result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache)
         return result

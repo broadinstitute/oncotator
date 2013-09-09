@@ -60,7 +60,6 @@ class MutUtils(object):
     """
     Static class containing utility functions for Mutations. 
     """
-
     proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)[_]*[A-Z]{0,1}([0-9]*)")
 
     def __init__(self,params):

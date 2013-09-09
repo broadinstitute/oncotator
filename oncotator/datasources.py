@@ -88,6 +88,10 @@ class GafInvalidChromosomeValue(Exception):
 
 class TranscriptProvider(object):
 
+    TX_MODE_CANONICAL = "CANONICAL"
+    TX_MODE_BEST_EFFECT = "EFFECT"
+    TX_MODE_CHOICES = [TX_MODE_CANONICAL, TX_MODE_BEST_EFFECT] # Simply list the ones above here.
+
     @abc.abstractmethod
     def getTranscriptDict(self):
         """ Return a dict containing all transcripts where key is the transcript ID.
@@ -97,6 +101,11 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon in each transcript"""
+        return
+
+    @abc.abstractmethod
+    def set_tx_mode(self, tx_mode):
+        # TODO: Throw exception if not in TX_MODE_CHOICES
         return
 
 
@@ -140,6 +149,7 @@ class Datasource(object):
         self.title = title
         self.version = str(version)
         self.output_headers = []
+        self.hashcode = ""
 
     def attach_to_class(self, cls, name, options):
         """
@@ -154,10 +164,17 @@ class Datasource(object):
             self.title = name
         options.add_datasource(self)
 
+    @abc.abstractmethod
     def annotate_mutation(self, mutation):
         # The default implementation raise a NotImplementedError
         # to ensure that any subclasses must override this method.
         raise NotImplementedError
+
+    def set_hashcode(self, value):
+        self.hashcode = value
+
+    def get_hashcode(self):
+        return self.hashcode
 
 class Gaf(Datasource, TranscriptProvider):
     """
@@ -230,6 +247,9 @@ class Gaf(Datasource, TranscriptProvider):
         self.logger.info("Datasource " + self.title + " " + self.version + " finished initialization")
 
         # TODO: Check for valid values.
+        self.tx_mode = tx_mode
+
+    def set_tx_mode(self, tx_mode):
         self.tx_mode = tx_mode
 
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):

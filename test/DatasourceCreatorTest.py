@@ -172,6 +172,13 @@ class DatasourceCreatorTest(unittest.TestCase):
         multiDS = DatasourceCreator.createDatasources('testdata/maflite/', "hg19", True)
         self.assertTrue(len(multiDS) == 0, "Length of multiDS when there were no datasources was not zero.")
 
+    def test_hashcode_generation(self):
+        """Test that we can read a hashcode for a datasource, if available."""
+        geneDS = DatasourceCreator.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
+        self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
+
+        self.assertTrue(geneDS.get_hashcode()=="7120edfdc7b29e45191c81c99894afd5")
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicInit']
     unittest.main()

@@ -50,6 +50,7 @@ import os
 import shutil
 from string import Template
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.Hasher import Hasher
 
 
 class DatasourceInstallUtils(object):
@@ -81,25 +82,55 @@ class DatasourceInstallUtils(object):
         return result
 
     @staticmethod
-    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns):
-        baseDSFile = os.path.basename(ds_file)
-        shutil.copy(ds_file, destDir + "/" + baseDSFile)
-
+    def create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type, ds_version, index_columns):
         # Grab appropriate template for the ds type
         templateName = 'ds_config.template'
         sourceConfigFP = ConfigUtils.createTemplateFP(templateName)
         sTemplate = Template(sourceConfigFP.read())
         indexColumnDict = DatasourceInstallUtils.determineIndexColumns(ds_type, index_columns.split(','))
-
         # Populate template, which yields the config file.
         finalText = sTemplate.safe_substitute(sTemplate, ds_title=ds_name, ds_version=ds_version, ds_type=ds_type,
                                               src_file=baseDSFile,
                                               genomic_pos_cols=",".join(indexColumnDict['genomic_pos_cols']),
                                               gene_col=",".join(indexColumnDict['gene_col']),
                                               transcript_col=",".join(indexColumnDict['transcript_col']),
-                                              gene_protein_position_cols=",".join(indexColumnDict['gene_protein_pos_cols']))
+                                              gene_protein_position_cols=",".join(
+                                                  indexColumnDict['gene_protein_pos_cols']))
+        return finalText
+
+    @staticmethod
+    def create_datasource_md5_file(datasource_dir):
+        """datasource_dir should be the /db_dir/ds_name/genome_build.
+        For example,
+        create_datasource_md5_file("/home/user/my_db_dir/gaf/hg19")
+        """
+        if datasource_dir.endswith('/'):
+            datasource_dir = datasource_dir[:-1]
+        md5_filename = os.path.abspath(datasource_dir) + ".md5"
+        print("md5 being written to: " + os.path.abspath(md5_filename))
+        hasher = Hasher()
+        hashcode = hasher.create_hashcode_for_dir(datasource_dir)
+        fp = file(md5_filename, 'w')
+        fp.write(hashcode)
+        fp.close()
+
+    @staticmethod
+    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns):
+        baseDSFile = os.path.basename(ds_file)
+        shutil.copy(ds_file, destDir + "/" + baseDSFile)
+
+        if ds_type == "indexed_vcf":
+            # TODO: Change this to be the appropriate code.
+            raise NotImplementedError("indexed_vcf not supported yet")
+        else:
+            finalText = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type,
+                                                                                     ds_version, index_columns)
         # Write the config file
         configFilename = destDir + "/" + ds_foldername + ".config"
+        print("config file being written to: " + os.path.abspath(configFilename))
         fp = file(configFilename, 'w')
         fp.write(finalText)
         fp.close()
+
+        DatasourceInstallUtils.create_datasource_md5_file(destDir)
+

@@ -88,7 +88,18 @@ class DatasourceCreator(object):
         """ Calls createDatasourceFromConfigParser with a two-entry tuple using 
             exact same arguments. """
         return DatasourceCreator.createDatasource(configTuple[0], configTuple[1])
-    
+
+    @staticmethod
+    def _retrieve_hash_code(leafDir):
+        hashcode = ""
+        md5_filename = os.path.dirname(leafDir) + ".md5"
+        if os.path.exists(md5_filename):
+            logging.info("md5 found for " + leafDir)
+            md5_fp = file(md5_filename, 'r')
+            hashcode = md5_fp.read()
+            md5_fp.close()
+        return hashcode
+
     @staticmethod
     def createDatasourceFromConfigParser(configParser, leafDir):
         """
@@ -133,10 +144,13 @@ class DatasourceCreator(object):
                                                                               outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
+
+        hashcode = DatasourceCreator._retrieve_hash_code(leafDir)
+        result.set_hashcode(hashcode)
         return result
     
     @staticmethod
-    def createDatasources(datasourceDir, genomeBuild="hg19", isMulticore=False, numCores = 4):
+    def createDatasources(datasourceDir, genomeBuild="hg19", isMulticore=False, numCores=4, tx_mode="CANONICAL"):
         """
         Scrapes a directory and creates a list of datasource instances.
         
@@ -157,7 +171,10 @@ class DatasourceCreator(object):
         type=tsv
         
         numCores is ignored if isMulticore == False
+
+
         """
+        # TODO: Note that createDatasources does not honor the tx-mode
         dsQueueList = []
         
         # Get a list of all of the directories
