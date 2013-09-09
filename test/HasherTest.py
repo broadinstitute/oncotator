@@ -11,7 +11,7 @@ class HasherTest(unittest.TestCase):
         test_dir = "testdata/thaga_janakari_gene_ds/hg19"
         hasher = Hasher()
         
-        self.assertTrue(hasher.create_hashcode_for_dir(test_dir)=="7120edfdc7b29e45191c81c99894afd5", "Hashed directory did not match ground truth.")
+        self.assertTrue(hasher.create_hashcode_for_dir(test_dir)=="7120edfdc7b29e45191c81c99894afd5", "Hashed directory did not match ground truth. (" + hasher.create_hashcode_for_dir(test_dir) + ")")
 
     def test_simple_hash(self):
         """Test that the single md5 call (static) functions correctly."""
