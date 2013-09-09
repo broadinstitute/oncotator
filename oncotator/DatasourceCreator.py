@@ -92,7 +92,7 @@ class DatasourceCreator(object):
     @staticmethod
     def _retrieve_hash_code(leafDir):
         hashcode = ""
-        md5_filename = leafDir + "../" + os.path.basename(leafDir) + ".md5"
+        md5_filename = os.path.dirname(leafDir) + ".md5"
         if os.path.exists(md5_filename):
             logging.info("md5 found for " + leafDir)
             md5_fp = file(md5_filename, 'r')
