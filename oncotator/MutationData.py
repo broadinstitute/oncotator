@@ -120,7 +120,7 @@ class MutationData(collections.MutableMapping):
             else:
                 raise DuplicateAnnotationException('Attempting to create an annotation multiple times (' + annotationName + ') with old, new values of (' + self.annotations[annotationName].value + ", " + annotationValue + ")")
         if annotationName in MutationData.attributes:
-            logging.getLogger(__name__).debug("Attempting to create an attribute with createAnnotation.  Should be using instance attribute setting.  x." + str(annotationName) + " = " + str(annotationValue) + " ... Ignoring annotationSource, but setting attribute.")
+            # FYI ... logging.getLogger(__name__).debug("Attempting to create an attribute with createAnnotation.  Should be using instance attribute setting.  x." + str(annotationName) + " = " + str(annotationValue) + " ... Ignoring annotationSource, but setting attribute.")
             self[annotationName] = annotationValue
         else:
             self.annotations[annotationName] = Annotation(annotationValue, annotationSource, annotationDataType, annotationDescription, tags=tags, number=number)

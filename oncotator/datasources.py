@@ -56,6 +56,7 @@ import shove
 from Bio import Seq
 from shove.core import Shove
 from oncotator.MissingAnnotationException import MissingAnnotationException
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils import gaf_annotation
 from oncotator.index.gaf import region2bins
 import vcf
@@ -341,7 +342,7 @@ class Gaf(Datasource, TranscriptProvider):
         return result
 
     def annotate_mutation(self, mutation, upstream_padding=3000, downstream_padding=0):
-        mutation.createAnnotation('variant_type', self._infer_variant_type(mutation.ref_allele, mutation.alt_allele), self.title)
+        mutation.createAnnotation('variant_type', TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), self.title)
         data = [mutation]
         data = gaf_annotation.find_mut_in_gaf(data, self)
         data = gaf_annotation.identify_best_effect_transcript(data, self)
@@ -589,7 +590,7 @@ class Gaf(Datasource, TranscriptProvider):
             
         out_records = list()
         for r in records:
-            if self.__test_overlap(start, end, r[st_key], r[en_key]):
+            if TranscriptProviderUtils.test_overlap(start, end, r[st_key], r[en_key]):
                 out_records.append(r)
                 
         return out_records
@@ -619,33 +620,6 @@ class Gaf(Datasource, TranscriptProvider):
             records.extend(data[chr].get(b, []))
             
         return records
-
-    def __test_overlap(self, a_st, a_en, b_st, b_en):
-        if (a_st >= b_st and a_st <= b_en) or (a_en >= b_st and a_en <= b_en) or \
-            (a_st <= b_st and a_en >= b_en):
-            return True
-        else:
-            return False
-
-    def _infer_variant_type(self,reference_allele, observed_allele):
-        """ To go completely in annotate method.  Returns variant type string."""
-        if reference_allele == '-': #is insertion
-            return 'INS'
-        elif observed_allele == '-': #is deletion
-            return 'DEL'
-        else:
-            if len(observed_allele) != len(reference_allele):
-                return 'ONP'
-            elif len(reference_allele) == 1:
-                return 'SNP'
-            elif len(reference_allele) == 2:
-                return 'DNP'
-            elif len(reference_allele) == 3:
-                return 'TNP'
-            elif len(reference_allele) > 3:
-                return 'ONP'
-
-        raise Exception('Variant Type cannot be inferred from reference and observed allele: (%s, %s)' % (reference_allele, observed_allele))
 
 class GenericGeneDataSourceException(Exception):
     def __init__(self, str):
@@ -1324,7 +1298,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
     """
-    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, genome_build, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file"):
+    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, ensembl_genomic_position_bins_to_transcript_index_fname, genome_build, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=ensembl_index_fname, title=title, version=version)
 
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
@@ -1334,11 +1308,39 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         self.gene_db = shove.Shove(protocol + ':///%s' % ensembl_gene_to_transcript_index_fname, "memory://")
         self.gene_dbkeys = self.gene_db.keys()
 
+        self.gp_bin_db = shove.Shove(protocol + ':///%s' % ensembl_genomic_position_bins_to_transcript_index_fname, "memory://")
+        self.gp_bin_db_dbkeys = self.gp_bin_db_db.keys()
+
+    def set_tx_mode(self, tx_mode):
+        if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
+            logging.getLogger(__name__).warn("Attempting to set transcript mode of CANONICAL for ensembl.  This operation is not supported.  Switching to EFFECT.")
+            self.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+        else:
+            self.set_tx_mode(tx_mode)
+
     def annotate_mutation(self, mutation):
         pass
 
 
+    def get_overlapping_transcripts(self, chr, start, end):
+        records = self._get_binned_transcripts(chr, start, end)
+        return self._get_overlapping_transcript_records(records, start, end)
 
+
+    def _get_binned_transcripts(self, chr, start, end):
+        bins = region2bins(int(start), int(end))
+        records = list()
+        for b in bins:
+            key = chr + "_" + str(b)
+            try:
+                txs = self.gp_bin_db[key]
+                records.extend(txs)
+            except KeyError:
+                records.extend([])
+
+    def _get_overlapping_transcript_records(self, records, start, end):
+        result = [r for r in records]
+        raise NotImplementedError
 
 
 

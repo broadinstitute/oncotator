@@ -51,6 +51,8 @@
 import itertools
 import math
 import Bio.Seq
+from oncotator.utils.MutUtils import MutUtils
+
 
 class GAFNonCodingTranscript(Exception):
     ####Custom Exception class for non-coding trancscipts
@@ -472,48 +474,7 @@ def adjust_protein_position_and_alleles(protein_seq, protein_position_start, pro
     return reference_aa, observed_aa, protein_position_start, protein_position_end
 
 def identify_best_effect_transcript(data, gaf):
-    order_dict = {
-        'De_novo_Start_OutOfFrame':0,
-        'Nonsense_Mutation':0,
-        'Nonstop_Mutation':0,
-        'Missense_Mutation':1,
-        'De_novo_Start_InFrame':1,
-        'In_Frame_Del':1,
-        'In_Frame_Ins':1,
-        'Frame_Shift_Del':2,
-        'Frame_Shift_Ins':2,
-        'Frame_Shift_Sub':2,
-        'Start_Codon_SNP':3,
-        'Start_Codon_Del':3,
-        'Start_Codon_Ins':3,
-        'Start_Codon_DNP':3,
-        'Start_Codon_TNP':3,
-        'Start_Codon_ONP':3,
-        'Stop_Codon_SNP':3,
-        'Stop_Codon_Del':3,
-        'Stop_Codon_Ins':3,
-        'Stop_Codon_DNP':3,
-        'Stop_Codon_TNP':3,
-        'Stop_Codon_ONP':3,
-        'Splice_Site':4,
-        'Splice_Site_SNP':4,
-        'Splice_Site_Del':4,
-        'Splice_Site_Ins':4,
-        'Splice_Site_DNP':4,
-        'Splice_Site_TNP':4,
-        'Splice_Site_ONP':4,
-        'Splice_Site':4,
-        'miRNA':4,
-        'Silent':5,
-        "3'UTR":6,
-        "5'UTR":6,
-        'Intron':7,
-        "5'Flank":8,
-        "3'Flank":8,
-        'Non-coding_Transcript':9,
-        'IGR':20,
-        'TX-REF-MISMATCH':100
-    }
+    order_dict = MutUtils.retrieve_effect_dict()
     for m in data:
         if m['variant_type'] != 'ERR':
             
