@@ -67,11 +67,11 @@ class Hasher(object):
         if not os.path.exists(directory):
             logging.getLogger(__name__).error(directory + " not found.")
             raise ValueError(directory + " not found.")
-
+        md5s = []
         for root, dirs, files in os.walk(directory):
 
             for names in files:
-                if names.endswith(".old") or names.endswith("bkup") or names.endswith(".md5") or names.startswith(".")  or names.endswith("~"):
+                if names.endswith(".old") or names.endswith("bkup") or names.endswith(".md5") or names.startswith(".") or names.endswith("~"):
                     logging.getLogger(__name__).info("Not creating new hash for " + names)
                     continue
 
@@ -88,7 +88,11 @@ class Hasher(object):
                 else:
                     md5 = self._read_md5_file(filepath)
 
-                md5hash.update(md5)
+                md5s.append(md5)
 
+        # We have to sort the md5s, since the order can change when walking the directory.
+        sorted_md5s = sorted(md5s)
+        for md5 in sorted_md5s:
+            md5hash.update(md5)
         return md5hash.hexdigest()
 

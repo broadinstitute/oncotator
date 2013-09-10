@@ -116,6 +116,7 @@ class Annotator(object):
         self._isMulticore = None
         self._numCores = None
         self._cacheManager = CacheManager()
+        self._cacheManager.initialize(None, "not_used")
         self._cache_stats = {"miss": 0, "hit":0}
         pass
 
@@ -286,6 +287,7 @@ class Annotator(object):
             self.logger.warn("THERE ARE NO DATASOURCES REGISTERED")
         for m in mutations:
             annot_dict = self._cacheManager.retrieve_cached_annotations(m)
+
             if annot_dict is None:
                 self._cache_stats['miss'] += 1
                 for datasource in self._datasources:
