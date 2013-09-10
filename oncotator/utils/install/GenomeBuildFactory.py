@@ -25,6 +25,11 @@ class GenomeBuildFactory(object):
         elif gff_record['type'] == 'CDS':
             self._transcript_index[transcript_id].add_cds(gff_record['location'][0], gff_record['location'][1])
 
+        if gff_record['strand'] == 1:
+            self._transcript_index[transcript_id].set_strand("+")
+        else:
+            self._transcript_index[transcript_id].set_strand("-")
+
         seq = seq_dict.get(transcript_id, None)
         if seq is not None:
             genome_seq_as_str = str(seq.seq)
@@ -107,11 +112,26 @@ class GenomeBuildFactory(object):
         output_db.close()
         transcript_db.close()
 
-    def build_ensembl_sequences_by_transcript_id_index(self, ensembl_transcript_index_fname):
-        """ Create an index that returns the sequences from the fasta file given the transcript id as a key.
+    # def build_ensembl_protein_seqs(self):
+    #     prot_seq_db = shelve.open(os.path.join(output_dir, 'Ensembl_protein_seqs.fa.shlv'), 'c')
+    #     for prot_rec in SeqIO.parse(proteins_file, 'fasta'):
+    #         tmp = re.search('ENST\d+', prot_rec.description)
+    #         if tmp == None:
+    #             continue
+    #         id_str = tmp.group(0)
+    #         prot_seq_db[id_str] = str(prot_rec.seq)
+    #
+    #     prot_seq_db.close()
+
+    def construct_ensembl_indices(self, ensembl_input_gtf, ensembl_input_fasta, base_output_filename):
+        """
+
+        :param ensembl_input_gtf: gtf input file
+        :param ensembl_input_fasta: fasta input file
+        :param base_output_filename: Just the base output filename, such as "my_ensembl" without any extensions.
         :return:
         """
-        #TODO: This method may need different parameters.
-        raise NotImplementedError("This method is not finished.")
-
-
+        ensembl_transcript_index_filename = base_output_filename + ".transcript.idx"
+        self.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, ensembl_transcript_index_filename)
+        self.build_ensembl_transcripts_by_gene_index(ensembl_transcript_index_filename, base_output_filename + ".transcript_by_gene.idx")
+        self.build_ensembl_transcripts_by_genomic_location_index(ensembl_transcript_index_filename, base_output_filename + ".transcript_by_gp_bin.idx")

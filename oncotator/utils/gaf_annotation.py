@@ -51,6 +51,7 @@
 import itertools
 import math
 import Bio.Seq
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.MutUtils import MutUtils
 
 
@@ -474,7 +475,7 @@ def adjust_protein_position_and_alleles(protein_seq, protein_position_start, pro
     return reference_aa, observed_aa, protein_position_start, protein_position_end
 
 def identify_best_effect_transcript(data, gaf):
-    order_dict = MutUtils.retrieve_effect_dict()
+    order_dict = TranscriptProviderUtils.retrieve_effect_dict()
     for m in data:
         if m['variant_type'] != 'ERR':
             

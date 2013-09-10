@@ -55,6 +55,7 @@ import os
 import shove
 from Bio import Seq
 from shove.core import Shove
+from oncotator.Annotation import Annotation
 from oncotator.MissingAnnotationException import MissingAnnotationException
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils import gaf_annotation
@@ -554,7 +555,7 @@ class Gaf(Datasource, TranscriptProvider):
                 left_dist = start - neareast_gene_border
                 left_gene = nearest_gene
                 break
-            
+
         right_gene, right_dist = None, None
         for s in size_extensions:
             new_end = end + s
@@ -563,13 +564,13 @@ class Gaf(Datasource, TranscriptProvider):
             for r in records:
                 if r['start'] < neareast_gene_border:
                     neareast_gene_border = r['start']
-                    nearest_gene = r['gene']    
+                    nearest_gene = r['gene']
             if neareast_gene_border < int(1e9):
                 right_dist = neareast_gene_border - end
                 right_gene = nearest_gene
                 break
-                
-        return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))    
+
+        return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
             
     def add_padding_to_GAF_transcripts(self, fiveprime_padding, threeprime_padding):
         for chr in self.Transcripts:
@@ -1298,34 +1299,73 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
     """
-    def __init__(self, ensembl_index_fname, ensembl_gene_to_transcript_index_fname, ensembl_genomic_position_bins_to_transcript_index_fname, genome_build, title='Ensembl', version='', tx_mode="CANONICAL", protocol="file"):
-        super(EnsemblTranscriptDatasource, self).__init__(src_file=ensembl_index_fname, title=title, version=version)
+    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file"):
+        super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
+
+        ensembl_index_fname = src_file + ".transcript.idx"
+        ensembl_gene_to_transcript_index_fname = src_file + ".transcript_by_gene.idx"
+        ensembl_genomic_position_bins_to_transcript_index_fname = src_file + ".transcript_by_gp_bin.idx"
 
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
-        self.transcript_db = shove.Shove(protocol + ':///%s' % ensembl_index_fname, "memory://")
+        self.transcript_db = shove.Shove(protocol + '://%s' % ensembl_index_fname, "memory://")
         self.transcript_dbkeys = self.transcript_db.keys()
 
-        self.gene_db = shove.Shove(protocol + ':///%s' % ensembl_gene_to_transcript_index_fname, "memory://")
+        self.gene_db = shove.Shove(protocol + '://%s' % ensembl_gene_to_transcript_index_fname, "memory://")
         self.gene_dbkeys = self.gene_db.keys()
 
-        self.gp_bin_db = shove.Shove(protocol + ':///%s' % ensembl_genomic_position_bins_to_transcript_index_fname, "memory://")
-        self.gp_bin_db_dbkeys = self.gp_bin_db_db.keys()
+        self.gp_bin_db = shove.Shove(protocol + '://%s' % ensembl_genomic_position_bins_to_transcript_index_fname, "memory://")
+        self.gp_bin_db_dbkeys = self.gp_bin_db.keys()
+
+        self.set_tx_mode(tx_mode)
 
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
             logging.getLogger(__name__).warn("Attempting to set transcript mode of CANONICAL for ensembl.  This operation is not supported.  Switching to EFFECT.")
             self.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
         else:
-            self.set_tx_mode(tx_mode)
+            self.tx_mode = tx_mode
+
+    def _create_basic_annotation(self, value):
+        return Annotation(value=value, datasourceName=self.title)
+
+    def _create_blank_set_of_annotations(self):
+        final_annotation_dict = dict()
+        final_annotation_dict['annotation_transcript'] = self._create_basic_annotation('')
+        final_annotation_dict['codon_change'] = self._create_basic_annotation('')
+        final_annotation_dict['strand'] = self._create_basic_annotation('')
+        final_annotation_dict['protein_change'] = self._create_basic_annotation('')
+        final_annotation_dict['transcript_exon'] = self._create_basic_annotation('')
+        final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
+        final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
+        final_annotation_dict['transcript_id'] = self._create_basic_annotation('')
+        final_annotation_dict['transcript_strand'] = self._create_basic_annotation('')
 
     def annotate_mutation(self, mutation):
-        pass
+        chr = mutation.chr
+        start = int(mutation.start)
+        end = int(mutation.end)
+        txs = self.get_overlapping_transcripts(chr, start, end)
+        final_annotation_dict = self._create_blank_set_of_annotations()
+        final_annotation_dict['variant_type'] = Annotation(value=TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), datasourceName=self.title)
 
+        # We have hit IGR if no transcripts come back.  Most annotations can just use the blank set.
+        if len(txs) == 0:
+            final_annotation_dict['variant_classification'] = self._create_basic_annotation('IGR')
+            nearest_genes = self._get_nearest_genes(chr, start, end)
+            final_annotation_dict['other_transcripts'] = self._create_basic_annotation(value='%s (%s upstream) : %s (%s downstream)' % (nearest_genes[0][0], nearest_genes[0][1], nearest_genes[1][0], nearest_genes[1][1]))
+            final_annotation_dict['gene'] = self._create_basic_annotation('Unknown')
+            final_annotation_dict['gene_id'] = self._create_basic_annotation('0')
+        else:
+            # Choose the best effect transcript
+            for tx in txs:
+                pass
+
+        mutation.addAnnotations(final_annotation_dict)
+        return mutation
 
     def get_overlapping_transcripts(self, chr, start, end):
         records = self._get_binned_transcripts(chr, start, end)
         return self._get_overlapping_transcript_records(records, start, end)
-
 
     def _get_binned_transcripts(self, chr, start, end):
         bins = region2bins(int(start), int(end))
@@ -1336,17 +1376,42 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
                 txs = self.gp_bin_db[key]
                 records.extend(txs)
             except KeyError:
-                records.extend([])
+                pass
 
     def _get_overlapping_transcript_records(self, records, start, end):
-        result = [r for r in records]
-        raise NotImplementedError
+        return [r for r in records if TranscriptProviderUtils.test_overlap(int(start), int(end), r.get_start(), r.get_end())]
 
+    def _get_nearest_genes(self, chr, start, end):
+        size_extensions = [1000, 10000, 100000, 1000000]
 
+        left_gene, left_dist = None, None
+        for s in size_extensions:
+            new_start = start - s
+            if new_start < 0: new_start = 1
+            records = self.get_overlapping_genes(chr, new_start, end)
+            neareast_gene_border = 0
+            for r in records:
+                if r['end'] > neareast_gene_border:
+                    neareast_gene_border = r['end']
+                    nearest_gene = r['gene']
+            if neareast_gene_border:
+                left_dist = start - neareast_gene_border
+                left_gene = nearest_gene
+                break
 
+        right_gene, right_dist = None, None
+        for s in size_extensions:
+            new_end = end + s
+            records = self.get_overlapping_genes(chr, start, new_end)
+            neareast_gene_border = int(1e9)
+            for r in records:
+                if r['start'] < neareast_gene_border:
+                    neareast_gene_border = r['start']
+                    nearest_gene = r['gene']
+            if neareast_gene_border < int(1e9):
+                right_dist = neareast_gene_border - end
+                right_gene = nearest_gene
+                break
 
+        return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
 
-
-
-
-        # Create genomic location --> collection of transcripts
