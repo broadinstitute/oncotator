@@ -685,7 +685,8 @@ class Generic_Transcript_Datasource(Generic_Gene_DataSource):
 
     def annotate_mutation(self, mutation):
         return super(Generic_Transcript_Datasource,self).annotate_mutation(mutation,'transcript_id')
-        
+
+
 class Generic_GenomicPosition_DataSource(Datasource):
     """
     A datasource derived from a generic TSV file in which the first three columns are 'chr',
