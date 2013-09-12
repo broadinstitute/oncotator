@@ -34,10 +34,7 @@ echo "PyVCF ========================="
 echo "Retrieving mgupta (aka elephanthunter) fork of PyVCF"
 wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
 
-if [-f master]
-then
-    mv master master.zip
-fi
+mv master master.zip
 
 unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
 
