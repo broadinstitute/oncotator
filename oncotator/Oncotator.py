@@ -201,7 +201,7 @@ USAGE
             if defaultConfigFile != DEFAULT_DEFAULT_ANNOTATIONS:
                 logger.warn("Could not find " + defaultConfigFile + "   ... proceeding anyway.")
             else:
-                logger.info("Could not find Broad-specific " + defaultConfigFile + "   ... proceeding without any default annotations.  __UNKNOWN__ may appear in TCGA MAFs outputs.")
+                logger.info("Could not find Broad-specific " + defaultConfigFile + "   ... proceeding without any default annotations.  __UNKNOWN__ may appear in TCGA MAF outputs.")
             defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
