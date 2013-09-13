@@ -99,8 +99,9 @@ def parseOptions():
                3) tsv --> tab separated values, so the file must be a table of tab-separated values with the same number of values on every row.
 
 
-       "tabix_gp_tsv" -- (This is not supported yet) tabix indexed tsv file.  The tabix index is created by this script (using oncotator-index).
-           TSVs have the same requirements as the gp_tsv
+       "transcript_tsv" -- tsv file referenced by transcript_id
+            TSV has the same requirements as gene_tsv, except that the single column must be for transcript_id.
+             Note:  This is inherently coupled with the transcript providing datasource used.
            
    datasource filename -- input data file.  In the case of tabix_gp_tsv, it would be the source tsv file.
    name -- arbitrary name for the datasource.  This will be the folder moved into the the destination db dir.  Must be unique from other datasources.  
@@ -110,10 +111,7 @@ def parseOptions():
    destination database directory -- an Oncotator database directory.
    destination datasource directory -- directory name that this datasource should have.  E.g. cancer_gene_census
    genome_build -- The genome build.  E.g. hg19        
-   index columns -- the columns that are indexed. 
-       For tabix_gp_tsv and gp_tsv, this MUST be a triplet specifying chromosome, start, and end.  
-           For example, if creating an ORegAnno datasource: 
-           'hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd'
+   index columns -- the columns that are indexed.
        For gene_tsv, this would be a single column name for the Hugo_Symbol, e.g. "Symbol"
        For gpp_tsv, this MUST be a triplet specifying gene, AA start, and AA end.  For a single amino acid, start should equal end.
    
