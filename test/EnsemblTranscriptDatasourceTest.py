@@ -46,16 +46,34 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+import ConfigParser
+import logging
 
 import unittest
+from oncotator.datasources import EnsemblTranscriptDatasource
+from oncotator.utils.ConfigUtils import ConfigUtils
+from test.TestUtils import TestUtils
 
-
+TestUtils.setupLogging(__file__, __name__)
 class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    @unittest.skip("Not implemented yet")
-    def test_something(self):
-        self.assertEqual(True, False)
+    def setUp(self):
+        self.logger = logging.getLogger(__name__)
+        self.config = TestUtils.createUnitTestConfig()
+
+    def tearDown(self):
+        pass
+
+    def test_intitialize(self):
+        """Test a simple initialization of an ensembl datasource """
+        base_config_location = "testdata/ensembl/saccer/"
+        config_parser = ConfigUtils.createConfigParser(base_config_location + "ensembl.config")
+        title = config_parser.get("general", "title")
+        version = config_parser.get("general", "version")
+        src_file = config_parser.get("general", "src_file")
+
+        ensembl_ds = EnsemblTranscriptDatasource(title=title, version=version, src_file=src_file)
 
 
 if __name__ == '__main__':

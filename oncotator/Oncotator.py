@@ -42,9 +42,9 @@ DEBUG = 1
 TESTRUN = 0
 PROFILE = 1
 
-#TODO: This needs to be dynamic from a config file.
-# TODO: This needs to be changed.
-DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_ds_tmp'
+#TODO: These need to be dynamic from a config file.
+DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds/'
+DEFAULT_DEFAULT_ANNOTATIONS = '/xchip/cga/reference/annotation/db/tcgaMAFManualOverrides2.4.config'
 DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
 class CLIError(Exception):
@@ -62,7 +62,7 @@ def parseOptions(program_license, program_version_message):
     epilog= '''
     
     Example usage :
-    python Oncotator.py -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
+    oncotator -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
     
     IMPORTANT NOTE:  hg19 is only supported genome build for now.
 
@@ -189,11 +189,20 @@ USAGE
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
         overrideConfigFile = args.override_config
+        if not os.path.exists(overrideConfigFile):
+            logger.warn("Could not find " + overrideConfigFile + "   ... proceeding anyway.")
+            overrideConfigFile = None
         manualOverrides = OncotatorCLIUtils.determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile)
 
         # Parse default overrides
         commandLineDefaultValues = args.default_cli
         defaultConfigFile = args.default_config
+        if not os.path.exists(defaultConfigFile):
+            if defaultConfigFile != DEFAULT_DEFAULT_ANNOTATIONS:
+                logger.warn("Could not find " + defaultConfigFile + "   ... proceeding anyway.")
+            else:
+                logger.info("Could not find Broad-specific " + defaultConfigFile + "   ... proceeding without any default annotations.  __UNKNOWN__ may appear in TCGA MAF outputs.")
+            defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.

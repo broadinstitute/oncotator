@@ -56,7 +56,7 @@ from datasources import Gaf, ReferenceDatasource
 from datasources import dbSNP
 from datasources import dbNSFP
 from datasources import Cosmic, Generic_Gene_DataSource, Generic_Transcript_Datasource, Generic_VariantClassification_Datasource
-from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider, IndexedVCF_DataSource, IndexedTSV_Datasource
+from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider, Generic_GenomicMutation_Datasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -141,6 +141,8 @@ class DatasourceCreator(object):
             result = Generic_VariantClassification_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'vc_col'))
         elif dsType == 'gp_tsv':
             result = Generic_GenomicPosition_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
+        elif dsType == 'gm_tsv':
+            result = Generic_GenomicMutation_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
         elif dsType == 'gpp_tsv':
             result = Generic_GeneProteinPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'gene_protein_position_cols'))
         elif dsType == "transcript_to_uniprot_aa":
@@ -148,7 +150,7 @@ class DatasourceCreator(object):
                                                                               version=configParser.get('general', 'version'),
                                                                               src_file="file://" + filePrefix + configParser.get('general', 'src_file'), # three slashes for sqlite
                                                                               inputPositionAnnotationName=configParser.get('general', 'inputPositionAnnotationName'),
-                                                                              outputPositionAnnotationName=configParser.get('general', 'outputPositionAnnotationName'))
+                                                                              outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == "indexed_vcf":
