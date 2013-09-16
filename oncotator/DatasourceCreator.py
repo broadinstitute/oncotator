@@ -94,11 +94,18 @@ class DatasourceCreator(object):
         hashcode = ""
         md5_filename = os.path.dirname(leafDir) + ".md5"
         if os.path.exists(md5_filename):
-            logging.info("md5 found for " + leafDir)
+            logging.getLogger(__name__).info("md5 found for " + leafDir)
             md5_fp = file(md5_filename, 'r')
             hashcode = md5_fp.read()
             md5_fp.close()
         return hashcode
+
+    @staticmethod
+    def _log_missing_column_name_msg(colnames, indexColnames):
+        for colname in indexColnames:
+            if colname not in colnames:
+                msg = "%s is missing from column name list." % colname
+                logging.getLogger(__name__).warn(msg)
 
     @staticmethod
     def createDatasourceFromConfigParser(configParser, leafDir):
@@ -152,10 +159,7 @@ class DatasourceCreator(object):
             colnames = configParser.get("general", "column_names")
             indexColnames = configParser.get("general", "index_columns")
             indexColnames = indexColnames.split(",")
-            for colname in indexColnames:
-                if colname not in colnames:
-                    msg = "%s is missing from column name list." % colname
-                    logging.warn(msg)
+            DatasourceCreator._log_missing_column_name_msg(colnames, indexColnames)
             result = IndexedTSV_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get('general', 'version'),

@@ -313,13 +313,20 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         """
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
-        alt = record.ALT[index]
-        if alt is None:
-            alt = ""
-        endPos = int(record.POS) + len(alt) - 1
         ref = record.REF
         if ref == ".":
             ref = ""
+
+        alt = record.ALT[index]
+        if alt is None:
+            alt = ""
+
+        # Write end position as it would be in MAF format
+        endPos = int(record.POS)
+        if len(alt) < len(ref):  # deletion
+            endPos += len(ref) - 1
+        elif len(alt) > len(ref):  # insertion
+            endPos += len(ref) - 1
         mut = MutationData(chrom, record.POS, endPos, ref, alt, "hg19")
 
         ID = record.ID
