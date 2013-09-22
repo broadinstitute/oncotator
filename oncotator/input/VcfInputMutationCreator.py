@@ -66,7 +66,6 @@ from SyntaxException import SyntaxException
 import vcf
 import copy
 from oncotator.Annotation import Annotation
-from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.ConfigTable import ConfigTable
 
 
@@ -324,9 +323,9 @@ class VcfInputMutationCreator(InputMutationCreator):
         # Write end position as it would be in MAF format
         endPos = int(record.POS)
         if len(alt) < len(ref):  # deletion
-            endPos += len(ref) - 1
+            endPos += len(ref) - len(alt) - 1
         elif len(alt) > len(ref):  # insertion
-            endPos += len(ref) - 1
+            endPos += 1
         mut = MutationData(chrom, record.POS, endPos, ref, alt, "hg19")
 
         ID = record.ID
@@ -347,12 +346,6 @@ class VcfInputMutationCreator(InputMutationCreator):
         mut.createAnnotation("altAlleleSeen", str(True), "INPUT")
         mut = self._addInfoDataToMutation(mut, record, index)
         return mut
-    #
-    # def _getAnnotationName(self, fieldType, ID):
-    #     if ID not in self.configTable[fieldType]:
-    #         raise SyntaxException(
-    #             "Missing %s ID, %s, in meta-information of VCF file, %s." % (fieldType, ID, self.filename))
-    #     return self.configTable[fieldType][ID]
 
     def reset(self):
         """ Resets the internal state, so that mutations can be generated. """

@@ -1,0 +1,12 @@
+##fileformat=VCFv4.0
+##fileDate=20090805
+##source=myImputationProgramV3.1
+##reference=1000GenomesPilot-NCBI36
+##phasing=partial
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##FILTER=<ID=q10,Description="Quality below 10">
+##FILTER=<ID=s50,Description="Less than 50% of samples have data">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	16890445	rs6040355	G	T	67	PASS	NS=2
+1	114189432	.	T	TA	67	PASS	NS=2
+1	154524458	rs6054257	TGA	T	29	PASS	NS=4

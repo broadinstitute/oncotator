@@ -63,6 +63,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordFactory import RecordFactory
 from oncotator.output.OutputDataManager import OutputDataManager
 from oncotator.utils.ConfigTable import ConfigTable
+from oncotator.utils.MutUtils import MutUtils
 
 class VcfOutputRenderer(OutputRenderer):
     """
@@ -106,6 +107,12 @@ class VcfOutputRenderer(OutputRenderer):
 
                 # Parse chromosome
                 chroms.add(mut.chr)
+
+                if mut.ref_allele == "_" or mut.alt_allele == "-":
+                    ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBase(mut)
+                    mut.start = updated_start
+                    mut.ref_allele = ref_allele
+                    mut.alt_allele = alt_allele
 
                 writer.writerow(mut)
 

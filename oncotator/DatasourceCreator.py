@@ -55,8 +55,18 @@ from utils.ConfigUtils import ConfigUtils
 from datasources import Gaf, ReferenceDatasource
 from datasources import dbSNP
 from datasources import dbNSFP
-from datasources import Cosmic, Generic_Gene_DataSource, Generic_Transcript_Datasource, Generic_VariantClassification_Datasource
-from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider, Generic_GenomicMutation_Datasource
+from datasources import Cosmic
+from datasources import Generic_Gene_DataSource
+from datasources import Generic_Transcript_Datasource
+from datasources import Generic_VariantClassification_Datasource
+from oncotator.datasources import Generic_GenomicPosition_DataSource
+from oncotator.datasources import Generic_GeneProteinPositionDatasource
+from oncotator.datasources import PositionTransformingDatasource
+from oncotator.datasources import TranscriptToUniProtProteinPositionTransformingDatasource
+from oncotator.datasources import TranscriptProvider
+from oncotator.datasources import Generic_GenomicMutation_Datasource
+from oncotator.datasources import IndexedTSV_Datasource
+from oncotator.datasources import IndexedVCF_DataSource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone

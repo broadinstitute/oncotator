@@ -282,6 +282,31 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         diff = gtKeys.symmetric_difference(ks)
         self.assertTrue(len(diff) == 0, "Missing keys that should have been seen in the metadata: " + str(diff))
 
+    def testSnpsAndIndelStartAndEndPos(self):
+        inputFilename = "testdata/vcf/example.snps.indels.vcf"
+        outputFilename = 'out/example.snps.indels.out.tsv'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        tsvReader = GenericTsvReader(outputFilename)
+        for row in tsvReader:
+            if row['start'] == "16890445":
+                self.assertEqual(row["end"], "16890445", "The value should be %s but it was %s." % ("16890445",
+                                                                                                    row["end"]))
+            elif row["start"] == "154524458":
+                self.assertEqual(row["end"], "154524459", "The value should be %s but it was %s." % ("154524459",
+                                                                                                     row["end"]))
+            elif row["start"] == "114189432":
+                self.assertEqual(row["end"], "114189433", "The value should be %s but it was %s." % ("114189433",
+                                                                                                     row["end"]))
+
+
     def testSplitByNumberOfAltsWithFile(self):
         """ Test whether we properly determine that a field is split ... using an actual file"""
         inputFilename = 'testdata/vcf/example.split.tags.vcf'
