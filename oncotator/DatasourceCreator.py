@@ -136,6 +136,8 @@ class DatasourceCreator(object):
             result = Generic_GenomicPosition_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
         elif dsType == 'gm_tsv':
             result = Generic_GenomicMutation_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
+        elif dsType == 'gm_tsv_reverse_complement':
+            result = Generic_GenomicMutation_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'), use_complementary_strand_alleles_for_negative_strand_transcripts=True)
         elif dsType == 'gpp_tsv':
             result = Generic_GeneProteinPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'gene_protein_position_cols'))
         elif dsType == "transcript_to_uniprot_aa":
