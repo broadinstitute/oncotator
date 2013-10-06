@@ -838,7 +838,7 @@ class dbSNP(IndexedVCF_DataSource):
         self.title = title
     
         super(dbSNP, self).__init__(src_file, title=self.title, version=version)
-        self.output_headers = ['dbSNP_RS', 'dbSNP_Val_Status']
+        self.output_headers = ['dbSNP_RS', 'dbSNP_Val_Status', 'dbSNP_INFO']
         self.logger = logging.getLogger(__name__)
     
     def annotate_mutation(self, mutation):
