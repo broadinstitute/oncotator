@@ -754,7 +754,7 @@ class Generic_GenomicMutation_Datasource(Generic_GenomicPosition_DataSource):
 
         if all(field in mutation for field in ['chr','start','end', 'ref_allele', 'alt_allele', 'strand']):
             chr, start, end = mutation.chr, mutation.start, mutation.end
-            ref_allele, alt_allele = mutation.ref_allele, mutation.alt_allele
+            ref_allele, alt_allele = str(mutation.ref_allele), str(mutation.alt_allele) #changed to str incase vcf.model._Substitution object is being used
             if self.use_complementary_strand_alleles_for_negative_strand_transcripts:
                 if mutation.get('strand') == '-':
                     ref_allele, alt_allele = Seq.reverse_complement(ref_allele), Seq.reverse_complement(alt_allele)
