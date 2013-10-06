@@ -66,6 +66,7 @@ import re
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
 from oncotator.utils.dbNSFP import dbnsfp_fieldnames
+import json
 
 try:
     import pysam
@@ -829,6 +830,8 @@ class dbSNP(IndexedVCF_DataSource):
         dbSNP_Val_Status
             'byFrequency' if dbSNP is validated by frequency.
             'b10000genomes' if dbSNP is found in 1000genomes dataset.
+        dbSNP_INFO
+            INFO field from dbSNP vcf dumped as json string
             
     """
     def __init__(self, src_file, title='dbSNP', version=None):
@@ -855,6 +858,7 @@ class dbSNP(IndexedVCF_DataSource):
         for vcf_rec in overlapping_vcf_records:
             for header in self.output_headers:
                 mutation['dbSNP_RS'].add(vcf_rec.ID)
+                mutation['dbSNP_INFO'].add(json.dumps(vcf_rec.INFO, separators=(',', ':')))
                 if 'VLD' in vcf_rec.INFO:
                     mutation['dbSNP_Val_Status'].add('byFrequency')
                 if 'KGVAL' in vcf_rec.INFO or 'KGPROD' in vcf_rec.INFO or 'KGPilot1' in vcf_rec.INFO or 'KGPilot123' in vcf_rec.INFO:
