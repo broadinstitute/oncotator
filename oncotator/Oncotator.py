@@ -189,7 +189,7 @@ USAGE
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
         overrideConfigFile = args.override_config
-        if not os.path.exists(overrideConfigFile):
+        if overrideConfigFile is not None and not os.path.exists(overrideConfigFile):
             logger.warn("Could not find " + overrideConfigFile + "   ... proceeding anyway.")
             overrideConfigFile = None
         manualOverrides = OncotatorCLIUtils.determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile)
@@ -197,7 +197,7 @@ USAGE
         # Parse default overrides
         commandLineDefaultValues = args.default_cli
         defaultConfigFile = args.default_config
-        if not os.path.exists(defaultConfigFile):
+        if defaultConfigFile is not None and not os.path.exists(defaultConfigFile):
             if defaultConfigFile != DEFAULT_DEFAULT_ANNOTATIONS:
                 logger.warn("Could not find " + defaultConfigFile + "   ... proceeding anyway.")
             else:
