@@ -47,6 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from TestUtils import TestUtils
+from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 
 
 """
@@ -69,6 +70,14 @@ from oncotator.DatasourceCreator import DatasourceCreator
 TestUtils.setupLogging(__file__, __name__)
 class TcgaMafOutputRendererTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
+    """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
+        These were taken from version 0.5.25.0 of Oncotator.
+    """
+    TCGA_MAF_DEFAULTS = {'NCBI_Build':'37','Strand':"+",'Center':'broad.mit.edu','source':'Capture', 'status':'Somatic', 'phase':'Phase_I', 'sequencer':'Illumina GAIIx',
+                  'Tumor_Validation_Allele1': '', 'Tumor_Validation_Allele2': '', 'Match_Norm_Validation_Allele1': '', 'Match_Norm_Validation_Allele2': '',
+                  'Verification_Status': '','Validation_Status': '', 'Validation_Method': '', 'Score': '', 'BAM_file': '',
+                  'Match_Norm_Seq_Allele1':'', 'Match_Norm_Seq_Allele2':''}
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)
@@ -128,24 +137,11 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
     def _determine_db_dir(self):
         return self.config.get('DEFAULT',"dbDir")
-    
-    def _createTCGAMAFDefaults(self):
-        """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
-        These were taken from version 0.5.25.0 of Oncotator.
-        """
 
-        result = {'NCBI_Build':'37','Strand':"+",'Center':'broad.mit.edu','source':'Capture', 'status':'Somatic', 'phase':'Phase_I', 'sequencer':'Illumina GAIIx',
-                  'Tumor_Validation_Allele1': '', 'Tumor_Validation_Allele2': '', 'Match_Norm_Validation_Allele1': '', 'Match_Norm_Validation_Allele2': '',
-                  'Verification_Status': '','Validation_Status': '', 'Validation_Method': '', 'Score': '', 'BAM_file': '',
-                  'Match_Norm_Seq_Allele1':'', 'Match_Norm_Seq_Allele2':''}
-        
-
-        return result        
-    
-    def _annotateTest(self, inputFilename, outputFilename, datasources, inputFormat="MAFLITE", outputFormat="TCGAMAF"):
+    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS):
         self.logger.info("Initializing Annotator...")
         annotator = Annotator()
-        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=self._createTCGAMAFDefaults(), datasourceDir=self._determine_db_dir())
+        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -229,6 +225,42 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         for h in headersToCheck:
             self.assertFalse(("i_" + h) in headers, "i_ was prepended to " + h)
             self.assertTrue(h in headers, h + " not found.")
+
+    def testProperConversionVcfToMaf(self):
+        """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF """
+
+        # For this conversion, you must specify the barcodes manually
+        default_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
+        default_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
+
+        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.vcf', "out/testConversionFromVCF.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", default_annotations=default_annotations)
+
+        # Sanity checks to make sure that the generated maf file is not junk.
+        self._validateTcgaMafContents(outputFilename)
+
+        # Check to make sure that the ref and alt are correct for a TCGA MAF.
+        tsvReader = GenericTsvReader(outputFilename)
+
+        ctr = 0
+
+        for line_dict in tsvReader:
+            ref = line_dict['Reference_Allele']
+            alt = line_dict['Tumor_Seq_Allele2']
+
+            # INS
+            if len(alt) > len(ref):
+                self.assertTrue(ref == "-", "Invalid insertion with " + ref + "  " + alt)
+
+            # DEL
+            if len(ref) > len(alt):
+                self.assertTrue(alt == "-", "Invalid deletion with " + ref + "  " + alt)
+
+            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170"])
+            self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A"])
+            self.assertTrue(line_dict['Tumor_Seq_Allele2'] in ["-", "TC", "G"])
+            ctr += 1
+
+        self.assertTrue(ctr > 1, "No output mutations found." )
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testSimpleVersionString']

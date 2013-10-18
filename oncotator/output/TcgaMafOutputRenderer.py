@@ -113,7 +113,52 @@ class TcgaMafOutputRenderer(OutputRenderer):
             row[h] = value
         return row
 
-    
+    def _alterMutationForIndel(self, m):
+        """ In the case where we have an indel, we should check that the mutation is using the proper ref and alt
+               For example, an insertion should have a ref of '-' or '.' and the alt should be one or more bases.
+               If this is being violated, this algorithm will assume that the first base in the insertion or deletion can
+               be removed from both fields (at that point one of ref or alt should become empty and replaced with '-'
+             TODO: Implement this
+
+        :return: a list of updated ref, alt, and start position (all as str)... always length 3
+        """
+        result = [m.ref_allele, m.alt_allele, m.start]
+
+        # DEL
+        if (len(m.ref_allele) > len(m.alt_allele)) and m.alt_allele not in [".", "-", ""]:
+            if m.ref_allele[0] != m.alt_allele[0]:
+                logging.getLogger(__name__).warn("ref and alt did not start with the same base for a deletion.  Removing alt anyway.")
+            result[0] = result[0][1:]
+            result[1] = "-"
+            result[2] = str(int(m.start) + 1)
+
+        # INS
+        if (len(m.alt_allele) > len(m.ref_allele)) and m.ref_allele not in [".", "-", ""]:
+            if m.ref_allele[0] != m.alt_allele[0]:
+                logging.getLogger(__name__).warn("ref and alt did not start with the same base for a deletion.  Removing alt anyway.")
+            result[0] = "-"
+            result[1] = result[1][1:]
+            result[2] = str(int(m.start) + 1)
+
+        return result
+
+    def _writeMutationRow(self, dw, fieldMap, fieldMapKeys, m):
+        """ If this row should be rendered, then write it to the given DictWriter
+        :param dw: DictWriter
+        :param fieldMap:
+        :param fieldMapKeys:
+        :param m:
+        :return:
+        """
+        if MutUtils.str2bool(m.get("altAlleleSeen", "True")):
+
+            new_vals = self._alterMutationForIndel(m)
+            m.ref_allele = new_vals[0]
+            m.alt_allele = new_vals[1]
+            m.start = new_vals[2]
+            row = self._createMutationRow(m, fieldMapKeys, fieldMap)
+            dw.writerow(row)
+
     def renderMutations(self, mutations, metadata, comments=[]):
         """ Returns a file name pointing to the maf file that is generated. """
         self.logger.info("TCGA MAF output file: " + self._filename)
@@ -160,15 +205,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
             # Add the NCBI build
             if m is not None:
                 m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
-                dw.writerow(self._createMutationRow(m, fieldMapKeys, fieldMap))
+                self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
                 ctr += 1
 
             for m in mutations:
 
                 # Add the NCBI build
                 m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
-                row = self._createMutationRow(m, fieldMapKeys, fieldMap)
-                dw.writerow(row)
+                self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
                 
                 # Update mutation count and log every 1000 mutations
                 ctr += 1
