@@ -326,9 +326,13 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         """
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+
         alt = record.ALT[index]
         if alt is None:
             alt = ""
+        else:
+            alt = str(alt)
+
         endPos = int(record.POS) + len(alt) - 1
         ref = record.REF
         if ref == ".":
