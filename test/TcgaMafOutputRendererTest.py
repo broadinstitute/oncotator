@@ -138,10 +138,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def _determine_db_dir(self):
         return self.config.get('DEFAULT',"dbDir")
 
-    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS):
+    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations={}):
         self.logger.info("Initializing Annotator...")
         annotator = Annotator()
-        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir)
+        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -230,10 +230,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF """
 
         # For this conversion, you must specify the barcodes manually
-        default_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
-        default_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
+        override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
+        override_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
 
-        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.vcf', "out/testConversionFromVCF.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", default_annotations=default_annotations)
+        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.vcf', "out/testConversionFromVCF.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations)
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(outputFilename)
@@ -258,9 +258,40 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170", "64948167"])
             self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A", "TTT"])
             self.assertTrue(line_dict['Tumor_Seq_Allele2'] in ["-", "TC", "G", "T"])
+            self.assertTrue(line_dict['Matched_Norm_Sample_Barcode'] == "Patient0-Normal")
+            self.assertTrue(line_dict['Matched_Norm_Sample_UUID'] == "Patient0-Normal")
+            self.assertTrue(line_dict['Tumor_Sample_Barcode'] == "Patient0-Tumor")
+            self.assertTrue(line_dict['Tumor_Sample_UUID'] == "Patient0-Tumor")
             ctr += 1
 
         self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8." )
+
+    def testProperConversionVcfToMafWithThirdSample(self):
+        """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF and that the NORMAL is ignored. """
+
+        # For this conversion, you must specify the barcodes manually
+        override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
+        override_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
+
+        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.met.vcf', "out/testConversionFromVCFv2.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations)
+
+        # Sanity checks to make sure that the generated maf file is not junk.
+        self._validateTcgaMafContents(outputFilename)
+
+        # Check to make sure that the ref and alt are correct for a TCGA MAF.
+        tsvReader = GenericTsvReader(outputFilename)
+
+        ctr = 0
+
+        for line_dict in tsvReader:
+            self.assertTrue(line_dict['Matched_Norm_Sample_Barcode'] == "Patient0-Normal")
+            self.assertTrue(line_dict['Matched_Norm_Sample_UUID'] == "Patient0-Normal")
+            self.assertTrue(line_dict['Tumor_Sample_Barcode'] == "Patient0-Tumor")
+            self.assertTrue(line_dict['Tumor_Sample_UUID'] == "Patient0-Tumor")
+            ctr += 1
+
+        self.assertTrue(ctr == 16, str(ctr) + " mutations found, but should have been 16." )
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testSimpleVersionString']

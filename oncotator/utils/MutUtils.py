@@ -255,6 +255,7 @@ class MutUtils(object):
                     for alternative in alternatives:
                         if alternative in annotations:
                             result[h] = alternative
+                            break
 
         if isRenderInternalFields:
             sAnnotations = set(annotations)
