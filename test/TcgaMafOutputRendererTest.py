@@ -255,12 +255,12 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             if len(ref) > len(alt):
                 self.assertTrue(alt == "-", "Invalid deletion with " + ref + "  " + alt)
 
-            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170"])
-            self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A"])
-            self.assertTrue(line_dict['Tumor_Seq_Allele2'] in ["-", "TC", "G"])
+            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170", "64948167"])
+            self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A", "TTT"])
+            self.assertTrue(line_dict['Tumor_Seq_Allele2'] in ["-", "TC", "G", "T"])
             ctr += 1
 
-        self.assertTrue(ctr > 1, "No output mutations found." )
+        self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8." )
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testSimpleVersionString']

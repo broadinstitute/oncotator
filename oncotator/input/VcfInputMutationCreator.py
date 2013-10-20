@@ -294,14 +294,28 @@ class VcfInputMutationCreator(InputMutationCreator):
                 if len(record.samples) <= 0:
                     yield mut
                 else:
-                    for sample in record.samples:
+
+                    sampleRecList = record.samples
+                    sample_names = [s.sample for s in sampleRecList]
+
+                    for sample in sampleRecList:
                         # TODO: move this to deep copy
                         sampleMut = self._createMutationCopy(mut)
-                        sampleMut.createAnnotation("sampleName", sample.sample, "INPUT")
+
+                        sample_name = sample.sample
+                        sampleMut.createAnnotation("sampleName", sample_name, "INPUT")
+
+                        #TODO: Confirm that altAlleleSeen will be False in all cases of GT = ./.
                         genotype = "GT"
                         if genotype in sample.data._fields:
                             if (sample.data.GT is None) or (sample.data.GT.find("1") == -1):
-                                sampleMut["altAlleleSeen"] = False
+                                sampleMut["altAlleleSeen"] = "False"
+
+                        # HACK: If the sample name is NORMAL, there is more than one sample, and
+                        # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
+                        if len(sample_names) > 1 and sample_name == "NORMAL" and ((genotype not in sample.data._fields) or ((sample.data.GT is None) or (sample.data.GT.find("1") == -1))):
+                            sampleMut["altAlleleSeen"] = "False"
+
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
 
                         yield sampleMut
