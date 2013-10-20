@@ -267,11 +267,11 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8." )
 
     def testProperConversionVcfToMafWithThirdSample(self):
-        """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF and that the NORMAL is ignored. """
+        """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF, but that the NORMAL is treated as any other sample, since this VCF has three samples in it. """
 
         # For this conversion, you must specify the barcodes manually
         override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
-        override_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
+        override_annotations.update({'tumor_barcode':'NA'})
 
         outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.met.vcf', "out/testConversionFromVCFv2.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations)
 
@@ -284,13 +284,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         ctr = 0
 
         for line_dict in tsvReader:
-            self.assertTrue(line_dict['Matched_Norm_Sample_Barcode'] == "Patient0-Normal")
-            self.assertTrue(line_dict['Matched_Norm_Sample_UUID'] == "Patient0-Normal")
-            self.assertTrue(line_dict['Tumor_Sample_Barcode'] == "Patient0-Tumor")
-            self.assertTrue(line_dict['Tumor_Sample_UUID'] == "Patient0-Tumor")
             ctr += 1
 
-        self.assertTrue(ctr == 16, str(ctr) + " mutations found, but should have been 16." )
+        self.assertTrue(ctr == 24, str(ctr) + " mutations found, but should have been 24." )
 
 
 if __name__ == "__main__":

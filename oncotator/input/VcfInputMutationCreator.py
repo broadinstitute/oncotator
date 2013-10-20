@@ -313,7 +313,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         # HACK: If the sample name is NORMAL, there is more than one sample, and
                         # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
-                        if len(sample_names) > 1 and sample_name == "NORMAL" and ((genotype not in sample.data._fields) or ((sample.data.GT is None) or (sample.data.GT.find("1") == -1))):
+                        if len(sample_names) == 2 and sample_name == "NORMAL" and ((genotype not in sample.data._fields) or ((sample.data.GT is None) or (sample.data.GT.find("1") == -1))):
                             sampleMut["altAlleleSeen"] = "False"
 
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
