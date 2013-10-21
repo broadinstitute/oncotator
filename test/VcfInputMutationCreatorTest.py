@@ -226,7 +226,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         ''' Test whether parsed annotations match the actual annotations. '''
         inputFilename = 'testdata/vcf/example.vcf'
         outputFilename = 'out/example.out.tsv'
-        expOutputFilename = 'testdata/vcf/example.expected.out.tsv'
+        expectedOutputFilename = 'testdata/vcf/example.expected.out.tsv'
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -239,7 +239,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         tsvReader = GenericTsvReader(outputFilename)
         
         current = pandas.read_csv(outputFilename, sep='\t', header=len(tsvReader.getCommentsAsList()))
-        expected = pandas.read_csv(expOutputFilename, sep='\t')
+        expected = pandas.read_csv(expectedOutputFilename, sep='\t')
 
         currentColNames = set()
         for i in range(len(current.columns)):
@@ -306,7 +306,6 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                 self.assertEqual(row["end"], "114189433", "The value should be %s but it was %s." % ("114189433",
                                                                                                      row["end"]))
 
-
     def testSplitByNumberOfAltsWithFile(self):
         """ Test whether we properly determine that a field is split ... using an actual file"""
         inputFilename = 'testdata/vcf/example.split.tags.vcf'
@@ -340,7 +339,6 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                     self.assertTrue((TagConstants.SPLIT in a.getTags()) == isSplit[annotationName],
                                     annotationName + " is split? " + str(isSplit[annotationName]) + ", but saw: " +
                                     str(TagConstants.SPLIT in a.getTags()))
-
 
 if __name__ == "__main__":
     unittest.main()
