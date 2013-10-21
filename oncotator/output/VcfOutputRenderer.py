@@ -65,9 +65,11 @@ from oncotator.output.OutputDataManager import OutputDataManager
 from oncotator.utils.ConfigTable import ConfigTable
 from oncotator.utils.MutUtils import MutUtils
 
+
 class VcfOutputRenderer(OutputRenderer):
     """
-    The SimpleOutputRenderer renders a basic tsv file from the given mutations.  All annotations are included with real names as column headers.
+    The VcfOutputRenderer renders a vcf file from the given mutations.  All annotations are included with real names
+    as column headers.
 
     Header is determined by the first mutation given.
 
@@ -78,6 +80,9 @@ class VcfOutputRenderer(OutputRenderer):
     def __init__(self, filename, datasources=[], configFile='vcf.out.config'):
         """
         Constructor
+        :param filename:
+        :param datasources:
+        :param configFile:
         """
         self._filename = filename
         self.logger = logging.getLogger(__name__)
@@ -92,6 +97,12 @@ class VcfOutputRenderer(OutputRenderer):
         self.reservedAnnotationNames = ['chr', 'start', 'ref_allele', 'alt_allele', 'end']
 
     def _writeMuts2Tsv(self, filename, fieldnames, muts):
+        """
+
+        :param filename:
+        :param fieldnames:
+        :param muts:
+        """
         sampleNames = set()
         chroms = set()
 
@@ -128,6 +139,12 @@ class VcfOutputRenderer(OutputRenderer):
             self.chroms = list(chroms)
 
     def _getFieldnames(self, mut, md):
+        """
+
+        :param mut:
+        :param md:
+        :return:
+        """
         fieldnames = self.reservedAnnotationNames
         if mut is not None:
             fieldnames = set(fieldnames).union(md.keys())
@@ -138,6 +155,11 @@ class VcfOutputRenderer(OutputRenderer):
         return list(fieldnames)
 
     def _validateOutputConfigFile(self):
+        """
+
+
+        :raise:
+        """
         sections = ["INFO", "FORMAT", "OTHER", "SPLIT_TAGS", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
                     "FORMAT_DESCRIPTION"]
         for section in sections:
@@ -150,6 +172,12 @@ class VcfOutputRenderer(OutputRenderer):
                 self._doFieldsExist(section, ["INFO", "FORMAT"])
 
     def _doFieldsExist(self, section, fields):
+        """
+
+        :param section:
+        :param fields:
+        :raise:
+        """
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, section)
         for field in fields:
             if field not in table:
@@ -157,6 +185,11 @@ class VcfOutputRenderer(OutputRenderer):
                                                      % (field, section))
 
     def _parseConfig(self):
+        """
+
+
+        :return:
+        """
         configTable = ConfigTable()
 
         table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
@@ -197,7 +230,11 @@ class VcfOutputRenderer(OutputRenderer):
     def renderMutations(self, mutations, metadata=[], comments=[]):
         """ Generate a simple tsv file based on the incoming mutations.
         Assumes that all mutations have the same annotations, even if some are not populated.
+        :param mutations:
+        :param metadata:
+        :param comments:
         Returns a file name. """
+
         self.logger.info("Rendering VCF output file: " + self._filename)
 
         # Initialize config table
@@ -242,6 +279,14 @@ class VcfOutputRenderer(OutputRenderer):
         return self._filename
 
     def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos):
+        """
+
+        :param curChrom:
+        :param prevChrom:
+        :param curPos:
+        :param prevPos:
+        :return:
+        """
         isNew = False
         if curChrom != prevChrom:
             isNew = True
@@ -250,6 +295,13 @@ class VcfOutputRenderer(OutputRenderer):
         return isNew
 
     def _renderSortedTsv(self, vcfFilename, tsvFilename, sampleNames, dataManager):
+        """
+
+        :param vcfFilename:
+        :param tsvFilename:
+        :param sampleNames:
+        :param dataManager:
+        """
         tempVcfReader = vcf.Reader(filename=vcfFilename, strict_whitespace=True)
         pointer = file(vcfFilename, "w")
         vcfWriter = vcf.Writer(pointer, tempVcfReader, self.lineterminator)
@@ -286,6 +338,13 @@ class VcfOutputRenderer(OutputRenderer):
         self.logger.info("Rendered all " + str(index) + " vcf records.")
 
     def _parseRecordFactory(self, m, recordFactory, dataManager):
+        """
+
+        :param m:
+        :param recordFactory:
+        :param dataManager:
+        :return:
+        """
         IDs = dataManager.getAnnotationNames("ID")
         quals = dataManager.getAnnotationNames("QUAL")
         filts = dataManager.getAnnotationNames("FILTER")
@@ -334,6 +393,11 @@ class VcfOutputRenderer(OutputRenderer):
         return recordFactory
 
     def _createChrom2HashCodeTable(self, chroms):
+        """
+
+        :param chroms:
+        :return:
+        """
         table = dict()
         highestHashCode = 0
         sorted(chroms)

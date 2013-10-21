@@ -66,7 +66,7 @@ from SyntaxException import SyntaxException
 import vcf
 import copy
 from oncotator.Annotation import Annotation
-from oncotator.utils.ConfigTable import ConfigTable
+from oncotator.input.VcfInputConfigTable import VcfInputConfigTable
 
 
 class VcfInputMutationCreator(InputMutationCreator):
@@ -85,7 +85,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.filename = filename
         self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
         self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
-        self.configTable = ConfigTable()
+        self.configTable = VcfInputConfigTable()
         self.logger = logging.getLogger(__name__)
 
     def _validateParsedFieldIDs(self, inputIDs, metaInfoIDs, fieldType="INFO"):
@@ -148,6 +148,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def _addInfoDataToMutation(self, mutation, record, index):
         """
+        This method
 
         :param mutation:
         :param record:
@@ -193,19 +194,20 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def _determineIsSplit(self, ID, num, fieldType):
         if num == -2:  # by the number of samples
-            if fieldType == "FORMAT" and self.configTable.isFieldSplit(ID, fieldType):
-                return True
+            if fieldType == "FORMAT":
+                if self.configTable.isFieldIDInSplitSet(fieldType, ID):
+                    return True
             else:
                 return False
         elif num == -1:  # by the number of alternates
-            if self.configTable.isFieldNotSplit(ID, fieldType):  # override the default using the config file
+            if self.configTable.isFieldIDInNotSplitSet(fieldType, ID):  # override the default using the config file
                 return False
             else:
                 return True
         elif num == 0:
             return False
         elif num is None:
-            if self.configTable.isFieldSplit(ID, fieldType):  # override the default using the config file
+            if self.configTable.isFieldIDInSplitSet(fieldType, ID):  # override the default using the config file
                 return True
             else:
                 return False
@@ -224,6 +226,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         for ID, name in table.items():
             self.configTable.addInfoFieldID(ID, name)
 
+        # Parse fields from FORMAT section of the config file
         table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
         for ID, name in table.items():
             self.configTable.addFormatFieldID(ID, name)
@@ -231,14 +234,12 @@ class VcfInputMutationCreator(InputMutationCreator):
         # Parse fields from NOT_SPLIT_TAGS section of the config file
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "NOT_SPLIT_TAGS")
         for fieldType, IDs in table.items():
-            for ID in IDs:
-                self.configTable.addFieldIDToNotSplit(fieldType, ID)
+            self.configTable.addFieldIDsToNotSplitSet(fieldType, IDs)
 
         # Parse fields from SPLIT_TAGS section of the config file
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
         for fieldType, IDs in table.items():
-            for ID in IDs:
-                self.configTable.addFieldIDToSplit(fieldType, ID)
+            self.configTable.addFieldIDsToSplitSet(fieldType, IDs)
 
     def _createConfigTable(self):
         # Iterate over the input VCF file and parse all possible fields in INFO and FORMAT section (excluding the
@@ -256,7 +257,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         self._validateParsedFieldIDs(infos, self.vcf_reader.infos.keys(), "INFO")
         for ID in infos:
             if ID not in self.configTable.getInfoFieldIDs():
-                self.configTable.addInfoFieldID(ID, ID)
+                name = ID
+                self.configTable.addInfoFieldID(ID, name)
 
         for ID in self.configTable.getFormatFieldIDs():
             if ID not in self.vcf_reader.formats.keys():
@@ -264,7 +266,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         self._validateParsedFieldIDs(formats, self.vcf_reader.formats.keys(), "FORMAT")
         for ID in formats:
             if ID not in self.configTable.getFormatFieldIDs():
-                self.configTable.addFormatFieldID(ID, ID)
+                name = ID
+                self.configTable.addFormatFieldID(ID, name)
 
     def createMutations(self):
         """ Creates a mutation for each mutation by each sample, regardless of allelic depth, etc.
@@ -278,7 +281,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             TODO: Complete documentation
         """
         self.reset()
-        self.configTable = ConfigTable()
+        self.configTable = VcfInputConfigTable()
         self._validateInputConfigFile()
         self._createConfigTableKeys()
         self._createConfigTable()
@@ -319,6 +322,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         alt = record.ALT[index]
         if alt is None:
             alt = ""
+        else:
+            alt = str(alt)
 
         # Write end position as it would be in MAF format
         endPos = int(record.POS)
@@ -396,7 +401,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         return metadata
 
     def _createMetadata(self):
-        self.configTable = ConfigTable()
+        self.configTable = VcfInputConfigTable()
         self._validateInputConfigFile()
         self._createConfigTableKeys()
         self._createConfigTable()

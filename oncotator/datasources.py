@@ -917,6 +917,7 @@ class IndexedVCF_DataSource(Datasource):
                 valsMap[ID] = [val]
 
         for ID in self.vcf_headers:
+            # multiple values are delimited by "|"
             val = "|".join(valsMap[ID])
             tags = copy.copy(tagsMap[ID])
             mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.vcf_reader.infos[ID].type,
@@ -966,6 +967,7 @@ class IndexedTSV_Datasource(Datasource):
                     if tsv_record is not None:
                         val = tsv_record[self.tsv_headers[colname]]
 
+                    # multiple records are delimited by "|"
                     if colname not in valsMap:
                         valsMap[colname] = val
                     else:

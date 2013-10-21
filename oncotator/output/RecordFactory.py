@@ -86,7 +86,7 @@ class RecordFactory:
                     val = data[ID]
                     if prop.num == -2:
                         pass
-                    if prop.num == -1:
+                    elif prop.num == -1:
                         if len(val) != nalts:
                             val = nalts*[None]
                     elif prop.num == 0:
@@ -97,7 +97,7 @@ class RecordFactory:
                                 val = nalts*[None]
                     else:
                         if len(val) != prop.num:
-                            val = prop.num*[None]
+                            val = abs(prop.num)*[None]
 
                 if ID == "GT":
                     sampleData[i] = val[0]
@@ -128,7 +128,8 @@ class RecordFactory:
 
         qual = self._qual
         if qual is None:
-            self._logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score.")
+            self._logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score."
+                              % (chrom, pos))
 
         filt = self._filt
         info = self._resolveInfo()
