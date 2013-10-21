@@ -297,12 +297,18 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                     sampleRecList = record.samples
                     sample_names = [s.sample for s in sampleRecList]
+                    is_tumor_normal_vcf = "NORMAL" in sample_names and len(sample_names) == 2
+                    if is_tumor_normal_vcf:
+                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
 
                     for sample in sampleRecList:
                         # TODO: move this to deep copy
                         sampleMut = self._createMutationCopy(mut)
 
                         sample_name = sample.sample
+                        if is_tumor_normal_vcf and sample_name != "NORMAL":
+                            sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
+
                         sampleMut.createAnnotation("sampleName", sample_name, "INPUT")
 
                         #TODO: Confirm that altAlleleSeen will be False in all cases of GT = ./.
@@ -313,7 +319,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         # HACK: If the sample name is NORMAL, there is more than one sample, and
                         # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
-                        if len(sample_names) == 2 and sample_name == "NORMAL" and ((genotype not in sample.data._fields) or ((sample.data.GT is None) or (sample.data.GT.find("1") == -1))):
+                        if is_tumor_normal_vcf and sample_name == "NORMAL" and ((genotype not in sample.data._fields) or ((sample.data.GT is None) or (sample.data.GT.find("1") == -1))):
                             sampleMut["altAlleleSeen"] = "False"
 
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
