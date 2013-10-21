@@ -61,6 +61,7 @@ setup(
       'Oncotator = oncotator.Oncotator:main',
       'oncotator = oncotator.Oncotator:main',
       'initializeDatasource = oncotator.initializeDataSource:main',
+      'addDatasourceMd5 = oncotator.addDatasourceMd5:main',
       # TODO: Make this work: 'oncotator-profile = oncotator.Oncotator:main_profile',
       # TODO: Uncomment the next line and debug
       #'oncotator-index = oncotator.oncotator-index'
@@ -132,7 +133,7 @@ setup(
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env/build/pyvcf/vcf$ cython cparse.pyx
   #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
-  install_requires=[ 'bcbio-gff', 'pyvcf >= 0.6.3', 'pysam', 'pandas', 'biopython','numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached'],
+  install_requires=[ 'bcbio-gff', 'pyvcf >= 0.6.3', 'pysam == 0.7.5', 'pandas', 'biopython', 'numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached'],
   
   # For future reference... how to specify required libraries.
     #  scripts=['scripts/vcf_melt', 'scripts/vcf_filter.py'],

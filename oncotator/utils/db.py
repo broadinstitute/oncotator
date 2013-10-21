@@ -123,7 +123,7 @@ def create_db_obj_from_txt_POSINDEXED(txt_fname, title, indexColumnNames='chr,st
 	data = read_data_and_add_title_str_to_each_header(data_0, title, indexColumnNames)
 	indexColumnList = indexColumnNames.split(',')
 	
-	if len(set(colnames).intersection( set(indexColumnList) )) <> len(indexColumnList):
+	if len(set(colnames).intersection( set(indexColumnList) )) <> len(set(indexColumnList)):
 	
 		print("ERROR: Invalid header values!")
 		print("If indexing by genomic position, headers must include '" + indexColumnNames + "'.")

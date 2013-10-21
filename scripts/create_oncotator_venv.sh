@@ -34,7 +34,13 @@ echo "PyVCF ========================="
 echo "Retrieving mgupta (aka elephanthunter) fork of PyVCF"
 wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
 
-mv master master.zip
+if [ -f "master" ];
+then
+   mv master master.zip
+else
+   echo "No master found, assuming master.zip"
+fi
+
 
 unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
 
@@ -49,7 +55,7 @@ echo "bcbio-gff ========================="
 pip install bcbio-gff
 echo " "
 echo "pysam ========================="
-pip install pysam
+pip install -I pysam==0.7.5
 echo " "
 echo "pandas ========================="
 pip install pandas
