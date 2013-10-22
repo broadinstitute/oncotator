@@ -54,7 +54,7 @@ Created on Oct 23, 2012
 
 @author: gavlee
 """
-
+import re
 from ConfigInputIncompleteException import ConfigInputIncompleteException
 from oncotator.utils.ConfigUtils import ConfigUtils
 from InputMutationCreator import InputMutationCreator
@@ -264,6 +264,19 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.configTable["FORMAT"] = self._correctTable(self.configTable["FORMAT"], formats,
                                                         self.vcf_reader.formats.keys(), "FORMAT")
 
+    def _determine_alt_seen(self, sample_gt_str, index):
+        """Look at the genotype string to see if the alternate is present.  GT of ./. is considered a 'yes'"""
+        # TODO: Confirm that it is necessary to take into account the index.  Take into account the index.
+        is_alt_seen = "True"
+        if sample_gt_str is not None:
+
+            # Split genotype field into number of entries as ploidy.  Using chars '/' or '|'
+            gt_haploid_list = re.split('/|\|', sample_gt_str)
+            if all([haploid != str(index) for haploid in gt_haploid_list]):
+                is_alt_seen = "False"
+
+        return is_alt_seen
+
     def createMutations(self):
         """ Creates a mutation for each mutation by each sample, regardless of allelic depth, etc.
             
@@ -313,15 +326,15 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         #TODO: Confirm that altAlleleSeen will be False in all cases of GT = ./.
                         genotype = "GT"
+                        is_alt_seen = "True"
                         if genotype in sample.data._fields:
-                            if (sample.data.GT is None) or (sample.data.GT.find("1") == -1):
-                                sampleMut["altAlleleSeen"] = "False"
+                            is_alt_seen = self._determine_alt_seen(sample.data.GT, index + 1)
 
                         # HACK: If the sample name is NORMAL, there is more than one sample, and
                         # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
-                        if is_tumor_normal_vcf and sample_name == "NORMAL" and ((genotype not in sample.data._fields) or ((sample.data.GT is None) or (sample.data.GT.find("1") == -1))):
-                            sampleMut["altAlleleSeen"] = "False"
-
+                        if is_tumor_normal_vcf and sample_name == "NORMAL" and (genotype not in sample.data._fields):
+                            is_alt_seen = "False"
+                        sampleMut["altAlleleSeen"] = is_alt_seen
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
 
                         yield sampleMut
