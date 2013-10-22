@@ -344,7 +344,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         muts = creator.createMutations()
         ctr = 0
         for mut in muts:
-            print(mut['sampleName'] + " " + mut["altAlleleSeen"] + " " + mut['genotype'])
+
             if MutUtils.str2bool(mut["altAlleleSeen"]):
                 self.assertTrue(mut['sampleName'] != "NA 00001")
                 ctr += 1
