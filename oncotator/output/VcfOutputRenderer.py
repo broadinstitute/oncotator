@@ -368,6 +368,8 @@ class VcfOutputRenderer(OutputRenderer):
             recordFactory.addFilter(ID, val)
 
         for name in infos:
+            if name == "ESP_AvgSampleReadDepth":
+                stop = True
             annotation = dataManager.getOutputAnnotation(name)
             ID = annotation.getID()
             num = annotation.getNumber()
