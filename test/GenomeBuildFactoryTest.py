@@ -143,6 +143,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gene.idx"))
         self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gp_bin.idx"))
 
+    @unittest.skip(" This needs to be rebuilt.  This test should be re-enabled in the ensembl branch")
     def test_retrieving_sequence(self):
         """Ensure we can retrieve a sequence from an ensembl transcript given a gene.  """
         #TODO: Rebuild the datasource otherwise strand test fails below.

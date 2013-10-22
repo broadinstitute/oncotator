@@ -244,7 +244,8 @@ class Annotator(object):
         manualAnnotationKeys = manualAnnotations.keys()
         for m in mutations:
             for k in manualAnnotationKeys:
-                m.createAnnotation(k, manualAnnotations[k], annotationSource="MANUAL")
+                # newRequired = False allows this call to overwrite the previous value.
+                m.createAnnotation(k, manualAnnotations[k], annotationSource="MANUAL", newRequired=False)
             yield m
 
     def _applyDefaultAnnotations(self, mutations, defaultAnnotations):

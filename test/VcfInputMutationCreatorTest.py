@@ -46,6 +46,7 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+from oncotator.utils.MutUtils import MutUtils
 
 
 '''
@@ -335,6 +336,20 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         test = creator._determineIsSplit('AF', None, "INFO")
         print test
         self.assertTrue(test is True)
+
+    def testGenotypeFieldIsHonored(self):
+        """Test that Oncotator does not have issues with genotype values >1 when multiple variants appear on one line"""
+        inputFilename = 'testdata/vcf/example.severalGTs.vcf'
+        creator = VcfInputMutationCreator(inputFilename)
+        muts = creator.createMutations()
+        ctr = 0
+        for mut in muts:
+
+            if MutUtils.str2bool(mut["altAlleleSeen"]):
+                self.assertTrue(mut['sampleName'] != "NA 00001")
+                ctr += 1
+        self.assertTrue(ctr == 7, str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -894,9 +894,13 @@ class dbNSFP(Datasource):
             start = mutation.start
             ref_allele, alt_allele = mutation.ref_allele, mutation.alt_allele
             regex_res = self.prot_regexp.match(mutation['protein_change'])
-            ref_prot_allele, alt_prot_allele = regex_res.group(1), regex_res.group(2)
-    
-            dbnsfp_results = self._query_dbnsfp(chrn, start, start, self.db_obj)
+
+            if regex_res is None:
+                logging.getLogger(__name__).error("Could not find a protein change for this missense mutation.")
+                dbnsfp_results =[]
+            else:
+                ref_prot_allele, alt_prot_allele = regex_res.group(1), regex_res.group(2)
+                dbnsfp_results = self._query_dbnsfp(chrn, start, start, self.db_obj)
     
             dbnsfp_data = None
             for res in dbnsfp_results:
