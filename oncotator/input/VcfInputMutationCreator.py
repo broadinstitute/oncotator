@@ -274,7 +274,9 @@ class VcfInputMutationCreator(InputMutationCreator):
             gt_haploid_list = re.split('/|\|', sample_gt_str)
             if all([haploid != str(index) for haploid in gt_haploid_list]):
                 is_alt_seen = "False"
-
+        else:
+            # GT is ./.
+            is_alt_seen = "False"
         return is_alt_seen
 
     def createMutations(self):

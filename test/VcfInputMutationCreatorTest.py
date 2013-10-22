@@ -344,10 +344,11 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         muts = creator.createMutations()
         ctr = 0
         for mut in muts:
+            print(mut['sampleName'] + " " + mut["altAlleleSeen"] + " " + mut['genotype'])
             if MutUtils.str2bool(mut["altAlleleSeen"]):
                 self.assertTrue(mut['sampleName'] != "NA 00001")
                 ctr += 1
-        self.assertTrue(ctr == 9, str(ctr) + " mutations with alt seen, but expected 9.  './.' should show as a variant.")
+        self.assertTrue(ctr == 7, str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
 
 
 if __name__ == "__main__":
