@@ -63,6 +63,7 @@ from oncotator.index.gaf import region2bins
 import vcf
 import logging
 import re
+from oncotator.utils.Hasher import Hasher
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
 from oncotator.utils.dbNSFP import dbnsfp_fieldnames
@@ -108,6 +109,10 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def set_tx_mode(self, tx_mode):
         # TODO: Throw exception if not in TX_MODE_CHOICES
+        return
+
+    @abc.abstractmethod
+    def get_tx_mode(self):
         return
 
 
@@ -251,8 +256,21 @@ class Gaf(Datasource, TranscriptProvider):
         # TODO: Check for valid values.
         self.tx_mode = tx_mode
 
-    def set_tx_mode(self, tx_mode):
-        self.tx_mode = tx_mode
+    def get_tx_mode(self):
+        return self.tx_mode
+
+    def set_tx_mode(self, value):
+        self.tx_mode = value
+
+    def get_hashcode(self):
+        """The GAF datasource has to adjust  its key based on the internal tx mode.  set_hashcode sends in
+         an initial hashcode, which is then adjusted by tx-mode
+
+         """
+        hasher = Hasher()
+        hasher.update(self.hashcode)
+        hasher.update(self.get_tx_mode())
+        return hasher.hexdigest()
 
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon"""
