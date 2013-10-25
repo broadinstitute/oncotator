@@ -118,6 +118,7 @@ class Annotator(object):
         self._cacheManager = CacheManager()
         self._cacheManager.initialize(None, "not_used")
         self._cache_stats = {"miss": 0, "hit":0}
+        self._is_skip_no_alts = False
         pass
 
     def getIsMulticore(self):
@@ -184,6 +185,7 @@ class Annotator(object):
         self.setIsMulticore(runSpec.get_is_multicore())
         self.setNumCores(runSpec.get_num_cores())
         self._cache_stats = {"miss": 0, "hit":0}
+        self._is_skip_no_alts = runSpec.get_is_skip_no_alts()
         self.initialize_cache_manager(runSpec)
 
     def addDatasource(self, datasource):
@@ -287,6 +289,11 @@ class Annotator(object):
         if len(self._datasources) == 0:
             self.logger.warn("THERE ARE NO DATASOURCES REGISTERED")
         for m in mutations:
+
+            # If the altAlleleSeen annotation is present and False, skip this mutation
+            if self._is_skip_no_alts and m.get("altAlleleSeen", "True") == "False":
+                continue
+
             annot_dict = self._cacheManager.retrieve_cached_annotations(m)
 
             if annot_dict is None:

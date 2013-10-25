@@ -138,10 +138,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def _determine_db_dir(self):
         return self.config.get('DEFAULT',"dbDir")
 
-    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations={}):
+    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations={}, is_skip_no_alts=False):
         self.logger.info("Initializing Annotator...")
         annotator = Annotator()
-        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations)
+        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -233,7 +233,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
         override_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
 
-        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.vcf', "out/testConversionFromVCF.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations)
+        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.vcf', "out/testConversionFromVCF.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations, is_skip_no_alts=True)
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(outputFilename)
