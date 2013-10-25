@@ -85,6 +85,10 @@ def parseOptions(program_license, program_version_message):
 
     # memcache
     -u memcache://localhost:11211
+
+    Please note that only VCF input will populate the altAlleleSeen annotation.  All other inputs assume that the alternate is present if it appears at all.
+        This feature is to allow users to exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
+        IMPORTANT:  Do not use with VCF output.
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
@@ -108,6 +112,7 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
+    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation altAlleleSeen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
     # Process arguments
     args = parser.parse_args()
     
@@ -185,6 +190,7 @@ USAGE
         cache_url = args.cache_url
         read_only_cache = args.read_only_cache
         tx_mode = args.tx_mode
+        is_skip_no_alts = args.skip_no_alt
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
@@ -206,7 +212,12 @@ USAGE
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues, cacheUrl=cache_url, read_only_cache=read_only_cache, tx_mode=tx_mode)
+        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
+                                                      globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
+                                                      isMulticore=(not args.noMulticore),
+                                                      defaultAnnotations=defaultValues, cacheUrl=cache_url,
+                                                      read_only_cache=read_only_cache, tx_mode=tx_mode,
+                                                      is_skip_no_alts=is_skip_no_alts)
            
         annotator = Annotator()
         annotator.initialize(runConfig)

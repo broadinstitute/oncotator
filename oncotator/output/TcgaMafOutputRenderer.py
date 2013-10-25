@@ -150,14 +150,13 @@ class TcgaMafOutputRenderer(OutputRenderer):
         :param m:
         :return:
         """
-        if MutUtils.str2bool(m.get("altAlleleSeen", "True")):
 
-            new_vals = self._alterMutationForIndel(m)
-            m.ref_allele = new_vals[0]
-            m.alt_allele = new_vals[1]
-            m.start = new_vals[2]
-            row = self._createMutationRow(m, fieldMapKeys, fieldMap)
-            dw.writerow(row)
+        new_vals = self._alterMutationForIndel(m)
+        m.ref_allele = new_vals[0]
+        m.alt_allele = new_vals[1]
+        m.start = new_vals[2]
+        row = self._createMutationRow(m, fieldMapKeys, fieldMap)
+        dw.writerow(row)
 
     def renderMutations(self, mutations, metadata, comments=[]):
         """ Returns a file name pointing to the maf file that is generated. """
