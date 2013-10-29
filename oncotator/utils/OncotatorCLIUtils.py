@@ -105,6 +105,7 @@ class RunSpecification(object):
         self.__numCores = None
         self.__cache_url = None
         self.__is_read_only_cache=True
+        self.__is_skip_no_alts = False
         pass
 
     def get_cache_url(self):
@@ -201,7 +202,16 @@ class RunSpecification(object):
     def del_default_annotations(self):
         del self.__defaultAnnotations
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True):
+    def get_is_skip_no_alts(self):
+        return self.__is_skip_no_alts
+
+    def set_is_skip_no_alts(self, value):
+        self.__is_skip_no_alts = value
+
+    def del_is_skip_no_alts(self):
+        del self.__is_skip_no_alts
+
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
         self.manualAnnotations = manualAnnotations
@@ -211,6 +221,7 @@ class RunSpecification(object):
         self.defaultAnnotations = defaultAnnotations
         self.cacheUrl = cacheUrl
         self.isReadOnlyCache = read_only_cache
+        self.isSkipNoAlts = is_skip_no_alts
 
     
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
@@ -222,6 +233,7 @@ class RunSpecification(object):
     numCores = property(get_num_cores, set_num_cores, del_num_cores, "numCores's docstring")
     cacheUrl = property(get_cache_url, set_cache_url, del_cache_url, "cacheUrl's docstring")
     isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
+    isSkipNoAlts = property(get_is_skip_no_alts, set_is_skip_no_alts, del_is_skip_no_alts, "isSkipNoAlts's docstring")
 
 class OncotatorCLIUtils(object):
     """
@@ -296,7 +308,7 @@ class OncotatorCLIUtils(object):
         return outputRenderer
 
     @staticmethod
-    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, tx_mode=TranscriptProvider.TX_MODE_CANONICAL):
+    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -325,7 +337,7 @@ class OncotatorCLIUtils(object):
                 ds.set_tx_mode(tx_mode)
 
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts)
         return result
     
     @staticmethod

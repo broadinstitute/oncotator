@@ -462,6 +462,16 @@ class GafDatasourceTest(unittest.TestCase):
             ctr += 1
         self.assertTrue(ctr == 730, "Should have read 730 variants, but read " + str(ctr))
 
+    def testChangeInTxModeChangesHashcode(self):
+        """Test that a change in the tx-mode will change the hashcode"""
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+
+        gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+        old_hashcode = gafDatasource.get_hashcode()
+        gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        new_hashcode = gafDatasource.get_hashcode()
+        self.assertTrue(old_hashcode != new_hashcode)
+
     def _flattenChunks(self, chunks):
         [[(yield m) for m in c] for c in chunks]
 

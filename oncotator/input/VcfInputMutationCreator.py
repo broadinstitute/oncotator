@@ -54,7 +54,7 @@ Created on Oct 23, 2012
 
 @author: gavlee
 """
-
+import re
 from ConfigInputIncompleteException import ConfigInputIncompleteException
 from oncotator.utils.ConfigUtils import ConfigUtils
 from InputMutationCreator import InputMutationCreator
@@ -269,6 +269,21 @@ class VcfInputMutationCreator(InputMutationCreator):
                 name = ID
                 self.configTable.addFormatFieldID(ID, name)
 
+    def _determine_alt_seen(self, sample_gt_str, index):
+        """Look at the genotype string to see if the alternate is present.  GT of ./. is considered a 'yes'"""
+        # TODO: Confirm that it is necessary to take into account the index.  Take into account the index.
+        is_alt_seen = "True"
+        if sample_gt_str is not None:
+
+            # Split genotype field into number of entries as ploidy.  Using chars '/' or '|'
+            gt_haploid_list = re.split('/|\|', sample_gt_str)
+            if all([haploid != str(index) for haploid in gt_haploid_list]):
+                is_alt_seen = "False"
+        else:
+            # GT is ./.
+            is_alt_seen = "False"
+        return is_alt_seen
+
     def createMutations(self):
         """ Creates a mutation for each mutation by each sample, regardless of allelic depth, etc.
             
@@ -303,10 +318,34 @@ class VcfInputMutationCreator(InputMutationCreator):
                     for sample in record.samples:
                         sampleMut = copy.deepcopy(mut)
                         sampleMut.createAnnotation("sampleName", sample.sample, "INPUT")
+
+                    sampleRecList = record.samples
+                    sample_names = [s.sample for s in sampleRecList]
+                    is_tumor_normal_vcf = "NORMAL" in sample_names and len(sample_names) == 2
+                    if is_tumor_normal_vcf:
+                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
+
+                    for sample in sampleRecList:
+                        # TODO: move this to deep copy
+                        sampleMut = self._createMutationCopy(mut)
+
+                        sample_name = sample.sample
+                        if is_tumor_normal_vcf and sample_name != "NORMAL":
+                            sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
+
+                        sampleMut.createAnnotation("sampleName", sample_name, "INPUT")
+
+                        #TODO: Confirm that altAlleleSeen will be False in all cases of GT = ./.
                         genotype = "GT"
+                        is_alt_seen = "True"
                         if genotype in sample.data._fields:
-                            if (sample.data.GT is None) or (sample.data.GT.find("1") == -1):
-                                sampleMut["altAlleleSeen"] = False
+                            is_alt_seen = self._determine_alt_seen(sample.data.GT, index + 1)
+
+                        # HACK: If the sample name is NORMAL, there is more than one sample, and
+                        # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
+                        if is_tumor_normal_vcf and sample_name == "NORMAL" and (genotype not in sample.data._fields):
+                            is_alt_seen = "False"
+                        sampleMut["altAlleleSeen"] = is_alt_seen
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
 
                         yield sampleMut
@@ -315,6 +354,14 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         """
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+
+        alt = record.ALT[index]
+        if alt is None:
+            alt = ""
+        else:
+            alt = str(alt)
+
+        endPos = int(record.POS) + len(alt) - 1
         ref = record.REF
         if ref == ".":
             ref = ""

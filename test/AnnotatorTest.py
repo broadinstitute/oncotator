@@ -210,6 +210,66 @@ class AnnotatorTest(unittest.TestCase):
         m2 = muts.next()
         self.assertTrue(m2.get("gene", None) is not None)
 
+    def testSkippingAltsForSingleMut(self):
+        """Test a simple case where a single mutation with altAlleleSeen of False is not produced."""
+
+        runSpec = RunSpecification()
+        runSpec.initialize(None, None, datasources=[], is_skip_no_alts=True)
+
+        # Initialize the annotator with the runspec
+        annotator = Annotator()
+        annotator.initialize(runSpec)
+
+        m = MutationData()
+        m.chr = "1"
+        m.start = "12941796"
+        m.end = "12941796"
+        m.alt_allele = "G"
+        m.ref_allele = "T"
+        m.createAnnotation("altAlleleSeen", "False")
+
+        muts = [m]
+
+        muts = annotator.annotate_mutations(muts)
+        self.assertRaises(StopIteration, muts.next)
+
+    def _simple_annotate(self, is_skip_no_alts):
+        runSpec = RunSpecification()
+        runSpec.initialize(None, None, datasources=[], is_skip_no_alts=is_skip_no_alts)
+        # Initialize the annotator with the runspec
+        annotator = Annotator()
+        annotator.initialize(runSpec)
+        m = MutationData()
+        m.chr = "1"
+        m.start = "12941796"
+        m.end = "12941796"
+        m.alt_allele = "G"
+        m.ref_allele = "T"
+        m.createAnnotation("altAlleleSeen", "False")
+        m2 = MutationData()
+        m2.chr = "1"
+        m2.start = "12941796"
+        m2.end = "12941796"
+        m2.alt_allele = "G"
+        m2.ref_allele = "T"
+        muts = [m, m2]
+        muts = annotator.annotate_mutations(muts)
+        ctr = 0
+        for m in muts:
+            ctr += 1
+        return ctr
+
+    def testSkippingAlts(self):
+        """Test a simple case where mutations with altAlleleSeen of False are not produced."""
+
+        ctr = self._simple_annotate(True)
+        self.assertTrue(ctr == 1)
+
+    def testSkippingAltsFalse(self):
+        """Test a simple case that is_skip_alts of False does not affect anything."""
+
+        ctr = self._simple_annotate(False)
+        self.assertTrue(ctr == 2)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']

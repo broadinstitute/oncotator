@@ -64,6 +64,7 @@ import vcf
 import logging
 import re
 import copy
+from oncotator.utils.Hasher import Hasher
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
 from oncotator.utils.TagConstants import TagConstants
@@ -110,6 +111,10 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def set_tx_mode(self, tx_mode):
         # TODO: Throw exception if not in TX_MODE_CHOICES
+        return
+
+    @abc.abstractmethod
+    def get_tx_mode(self):
         return
 
 
@@ -253,8 +258,21 @@ class Gaf(Datasource, TranscriptProvider):
         # TODO: Check for valid values.
         self.tx_mode = tx_mode
 
-    def set_tx_mode(self, tx_mode):
-        self.tx_mode = tx_mode
+    def get_tx_mode(self):
+        return self.tx_mode
+
+    def set_tx_mode(self, value):
+        self.tx_mode = value
+
+    def get_hashcode(self):
+        """The GAF datasource has to adjust  its key based on the internal tx mode.  set_hashcode sends in
+         an initial hashcode, which is then adjusted by tx-mode
+
+         """
+        hasher = Hasher()
+        hasher.update(self.hashcode)
+        hasher.update(self.get_tx_mode())
+        return hasher.hexdigest()
 
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon"""
@@ -624,33 +642,6 @@ class Gaf(Datasource, TranscriptProvider):
             
         return records
 
-    def __test_overlap(self, a_st, a_en, b_st, b_en):
-        if (a_st >= b_st and a_st <= b_en) or (a_en >= b_st and a_en <= b_en) or \
-            (a_st <= b_st and a_en >= b_en):
-            return True
-        else:
-            return False
-
-    def _infer_variant_type(self,reference_allele, observed_allele):
-        """ To go completely in annotate method.  Returns variant type string."""
-        if reference_allele == '-': #is insertion
-            return 'INS'
-        elif observed_allele == '-': #is deletion
-            return 'DEL'
-        else:
-            if len(observed_allele) != len(reference_allele):
-                return 'ONP'
-            elif len(reference_allele) == 1:
-                return 'SNP'
-            elif len(reference_allele) == 2:
-                return 'DNP'
-            elif len(reference_allele) == 3:
-                return 'TNP'
-            elif len(reference_allele) > 3:
-                return 'ONP'
-
-        raise Exception('Variant Type cannot be inferred from reference and observed allele: (%s, %s)' % (reference_allele, observed_allele))
-
 class GenericGeneDataSourceException(Exception):
     def __init__(self, str):
         """
@@ -714,6 +705,7 @@ class Generic_Transcript_Datasource(Generic_Gene_DataSource):
 
     def annotate_mutation(self, mutation):
         return super(Generic_Transcript_Datasource,self).annotate_mutation(mutation,'transcript_id')
+   
         
 class Generic_GenomicPosition_DataSource(Datasource):
     """
@@ -730,12 +722,12 @@ class Generic_GenomicPosition_DataSource(Datasource):
         index_mode = 'genomic_pos'
         self.db_obj, self.output_headers = get_db_data(src_file, title, use_binary, index_mode, gpColumnNames)
     
-    def annotate_mutation(self, mutation, index_field='gene'):
+    def annotate_mutation(self, mutation):
         #if any([c in mutation for c in self.output_headers]):
         for c in self.output_headers:
             if c in mutation:
                 raise Exception('Error: Non-unique header value in annotation table (%s)' % (c))
-         
+
         if all(field in mutation for field in ['chr','start','end']):
             chr, start, end = mutation.chr, mutation.start, mutation.end
                 
@@ -801,20 +793,23 @@ class Generic_GenomicMutation_Datasource(Generic_GenomicPosition_DataSource):
 class IndexedVCF_DataSource(Datasource):
     """
     A datasource derived from a VCF file.  Expects a bgzipped vcf using Tabix.
-
+    
     Instructions on how to index file using Tabix prior Oncotator:
-
+    
     bgzip foo.vcf
     tabix -p vcf foo.vcf.gz
 
     Please see http://samtools.sourceforge.net/tabix.shtml for more info.
-
-
-    The following VCF columns will be added to the output: INFO
-
-
+    
+    
+    The following VCF columns will be added to the output.
+        CHROM    POS    ID    REF    ALT    QUAL    FILTER    INFO
+    
+    
     Multiple annotation data for the same mutation will be delimited by "|".
-
+    
+    TODO: Support for FORMAT and sample columns in output
+    
     """
     def __init__(self, src_file, title='', version=None):
         super(IndexedVCF_DataSource, self).__init__(src_file, title=title, version=version)  # all of the info is coming from config file
@@ -1067,9 +1062,13 @@ class dbNSFP(Datasource):
             start = mutation.start
             ref_allele, alt_allele = mutation.ref_allele, mutation.alt_allele
             regex_res = self.prot_regexp.match(mutation['protein_change'])
-            ref_prot_allele, alt_prot_allele = regex_res.group(1), regex_res.group(2)
-    
-            dbnsfp_results = self._query_dbnsfp(chrn, start, start, self.db_obj)
+
+            if regex_res is None:
+                logging.getLogger(__name__).error("Could not find a protein change for this missense mutation.")
+                dbnsfp_results =[]
+            else:
+                ref_prot_allele, alt_prot_allele = regex_res.group(1), regex_res.group(2)
+                dbnsfp_results = self._query_dbnsfp(chrn, start, start, self.db_obj)
     
             dbnsfp_data = None
             for res in dbnsfp_results:
