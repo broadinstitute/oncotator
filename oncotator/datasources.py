@@ -363,7 +363,7 @@ class Gaf(Datasource, TranscriptProvider):
         return result
 
     def annotate_mutation(self, mutation, upstream_padding=3000, downstream_padding=0):
-        mutation.createAnnotation('variant_type', self._infer_variant_type(mutation.ref_allele, mutation.alt_allele), self.title)
+        mutation.createAnnotation('variant_type', TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), self.title)
         data = [mutation]
         data = gaf_annotation.find_mut_in_gaf(data, self)
         data = gaf_annotation.identify_best_effect_transcript(data, self)
