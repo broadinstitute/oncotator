@@ -2,7 +2,6 @@ import string
 import vcf
 from oncotator.output.VcfOutputAnnotation import VcfOutputAnnotation
 from oncotator.utils.TagConstants import TagConstants
-from oncotator.utils.ConfigTable import ConfigTable
 
 
 class OutputDataManager:
@@ -227,11 +226,11 @@ class OutputDataManager:
             fieldType = self._resolveFieldType(name, tags)
             ID = self._resolveFieldID(fieldType, name)
             dataType = self._resolveFieldDataType(fieldType, ID, dataType)
-            desc = self._resolveFieldDescription(fieldType, ID, desc)
+            desc = self._resolveFieldDescription(fieldType, name, desc)
 
             isSplit = False
             if fieldType in ("INFO", "FORMAT",):
-                isSplit = self._determineIsSplit(ID, num, fieldType, tags)
+                isSplit = self._determineIsSplit(name, num, fieldType, tags)
             table[name] = VcfOutputAnnotation(ID, fieldType, isSplit, src, dataType, desc, num)
             if fieldType not in revTable:
                 revTable[fieldType] = [name]
@@ -240,21 +239,21 @@ class OutputDataManager:
 
         return table, revTable
 
-    def _determineIsSplit(self, ID, num, fieldType, tags=[]):
+    def _determineIsSplit(self, name, num, fieldType, tags=[]):
         """
-        Determines whether a given ID's value was split by the alternate allele or not.
+        Determines whether a given name's value was split by the alternate allele or not.
         This method implements the following decision tree for the number and field type corresponding to the ID:
-        (1) Number is -2 (thus, G): by default it is assumed that the field ID's value was NOT split by the alternate
-        allele but is when the field type is FORMAT and the field ID appears in the SPLIT_TAGS section of the config
+        (1) Number is -2 (thus, G): by default it is assumed that the field name's value was NOT split by the alternate
+        allele but is when the field type is FORMAT and the field name appears in the SPLIT_TAGS section of the config
         file.
-        (2) Number is -1 (thus, A): by default it is assumed that the field ID's value was split by the alternate allele
-        but is NOT when the field ID for a given field type appears in the NOT_SPLIT_TAGS section of the config file.
-        (3) Number is None (thus, .): by default it is assumed that the field ID's value was NOT split by the alternate
-        allele but is when the field ID for a given field type appears in the NOT_SPLIT_TAGS section of the config file.
-        (4) Number is an integer: the default it is assumed that the field ID's values was NOT split by the alternate
-        allele but is when the field ID for a given field type appears in the NOT_SPLIT_TAGS section of the config file.
+        (2) Number is -1 (thus, A): by default it is assumed that the field name's value was split by the alternate allele
+        but is NOT when the field name for a given field type appears in the NOT_SPLIT_TAGS section of the config file.
+        (3) Number is None (thus, .): by default it is assumed that the field name's value was NOT split by the alternate
+        allele but is when the field name for a given field type appears in the NOT_SPLIT_TAGS section of the config file.
+        (4) Number is an integer: the default it is assumed that the field name's values was NOT split by the alternate
+        allele but is when the field name for a given field type appears in the NOT_SPLIT_TAGS section of the config file.
 
-        :param ID: field ID
+        :param name: field name
         :param num: integer that describes the number of values that can be included with the field
         :param fieldType: type of Vcf field (for example, INFO)
         :return: whether the field ID's value was split by the alternate or not
@@ -263,28 +262,28 @@ class OutputDataManager:
             if fieldType == "FORMAT":
                 if TagConstants.SPLIT in tags:  # override the default using the tags section
                     return True
-                elif self.configTable.isFieldSplit(ID, fieldType): # override the default using the config file
+                elif self.configTable.isFieldNameInSplitSet(name, fieldType):  # override the default using the config file
                     return True
                 else:
                     return False
         elif num == -1:  # by the number of alternates
             if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
                 return False
-            elif self.configTable.isFieldNotSplit(ID, fieldType):
+            elif self.configTable.isFieldNameInNotSplitSet(name, fieldType):
                 return False
             else:
                 return True
         elif num is None:  # number is unknown
             if TagConstants.SPLIT in tags:  # override the default using the tags section
                 return True
-            elif self.configTable.isFieldSplit(ID, fieldType):  # override the default using the config file
+            elif self.configTable.isFieldNameInSplitSet(name, fieldType):  # override the default using the config file
                 return True
             else:
                 return False
         else:
             if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
                 return True
-            elif self.configTable.isFieldSplit(ID, fieldType):  # override the default using the config file
+            elif self.configTable.isFieldNameInSplitSet(name, fieldType):  # override the default using the config file
                 return True
             else:
                 return False
@@ -311,11 +310,11 @@ class OutputDataManager:
             if tag in m.keys():
                 return m[tag]
 
-        if name in self.configTable.getInfoFieldIDs():
+        if name in self.configTable.getInfoFieldNames():
             return "INFO"
-        elif name in self.configTable.getFormatFieldIDs():
+        elif name in self.configTable.getFormatFieldNames():
             return "FORMAT"
-        elif name in self.configTable.getOtherFieldIDs():
+        elif name in self.configTable.getOtherFieldNames():
             return self.configTable.getOtherFieldName(name)
 
         if name.upper() in vcf.parser.RESERVED_INFO:
@@ -336,11 +335,11 @@ class OutputDataManager:
         :return: mapped field ID
         """
         if fieldType == "FORMAT":
-            return self.configTable.getFormatFieldName(name)
+            return self.configTable.getFormatFieldID(name)
         elif fieldType == "INFO":
-            return self.configTable.getInfoFieldName(name)
+            return self.configTable.getInfoFieldID(name)
         elif fieldType == "FILTER":
-            return self.configTable.getFormatFieldName(name)
+            return self.configTable.getFormatFieldID(name)
         return name
 
     def _resolveFieldDataType(self, fieldType, ID, dataType):
@@ -360,26 +359,27 @@ class OutputDataManager:
                 return vcf.parser.RESERVED_FORMAT.get(ID, dataType)
         return dataType
 
-    def _resolveFieldDescription(self, fieldType, ID, desc):
+    def _resolveFieldDescription(self, fieldType, name, description):
         """
         Determines description corresponding to a given field ID.
         This method overwrites the default description passed in the mut object with corresponding description in
         the config file when present.
 
         :param fieldType: type of Vcf field (for example, INFO)
-        :param ID: field ID
-        :param desc: description passed in mut object
+        :param name: field name
+        :param description: description passed in mut object
         :return: description (default: 'Unknown'), must be surrounded by double-quotes
         """
-        if fieldType == "FILTER" and ID in self.configTable.getFilterFieldIDs():
-            return self.configTable.getInfoFilterIDDesc(ID)
-        elif fieldType == "FORMAT" and ID in self.configTable.getFormatFieldIDs():
-            return self.configTable.getFormatFieldIDDesc(ID)
-        elif fieldType == "INFO" and ID in self.configTable.getInfoFieldIDs():
-            return self.configTable.getInfoFieldIDDesc(ID)
-        if desc is None or desc == "":
+        if description is None or description.lower() == "unknown":
+            if fieldType == "FILTER" and name in self.configTable.getFilterFieldNames():
+                return self.configTable.getFilterFieldNameDescription(name)
+            elif fieldType == "FORMAT" and name in self.configTable.getFormatFieldNames():
+                return self.configTable.getFormatFieldNameDescription(name)
+            elif fieldType == "INFO" and name in self.configTable.getInfoFieldNames():
+                return self.configTable.getInfoFieldNameDescription(name)
+        if description is None or description == "":
             return "Unknown"
-        return desc
+        return description
 
     def _annotation2str(self, fieldType, ID, desc="Unknown", dataType="String", num=None):
         """

@@ -54,16 +54,16 @@ import collections
 import logging
 import os
 import tempfile
-import itertools
 import string
+import itertools
 import vcf
 from oncotator.input.ConfigInputIncompleteException import ConfigInputIncompleteException
 from oncotator.utils.TsvFileSorter import TsvFileSorter
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordFactory import RecordFactory
 from oncotator.output.OutputDataManager import OutputDataManager
-from oncotator.utils.ConfigTable import ConfigTable
 from oncotator.utils.MutUtils import MutUtils
+from oncotator.output.VcfOutputConfigTable import VcfOutputConfigTable
 
 
 class VcfOutputRenderer(OutputRenderer):
@@ -79,17 +79,18 @@ class VcfOutputRenderer(OutputRenderer):
 
     def __init__(self, filename, datasources=[], configFile='vcf.out.config'):
         """
-        Constructor
+
+
         :param filename:
         :param datasources:
-        :param configFile:
+        :param configFile: output config file
         """
         self._filename = filename
         self.logger = logging.getLogger(__name__)
         self._datasources = datasources
         self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
         self.chromHashCodeTable = None  # maps every chromosome in the mutations to a sortable integer
-        self.configTable = ConfigTable()
+        self.configTable = VcfOutputConfigTable()
         self.delimiter = "\t"
         self.lineterminator = "\n"
         self.sampleNames = []  # all sample names in the mutations
@@ -98,10 +99,11 @@ class VcfOutputRenderer(OutputRenderer):
 
     def _writeMuts2Tsv(self, filename, fieldnames, muts):
         """
+        Given a mutation generator, this methods writes
 
-        :param filename:
-        :param fieldnames:
-        :param muts:
+        :param filename: temporary filename
+        :param fieldnames: field names to render
+        :param muts: generator object with mutations
         """
         sampleNames = set()
         chroms = set()
@@ -141,9 +143,10 @@ class VcfOutputRenderer(OutputRenderer):
     def _getFieldnames(self, mut, md):
         """
 
-        :param mut:
-        :param md:
-        :return:
+
+        :param mut: mutation object
+        :param md: mutation data
+        :return: list of fieldnames
         """
         fieldnames = self.reservedAnnotationNames
         if mut is not None:
@@ -190,41 +193,40 @@ class VcfOutputRenderer(OutputRenderer):
 
         :return:
         """
-        configTable = ConfigTable()
+        configTable = VcfOutputConfigTable()
 
         table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
-        for ID, name in table.items():
-            configTable.addInfoFieldID(ID, name)
+        for name, ID in table.items():
+            configTable.addInfoFieldName(name, ID)
 
         table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
-        for ID, name in table.items():
-            configTable.addFormatFieldID(ID, name)
+        for name, ID in table.items():
+            configTable.addFormatFieldName(name, ID)
 
         table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "OTHER")
-        for ID, name in table.items():
-            configTable.addOtherFieldID(ID, name)
+        for name, ID in table.items():
+            configTable.addOtherFieldName(name, ID)
 
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "INFO_DESCRIPTION")
-        for ID, desc in table.items():
-            configTable.addInfoFieldIDDesc(ID, string.join(desc, ","))
+        for name, description in table.items():
+            configTable.addInfoFieldNameDescription(name, string.join(description, ","))
 
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FORMAT_DESCRIPTION")
-        for ID, desc in table.items():
-            configTable.addFormatFieldIDDesc(ID, string.join(desc, ","))
+        for name, description in table.items():
+            configTable.addFormatFieldNameDescription(name, string.join(description, ","))
 
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FILTER_DESCRIPTION")
-        for ID, desc in table.items():
-            configTable.addFilterFieldIDDesc(ID, string.join(desc, ","))
+        for name, description in table.items():
+            configTable.addFilterFieldNameDescription(name, string.join(description, ","))
 
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
-        for fieldType, IDs in table.items():
-            for ID in IDs:
-                configTable.addFieldIDToSplit(fieldType, ID)
+        for fieldType, names in table.items():
+            configTable.addFieldNamesToSplitSet(fieldType, names)
 
         table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "NOT_SPLIT_TAGS")
-        for fieldType, IDs in table.items():
-            for ID in IDs:
-                configTable.addFieldIDToNotSplit(fieldType, ID)
+        for fieldType, names in table.items():
+            configTable.addFieldNamesToNotSplitSet(fieldType, names)
+
         return configTable
 
     def renderMutations(self, mutations, metadata=[], comments=[]):
@@ -339,8 +341,10 @@ class VcfOutputRenderer(OutputRenderer):
 
     def _parseRecordFactory(self, m, recordFactory, dataManager):
         """
+        Parse the input mutation object.
+        First, this method
 
-        :param m:
+        :param m: mutation object
         :param recordFactory:
         :param dataManager:
         :return:
@@ -368,8 +372,6 @@ class VcfOutputRenderer(OutputRenderer):
             recordFactory.addFilter(ID, val)
 
         for name in infos:
-            if name == "ESP_AvgSampleReadDepth":
-                stop = True
             annotation = dataManager.getOutputAnnotation(name)
             ID = annotation.getID()
             num = annotation.getNumber()
@@ -396,6 +398,7 @@ class VcfOutputRenderer(OutputRenderer):
 
     def _createChrom2HashCodeTable(self, chroms):
         """
+
 
         :param chroms:
         :return:

@@ -22,46 +22,19 @@ class VcfOutputAnnotation(Annotation):
         self.ID = ID
 
     def setID(self, ID):
-        """
-
-        :param ID:
-        """
         self.ID = ID
 
     def getID(self):
-        """
-
-
-        :return:
-        """
         return self.ID
 
     def setIsSplit(self, split):
-        """
-
-        :param split:
-        """
         self.split = split
 
     def isSplit(self):
-        """
-
-
-        :return:
-        """
         return self.split
 
     def setFieldType(self, ft):
-        """
-
-        :param ft:
-        """
         self.fieldType = ft
 
     def getFieldType(self):
-        """
-
-
-        :return: field type
-        """
         return self.fieldType

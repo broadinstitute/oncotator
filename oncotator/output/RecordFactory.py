@@ -7,6 +7,13 @@ from oncotator.utils.MutUtils import MutUtils
 
 class RecordFactory:
     def __init__(self, chrom, pos, ref, sampleNames):
+        """
+
+        :param chrom:
+        :param pos:
+        :param ref:
+        :param sampleNames:
+        """
         self._logger = logging.getLogger(__name__)
         self._chrom = chrom
         self._pos = pos
@@ -25,13 +32,32 @@ class RecordFactory:
         self._fieldProperty = collections.namedtuple(typename="Property", field_names=["num", "dataType", "isSplit"])
 
     def _map(self, func, iterable, bad=(".", "",)):
+        """
+
+        :param func:
+        :param iterable:
+        :param bad:
+        :return:
+        """
         return [func(v) if v not in bad else None for v in iterable]
 
     def _replaceChrs(self, text, frm, to):
+        """
+
+        :param text:
+        :param frm:
+        :param to:
+        :return:
+        """
         tbl = string.maketrans(frm, to)
         return text.translate(tbl)
 
     def _resolveInfo(self):
+        """
+
+
+        :return:
+        """
         IDs = self._info.keys()
         info = collections.OrderedDict()
 
@@ -63,6 +89,11 @@ class RecordFactory:
         return info
 
     def _resolveSamples(self, record):
+        """
+
+        :param record:
+        :return:
+        """
         nalts = len(self._alts)
         samples = [None]*len(self._sampleNames)
 
@@ -115,6 +146,11 @@ class RecordFactory:
         return samples
 
     def createRecord(self):
+        """
+
+
+        :return:
+        """
         chrom = self._chrom
         pos = self._pos
         refAllele = self._refAllele
@@ -139,9 +175,21 @@ class RecordFactory:
         return record
 
     def _correct(self, iterable, bad=(".", "",)):
+        """
+
+        :param iterable:
+        :param bad:
+        :return:
+        """
         return [v if v not in bad else None for v in iterable]
 
     def _fixVal(self, val, isSplit):
+        """
+
+        :param val:
+        :param isSplit:
+        :return:
+        """
         if isSplit:
             val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
         else:
@@ -155,6 +203,14 @@ class RecordFactory:
         return val
 
     def _appendVal2FixedNumField(self, data, ID, num, isSplit, val):
+        """
+
+        :param data:
+        :param ID:
+        :param num:
+        :param isSplit:
+        :param val:
+        """
         if ID not in data:
             data[ID] = self._fixVal(val, isSplit)
         elif isSplit and num > 1:
@@ -164,6 +220,15 @@ class RecordFactory:
                 data[ID] = vals
 
     def addInfo(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
+        """
+
+        :param sampleName:
+        :param ID:
+        :param num:
+        :param dataType:
+        :param val:
+        :param isSplit:
+        """
         if num == -2:  # num is the number of samples
             nsamples = len(self._sampleNames)
             if sampleName in self._sampleNames:
@@ -189,6 +254,15 @@ class RecordFactory:
             self._infoFieldProperty[ID] = self._fieldProperty(num, dataType, isSplit)
 
     def addFormat(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
+        """
+
+        :param sampleName:
+        :param ID:
+        :param num:
+        :param dataType:
+        :param val:
+        :param isSplit:
+        """
         if sampleName in self._sampleNames and num != 0:
             sampleNameIndex = self._sampleNameIndexes[sampleName]
             if self._fmt[sampleNameIndex] is None:
