@@ -55,8 +55,18 @@ from utils.ConfigUtils import ConfigUtils
 from datasources import Gaf, ReferenceDatasource
 from datasources import dbSNP
 from datasources import dbNSFP
-from datasources import Cosmic, Generic_Gene_DataSource, Generic_Transcript_Datasource, Generic_VariantClassification_Datasource
-from oncotator.datasources import Generic_GenomicPosition_DataSource, Generic_GeneProteinPositionDatasource, PositionTransformingDatasource, TranscriptToUniProtProteinPositionTransformingDatasource, TranscriptProvider, Generic_GenomicMutation_Datasource
+from datasources import Cosmic
+from datasources import Generic_Gene_DataSource
+from datasources import Generic_Transcript_Datasource
+from datasources import Generic_VariantClassification_Datasource
+from oncotator.datasources import Generic_GenomicPosition_DataSource
+from oncotator.datasources import Generic_GeneProteinPositionDatasource
+from oncotator.datasources import PositionTransformingDatasource
+from oncotator.datasources import TranscriptToUniProtProteinPositionTransformingDatasource
+from oncotator.datasources import TranscriptProvider
+from oncotator.datasources import Generic_GenomicMutation_Datasource
+from oncotator.datasources import IndexedTSV_Datasource
+from oncotator.datasources import IndexedVCF_DataSource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -94,11 +104,18 @@ class DatasourceCreator(object):
         hashcode = ""
         md5_filename = os.path.dirname(leafDir) + ".md5"
         if os.path.exists(md5_filename):
-            logging.info("md5 found for " + leafDir)
+            logging.getLogger(__name__).info("md5 found for " + leafDir)
             md5_fp = file(md5_filename, 'r')
             hashcode = md5_fp.read()
             md5_fp.close()
         return hashcode
+
+    @staticmethod
+    def _log_missing_column_name_msg(colnames, indexColnames):
+        for colname in indexColnames:
+            if colname not in colnames:
+                msg = "%s is missing from column name list." % colname
+                logging.getLogger(__name__).warn(msg)
 
     @staticmethod
     def createDatasourceFromConfigParser(configParser, leafDir):
@@ -146,6 +163,20 @@ class DatasourceCreator(object):
                                                                               outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
+        elif dsType == "indexed_vcf":
+            result = IndexedVCF_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'),
+                                           title=configParser.get("general", "title"),
+                                           version=configParser.get('general', 'version'))
+        elif dsType == "indexed_tsv":
+            colnames = configParser.get("general", "column_names")
+            indexColnames = configParser.get("general", "index_columns")
+            indexColnames = indexColnames.split(",")
+            DatasourceCreator._log_missing_column_name_msg(colnames, indexColnames)
+            result = IndexedTSV_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'),
+                                           title=configParser.get("general", "title"),
+                                           version=configParser.get('general', 'version'),
+                                           colnames=colnames.split(","),
+                                           indexColnames=indexColnames)
 
         hashcode = DatasourceCreator._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)

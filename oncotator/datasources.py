@@ -63,9 +63,11 @@ from oncotator.index.gaf import region2bins
 import vcf
 import logging
 import re
+import copy
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
+from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.dbNSFP import dbnsfp_fieldnames
 
 try:
@@ -445,40 +447,40 @@ class Gaf(Datasource, TranscriptProvider):
             transcript = m['transcripts'][transcriptIndex]
 
             if transcript['variant_classification'] == 'IGR':
-                m.createAnnotation('gene', 'Unknown', self.title)
-                m.createAnnotation('gene_id', "0", self.title)
-                m.createAnnotation('other_transcripts', transcript['nearest_genes'], self.title)
+                m.createAnnotation('gene', 'Unknown', self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('gene_id', "0", self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('other_transcripts', transcript['nearest_genes'], self.title, tags=[TagConstants.SPLIT])
 
                 #TODO: Refactor to reduce duplicate code
-                m.createAnnotation('annotation_transcript', '', self.title)
-                m.createAnnotation('codon_change', '', self.title)
-                m.createAnnotation('strand', '', self.title)
-                m.createAnnotation('protein_change', '', self.title)
-                m.createAnnotation('transcript_exon', '', self.title)
-                m.createAnnotation('transcript_position', '', self.title)
-                m.createAnnotation('transcript_change', '', self.title)
-                m.createAnnotation('transcript_id', '', self.title),
-                m.createAnnotation('transcript_strand', '', self.title)
+                m.createAnnotation('annotation_transcript', '', self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('codon_change', '', self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('strand', '', self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('protein_change', '', self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_exon', '', self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_position', '', self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_change', '', self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_id', '', self.title, tags=[TagConstants.NOT_SPLIT]),
+                m.createAnnotation('transcript_strand', '', self.title, tags=[TagConstants.NOT_SPLIT])
 
             else:
-                m.createAnnotation('gene', transcript['gene'], self.title)
-                m.createAnnotation('gene_id', transcript['id'], self.title)
-                m.createAnnotation('annotation_transcript', transcript['transcript_id'], self.title)
-                m.createAnnotation('transcript_exon', transcript['exon_affected'], self.title)
-                m.createAnnotation('transcript_position', self._determineTranscriptPosition(transcript), self.title)
-                m.createAnnotation('transcript_change', transcript.get('transcript_change', ''), self.title)
-                m.createAnnotation('transcript_id', transcript.get('transcript_id', ''), self.title),
-                m.createAnnotation('transcript_strand', transcript.get('strand', ''), self.title),
-                m.createAnnotation('codon_change', transcript['codon_change'], self.title)
-                m.createAnnotation('protein_change', transcript['protein_change'], self.title)
-                m.createAnnotation('other_transcripts', self._renderOtherTranscripts(m, transcriptIndices), self.title)
-                m.createAnnotation('strand', transcript['strand'], self.title)
-            m.createAnnotation('tx_start', transcript.get('tx_start', ''), self.title)
-            m.createAnnotation('tx_end', transcript.get('tx_end', ''), self.title)
-            m.createAnnotation('variant_classification', transcript['variant_classification'], self.title)
-            m.createAnnotation('transcript_description', transcript.get('description', ''), self.title)
-            m.createAnnotation('transcript_protein_position_start', str(transcript.get('protein_position_start', '')), self.title)
-            m.createAnnotation('transcript_protein_position_end', str(transcript.get('protein_position_end', '')), self.title)
+                m.createAnnotation('gene', transcript['gene'], self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('gene_id', transcript['id'], self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('annotation_transcript', transcript['transcript_id'], self.title, tags=[TagConstants.NOT_SPLIT])
+                m.createAnnotation('transcript_exon', transcript['exon_affected'], self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_position', self._determineTranscriptPosition(transcript), self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_change', transcript.get('transcript_change', ''), self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('transcript_id', transcript.get('transcript_id', ''), self.title, tags=[TagConstants.NOT_SPLIT]),
+                m.createAnnotation('transcript_strand', transcript.get('strand', ''), self.title, tags=[TagConstants.NOT_SPLIT]),
+                m.createAnnotation('codon_change', transcript['codon_change'], self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('protein_change', transcript['protein_change'], self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('other_transcripts', self._renderOtherTranscripts(m, transcriptIndices), self.title, tags=[TagConstants.SPLIT])
+                m.createAnnotation('strand', transcript['strand'], self.title, tags=[TagConstants.NOT_SPLIT])
+            m.createAnnotation('tx_start', transcript.get('tx_start', ''), self.title, tags=[TagConstants.SPLIT])
+            m.createAnnotation('tx_end', transcript.get('tx_end', ''), self.title, tags=[TagConstants.SPLIT])
+            m.createAnnotation('variant_classification', transcript['variant_classification'], self.title, tags=[TagConstants.SPLIT])
+            m.createAnnotation('transcript_description', transcript.get('description', ''), self.title, tags=[TagConstants.SPLIT])
+            m.createAnnotation('transcript_protein_position_start', str(transcript.get('protein_position_start', '')), self.title, tags=[TagConstants.SPLIT])
+            m.createAnnotation('transcript_protein_position_end', str(transcript.get('protein_position_end', '')), self.title, tags=[TagConstants.SPLIT])
 
             # TODO: Low Priority -- rename transcripts to _transcripts instead of deleting
             del m['transcripts']
@@ -573,7 +575,7 @@ class Gaf(Datasource, TranscriptProvider):
                 left_dist = start - neareast_gene_border
                 left_gene = nearest_gene
                 break
-
+            
         right_gene, right_dist = None, None
         for s in size_extensions:
             new_end = end + s
@@ -703,8 +705,8 @@ class Generic_Transcript_Datasource(Generic_Gene_DataSource):
 
     def annotate_mutation(self, mutation):
         return super(Generic_Transcript_Datasource,self).annotate_mutation(mutation,'transcript_id')
-
-
+   
+        
 class Generic_GenomicPosition_DataSource(Datasource):
     """
     A datasource derived from a generic TSV file in which the first three columns are 'chr',
@@ -787,6 +789,7 @@ class Generic_GenomicMutation_Datasource(Generic_GenomicPosition_DataSource):
         
         return mutation
 
+
 class IndexedVCF_DataSource(Datasource):
     """
     A datasource derived from a VCF file.  Expects a bgzipped vcf using Tabix.
@@ -809,34 +812,180 @@ class IndexedVCF_DataSource(Datasource):
     
     """
     def __init__(self, src_file, title='', version=None):
-        super(IndexedVCF_DataSource, self).__init__(src_file, title=title, version=version)
-        
+        super(IndexedVCF_DataSource, self).__init__(src_file, title=title, version=version)  # all of the info is coming from config file
 
-        self.db_obj = vcf.Reader(filename=src_file)
-        # TODO: Annotate from the INFO columns.
-        self.vcf_headers = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL',    'FILTER', 'INFO']
-        self.output_headers = ['_'.join([self.title, h]) for h in self.vcf_headers]
-            
+        self.vcf_reader = vcf.Reader(filename=src_file, strict_whitespace=True)
+        self.vcf_headers = self.vcf_reader.infos.keys()
+        self.output_vcf_headers = dict([(header, '_'.join([self.title, header])) for header in self.vcf_headers])
+        self.logger = logging.getLogger(__name__)
+
+    def _determine_tags(self):
+        """
+        Determine tag constants associated with annotation IDs.
+
+        :return: map of tag IDs and respective tag constants
+        """
+        tagsMap = {}
+        for ID in self.vcf_headers:
+            num = self.vcf_reader.infos[ID].num
+            if num == -1:
+                tagsMap[ID] = [TagConstants.INFO, TagConstants.SPLIT]
+            else:
+                tagsMap[ID] = [TagConstants.INFO, TagConstants.NOT_SPLIT]
+        return tagsMap
+
+    def _determine_annotationValue(self, vcf_record, ID):
+        """
+        Determine the appropriate value that corresponds to a given ID.
+        This method checks whether ID is present in the input Vcf record or not. If it is not found, then an appropriate
+        missing value is computed.
+
+        :param vcf_record: input Vcf record
+        :param ID: ID
+        :return: value that corresponds to a given ID
+        """
+        if ID in vcf_record.INFO:
+            vals = vcf_record.INFO[ID]
+            if isinstance(vals, list):
+                val = ",".join(map(str, ["" if val is None else val for val in vals]))
+            else:
+                val = str(vals)
+        else:
+            val = self._determine_missing_annotationValue(vcf_record, ID)
+        return val
+
+    def _determine_missing_annotationValue(self, vcf_record, ID):
+        """
+        Determine the missing value that corresponds to a given ID.
+        This method takes into account the number field and computes an appropriate missing value for a given ID.
+
+        :param vcf_record: input Vcf record used to determine the number
+        :param ID: ID
+        :return: value that corresponds to a given ID
+        """
+        nsamples = len(self.vcf_reader.samples)
+        num = self.vcf_reader.infos[ID].num
+        if num == -2:
+            val = ",".join([""]*nsamples)
+        elif num == -1:
+            val = ""
+            if vcf_record is not None:
+                val = ",".join([""]*len(vcf_record.ALT))
+        elif num == 0:
+            val = "False"
+        elif num is None:
+            val = ""
+        else:
+            val = ",".join([""]*num)
+        return val
+
     def annotate_mutation(self, mutation):
-        # TODO: This code needs to be changed.
-        chr, start, end = mutation.chr, int(mutation.start), int(mutation['Position']) + len(mutation['Reference'])
-        chr = ''.join(['chr', chr])
-        
-        for header in self.output_headers:
-            mutation[header] = list()
-        
-        overlapping_vcf_records = self.db_obj.fetch(chr, start, end)
-        
-        for vcf_rec in overlapping_vcf_records:
-            for header in self.output_headers:
-                mutation[header].append(str(getattr(vcf_rec, header.replace(self.title + '_', ''))))
-        for header in self.output_headers:
-            mutation[header] = '|'.join(mutation[header])
-        
+        """
+        Annotate mutation with appropriate annotation value pairs from Tabix indexed Vcf file.
+
+        :param mutation: mutation to annotate
+        :return: annotated mutation
+        """
+        vcf_records = None
+        try:
+            vcf_records = self.vcf_reader.fetch(mutation.chr, int(mutation.start), int(mutation.end))
+        except ValueError as ve:
+            self.logger.warn("Exception when looking for vcf records. Empty set of records being returned: " +
+                             repr(ve))
+
+        tagsMap = self._determine_tags()
+        valsMap = dict()
+
+        if vcf_records is not None:
+            for vcf_record in vcf_records:
+                for ID in self.vcf_headers:
+                    val = self._determine_annotationValue(vcf_record, ID)
+                    if ID not in valsMap:
+                        valsMap[ID] = [val]
+                    else:
+                        valsMap[ID] += [val]
+
+        if len(valsMap) == 0:
+            for ID in self.vcf_headers:
+                vcf_record = None
+                val = self._determine_missing_annotationValue(vcf_record, ID)
+                valsMap[ID] = [val]
+
+        for ID in self.vcf_headers:
+            # multiple values are delimited by "|"
+            val = "|".join(valsMap[ID])
+            tags = copy.copy(tagsMap[ID])
+            mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.vcf_reader.infos[ID].type,
+                                      self.vcf_reader.infos[ID].desc, tags=tags, number=self.vcf_reader.infos[ID].num)
         return mutation
         
 
-class dbSNP(IndexedVCF_DataSource):
+
+class IndexedTSV_Datasource(Datasource):
+    """
+    A datasource derived from a TSV file.  Expects a bgzipped vcf using Tabix.
+
+    Instructions on how to index file using Tabix prior Oncotator:
+
+    bgzip foo.vcf
+    tabix -p vcf foo.vcf.gz
+
+    Please see http://samtools.sourceforge.net/tabix.shtml for more info.
+
+    Multiple annotation data for the same mutation will be delimited by "|".
+    """
+    def __init__(self, src_file, title='', version=None, colnames=[], indexColnames=[]):
+        super(IndexedTSV_Datasource, self).__init__(src_file, title=title, version=version)
+
+        self.tsv_reader = pysam.Tabixfile(filename=src_file)
+        self.tsv_headers = dict([(x, i) for (i, x) in enumerate(colnames)])  # index of the tsv header
+        self.output_tsv_headers = dict([(colname, '_'.join([self.title, colname])) for colname in colnames])
+        for colname in indexColnames:
+            if colname in self.output_tsv_headers:
+                self.output_tsv_headers.pop(colname, None)
+        self.logger = logging.getLogger(__name__)
+
+    def annotate_mutation(self, mutation):
+        """
+        Annotate mutation with appropriate annotation value pairs from a Tabix indexed TSV file.
+
+        :param mutation: mutation to annotate
+        :return: annotated mutation
+        """
+        valsMap = dict()
+        try:
+            tsv_records = self.tsv_reader.fetch(mutation.chr, int(mutation.start)-1, int(mutation.end),
+                                                parser=pysam.asTuple())
+            for tsv_record in tsv_records:
+                for colname in self.output_tsv_headers:
+                    val = ""
+                    if tsv_record is not None:
+                        val = tsv_record[self.tsv_headers[colname]]
+
+                    # multiple records are delimited by "|"
+                    if colname not in valsMap:
+                        valsMap[colname] = val
+                    else:
+                        valsMap[colname] += "|" + val
+        except ValueError as ve:
+            msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
+            self.logger.warn(msg)
+
+        for colname in self.output_tsv_headers:
+            val = ""
+            if len(valsMap) != 0:
+                val = valsMap[colname]
+            else:
+                msg = "Exception when looking for tsv records. Empty set of records being returned."
+                self.logger.warn(msg)
+
+            mutation.createAnnotation(self.output_tsv_headers[colname], val, self.title,
+                                      tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])
+
+        return mutation
+
+
+class dbSNP(Datasource):
     """
     dbSNP Datasource expecting a Tabix compressed and indexed dbsnp vcf file.
     
@@ -853,6 +1002,7 @@ class dbSNP(IndexedVCF_DataSource):
         self.title = title
     
         super(dbSNP, self).__init__(src_file, title=self.title, version=version)
+        self.vcf_reader = vcf.Reader(filename=src_file, strict_whitespace=True)
         self.output_headers = ['dbSNP_RS', 'dbSNP_Val_Status']
         self.logger = logging.getLogger(__name__)
     
@@ -866,7 +1016,7 @@ class dbSNP(IndexedVCF_DataSource):
         
         overlapping_vcf_records = []
         try:
-            overlapping_vcf_records = self.db_obj.fetch(chr, start, end)
+            overlapping_vcf_records = self.vcf_reader.fetch(chr, start, end)
         except ValueError as ve:
             self.logger.warn("Exception when looking for vcf records.  Empty set of records being returned: " + repr(ve))
         

@@ -68,6 +68,7 @@ from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceCreator import DatasourceCreator
 import vcf
+from oncotator.utils.TagConstants import TagConstants
 from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
@@ -95,7 +96,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         # You cannot use len(muts), since muts is a generator.
         ctr = 0
         for m in muts:
-            ctr = ctr +1
+            ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
         self.assertTrue((m.chr == "21") and (m.start == 1234567), "Last mutation was not correct: " + str(m))
         
@@ -104,9 +105,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         muts = creator.createMutations()
         ctr = 0
         for m in muts:
-            ctr = ctr + 1
+            ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 called mutations, but saw: " + str(ctr))
-    
 
     def testSimpleAnnotationWithExampleVcf(self):
         ''' Tests the ability to do a simple Gaf 3.0 annotation. '''
@@ -227,7 +227,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         ''' Test whether parsed annotations match the actual annotations. '''
         inputFilename = 'testdata/vcf/example.vcf'
         outputFilename = 'out/example.out.tsv'
-        expOutputFilename = 'testdata/vcf/example.expected.out.tsv'
+        expectedOutputFilename = 'testdata/vcf/example.expected.out.tsv'
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -240,7 +240,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         tsvReader = GenericTsvReader(outputFilename)
         
         current = pandas.read_csv(outputFilename, sep='\t', header=len(tsvReader.getCommentsAsList()))
-        expected = pandas.read_csv(expOutputFilename, sep='\t')
+        expected = pandas.read_csv(expectedOutputFilename, sep='\t')
 
         currentColNames = set()
         for i in range(len(current.columns)):
@@ -283,6 +283,30 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         diff = gtKeys.symmetric_difference(ks)
         self.assertTrue(len(diff) == 0, "Missing keys that should have been seen in the metadata: " + str(diff))
 
+    def testSnpsAndIndelStartAndEndPos(self):
+        inputFilename = "testdata/vcf/example.snps.indels.vcf"
+        outputFilename = 'out/example.snps.indels.out.tsv'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        tsvReader = GenericTsvReader(outputFilename)
+        for row in tsvReader:
+            if row['start'] == "16890445":
+                self.assertEqual(row["end"], "16890445", "The value should be %s but it was %s." % ("16890445",
+                                                                                                    row["end"]))
+            elif row["start"] == "154524458":
+                self.assertEqual(row["end"], "154524459", "The value should be %s but it was %s." % ("154524459",
+                                                                                                     row["end"]))
+            elif row["start"] == "114189432":
+                self.assertEqual(row["end"], "114189433", "The value should be %s but it was %s." % ("114189433",
+                                                                                                     row["end"]))
+
     def testSplitByNumberOfAltsWithFile(self):
         """ Test whether we properly determine that a field is split ... using an actual file"""
         inputFilename = 'testdata/vcf/example.split.tags.vcf'
@@ -298,7 +322,6 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         mapVcfFields2Tsv['allele_frequency'] = 'AF'
 
         muts = creator.createMutations()
-        md = creator.getMetadata()
 
         vcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
 
@@ -313,29 +336,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
             for annotationName in isSplit.keys():
                 if mapVcfFields2Tsv[annotationName] in variant.INFO:
-                    a = md[annotationName]
-                    self.assertTrue(('SPLIT' in a.getTags()) == isSplit[annotationName],
+                    a = m.getAnnotation(annotationName)
+                    self.assertTrue((TagConstants.SPLIT in a.getTags()) == isSplit[annotationName],
                                     annotationName + " is split? " + str(isSplit[annotationName]) + ", but saw: " +
-                                    str('SPLIT' in a.getTags()))
-
-    def testSplitByNumberOfAlts(self):
-        """ Test whether we properly determine that a field is split"""
-        inputFilename = 'testdata/vcf/example.split.tags.vcf'
-        creator = VcfInputMutationCreator(inputFilename)
-
-        # We do this to make sure that the internal state is correct
-        md = creator.getMetadata()
-
-        test = creator._determineIsSplit('DP', 1, "FORMAT")
-        self.assertTrue(test is False)
-
-        # Test with an exception in the config file
-        test = creator._determineIsSplit('ESP_MAF', None, "INFO")
-        self.assertTrue(test is False)
-
-        test = creator._determineIsSplit('AF', None, "INFO")
-        print test
-        self.assertTrue(test is True)
+                                    str(TagConstants.SPLIT in a.getTags()))
 
     def testGenotypeFieldIsHonored(self):
         """Test that Oncotator does not have issues with genotype values >1 when multiple variants appear on one line"""
