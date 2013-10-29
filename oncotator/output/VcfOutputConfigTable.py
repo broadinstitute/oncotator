@@ -9,8 +9,8 @@ class VcfOutputConfigTable():
     _formatFieldNamesDescriptions = dict()  # format (name, description) pairs
     _filterFieldNamesDescriptions = dict()  # filter (name, description) pairs
 
-    _splitSet = dict()  #
-    _notSplitSet = dict()  #
+    _splitSet = dict()
+    _notSplitSet = dict()
 
     def addInfoFieldName(self, name, ID):
         self._infoFieldNames[name] = ID
