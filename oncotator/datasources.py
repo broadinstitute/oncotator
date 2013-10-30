@@ -50,6 +50,7 @@
 
 import abc
 import cPickle
+import string
 from operator import mod
 import os
 import shove
@@ -803,7 +804,7 @@ class IndexedVCF_DataSource(Datasource):
     
     
     The following VCF columns will be added to the output.
-        CHROM    POS    ID    REF    ALT    QUAL    FILTER    INFO
+        REF, ALT and INFO
     
     
     Multiple annotation data for the same mutation will be delimited by "|".
@@ -815,8 +816,21 @@ class IndexedVCF_DataSource(Datasource):
         super(IndexedVCF_DataSource, self).__init__(src_file, title=title, version=version)  # all of the info is coming from config file
 
         self.vcf_reader = vcf.Reader(filename=src_file, strict_whitespace=True)
-        self.vcf_headers = self.vcf_reader.infos.keys()
-        self.output_vcf_headers = dict([(header, '_'.join([self.title, header])) for header in self.vcf_headers])
+        self.vcf_info_headers = self.vcf_reader.infos.keys()
+
+        self.output_vcf_headers = dict([(ID, '_'.join([self.title, ID])) for ID in self.vcf_info_headers])
+        self.output_vcf_headers.update([(ID, '_'.join([self.title, ID])) for ID in ["REF", "ALT"]])
+
+        self.output_vcf_types = dict([(ID, self.vcf_reader.infos[ID].type) for ID in self.vcf_info_headers])
+        self.output_vcf_types.update({"REF": "String", "ALT": "String"})
+
+        self.output_vcf_nums = dict([(ID, self.vcf_reader.infos[ID].num) for ID in self.vcf_info_headers])
+        self.output_vcf_nums.update({"REF": None, "ALT": None})
+
+        self.output_vcf_descs = dict([(ID, self.vcf_reader.infos[ID].desc) for ID in self.vcf_info_headers])
+        self.output_vcf_descs.update({"REF": string.join(["Reference allele in ", self.title], ""),
+                                     "ALT": string.join(["Alternate allele(s) in ", self.title], "")})
+
         self.logger = logging.getLogger(__name__)
 
     def _determine_tags(self):
@@ -826,15 +840,15 @@ class IndexedVCF_DataSource(Datasource):
         :return: map of tag IDs and respective tag constants
         """
         tagsMap = {}
-        for ID in self.vcf_headers:
-            num = self.vcf_reader.infos[ID].num
+        for ID in self.vcf_info_headers + ["REF", "ALT"]:
+            num = self.output_vcf_nums[ID]
             if num == -1:
                 tagsMap[ID] = [TagConstants.INFO, TagConstants.SPLIT]
             else:
                 tagsMap[ID] = [TagConstants.INFO, TagConstants.NOT_SPLIT]
         return tagsMap
 
-    def _determine_annotationValue(self, vcf_record, ID):
+    def _determine_info_annotationValue(self, vcf_record, ID):
         """
         Determine the appropriate value that corresponds to a given ID.
         This method checks whether ID is present in the input Vcf record or not. If it is not found, then an appropriate
@@ -851,10 +865,10 @@ class IndexedVCF_DataSource(Datasource):
             else:
                 val = str(vals)
         else:
-            val = self._determine_missing_annotationValue(vcf_record, ID)
+            val = self._determine_missing_value(vcf_record, ID)
         return val
 
-    def _determine_missing_annotationValue(self, vcf_record, ID):
+    def _determine_missing_value(self, vcf_record, ID):
         """
         Determine the missing value that corresponds to a given ID.
         This method takes into account the number field and computes an appropriate missing value for a given ID.
@@ -864,7 +878,7 @@ class IndexedVCF_DataSource(Datasource):
         :return: value that corresponds to a given ID
         """
         nsamples = len(self.vcf_reader.samples)
-        num = self.vcf_reader.infos[ID].num
+        num = self.output_vcf_nums[ID]
         if num == -2:
             val = ",".join([""]*nsamples)
         elif num == -1:
@@ -887,6 +901,8 @@ class IndexedVCF_DataSource(Datasource):
         :return: annotated mutation
         """
         vcf_records = None
+
+        # Get all the records corresponding to the given mutation object
         try:
             vcf_records = self.vcf_reader.fetch(mutation.chr, int(mutation.start), int(mutation.end))
         except ValueError as ve:
@@ -896,27 +912,41 @@ class IndexedVCF_DataSource(Datasource):
         tagsMap = self._determine_tags()
         valsMap = dict()
 
+        ref = mutation.ref_allele
+        alt = mutation.alt_allele
+
         if vcf_records is not None:
             for vcf_record in vcf_records:
-                for ID in self.vcf_headers:
-                    val = self._determine_annotationValue(vcf_record, ID)
+                for ID in self.vcf_info_headers:
+
+                    val = self._determine_info_annotationValue(vcf_record, ID)
                     if ID not in valsMap:
                         valsMap[ID] = [val]
                     else:
                         valsMap[ID] += [val]
 
+                if "REF" not in valsMap:
+                    valsMap["REF"] = [vcf_record.REF]
+                else:
+                    valsMap["REF"] += [vcf_record.REF]
+
+                if "ALT" not in valsMap:
+                    valsMap["ALT"] = [string.join(map(str, vcf_record.ALT), ",")]
+                else:
+                    valsMap["ALT"] += [string.join(map(str, vcf_record.ALT), ",")]
+
         if len(valsMap) == 0:
-            for ID in self.vcf_headers:
+            for ID in self.vcf_info_headers + ["REF", "ALT"]:
                 vcf_record = None
-                val = self._determine_missing_annotationValue(vcf_record, ID)
+                val = self._determine_missing_value(vcf_record, ID)
                 valsMap[ID] = [val]
 
-        for ID in self.vcf_headers:
+        for ID in self.vcf_info_headers + ["REF", "ALT"]:
             # multiple values are delimited by "|"
             val = "|".join(valsMap[ID])
             tags = copy.copy(tagsMap[ID])
-            mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.vcf_reader.infos[ID].type,
-                                      self.vcf_reader.infos[ID].desc, tags=tags, number=self.vcf_reader.infos[ID].num)
+            mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
+                                      self.output_vcf_descs[ID], tags=tags, number=self.output_vcf_nums[ID])
         return mutation
         
 
