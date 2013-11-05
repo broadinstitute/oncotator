@@ -42,9 +42,9 @@ DEBUG = 1
 TESTRUN = 0
 PROFILE = 1
 
-#TODO: These need to be dynamic from a config file.
-DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds/'
-DEFAULT_DEFAULT_ANNOTATIONS = '/xchip/cga/reference/annotation/db/tcgaMAFManualOverrides2.4.config'
+#TODO: This needs to be dynamic from a config file.
+# TODO: This needs to be changed.
+DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_ds_tmp'
 DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
 class CLIError(Exception):
@@ -62,7 +62,7 @@ def parseOptions(program_license, program_version_message):
     epilog= '''
     
     Example usage :
-    oncotator -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
+    python Oncotator.py -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
     
     IMPORTANT NOTE:  hg19 is only supported genome build for now.
 
@@ -112,7 +112,6 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
-    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation altAlleleSeen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
     # Process arguments
     args = parser.parse_args()
     
@@ -190,34 +189,19 @@ USAGE
         cache_url = args.cache_url
         read_only_cache = args.read_only_cache
         tx_mode = args.tx_mode
-        is_skip_no_alts = args.skip_no_alt
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
         overrideConfigFile = args.override_config
-        if overrideConfigFile is not None and not os.path.exists(overrideConfigFile):
-            logger.warn("Could not find " + overrideConfigFile + "   ... proceeding anyway.")
-            overrideConfigFile = None
         manualOverrides = OncotatorCLIUtils.determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile)
 
         # Parse default overrides
         commandLineDefaultValues = args.default_cli
         defaultConfigFile = args.default_config
-        if defaultConfigFile is not None and not os.path.exists(defaultConfigFile):
-            if defaultConfigFile != DEFAULT_DEFAULT_ANNOTATIONS:
-                logger.warn("Could not find " + defaultConfigFile + "   ... proceeding anyway.")
-            else:
-                logger.info("Could not find Broad-specific " + defaultConfigFile + "   ... proceeding without any default annotations.  __UNKNOWN__ may appear in TCGA MAF outputs.")
-            defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
-                                                      globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
-                                                      isMulticore=(not args.noMulticore),
-                                                      defaultAnnotations=defaultValues, cacheUrl=cache_url,
-                                                      read_only_cache=read_only_cache, tx_mode=tx_mode,
-                                                      is_skip_no_alts=is_skip_no_alts)
+        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=manualOverrides, datasourceDir=datasourceDir, isMulticore=(not args.noMulticore), defaultAnnotations=defaultValues, cacheUrl=cache_url, read_only_cache=read_only_cache, tx_mode=tx_mode)
            
         annotator = Annotator()
         annotator.initialize(runConfig)
