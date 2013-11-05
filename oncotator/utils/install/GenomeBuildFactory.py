@@ -10,25 +10,46 @@ class GenomeBuildFactory(object):
     """ Responsible for creating indices for genome builds (through ENSEMBL) and creating a set of datasource files.
         The methods in this class would typically be run in datasource creation, not during annotation.
     """
+
+    QUALS_TO_CHECK = ['gene_status', 'level', 'source', 'tag', 'ccdsid', 'transcript_name', 'transcript_type', 'havana_gene', 'havana_transcript']
+
     def __init__(self):
         self._transcript_index = dict()
 
     def _convertGFFRecordToTranscript(self, gff_record, seq_dict):
+        """
+
+        :param gff_record:
+        :param seq_dict:
+        :return: None if the record is a gene record or otherwise does not represent a transcript, CDS, *_codon, or exon
+        """
         quals = gff_record['quals']
         transcript_id = quals['transcript_id'][0]
 
-        if transcript_id not in self._transcript_index.keys():
+        types_of_interest = ["exon", "CDS", "start_codon", "stop_codon"]
+
+        if transcript_id not in self._transcript_index.keys() and gff_record['type'] in types_of_interest:
             self._transcript_index[transcript_id] = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=gff_record['rec_id'])
 
         if gff_record['type'] == 'exon':
             self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1])
         elif gff_record['type'] == 'CDS':
             self._transcript_index[transcript_id].add_cds(gff_record['location'][0], gff_record['location'][1])
+        elif gff_record['type'] == 'start_codon':
+            self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0], gff_record['location'][1])
+        elif gff_record['type'] == 'stop_codon':
+            self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
+        else:
+            return None
 
         if gff_record['strand'] == 1:
             self._transcript_index[transcript_id].set_strand("+")
         else:
             self._transcript_index[transcript_id].set_strand("-")
+
+        for attribute in GenomeBuildFactory.QUALS_TO_CHECK:
+            if attribute in quals.keys():
+                self._transcript_index[transcript_id].add_other_attribute(attribute, quals[attribute])
 
         seq = seq_dict.get(transcript_id, None)
         if seq is not None:
@@ -63,7 +84,11 @@ class GenomeBuildFactory(object):
             if len(rec['quals']['transcript_id']) > 1:
                 logging.getLogger(__name__).warn("ensembl records had more than one transcript id: " + str(rec['quals']['transcript_id']))
             transcript_id = rec['quals']['transcript_id'][0]
-            shove[transcript_id] = self._convertGFFRecordToTranscript(rec, seq_dict)
+
+            tx = self._convertGFFRecordToTranscript(rec, seq_dict)
+            if tx is not None:
+                shove[transcript_id] = tx
+
         shove.close()
         in_handle.close()
 

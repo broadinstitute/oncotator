@@ -136,6 +136,8 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
         base_output_filename = "out/test_full_indices_ensembl"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
 
@@ -143,13 +145,14 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gene.idx"))
         self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gp_bin.idx"))
 
-    @unittest.skip(" This needs to be rebuilt.  This test should be re-enabled in the ensembl branch")
     def test_retrieving_sequence(self):
         """Ensure we can retrieve a sequence from an ensembl transcript given a gene.  """
         #TODO: Rebuild the datasource otherwise strand test fails below.
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
         base_output_filename = "out/test_full_indices_ensembl"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
 
@@ -160,3 +163,15 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
         transcripts = seq_index['PAU8']
         self.assertTrue(transcripts[0].get_strand() == "-")
+
+    def test_gencode_small(self):
+        """Test that we can create Transcript isntances from a small gencode gtf and fasta."""
+        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
+        base_output_filename = "out/test_small_gencode"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+
+        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://")

@@ -6,7 +6,7 @@ class Transcript(object):
     exons are a list of (start, end) in genomic coordinates (integers)
 
     """
-    def __init__(self, transcript_id, gene, contig, gene_id = "", exons = [], cds = [], seq="", strand="+"):
+    def __init__(self, transcript_id, gene, contig, gene_id = "", exons = [], cds = [], seq="", strand="+", start_codon=None, stop_codon=None, other_attributes={}):
         self._transcript_id = transcript_id
         self._exons = exons
         self._cds = cds
@@ -15,6 +15,9 @@ class Transcript(object):
         self._seq = seq
         self._contig = contig
         self._strand = strand
+        self._start_codon = start_codon
+        self._stop_codon = stop_codon
+        self._other_attributes = other_attributes
 
     def add_exon(self, start, end):
         self._exons.append((start, end))
@@ -66,3 +69,21 @@ class Transcript(object):
 
     def set_strand(self, value):
         self._strand = value
+
+    def set_start_codon(self, start, end):
+        self._start_codon = (start, end)
+
+    def set_stop_codon(self, start, end):
+        self._stop_codon = (start, end)
+
+    def get_stop_codon(self):
+        return self._stop_codon
+
+    def get_start_codon(self):
+        return self._start_codon
+
+    def add_other_attribute(self, key, value):
+        self._other_attributes[key] = value
+
+    def get_other_attributes(self):
+        return self._other_attributes

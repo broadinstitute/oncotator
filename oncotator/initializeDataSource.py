@@ -148,7 +148,7 @@ def parseOptions():
     parser.add_argument("version", type=str, help="version of the datasource.  This should be the version of the data itself, such as '3.0' for Gaf 3.0")
     parser.add_argument("dbDir", type=str, help="Main datasource directory that contains other datasources.  I.e. the destination directory for the newly created datasource.")
     parser.add_argument("ds_foldername", type=str, help="Name of the folder that should appear in dbDir")
-    parser.add_argument("genome_build", type=str, help="Genome build.  For example, hg19.", choices=['hg19'])
+    parser.add_argument("genome_build", type=str, help="Genome build -- this must be specified correctly by the user.  For example, hg19.", choices=['hg19'])
     parser.add_argument("index_columns", type=str, help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.  For gp_tsv, this parameter MUST be three entries corresponding to chr, start, and end.  gene_tsv and transcipt_tsv have only one entry.")
         
     # Process arguments
