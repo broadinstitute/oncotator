@@ -50,7 +50,8 @@ import ConfigParser
 import logging
 
 import unittest
-from oncotator.datasources import EnsemblTranscriptDatasource
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.datasources import EnsemblTranscriptDatasource, TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
 from test.TestUtils import TestUtils
 
@@ -74,7 +75,9 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         src_file = config_parser.get("general", "src_file")
 
         ensembl_ds = EnsemblTranscriptDatasource(title=title, version=version, src_file=src_file)
-
+        self.assertIsNotNone(ensembl_ds)
+        ensembl_ds.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+        self.assertTrue(TranscriptProvider.TX_MODE_BEST_EFFECT == ensembl_ds.get_tx_mode())
 
 if __name__ == '__main__':
     unittest.main()

@@ -115,7 +115,7 @@ class TranscriptProvider(object):
 
     @abc.abstractmethod
     def get_tx_mode(self):
-        return
+        return self.tx_mode
 
 
 class Datasource(object):
@@ -1515,6 +1515,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
+        Also, supports gencode
     """
     def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
