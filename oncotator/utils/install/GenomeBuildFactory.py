@@ -54,6 +54,15 @@ class GenomeBuildFactory(object):
                 self._transcript_index[transcript_id].add_other_attribute(attribute, quals[attribute])
 
         seq = seq_dict.get(transcript_id, None)
+
+        if seq is None:
+            # Try to parse the key.  Some fasta files embed the transcript id in with a lot of other info.
+            for k in seq_dict.keys():
+                kList = k.split('|')
+                if transcript_id in kList:
+                    seq = seq_dict.get(k)
+                    break
+
         if seq is not None:
             genome_seq_as_str = str(seq.seq)
         else:

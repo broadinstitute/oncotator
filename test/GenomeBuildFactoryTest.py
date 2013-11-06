@@ -193,3 +193,8 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         transcripts = seq_index_gp["chr22_753"]
         self.assertTrue(transcripts[0].get_strand() == "-")
         self.assertTrue(len(transcripts) == 4)
+
+        for tx in transcripts:
+            if tx.get_transcript_id() != "ENST00000215832.6":
+                continue
+            self.assertTrue(tx.get_seq().startswith("AGGCAATCGGTCCGAG"))
