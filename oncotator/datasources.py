@@ -1569,15 +1569,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         # We have hit IGR if no transcripts come back.  Most annotations can just use the blank set.
         if len(txs) == 0:
-            final_annotation_dict['variant_classification'].value = self._create_basic_annotation('IGR')
+            final_annotation_dict['variant_classification'] = self._create_basic_annotation('IGR')
             nearest_genes = self._get_nearest_genes(chr, start, end)
-            final_annotation_dict['other_transcripts'].value = self._create_basic_annotation(value='%s (%s upstream) : %s (%s downstream)' % (nearest_genes[0][0], nearest_genes[0][1], nearest_genes[1][0], nearest_genes[1][1]))
-            final_annotation_dict['gene'].value = self._create_basic_annotation('Unknown')
-            final_annotation_dict['gene_id'].value = self._create_basic_annotation('0')
+            final_annotation_dict['other_transcripts'] = self._create_basic_annotation(value='%s (%s upstream) : %s (%s downstream)' % (nearest_genes[0][0], nearest_genes[0][1], nearest_genes[1][0], nearest_genes[1][1]))
+            final_annotation_dict['gene'] = self._create_basic_annotation('Unknown')
+            final_annotation_dict['gene_id'] = self._create_basic_annotation('0')
         else:
             # Choose the best effect transcript
             chosen_tx = self._choose_transcript(txs, self.get_tx_mode())
-            final_annotation_dict['annotation_transcript'].value = chosen_tx.get_transcript_id()
+            final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
+            final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils._determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
             # final_annotation_dict['codon_change'] = self._create_basic_annotation('')
             # final_annotation_dict['strand'] = self._create_basic_annotation('')
             # final_annotation_dict['protein_change'] = self._create_basic_annotation('')
@@ -1585,7 +1586,10 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             # final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_id'] = self._create_basic_annotation('')
-            # final_annotation_dict['transcript_strand'] = self._create_basic_annotation('')
+            # final_annotation_dict['variant_classification'].value = ?
+            final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
+            final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())
+            # final_annotation_dict['gene_id'].value
 
         mutation.addAnnotations(final_annotation_dict)
         return mutation
@@ -1659,4 +1663,35 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
                 break
 
         return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
+
+    def _convert_genomic_space_to_transcript_space(self, start, end, tx):
+        """
+        This includes all exons, UTR, but not padding.
+
+        :param start: str position in genome space  start < end
+        :param end: str position in genome space    start < end
+        :return (list of str and length 2) ["-1", "-1"] if position cannot be mapped.  Note that here start can be greater or less than
+            end (start, end) depending on strand of transcript.
+        """
+        s = int(start)
+        e = int(end)
+
+        tx_start = int(tx.determine_transcript_start())
+        tx_end = int(tx.determine_transcript_stop())
+
+        result = ["-1", "-1"]
+
+        if tx.get_strand() == "-":
+            if e <= tx_start:
+                result[0] = tx_start - e
+            if s >= tx_end:
+                result[1] = tx_start - s
+        else:
+            if e <= tx_end:
+                result[1] = e - tx_start
+            if s >= tx_start:
+                result[0] = s - tx_start
+        return result
+
+
 

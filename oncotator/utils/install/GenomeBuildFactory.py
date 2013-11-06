@@ -34,7 +34,7 @@ class GenomeBuildFactory(object):
             self._transcript_index[transcript_id] = tx
 
         if gff_record['type'] == 'exon':
-            self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1])
+            self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
         elif gff_record['type'] == 'CDS':
             self._transcript_index[transcript_id].add_cds(gff_record['location'][0], gff_record['location'][1])
         elif gff_record['type'] == 'start_codon':

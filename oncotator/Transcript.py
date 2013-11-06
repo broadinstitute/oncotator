@@ -19,8 +19,9 @@ class Transcript(object):
         self._stop_codon = stop_codon
         self._other_attributes = {}
 
-    def add_exon(self, start, end):
-        self._exons.append((start, end))
+
+    def add_exon(self, start, end, exon_number):
+        self._exons.append((start, end, exon_number))
 
     def add_cds(self, start, end):
         self._cds.append((start, end))
@@ -87,3 +88,29 @@ class Transcript(object):
 
     def get_other_attributes(self):
         return self._other_attributes
+
+    def determine_transcript_start(self):
+        """Includes UTR but not padding
+        Returns the start location in genomic space.  This will be the largest position if strand is negative."""
+        all_locations_start = [s[0] for s in self._exons]
+        all_locations_end = [s[1] for s in self._exons]
+        all_locations = []
+        all_locations.extend(all_locations_start)
+        all_locations.extend(all_locations_end)
+        if self._strand == "-":
+            return max(all_locations)
+        else:
+            return min(all_locations)
+
+    def determine_transcript_stop(self):
+        """Includes UTR but not padding
+        Returns the stop location in genomic space.  This will be the largest position if strand is negative."""
+        all_locations_start = [s[0] for s in self._exons]
+        all_locations_end = [s[1] for s in self._exons]
+        all_locations = []
+        all_locations.extend(all_locations_start)
+        all_locations.extend(all_locations_end)
+        if self._strand == "-":
+            return min(all_locations)
+        else:
+            return max(all_locations)

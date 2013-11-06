@@ -75,3 +75,24 @@ class TranscriptProviderUtils(object):
             return True
         else:
             return False
+
+    @staticmethod
+    def _determine_genome_change(chr, start, end, ref_allele, alt_allele, variant_type):
+        genome_change = ''
+        start = int(start)
+        end = int(end)
+        if variant_type == 'SNP':
+            genome_change = 'g.chr%s:%d%s>%s' % (chr, start, ref_allele,
+                                                 alt_allele)
+        elif variant_type.endswith('NP'):
+            genome_change = 'g.chr%s:%d_%d%s>%s' % (chr, start, end,
+                                                    ref_allele, alt_allele)
+        elif variant_type == 'DEL':
+            if start == end:
+                genome_change = 'g.chr%s:%ddel%s' % (chr, start, ref_allele)
+            else:
+                genome_change = 'g.chr%s:%d_%ddel%s' % (chr, start, end, ref_allele)
+        elif variant_type == 'INS':
+            genome_change = 'g.chr%s:%d_%dins%s' % (chr, start, end,
+                                                    alt_allele)
+        return genome_change

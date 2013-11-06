@@ -151,7 +151,14 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         m2 = ensembl_ds.annotate_mutation(m)
 
+    def test_convert_genomic_space_to_transcript_space(self):
+        base_config_location = "testdata/ensembl/saccer/"
+        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
 
+        tx = ensembl_ds.get_overlapping_transcripts("I", "350", "350")
+        start, end = ensembl_ds._convert_genomic_space_to_transcript_space("350", "350", tx[0])
+        self.assertTrue(start == end)
+        self.assertTrue(start == "16")
 
 
 if __name__ == '__main__':
