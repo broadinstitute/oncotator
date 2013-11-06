@@ -1,3 +1,4 @@
+from copy import deepcopy
 import logging
 from shove.core import Shove
 from oncotator.Transcript import Transcript
@@ -29,7 +30,8 @@ class GenomeBuildFactory(object):
         types_of_interest = ["exon", "CDS", "start_codon", "stop_codon"]
 
         if transcript_id not in self._transcript_index.keys() and gff_record['type'] in types_of_interest:
-            self._transcript_index[transcript_id] = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=gff_record['rec_id'])
+            tx = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=gff_record['rec_id'])
+            self._transcript_index[transcript_id] = tx
 
         if gff_record['type'] == 'exon':
             self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1])
@@ -101,16 +103,20 @@ class GenomeBuildFactory(object):
         #TODO: This may need to be moved to the init of the transcript datasource as that may be faster.
 
         transcript_db = Shove(protocol + "://" + ensembl_transcript_index_fname, "memory://")
-        output_db = Shove(protocol + "://" + output_filename, "memory://")
+        output_db = Shove(protocol + "://" + output_filename, "memory://", optimize=False)
 
         transcript_keys = transcript_db.keys()
 
         for tx_id in transcript_keys:
             tx = transcript_db[tx_id]
-            if tx.get_gene() not in output_db:
-                output_db[tx.get_gene()] = [tx]
+            gene = tx.get_gene()
+            if gene not in output_db.keys():
+                output_db[gene] = [tx]
             else:
-                output_db[tx.get_gene()].append(tx)
+                # This must be done like this, since we have to store the new value in the db.
+                tmpList = output_db[gene]
+                tmpList.append(tx)
+                output_db[gene] = tmpList
 
         output_db.close()
         transcript_db.close()
@@ -119,8 +125,8 @@ class GenomeBuildFactory(object):
         """Create an index for genomic position to transcripts index, using a transcript index created in
             build_ensembl_transcript_index
         """
-        transcript_db = Shove(protocol + "://" + ensembl_transcript_index_fname, "memory://")
-        output_db = Shove(protocol + "://" + output_filename, "memory://")
+        transcript_db = Shove(protocol + "://" + ensembl_transcript_index_fname)
+        output_db = Shove(protocol + "://" + output_filename, optimize=False)
 
         transcript_keys = transcript_db.keys()
 
@@ -133,7 +139,10 @@ class GenomeBuildFactory(object):
             if key not in output_db:
                 output_db[key] = [tx]
             else:
-                output_db[key].append([tx])
+                tmpList = output_db[key]
+                tmpList.append(tx)
+                output_db[key] = tmpList
+
         output_db.close()
         transcript_db.close()
 

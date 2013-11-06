@@ -66,7 +66,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
-        output_filename = "out/test_ensemble_gtf.db"
+        output_filename = "out/test_ensembl_gtf.db"
         protocol = "file"
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol=protocol)
@@ -93,8 +93,10 @@ class GenomeBuildFactoryTest(unittest.TestCase):
     def test_build_ensembl_transcripts_by_gene_index(self):
         """Test building an index for getting a transcript given a gene."""
         protocol = "file"
-        transcript_index_filename = "out/test_ensemble_gtf_for_gene.db"
-        output_filename = "out/test_ensemble_gtf_for_gene.db.gene.idx"
+        transcript_index_filename = "out/test_ensembl_gtf_for_gene.db"
+        output_filename = "out/test_ensembl_gtf_for_gene.db.gene.idx"
+        shutil.rmtree(output_filename,ignore_errors=True)
+
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
@@ -103,7 +105,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         genome_build_factory.build_ensembl_transcripts_by_gene_index(transcript_index_filename, output_filename)
 
         # Now load the index and look something up.
-        gene_index = Shove(protocol + "://" + output_filename)
+        gene_index = Shove(protocol + "://" + output_filename, optimize=False)
         self.assertTrue(len(gene_index['SEO1']) == 1)
         tx = gene_index['SEO1'][0]
 
@@ -114,6 +116,8 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         protocol = "file"
         transcript_index_filename = "out/test_ensemble_gtf_for_gp.db"
         output_filename = "out/test_ensemble_gtf_for_gp.db.idx"
+        shutil.rmtree(output_filename, ignore_errors=True)
+
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
@@ -147,16 +151,17 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
     def test_retrieving_sequence(self):
         """Ensure we can retrieve a sequence from an ensembl transcript given a gene.  """
-        #TODO: Rebuild the datasource otherwise strand test fails below.
+
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
         base_output_filename = "out/test_full_indices_ensembl"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
 
-        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://")
+        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
         transcripts = seq_index['SEO1']
 
         self.assertTrue(transcripts[0].get_seq().startswith('ATGTATTCAATTGTTAAAGAGATTATTGTAGATCCTTACAAAAGACTAAAATGGGGTTTT'))
@@ -164,14 +169,27 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         transcripts = seq_index['PAU8']
         self.assertTrue(transcripts[0].get_strand() == "-")
 
+        seq_index_gp = Shove("file://" + base_output_filename + ".transcript_by_gp_bin.idx", "memory://")
+        transcripts = seq_index_gp["I_585"]
+        self.assertTrue(transcripts[0].get_strand() == "+")
+
     def test_gencode_small(self):
-        """Test that we can create Transcript isntances from a small gencode gtf and fasta."""
+        """Test that we can create Transcript instances from a small gencode gtf and fasta."""
         gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
         gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
         base_output_filename = "out/test_small_gencode"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
 
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
 
-        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://")
+        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
+        transcripts = seq_index["MAPK1"]
+        self.assertTrue(len(transcripts) == 4)
+
+        seq_index_gp = Shove("file://" + base_output_filename + ".transcript_by_gp_bin.idx", "memory://", optimize=False)
+        transcripts = seq_index_gp["chr22_753"]
+        self.assertTrue(transcripts[0].get_strand() == "-")
+        self.assertTrue(len(transcripts) == 4)
