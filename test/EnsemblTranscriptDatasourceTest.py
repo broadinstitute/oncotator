@@ -50,6 +50,8 @@ import ConfigParser
 import logging
 
 import unittest
+from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources import EnsemblTranscriptDatasource, TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
@@ -78,6 +80,79 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertIsNotNone(ensembl_ds)
         ensembl_ds.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
         self.assertTrue(TranscriptProvider.TX_MODE_BEST_EFFECT == ensembl_ds.get_tx_mode())
+
+    def test_overlapping_single_transcripts(self):
+        base_config_location = "testdata/ensembl/saccer/"
+
+        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        recs = ensembl_ds.get_overlapping_transcripts("I", "500", "500")
+        self.assertTrue(len(recs) == 1)
+        self.assertTrue(recs[0].get_gene() == 'YAL069W')
+
+    def test_overlapping_multiple_transcripts_snp(self):
+        base_config_location = "testdata/ensembl/saccer/"
+
+        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        recs = ensembl_ds.get_overlapping_transcripts("I", "550", "550")
+        self.assertTrue(len(recs) == 2)
+        ids = set()
+        for r in recs:
+            ids.add(r.get_transcript_id())
+
+        self.assertTrue(len(ids - set(['YAL069W', 'YAL068W-A'])) == 0)
+
+    def test_overlapping_multiple_transcripts_indel(self):
+        base_config_location = "testdata/ensembl/saccer/"
+
+        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        recs = ensembl_ds.get_overlapping_transcripts("I", "2500", "8000")
+        self.assertTrue(len(recs) == 2)
+        ids = set()
+        for r in recs:
+            ids.add(r.get_transcript_id())
+
+        self.assertTrue(len(ids - set(['YAL067W-A', 'YAL067C'])) == 0)
+
+    def test_simple_annotate_with_nonhuman(self):
+        """Test a very simple annotation with a nonhuman genome (saccer)"""
+        base_config_location = "testdata/ensembl/saccer/"
+
+        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+
+        m = MutationData()
+        m.chr = "I"
+        m.start = "500"
+        m.end = "500"
+        m.ref_allele = "C"
+        m.alt_allele = "A"
+
+        m2 = ensembl_ds.annotate_mutation(m)
+
+        self.assertTrue(m2['annotation_transcript'] == "YAL069W")
+        self.assertTrue(m2['gene'] == "YAL069W")
+
+    def test_simple_annotate(self):
+        """ Annotate a simple example.
+        """
+        base_config_location = "testdata/ensembl/saccer/"
+        config_parser = ConfigUtils.createConfigParser(base_config_location + "ensembl.config")
+        title = config_parser.get("general", "title")
+        version = config_parser.get("general", "version")
+        src_file = config_parser.get("general", "src_file")
+
+        ensembl_ds = EnsemblTranscriptDatasource(title=title, version=version, src_file=src_file)
+
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22161963"
+        m.end = "22161963"
+        m.ref_allele = "C"
+        m.alt_allele = "A"
+
+        m2 = ensembl_ds.annotate_mutation(m)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

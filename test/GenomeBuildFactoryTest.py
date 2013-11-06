@@ -157,11 +157,11 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         base_output_filename = "out/test_full_indices_ensembl"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
-        shutil.rmtree(base_output_filename + ".transcript_by_gp.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
 
-        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
+        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", optimize=False)
         transcripts = seq_index['SEO1']
 
         self.assertTrue(transcripts[0].get_seq().startswith('ATGTATTCAATTGTTAAAGAGATTATTGTAGATCCTTACAAAAGACTAAAATGGGGTTTT'))

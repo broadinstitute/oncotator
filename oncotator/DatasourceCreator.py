@@ -59,7 +59,7 @@ from datasources import Cosmic
 from datasources import Generic_Gene_DataSource
 from datasources import Generic_Transcript_Datasource
 from datasources import Generic_VariantClassification_Datasource
-from oncotator.datasources import Generic_GenomicPosition_DataSource
+from oncotator.datasources import Generic_GenomicPosition_DataSource, EnsemblTranscriptDatasource
 from oncotator.datasources import Generic_GeneProteinPositionDatasource
 from oncotator.datasources import PositionTransformingDatasource
 from oncotator.datasources import TranscriptToUniProtProteinPositionTransformingDatasource
@@ -137,6 +137,8 @@ class DatasourceCreator(object):
             result = Gaf(gaf_fname, gaf_transcript_sequences_fname, title=configParser.get("general", "title"), version=configParser.get("general", "version"), protocol=configParser.get("general", "protocol"))
         elif dsType == "dbsnp":
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
+        elif dsType == "ensembl":
+            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
         elif dsType == "dbnsfp":

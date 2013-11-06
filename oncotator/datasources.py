@@ -1557,6 +1557,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
         final_annotation_dict['transcript_id'] = self._create_basic_annotation('')
         final_annotation_dict['transcript_strand'] = self._create_basic_annotation('')
+        return final_annotation_dict
 
     def annotate_mutation(self, mutation):
         chr = mutation.chr
@@ -1568,33 +1569,59 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         # We have hit IGR if no transcripts come back.  Most annotations can just use the blank set.
         if len(txs) == 0:
-            final_annotation_dict['variant_classification'] = self._create_basic_annotation('IGR')
+            final_annotation_dict['variant_classification'].value = self._create_basic_annotation('IGR')
             nearest_genes = self._get_nearest_genes(chr, start, end)
-            final_annotation_dict['other_transcripts'] = self._create_basic_annotation(value='%s (%s upstream) : %s (%s downstream)' % (nearest_genes[0][0], nearest_genes[0][1], nearest_genes[1][0], nearest_genes[1][1]))
-            final_annotation_dict['gene'] = self._create_basic_annotation('Unknown')
-            final_annotation_dict['gene_id'] = self._create_basic_annotation('0')
+            final_annotation_dict['other_transcripts'].value = self._create_basic_annotation(value='%s (%s upstream) : %s (%s downstream)' % (nearest_genes[0][0], nearest_genes[0][1], nearest_genes[1][0], nearest_genes[1][1]))
+            final_annotation_dict['gene'].value = self._create_basic_annotation('Unknown')
+            final_annotation_dict['gene_id'].value = self._create_basic_annotation('0')
         else:
             # Choose the best effect transcript
-            for tx in txs:
-                pass
+            chosen_tx = self._choose_transcript(txs, self.get_tx_mode())
+            final_annotation_dict['annotation_transcript'].value = chosen_tx.get_transcript_id()
+            # final_annotation_dict['codon_change'] = self._create_basic_annotation('')
+            # final_annotation_dict['strand'] = self._create_basic_annotation('')
+            # final_annotation_dict['protein_change'] = self._create_basic_annotation('')
+            # final_annotation_dict['transcript_exon'] = self._create_basic_annotation('')
+            # final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
+            # final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
+            # final_annotation_dict['transcript_id'] = self._create_basic_annotation('')
+            # final_annotation_dict['transcript_strand'] = self._create_basic_annotation('')
 
         mutation.addAnnotations(final_annotation_dict)
         return mutation
+
+    def _choose_transcript(self, txs, tx_mode):
+        """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
+        # TODO: Integrate tx-mode here
+        return txs[0]
+
 
     def get_overlapping_transcripts(self, chr, start, end):
         records = self._get_binned_transcripts(chr, start, end)
         return self._get_overlapping_transcript_records(records, start, end)
 
-    def _get_binned_transcripts(self, chr, start, end):
+    def get_overlapping_genes(self, chr, start, end):
+        records = self._get_binned_genes(chr, start, end)
+        return self._get_overlapping_transcript_records(records, start, end)
+
+    def _get_binned_transcripts_given_index(self, chr, start, end, index_dict):
         bins = region2bins(int(start), int(end))
         records = list()
+
         for b in bins:
             key = chr + "_" + str(b)
             try:
-                txs = self.gp_bin_db[key]
+                txs = index_dict[key]
                 records.extend(txs)
             except KeyError:
                 pass
+        return set(records)
+
+    def _get_binned_genes(self, chr, start, end):
+        return self._get_binned_transcripts_given_index(chr, start, end, self.gene_db)
+
+    def _get_binned_transcripts(self, chr, start, end):
+        return self._get_binned_transcripts_given_index(chr, start, end, self.gp_bin_db)
 
     def _get_overlapping_transcript_records(self, records, start, end):
         return [r for r in records if TranscriptProviderUtils.test_overlap(int(start), int(end), r.get_start(), r.get_end())]
