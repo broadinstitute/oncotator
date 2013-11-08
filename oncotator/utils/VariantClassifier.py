@@ -14,6 +14,12 @@ class VariantClassifier(object):
         cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_transcript_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
         return cds_start, cds_stop
 
+    def _determine_cds_in_exon_space(self, tx):
+        cds_start_genomic_space = tx.determine_cds_start()
+        cds_stop_genomic_space = tx.determine_cds_stop()
+        cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
+        return cds_start, cds_stop
+
     def _determine_protein_seq(self, tx):
         s = cds_start = tx.determine_cds_start()
         e = cds_stop = tx.determine_cds_stop()
@@ -33,7 +39,7 @@ class VariantClassifier(object):
             is_mirna = False
 
 
-        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_transcript_space(start, end, tx)
+        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
 
         # TODO: Fix exon_affected
         exon_affected = "-1"
@@ -54,7 +60,7 @@ class VariantClassifier(object):
             ref_tx_seq_has_been_changed = False
 
         protein_seq = self._determine_protein_seq(tx)
-        cds_start, cds_stop = self._determine_cds_in_tx_space(tx)
+        cds_start, cds_stop = self._determine_cds_in_exon_space(tx)
 
         #always use '+' here because strand doesn't matter, since inputs are in transcript space
         cds_overlap_type = TranscriptProviderUtils.test_overlap_with_strand(transcript_position_start, transcript_position_end,

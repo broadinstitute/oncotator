@@ -116,10 +116,7 @@ class TranscriptProviderUtils(object):
                                                     alt_allele)
         return genome_change
 
-    @staticmethod
-    def convert_genomic_space_to_cds_space(start, end, tx):
-        pass
-
+    # TODO: These transforms should be in a separate class.
     @staticmethod
     def _transform_to_feature_space(exons, s, strand):
         """
@@ -168,8 +165,6 @@ class TranscriptProviderUtils(object):
         strand = tx.get_strand()
         cds = tx.get_cds()
         return TranscriptProviderUtils._convert_genomic_space_to_feature_space(s, e, cds, strand)
-
-
 
     @staticmethod
     def convert_genomic_space_to_transcript_space(start, end, tx):
