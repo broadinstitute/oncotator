@@ -16,13 +16,14 @@ TestUtils.setupLogging(__file__, __name__)
 class VariantClassifierTest(unittest.TestCase):
 
     variants_indels = lambda: (
-        ("22", "22221645", "22221645", "G", "-", "DEL", "Frame_Shift_Del"),
-        ("22",	"22221645", "22221645", "-", "A", "INS", "Frame_Shift_Ins")
+        ("22", "22221645", "22221647", "In_Frame_Del", "DEL", "GAG", "-"),
+        ("22", "22221645", "22221645", "Frame_Shift_Del", "DEL", "G", "-"),
+        ("22",	"22221645", "22221645", "Frame_Shift_Ins", "INS", "-", "A")
     )
-
+    # TODO: Get recently downloaded test data and use that.
 
     @data_provider(variants_indels)
-    def test_variant_classification_indels(self, chr, start, end, ref, alt, vt, gt_vc):
+    def test_variant_classification_indels(self, chr, start, end, gt_vc, vt, ref, alt):
         gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
         gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
         base_output_filename = "out/test_variant_classification"
@@ -36,8 +37,8 @@ class VariantClassifierTest(unittest.TestCase):
 
         vcer = VariantClassifier()
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
-        vcer.variant_classify(recs[0], vt, ref, alt, start, end)
-        self.assertTrue(gt_vc == "TODO: Replace with annotated version")
+        vc = vcer.variant_classify(recs[0], vt, ref, alt, start, end)
+        self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc)
 
     def test_region_queries(self):
         b = region2bin(22221612, 22221919)

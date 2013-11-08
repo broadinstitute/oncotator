@@ -1,12 +1,122 @@
 import Bio
 from Bio import Seq
+import itertools
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.gaf_annotation import chop
 
 
 class VariantClassifier(object):
 
     def __init__(self):
         pass
+
+    def _adjust_protein_position_and_alleles(self, protein_seq, protein_position_start, protein_position_end, reference_aa, observed_aa):
+        ## Adjust positions and alleles for indels and ONPs when leading or trailing amino acids
+        ## are the same in both the refence and observed, thus not changed in the final mutant protein.
+        ## e.g. L > LK at position 813 should be - > L at position 814
+        if reference_aa == observed_aa: #don't adjust on silent DNPs
+            return reference_aa, observed_aa, protein_position_start, protein_position_end
+        if reference_aa == '': reference_aa = '-'
+        if observed_aa == '': observed_aa = '-'
+
+
+        adjust_alleles_and_positions, is_reverse = False, False
+        if reference_aa[0] == observed_aa[0] and reference_aa[-1] == observed_aa[-1]:
+            left_adjust_count, right_adjust_count = 0, 0
+            for i, alleles in enumerate(itertools.izip(reference_aa, observed_aa)):
+                if alleles[0] == alleles[1]:
+                    left_adjust_count += 1
+                else:
+                    break
+            for i, alleles in enumerate(itertools.izip(reference_aa[::-1], observed_aa[::-1])):
+                if alleles[0] == alleles[1]:
+                    right_adjust_count += 1
+                else:
+                    break
+
+            if left_adjust_count > right_adjust_count:
+                adjust_alleles_and_positions = True
+                adjusted_ref_aa, adjusted_obs_aa = list(reference_aa), list(observed_aa)
+            elif right_adjust_count > left_adjust_count:
+                adjust_alleles_and_positions = True
+                is_reverse = True
+                adjusted_ref_aa, adjusted_obs_aa = list(reference_aa[::-1]), list(observed_aa[::-1])
+
+        elif reference_aa[0] == observed_aa[0]:
+            adjust_alleles_and_positions = True
+            adjusted_ref_aa, adjusted_obs_aa = list(reference_aa), list(observed_aa)
+        elif reference_aa[-1] == observed_aa[-1]:
+            adjust_alleles_and_positions = True
+            is_reverse = True
+            adjusted_ref_aa, adjusted_obs_aa = list(reference_aa[::-1]), list(observed_aa[::-1])
+
+        if adjust_alleles_and_positions:
+            allele_idxs_to_delete = list()
+            for i, alleles in enumerate(itertools.izip(adjusted_ref_aa, adjusted_obs_aa)):
+                if alleles[0] == alleles[1]:
+                    allele_idxs_to_delete.append(i)
+                else:
+                    break
+
+            for idx in allele_idxs_to_delete[::-1]:
+                del(adjusted_ref_aa[idx])
+                del(adjusted_obs_aa[idx])
+
+            if is_reverse:
+                adjusted_ref_aa, adjusted_obs_aa = adjusted_ref_aa[::-1], adjusted_obs_aa[::-1]
+                adjusted_start = protein_position_start
+                adjusted_end = protein_position_end - len(allele_idxs_to_delete)
+            else:
+                adjusted_start = protein_position_start + len(allele_idxs_to_delete)
+                adjusted_end = protein_position_end
+
+            adjusted_ref_aa, adjusted_obs_aa = ''.join(adjusted_ref_aa), ''.join(adjusted_obs_aa)
+            if adjusted_ref_aa == '': adjusted_ref_aa = '-'
+            if adjusted_obs_aa == '': adjusted_obs_aa = '-'
+            if adjusted_ref_aa == '-': #insertion between codons:
+                adjusted_start, adjusted_end = min(adjusted_start, adjusted_end), max(adjusted_start, adjusted_end)
+                if adjusted_end-adjusted_start != 1: raise Exception
+
+            reference_aa, observed_aa = adjusted_ref_aa, adjusted_obs_aa
+            protein_position_start, protein_position_end = adjusted_start, adjusted_end
+
+        ## Shift protein postion upstream if adjacent amino acids are the same
+        look_upstream_and_adjust_position = False
+        if reference_aa == '-': #insertion
+            slice = len(observed_aa)
+            pos = protein_position_end
+            q_aa = observed_aa
+            look_upstream_and_adjust_position = True
+        elif observed_aa == '-': #deletion
+            slice = len(reference_aa)
+            pos = protein_position_end + 1
+            q_aa = reference_aa
+            look_upstream_and_adjust_position = True
+        if look_upstream_and_adjust_position:
+            for aa in chop(protein_seq[pos-1:], slice):
+                if q_aa == ''.join(aa):
+                    protein_position_start += slice
+                    protein_position_end += slice
+                else:
+                    break
+        return reference_aa, observed_aa, protein_position_start, protein_position_end
+
+
+    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele):
+        if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
+            vc = 'In_Frame_Ins'
+        elif variant_type == 'DEL' or (variant_type == 'ONP' and len(reference_allele) > len(observed_allele)):
+            vc = 'In_Frame_Del'
+        else:
+            if reference_aa == observed_aa:
+                vc = 'Silent'
+            elif reference_aa.find('*') > -1 and observed_aa.find('*') == -1:
+                vc = 'Nonstop_Mutation'
+            elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
+                vc = 'Nonsense_Mutation'
+            elif reference_aa != observed_aa:
+                vc = 'Missense_Mutation'
+        return vc
 
     def _determine_cds_in_exon_space(self, tx):
         cds_start_genomic_space, cds_stop_genomic_space = self._determine_cds_footprint(tx)
@@ -78,7 +188,7 @@ class VariantClassifier(object):
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
 
             is_mut_a_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end),  observed_allele)
-            # TODO: Handle a frameshift here.
+            # TODO: Handle a frameshift here, since the rest of the code will not handle it.
 
             if variant_type == 'INS' and protein_position_start != protein_position_end:
                 #treat differently if insertion falls between codons
@@ -94,7 +204,7 @@ class VariantClassifier(object):
 
             observed_aa = Bio.Seq.translate(mutated_codon_seq)
 
-            variant_classification = infer_variant_classification(m['variant_type'],
+            variant_classification = self.infer_variant_classification(variant_type,
                 reference_aa, observed_aa, reference_allele, observed_allele)
 
             # If silent mutation w/in 2 bp of a splice junction, then change to splice site
@@ -103,11 +213,13 @@ class VariantClassifier(object):
 
             if variant_type != 'SNP':
                 reference_aa, observed_aa, protein_position_start, protein_position_end = \
-                    adjust_protein_position_and_alleles(protein_seq, protein_position_start,
+                    self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
                         protein_position_end, reference_aa, observed_aa)
         else:
             annotate_mutations_not_fully_within_cds(transcript_seq, observed_allele, cds_overlap_type, transcript_position_start,
                 transcript_position_end, m, t, exon_affected)
+
+        return variant_classification
 
     def get_protein_sequence(self, tx, cds_start_genomic_space, cds_stop_genomic_space):
         tx_seq = tx.get_seq()
