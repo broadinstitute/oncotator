@@ -1,6 +1,7 @@
 import Bio
 from Bio import Seq
 import itertools
+import math
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.gaf_annotation import chop
 
@@ -102,11 +103,17 @@ class VariantClassifier(object):
         return reference_aa, observed_aa, protein_position_start, protein_position_end
 
 
-    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele):
+    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False):
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
-            vc = 'In_Frame_Ins'
+            if not is_frameshift_indel:
+                vc = 'In_Frame_Ins'
+            else:
+                vc = "Frame_Shift_Ins"
         elif variant_type == 'DEL' or (variant_type == 'ONP' and len(reference_allele) > len(observed_allele)):
-            vc = 'In_Frame_Del'
+            if not is_frameshift_indel:
+                vc = 'In_Frame_Del'
+            else:
+                vc = "Frame_Shift_Del"
         else:
             if reference_aa == observed_aa:
                 vc = 'Silent'
@@ -205,19 +212,19 @@ class VariantClassifier(object):
             observed_aa = Bio.Seq.translate(mutated_codon_seq)
 
             variant_classification = self.infer_variant_classification(variant_type,
-                reference_aa, observed_aa, reference_allele, observed_allele)
+                reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=is_mut_a_frameshift_indel)
 
             # If silent mutation w/in 2 bp of a splice junction, then change to splice site
             if variant_classification.lower() == "silent":
-                determineIfSpliceSiteThrown(end, exon_affected,gaf,start,t, dist=2)
+                self._determine_if_splice_site(self, int(start), int(end), tx, dist=2)
 
             if variant_type != 'SNP':
                 reference_aa, observed_aa, protein_position_start, protein_position_end = \
                     self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
                         protein_position_end, reference_aa, observed_aa)
         else:
-            annotate_mutations_not_fully_within_cds(transcript_seq, observed_allele, cds_overlap_type, transcript_position_start,
-                transcript_position_end, m, t, exon_affected)
+            variant_classification = self.annotate_mutations_not_fully_within_cds(transcript_seq, observed_allele, cds_overlap_type, transcript_position_start,
+                transcript_position_end, variant_type, t, exon_affected)
 
         return variant_classification
 
@@ -240,3 +247,85 @@ class VariantClassifier(object):
             if dl != 0:
                 return True
         return False
+
+    def _determine_if_splice_site(self, start_genomic_space, end_genomic_space, tx, dist=2):
+
+        """
+         If overlap is detected, but the start or end is within dist bp, then this is a splice site.
+        :param end:
+        :param start:
+        :param t:
+
+        """
+        exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
+        if abs(ldist) < dist or abs(rdist) < dist:
+            return True
+        return False
+
+    def _determine_closest_distances_from_exon(self, exons, start_genomic_space, end_genomic_space):
+        """
+        start_genomic_space <= end_genomic_space
+
+        :param exons:
+        :param start_genomic_space:
+        :param end_genomic_space:
+        :return: exon_i, ldist, rdist
+        """
+        exon_i = ldist = rdist = -1
+        min_val = 10000000000
+
+        for i in range(0, len(exons)):
+            exon = exons[i]
+
+            # Distance from the larger genomic position
+            left_distance_from_start = abs(start_genomic_space - exon[0])
+            left_distance_from_end = abs(end_genomic_space - exon[0])
+            right_distance_from_start = abs(start_genomic_space - exon[1])
+            right_distance_from_end = abs(end_genomic_space - exon[1])
+
+            left_diff = min(left_distance_from_start, left_distance_from_end)
+            right_diff = max(right_distance_from_start, right_distance_from_end)
+
+            if min_val > left_diff or min_val > right_diff:
+                ldist = left_diff
+                rdist = right_diff
+                exon_i = i
+                min_val = min(left_diff, right_diff)
+
+        return exon_i, ldist, rdist
+
+    def annotate_mutations_not_fully_within_cds(self, transcript_seq, observed_allele, cds_overlap_type, transcript_position_start, transcript_position_end, variant_type, t, exon_affected):
+        if variant_type in ['DEL','INS']:
+            vt = ''.join([variant_type[0], variant_type[1:].lower()])
+        else:
+            vt = 'variant_type'
+
+        result = ""
+        if cds_overlap_type == 'a_overlaps_b_left_border':
+            result = 'Start_Codon_' + vt
+        elif cds_overlap_type == 'a_overlaps_b_right_border':
+            result = 'Stop_Codon_' + vt
+        else:
+            if transcript_position_start < t['cds_start'] and transcript_position_start < t['cds_stop']: p = 5
+            elif transcript_position_start > t['cds_start'] and transcript_position_start > t['cds_stop']: p = 3
+            vc = "%d'UTR" % (p)
+            result = vc
+            if vc == "5'UTR":
+                utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
+
+                utr_region_seq = transcript_seq[utr_region_start-1:utr_region_end]
+                # TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq,
+                #     cds_codon_start, transcript_position_start, transcript_position_end, observed_allele, variant_type)
+                mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
+                    transcript_position_start, transcript_position_end, observed_allele, variant_type)
+
+                # Check for Denovo
+                ATG_position = mutated_utr_region_seq.find('ATG')
+                if ATG_position > -1:
+                    ATG_position = utr_region_start + ATG_position
+                    if (t['cds_start'] - ATG_position) % 3 == 0:
+                        frameness = 'InFrame'
+                    else:
+                        frameness = 'OutOfFrame'
+                    result = 'De_novo_Start_' + frameness
+        return result
