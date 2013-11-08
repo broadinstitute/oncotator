@@ -90,14 +90,18 @@ class GenomeBuildFactory(object):
 
         # Example code taken from http://biopython.org/wiki/GFF_Parsing
         shove = Shove(protocol + "://" + output_filename, "memory://")
+        logging.getLogger(__name__).info("Transcript index being created: " + protocol + "://" + output_filename)
 
         in_seq_file = ensembl_input_fasta
         in_seq_handle = open(in_seq_file)
         seq_dict = SeqIO.to_dict(SeqIO.parse(in_seq_handle, "fasta"))
         in_seq_handle.close()
+        logging.getLogger(__name__).info("Parsed fasta file: " + in_seq_file)
 
         in_file = ensembl_input_gtf
         in_handle = open(in_file)
+
+        ctr = 0
         for rec in GFF.parse_simple(in_file): #(in_handle, base_dict=seq_dict):
 
             # transcript id seems to always be a list of length 1
@@ -108,7 +112,11 @@ class GenomeBuildFactory(object):
             tx = self._convertGFFRecordToTranscript(rec, seq_dict)
             if tx is not None:
                 shove[transcript_id] = tx
+            ctr += 1
+            if (ctr % 100 ) == 0:
+                logging.getLogger(__name__).info("Processed " + str(ctr) + " lines of the gtf.")
 
+        logging.getLogger(__name__).info("Transcript index created " + str(shove.keys()) + " transcripts.")
         shove.close()
         in_handle.close()
 
