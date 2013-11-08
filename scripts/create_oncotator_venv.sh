@@ -71,6 +71,9 @@ pip install sqlalchemy
 echo " "
 echo "python-memcached ========================="
 pip install python-memcached
+echo " "
+echo "unittest-data-provider ========================="
+pip install unittest-data-provider
 
 echo " NOTE:  Some dependencies may not have been installed, you should still install oncotator normally."
 

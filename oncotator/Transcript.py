@@ -6,7 +6,7 @@ class Transcript(object):
     exons are a list of (start, end) in genomic coordinates (integers)
 
     """
-    def __init__(self, transcript_id, gene, contig, gene_id="", seq="", strand="+", start_codon=None, stop_codon=None):
+    def __init__(self, transcript_id, gene, contig, gene_id="", seq="", strand="+", start_codon=None, stop_codon=None, gene_type=""):
         self._transcript_id = transcript_id
         self._exons = []
         self._cds = []
@@ -18,7 +18,7 @@ class Transcript(object):
         self._start_codon = start_codon
         self._stop_codon = stop_codon
         self._other_attributes = {}
-
+        self._gene_type = gene_type
 
     def add_exon(self, start, end, exon_number):
         self._exons.append((start, end, exon_number))
@@ -57,7 +57,7 @@ class Transcript(object):
 
     def get_end(self):
         exon_ends = [exon[1] for exon in self._exons]
-        return min(exon_ends)
+        return max(exon_ends)
 
     def get_contig(self):
         return self._contig
@@ -89,9 +89,16 @@ class Transcript(object):
     def get_other_attributes(self):
         return self._other_attributes
 
+    def get_gene_type(self):
+        return self._gene_type
+
+    def set_gene_type(self, value):
+        self._gene_type = value
+
+    # TODO: Reduce code duplication
     def determine_transcript_start(self):
         """Includes UTR but not padding
-        Returns the start location in genomic space.  This will be the largest position if strand is negative."""
+        Returns the start location in genomic space.  This will be the highest position if strand is negative."""
         all_locations_start = [s[0] for s in self._exons]
         all_locations_end = [s[1] for s in self._exons]
         all_locations = []
@@ -104,9 +111,31 @@ class Transcript(object):
 
     def determine_transcript_stop(self):
         """Includes UTR but not padding
-        Returns the stop location in genomic space.  This will be the largest position if strand is negative."""
+        Returns the stop location in genomic space.  This will be the highest position if strand is positive."""
         all_locations_start = [s[0] for s in self._exons]
         all_locations_end = [s[1] for s in self._exons]
+        all_locations = []
+        all_locations.extend(all_locations_start)
+        all_locations.extend(all_locations_end)
+        if self._strand == "-":
+            return min(all_locations)
+        else:
+            return max(all_locations)
+
+    def determine_cds_start(self):
+        all_locations_start = [s[0] for s in self._cds]
+        all_locations_end = [s[1] for s in self._cds]
+        all_locations = []
+        all_locations.extend(all_locations_start)
+        all_locations.extend(all_locations_end)
+        if self._strand == "-":
+            return max(all_locations)
+        else:
+            return min(all_locations)
+
+    def determine_cds_stop(self):
+        all_locations_start = [s[0] for s in self._cds]
+        all_locations_end = [s[1] for s in self._cds]
         all_locations = []
         all_locations.extend(all_locations_start)
         all_locations.extend(all_locations_end)

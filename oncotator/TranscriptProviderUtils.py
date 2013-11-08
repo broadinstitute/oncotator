@@ -1,3 +1,6 @@
+import math
+
+
 class TranscriptProviderUtils(object):
 
     @staticmethod
@@ -77,6 +80,22 @@ class TranscriptProviderUtils(object):
             return False
 
     @staticmethod
+    def test_overlap_with_strand(a_st, a_en, b_st, b_en, strand):
+        if strand == '+':
+            if a_st <= b_st and a_en >= b_en: return 'a_encompasses_b'
+            elif a_st >= b_st and a_en <= b_en: return 'a_within_b'
+            elif a_st < b_st and a_en >= b_st: return 'a_overlaps_b_left_border'
+            elif a_st <= b_en and a_en >= b_en: return 'a_overlaps_b_right_border'
+            else: return None
+        elif strand == '-':
+            b_st, b_en = b_en, b_st
+            if a_st <= b_st and a_en >= b_en: return 'a_encompasses_b'
+            elif a_st >= b_st and a_en <= b_en: return 'a_within_b'
+            elif a_st < b_st and a_en >= b_st: return 'a_overlaps_b_right_border'
+            elif a_st <= b_en and a_en >= b_en: return 'a_overlaps_b_left_border'
+            else: return None
+
+    @staticmethod
     def _determine_genome_change(chr, start, end, ref_allele, alt_allele, variant_type):
         genome_change = ''
         start = int(start)
@@ -96,3 +115,93 @@ class TranscriptProviderUtils(object):
             genome_change = 'g.chr%s:%d_%dins%s' % (chr, start, end,
                                                     alt_allele)
         return genome_change
+
+    @staticmethod
+    def convert_genomic_space_to_cds_space(start, end, tx):
+        pass
+
+    @staticmethod
+    def _transform_to_exon_space(exons, s, strand):
+        """
+        Assumes exons are in order given strand, though their start > end
+        :param exons:
+        :param s:
+        :param strand:
+        :return:
+        """
+        d = 0
+        for exon in exons:
+            if s >= exon[0] and s < exon[1]:
+                if strand == "-":
+                    d += (exon[1] - s)
+                else:
+                    d += (s - exon[0])
+                break
+            elif (s > exon[1] and strand == "+") or (s < exon[0] and strand == "-"):
+                d += (exon[1] - exon[0])
+            else:
+                break
+        return d
+
+    @staticmethod
+    def convert_genomic_space_to_exon_space(start, end, tx):
+        s = int(start)
+        e = int(end)
+        strand = tx.get_strand()
+        exons = tx.get_exons()
+        d_start = TranscriptProviderUtils._transform_to_exon_space(exons, s, strand)
+        d_end = TranscriptProviderUtils._transform_to_exon_space(exons, e, strand)
+        if strand == "-":
+            tmp = d_start
+            d_start = d_end
+            d_end = tmp
+        return d_start, d_end
+
+
+
+    @staticmethod
+    def convert_genomic_space_to_transcript_space(start, end, tx):
+        """ start <= end, regardless of strand for this method
+        This includes all exons, UTR, but not padding.
+
+        :param start: str position in genome space  start <= end
+        :param end: str position in genome space    start <= end
+        :return (list of str and length 2) ["-1", "-1"] if position cannot be mapped.  Note that here start cannot be greater or less than
+            end (start, end).  The strand of transcript is taken into account.
+        """
+        s = int(start)
+        e = int(end)
+
+        tx_start = int(tx.determine_transcript_start())
+        tx_end = int(tx.determine_transcript_stop())
+
+        result = ["-1", "-1"]
+
+        if tx.get_strand() == "-":
+            if e <= tx_start:
+                result[0] = tx_start - e
+            if s >= tx_end:
+                result[1] = tx_start - s
+        else:
+            if e <= tx_end:
+                result[1] = e - tx_start
+            if s >= tx_start:
+                result[0] = s - tx_start
+        return result[0], result[1]
+
+    @staticmethod
+    def get_protein_positions(transcript_position_start, transcript_position_end, cds_start):
+        """Parameters are all in transcript space """
+        protein_position_start = int(math.ceil((float(transcript_position_start) - float(cds_start) + 1) /3))
+        if transcript_position_end == transcript_position_start:
+            protein_position_end = protein_position_start
+        else:
+            protein_position_end = int(math.ceil((float(transcript_position_end) - float(cds_start) + 1) /3))
+        return protein_position_start, protein_position_end
+
+    @staticmethod
+    def get_cds_codon_positions(protein_position_start, protein_position_end, cds_start):
+        """cds_Start is in transcript space """
+        cds_codon_start = (protein_position_start * 3 - 2) + cds_start - 1
+        cds_codon_end = (protein_position_end * 3) + cds_start - 1
+        return cds_codon_start, cds_codon_end

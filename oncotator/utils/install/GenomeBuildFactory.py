@@ -3,6 +3,7 @@ import logging
 from shove.core import Shove
 from oncotator.Transcript import Transcript
 from oncotator.index.gaf import region2bin
+from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
 from BCBio import GFF
 from Bio import SeqIO
@@ -29,8 +30,10 @@ class GenomeBuildFactory(object):
 
         types_of_interest = ["exon", "CDS", "start_codon", "stop_codon"]
 
+        contig = MutUtils.convertChromosomeStringToMutationDataFormat(gff_record['rec_id'])
+
         if transcript_id not in self._transcript_index.keys() and gff_record['type'] in types_of_interest:
-            tx = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=gff_record['rec_id'])
+            tx = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=contig)
             self._transcript_index[transcript_id] = tx
 
         if gff_record['type'] == 'exon':
@@ -43,6 +46,12 @@ class GenomeBuildFactory(object):
             self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
         else:
             return None
+
+        # Set the gene_type based on gene_type or gene_biotype
+        key = "gene_biotype"
+        if key not in quals.keys():
+            key = "gene_type"
+        self._transcript_index[transcript_id].set_gene_type(quals[key])
 
         if gff_record['strand'] == 1:
             self._transcript_index[transcript_id].set_strand("+")

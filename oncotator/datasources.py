@@ -1664,34 +1664,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
 
-    def _convert_genomic_space_to_transcript_space(self, start, end, tx):
-        """
-        This includes all exons, UTR, but not padding.
 
-        :param start: str position in genome space  start < end
-        :param end: str position in genome space    start < end
-        :return (list of str and length 2) ["-1", "-1"] if position cannot be mapped.  Note that here start can be greater or less than
-            end (start, end) depending on strand of transcript.
-        """
-        s = int(start)
-        e = int(end)
-
-        tx_start = int(tx.determine_transcript_start())
-        tx_end = int(tx.determine_transcript_stop())
-
-        result = ["-1", "-1"]
-
-        if tx.get_strand() == "-":
-            if e <= tx_start:
-                result[0] = tx_start - e
-            if s >= tx_end:
-                result[1] = tx_start - s
-        else:
-            if e <= tx_end:
-                result[1] = e - tx_start
-            if s >= tx_start:
-                result[0] = s - tx_start
-        return result
 
 
 
