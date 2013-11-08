@@ -212,3 +212,17 @@ class TranscriptProviderUtils(object):
         cds_codon_start = (protein_position_start * 3 - 2) + cds_start - 1
         cds_codon_end = (protein_position_end * 3) + cds_start - 1
         return cds_codon_start, cds_codon_end
+
+    @staticmethod
+    def mutate_reference_sequence(seq, seq_start_pos, mutation_start_pos, mutation_end_pos, observed_allele, variant_type):
+        mutated_seq = list(seq)
+        if variant_type == 'DEL':
+            del(mutated_seq[mutation_start_pos - seq_start_pos: \
+                mutation_end_pos - seq_start_pos + 1])
+        elif variant_type == 'INS':
+            mutated_seq.insert(mutation_end_pos - seq_start_pos, observed_allele)
+        else: #SNP or ONP
+            mutated_seq[mutation_start_pos - seq_start_pos: \
+                mutation_end_pos - seq_start_pos + 1] = str(observed_allele)
+        mutated_seq = ''.join(mutated_seq)
+        return mutated_seq

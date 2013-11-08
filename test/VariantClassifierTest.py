@@ -66,5 +66,18 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertIsNotNone(protein_seq)
         self.assertEqual(gt_prot, protein_seq)
 
+    frameshift_indels = lambda : (
+        ("INS", 10, 11,  "A", True),
+        ("INS", 10, 12,  "ATC", False),
+        ("DEL", 10, 10,  "-", True),
+        ("DEL", 10, 12,  "-", False)
+    )
+
+    @data_provider(frameshift_indels)
+    def test_is_framshift_indel(self, vt, s, e, alt, gt):
+        vcer = VariantClassifier()
+        self.assertTrue(vcer.is_framshift_indel(vt, s, e, alt) == gt)
+
+
 if __name__ == '__main__':
     unittest.main()
