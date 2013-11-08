@@ -121,7 +121,7 @@ class TranscriptProviderUtils(object):
         pass
 
     @staticmethod
-    def _transform_to_exon_space(exons, s, strand):
+    def _transform_to_feature_space(exons, s, strand):
         """
         Assumes exons are in order given strand, though their start > end
         :param exons:
@@ -144,18 +144,30 @@ class TranscriptProviderUtils(object):
         return d
 
     @staticmethod
-    def convert_genomic_space_to_exon_space(start, end, tx):
-        s = int(start)
-        e = int(end)
-        strand = tx.get_strand()
-        exons = tx.get_exons()
-        d_start = TranscriptProviderUtils._transform_to_exon_space(exons, s, strand)
-        d_end = TranscriptProviderUtils._transform_to_exon_space(exons, e, strand)
+    def _convert_genomic_space_to_feature_space(s, e, features, strand):
+        d_start = TranscriptProviderUtils._transform_to_feature_space(features, s, strand)
+        d_end = TranscriptProviderUtils._transform_to_feature_space(features, e, strand)
         if strand == "-":
             tmp = d_start
             d_start = d_end
             d_end = tmp
         return d_start, d_end
+
+    @staticmethod
+    def convert_genomic_space_to_exon_space(start, end, tx):
+        s = int(start)
+        e = int(end)
+        strand = tx.get_strand()
+        exons = tx.get_exons()
+        return TranscriptProviderUtils._convert_genomic_space_to_feature_space(s, e, exons, strand)
+
+    @staticmethod
+    def convert_genomic_space_to_cds_space(start, end, tx):
+        s = int(start)
+        e = int(end)
+        strand = tx.get_strand()
+        cds = tx.get_cds()
+        return TranscriptProviderUtils._convert_genomic_space_to_feature_space(s, e, cds, strand)
 
 
 

@@ -9,9 +9,6 @@ from test.TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
 class TranscriptProviderUtilsTest(unittest.TestCase):
-    locs = lambda: (
-        (("22108790", "22108790"), 11020), (("22108800", "22108890"), 10920)
-    )
 
     def test_convert_genomic_space_to_transcript_space(self):
         base_config_location = "testdata/ensembl/saccer/"
@@ -30,6 +27,10 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         start, end = TranscriptProviderUtils.convert_genomic_space_to_transcript_space("764680", "764690", tx[0])
         self.assertTrue(start == (end - 10))
         self.assertTrue(start == 7)
+
+    locs = lambda: (
+        (("22108790", "22108790"), 11020), (("22108800", "22108890"), 10920)
+    )
 
     @data_provider(locs)
     def test_convert_genomic_space_to_exon_space(self, loc, gt_d):
@@ -63,12 +64,11 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
     )
 
     @data_provider(simple_locs)
-    def test_transform_to_exon_space(self, exons, s, gt, strand):
+    def test_transform_to_feature_space(self, exons, s, gt, strand):
         """Run some basic tests transforming genomic coordinates to exon coordinates, taking strand into account. """
 
-        guess = TranscriptProviderUtils._transform_to_exon_space(exons, s, strand)
+        guess = TranscriptProviderUtils._transform_to_feature_space(exons, s, strand)
         self.assertTrue(guess == gt, "Did not transform genomic to exon space properly: " + str(exons) +  "   pos: " + str(s) + "  strand: " + strand + "  guess/gt: " + str(guess) + "/" + str(gt))
-
 
 
 if __name__ == '__main__':

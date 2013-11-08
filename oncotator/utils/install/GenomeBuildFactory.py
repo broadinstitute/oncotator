@@ -51,7 +51,7 @@ class GenomeBuildFactory(object):
         key = "gene_biotype"
         if key not in quals.keys():
             key = "gene_type"
-        self._transcript_index[transcript_id].set_gene_type(quals[key])
+        self._transcript_index[transcript_id].set_gene_type(quals[key][0])
 
         if gff_record['strand'] == 1:
             self._transcript_index[transcript_id].set_strand("+")

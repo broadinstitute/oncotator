@@ -15,9 +15,12 @@ class VariantClassifier(object):
         return cds_start, cds_stop
 
     def _determine_protein_seq(self, tx):
-        cds_start = tx.determine_cds_start()
-        cds_stop = tx.determine_cds_stop()
-        protein_seq = self.get_protein_sequence(tx, cds_start, cds_stop)
+        s = cds_start = tx.determine_cds_start()
+        e = cds_stop = tx.determine_cds_stop()
+        if cds_stop < cds_start:
+            s = cds_stop
+            e = cds_start
+        protein_seq = self.get_protein_sequence(tx, s, e)
         protein_seq = ''.join([protein_seq, '*'])
         return protein_seq
 
@@ -52,8 +55,10 @@ class VariantClassifier(object):
 
         protein_seq = self._determine_protein_seq(tx)
         cds_start, cds_stop = self._determine_cds_in_tx_space(tx)
+
+        #always use '+' here because strand doesn't matter, since inputs are in transcript space
         cds_overlap_type = TranscriptProviderUtils.test_overlap_with_strand(transcript_position_start, transcript_position_end,
-            cds_start, cds_stop, '+')  #always use '+' here because strand doesn't matter, since inputs are in transcript space
+            cds_start, cds_stop, '+')
 
         if cds_overlap_type == 'a_within_b':
             protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(transcript_position_start,
@@ -98,9 +103,9 @@ class VariantClassifier(object):
 
     def get_protein_sequence(self, tx, cds_start_genomic_space, cds_stop_genomic_space):
         tx_seq = tx.get_seq()
-        cds_start_tx_space, cds_stop_tx_space = TranscriptProviderUtils.convert_genomic_space_to_transcript_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
+        cds_start_exon_space, cds_stop_exon_space = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
 
-        prot_seq = Seq.translate(tx_seq[int(cds_start_tx_space):int(cds_stop_tx_space)])
+        prot_seq = Seq.translate(tx_seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
         if prot_seq[-1] == '*':
             prot_seq = prot_seq[:-1]
 
