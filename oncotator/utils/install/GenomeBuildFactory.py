@@ -25,16 +25,52 @@ class GenomeBuildFactory(object):
         :param seq_dict:
         :return: None if the record is a gene record or otherwise does not represent a transcript, CDS, *_codon, or exon
         """
+        types_of_interest = ["exon", "CDS", "start_codon", "stop_codon"]
+        if gff_record['type'] not in types_of_interest:
+            return None
+
         quals = gff_record['quals']
         transcript_id = quals['transcript_id'][0]
 
-        types_of_interest = ["exon", "CDS", "start_codon", "stop_codon"]
+        is_new_record = False
 
-        contig = MutUtils.convertChromosomeStringToMutationDataFormat(gff_record['rec_id'])
-
-        if transcript_id not in self._transcript_index.keys() and gff_record['type'] in types_of_interest:
+        if transcript_id not in self._transcript_index.keys():
+            contig = MutUtils.convertChromosomeStringToMutationDataFormat(gff_record['rec_id'])
             tx = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=contig)
             self._transcript_index[transcript_id] = tx
+
+            # Set the gene_type based on gene_type or gene_biotype
+            key = "gene_biotype"
+            if key not in quals.keys():
+                key = "gene_type"
+            self._transcript_index[transcript_id].set_gene_type(quals[key][0])
+
+            if gff_record['strand'] == 1:
+                self._transcript_index[transcript_id].set_strand("+")
+            else:
+                self._transcript_index[transcript_id].set_strand("-")
+
+            for attribute in GenomeBuildFactory.QUALS_TO_CHECK:
+                if attribute in quals.keys():
+                    self._transcript_index[transcript_id].add_other_attribute(attribute, quals[attribute])
+
+            seq = seq_dict.get(transcript_id, None)
+
+            if seq is None:
+                ks = seq_dict.keys()
+                # Try to parse the key.  Some fasta files embed the transcript id in with a lot of other info.
+                for k in ks:
+                    if k.find(transcript_id) != -1:
+                        seq = seq_dict.get(k)
+                        break
+
+            if seq is not None:
+                genome_seq_as_str = str(seq.seq)
+            else:
+                genome_seq_as_str = ""
+
+            self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
+            is_new_record = True
 
         if gff_record['type'] == 'exon':
             self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
@@ -44,41 +80,11 @@ class GenomeBuildFactory(object):
             self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0], gff_record['location'][1])
         elif gff_record['type'] == 'stop_codon':
             self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
+
+        if is_new_record:
+            return self._transcript_index[transcript_id]
         else:
             return None
-
-        # Set the gene_type based on gene_type or gene_biotype
-        key = "gene_biotype"
-        if key not in quals.keys():
-            key = "gene_type"
-        self._transcript_index[transcript_id].set_gene_type(quals[key][0])
-
-        if gff_record['strand'] == 1:
-            self._transcript_index[transcript_id].set_strand("+")
-        else:
-            self._transcript_index[transcript_id].set_strand("-")
-
-        for attribute in GenomeBuildFactory.QUALS_TO_CHECK:
-            if attribute in quals.keys():
-                self._transcript_index[transcript_id].add_other_attribute(attribute, quals[attribute])
-
-        seq = seq_dict.get(transcript_id, None)
-
-        if seq is None:
-            # Try to parse the key.  Some fasta files embed the transcript id in with a lot of other info.
-            for k in seq_dict.keys():
-                kList = k.split('|')
-                if transcript_id in kList:
-                    seq = seq_dict.get(k)
-                    break
-
-        if seq is not None:
-            genome_seq_as_str = str(seq.seq)
-        else:
-            genome_seq_as_str = ""
-
-        self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
-        return self._transcript_index[transcript_id]
 
     def build_ensembl_transcript_index(self, ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol="file"):
         """Create the transcript index (using shove) for ensembl.  Key is transcript ID

@@ -10,13 +10,8 @@ from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 def setup_logging():
     # Add a console logger to the root logger, which means that all loggers generated will have the console dump.
     #    Output on the console will be the same as what is in the log file.
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s')
-    ch.setFormatter(formatter)
-
-    logging.getLogger(__name__).addHandler(ch)
-
+    logging_format = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
+    logging.basicConfig(level=logging.INFO, format=logging_format)
 
 
 def parseOptions():
