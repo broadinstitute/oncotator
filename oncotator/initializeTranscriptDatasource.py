@@ -43,12 +43,16 @@ def main():
     # create temp dir
     tmpDir = tempfile.mkdtemp(prefix="onco_ensembl_ds_")
     try:
-        ds_build_dir = tmpDir + "/" + genome_build
+        logging.getLogger(__name__).info("Creating tmp dir (" + tmpDir + ") ....")
+        ds_build_dir = tmpDir + "/" + genome_build + "/"
         os.mkdir(ds_build_dir)
-        logging.getLogger(__name__).info("Starting index construction...")
+        logging.getLogger(__name__).info("Starting index construction (temp location: " + ds_build_dir + ") ...")
         factory = GenomeBuildFactory()
-        factory.construct_ensembl_indices(gtf_file, fasta_file, ds_build_dir)
+        factory.construct_ensembl_indices(gtf_file, fasta_file, ds_build_dir + os.path.basename(gtf_file))
+        logging.getLogger(__name__).info("Creating datasource md5...")
         DatasourceInstallUtils.create_datasource_md5_file(ds_build_dir)
+
+        logging.getLogger(__name__).info("Copying created datasource from temp directory to final location (" + output_dir + ")...")
         shutil.copytree(symlinks=True, src=tmpDir, dst=output_dir)
 
     except Exception as e:

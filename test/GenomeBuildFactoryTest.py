@@ -198,3 +198,26 @@ class GenomeBuildFactoryTest(unittest.TestCase):
             if tx.get_transcript_id() != "ENST00000215832.6":
                 continue
             self.assertTrue(tx.get_seq().startswith("AGGCAATCGGTCCGAG"))
+
+    def test_gencode_cp(self):
+        """Test the indexing of a gene that was causing problems and make sure that it can be indexed."""
+        gencode_input_gtf = "testdata/gencode/CP.gencode.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/CP.gencode.pc_transcripts.fa"
+        base_output_filename = "out/test_small_gencode"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
+
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
+        transcripts = seq_index["CP"]
+
+        self.assertTrue(len(transcripts) == 15)
+        troubled_transcript = "ENST00000474204.1"
+        is_troubled_transcript_seen = False
+        for tx in transcripts:
+            if tx.get_transcript_id() == troubled_transcript:
+                is_troubled_transcript_seen = True
+                break
+        self.assertTrue(is_troubled_transcript_seen)
