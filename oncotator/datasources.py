@@ -1538,10 +1538,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
-            logging.getLogger(__name__).warn("Attempting to set transcript mode of CANONICAL for ensembl.  This operation is not supported.  Switching to EFFECT.")
-            self.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
-        else:
-            self.tx_mode = tx_mode
+            logging.getLogger(__name__).warn("Attempting to set transcript mode of CANONICAL for ensembl.  This operation is only supported for GENCODE.  Otherwise, will be the same as EFFECT.")
+        self.tx_mode = tx_mode
 
     def _create_basic_annotation(self, value):
         return Annotation(value=value, datasourceName=self.title)
@@ -1596,8 +1594,18 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def _choose_transcript(self, txs, tx_mode):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
-        # TODO: Integrate tx-mode here
-        return txs[0]
+        if len(txs) == 1:
+            return txs
+        return txs[1]
+
+    def _choose_canonical_transcript(self, txs):
+        """Use the level tag to choose canonical transcript.
+        Level 1 is validated
+        Level 2 is manual annotation
+        Level 3 is automated annotation.
+
+        """
+
 
 
     def get_overlapping_transcripts(self, chr, start, end):

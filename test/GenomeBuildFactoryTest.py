@@ -154,7 +154,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
         ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
-        base_output_filename = "out/test_full_indices_ensembl"
+        base_output_filename = "out/test_retrieving_full_indices_ensembl"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
@@ -203,7 +203,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         """Test the indexing of a gene that was causing problems and make sure that it can be indexed."""
         gencode_input_gtf = "testdata/gencode/CP.gencode.annotation.gtf"
         gencode_input_fasta = "testdata/gencode/CP.gencode.pc_transcripts.fa"
-        base_output_filename = "out/test_small_gencode"
+        base_output_filename = "out/test_cp_gencode"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)

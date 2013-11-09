@@ -195,7 +195,6 @@ class VariantClassifier(object):
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
 
             is_mut_a_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end),  observed_allele)
-            # TODO: Handle a frameshift here, since the rest of the code will not handle it.
 
             if variant_type == 'INS' and protein_position_start != protein_position_end:
                 #treat differently if insertion falls between codons
@@ -306,8 +305,10 @@ class VariantClassifier(object):
         elif cds_overlap_type == 'a_overlaps_b_right_border':
             result = 'Stop_Codon_' + vt
         else:
-            if transcript_position_start < t['cds_start'] and transcript_position_start < t['cds_stop']: p = 5
-            elif transcript_position_start > t['cds_start'] and transcript_position_start > t['cds_stop']: p = 3
+            cds_start_in_exon_space,cds_end_in_exon_space = self._determine_cds_in_exon_space(t)
+
+            if transcript_position_start < cds_start_in_exon_space and transcript_position_start < cds_end_in_exon_space: p = 5
+            elif transcript_position_start > cds_start_in_exon_space and transcript_position_start > cds_end_in_exon_space: p = 3
             vc = "%d'UTR" % (p)
             result = vc
             if vc == "5'UTR":
