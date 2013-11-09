@@ -18,7 +18,7 @@ class GenomeBuildFactory(object):
     def __init__(self):
         self._transcript_index = dict()
 
-    def _convertGFFRecordToTranscript(self, gff_record, seq_dict):
+    def _convertGFFRecordToTranscript(self, gff_record, seq_dict, seq_dict_keys):
         """
 
         :param gff_record:
@@ -57,9 +57,8 @@ class GenomeBuildFactory(object):
             seq = seq_dict.get(transcript_id, None)
 
             if seq is None:
-                ks = seq_dict.keys()
                 # Try to parse the key.  Some fasta files embed the transcript id in with a lot of other info.
-                for k in ks:
+                for k in seq_dict_keys:
                     if k.find(transcript_id) != -1:
                         seq = seq_dict.get(k)
                         break
@@ -106,7 +105,7 @@ class GenomeBuildFactory(object):
 
         in_file = ensembl_input_gtf
         in_handle = open(in_file)
-
+        seq_dict_keys = seq_dict.keys()
         ctr = 0
         for rec in GFF.parse_simple(in_file): #(in_handle, base_dict=seq_dict):
 
@@ -115,7 +114,7 @@ class GenomeBuildFactory(object):
                 logging.getLogger(__name__).warn("ensembl records had more than one transcript id: " + str(rec['quals']['transcript_id']))
             transcript_id = rec['quals']['transcript_id'][0]
 
-            tx = self._convertGFFRecordToTranscript(rec, seq_dict)
+            tx = self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
             if tx is not None:
                 shove[transcript_id] = tx
             ctr += 1

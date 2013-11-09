@@ -58,6 +58,7 @@ def main():
     except Exception as e:
         import traceback
         logging.getLogger(__name__).fatal((e.__repr__()) + " " + traceback.format_exc())
+        logging.getLogger(__name__).info(""""If you are getting and error such as:  KeyError: 'ENST00000474204.1'), then you may be out of disk space in /tmp/.""")
 
     # Remove the tempdir
     logging.getLogger(__name__).info("Done...")
