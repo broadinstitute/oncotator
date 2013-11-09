@@ -216,7 +216,7 @@ class VariantClassifier(object):
 
             # If silent mutation w/in 2 bp of a splice junction, then change to splice site
             if variant_classification.lower() == "silent":
-                self._determine_if_splice_site(self, int(start), int(end), tx, dist=2)
+                self._determine_if_splice_site(int(start), int(end), tx, dist=2)
 
             if variant_type != 'SNP':
                 reference_aa, observed_aa, protein_position_start, protein_position_end = \
@@ -224,7 +224,7 @@ class VariantClassifier(object):
                         protein_position_end, reference_aa, observed_aa)
         else:
             variant_classification = self.annotate_mutations_not_fully_within_cds(transcript_seq, observed_allele, cds_overlap_type, transcript_position_start,
-                transcript_position_end, variant_type, t, exon_affected)
+                transcript_position_end, variant_type, tx, exon_affected)
 
         return variant_classification
 

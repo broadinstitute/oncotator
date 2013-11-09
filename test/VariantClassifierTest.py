@@ -5,7 +5,7 @@ from oncotator.datasources import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils
-
+from MUC16Testdata import muc16testdata
 __author__ = 'lichtens'
 
 import unittest
@@ -22,9 +22,9 @@ class VariantClassifierTest(unittest.TestCase):
     )
     # TODO: Get recently downloaded test data and use that.
 
-    def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
-        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
+    def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt, gene="MAPK1"):
+        gencode_input_gtf = "testdata/gencode/" + gene + ".gencode.v18.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa"
         base_output_filename = "out/test_variant_classification"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
@@ -32,9 +32,12 @@ class VariantClassifierTest(unittest.TestCase):
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, version="TEST")
-        vcer = VariantClassifier()
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
-        vc = vcer.variant_classify(recs[0], vt, ref, alt, start, end)
+        tx = ensembl_ds._choose_transcript(recs, EnsemblTranscriptDatasource.TX_MODE_BEST_EFFECT)
+        self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
+
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, vt, ref, alt, start, end)
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc)
 
     @data_provider(variants_indels)
@@ -104,6 +107,10 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(gt_exon_ld == guess_exon_ld, "guess, gt ld did not match: " + str([guess_exon_ld, gt_exon_ld]))
         self.assertTrue(gt_exon_rd == guess_exon_rd, "guess, gt rd did not match: " + str([guess_exon_rd, gt_exon_rd]))
 
+    @data_provider(muc16testdata)
+    def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
+        """ Test all of the MUC16 SNPs."""
+        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
 
 if __name__ == '__main__':
     unittest.main()

@@ -32,7 +32,6 @@ class GenomeBuildFactory(object):
         quals = gff_record['quals']
         transcript_id = quals['transcript_id'][0]
 
-        is_new_record = False
 
         if transcript_id not in self._transcript_index.keys():
             contig = MutUtils.convertChromosomeStringToMutationDataFormat(gff_record['rec_id'])
@@ -69,7 +68,6 @@ class GenomeBuildFactory(object):
                 genome_seq_as_str = ""
 
             self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
-            is_new_record = True
 
         if gff_record['type'] == 'exon':
             self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
@@ -79,11 +77,6 @@ class GenomeBuildFactory(object):
             self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0], gff_record['location'][1])
         elif gff_record['type'] == 'stop_codon':
             self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
-
-        if is_new_record:
-            return self._transcript_index[transcript_id]
-        else:
-            return None
 
     def build_ensembl_transcript_index(self, ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol="file"):
         """Create the transcript index (using shove) for ensembl.  Key is transcript ID
@@ -112,14 +105,16 @@ class GenomeBuildFactory(object):
             # transcript id seems to always be a list of length 1
             if len(rec['quals']['transcript_id']) > 1:
                 logging.getLogger(__name__).warn("ensembl records had more than one transcript id: " + str(rec['quals']['transcript_id']))
-            transcript_id = rec['quals']['transcript_id'][0]
 
-            tx = self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
-            if tx is not None:
-                shove[transcript_id] = tx
+            self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
             ctr += 1
             if (ctr % 100 ) == 0:
-                logging.getLogger(__name__).info("Processed " + str(ctr) + " lines of the gtf.")
+                logging.getLogger(__name__).info("Added " + str(ctr) + " lines of the gtf into internal transcript index.")
+
+        logging.getLogger(__name__).info("Populating final db with internal transcript index.")
+        transcript_index_keys = self._transcript_index.keys()
+        for k in transcript_index_keys:
+            shove[k] = self._transcript_index[k]
 
         logging.getLogger(__name__).info("Transcript index created " + str(shove.keys()) + " transcripts.")
         shove.close()
