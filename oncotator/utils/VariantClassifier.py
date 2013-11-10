@@ -103,7 +103,7 @@ class VariantClassifier(object):
         return reference_aa, observed_aa, protein_position_start, protein_position_end
 
 
-    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False):
+    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False, is_splice_site=False):
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
             if not is_frameshift_indel:
                 vc = 'In_Frame_Ins'
@@ -210,12 +210,15 @@ class VariantClassifier(object):
 
             observed_aa = Bio.Seq.translate(mutated_codon_seq)
 
+            is_splice_site = self._determine_if_splice_site(int(start), int(end), tx, dist=2)
+
             variant_classification = self.infer_variant_classification(variant_type,
                 reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=is_mut_a_frameshift_indel)
 
-            # If silent mutation w/in 2 bp of a splice junction, then change to splice site
-            if variant_classification.lower() == "silent":
-                self._determine_if_splice_site(int(start), int(end), tx, dist=2)
+            # TODO: Bring this code back, so that we can handle alternate values for silent mutations
+            # # If silent mutation w/in 2 bp of a splice junction, then change to splice site
+            # if variant_classification.lower() == "silent":
+            #     self._determine_if_splice_site(int(start), int(end), tx, dist=2)
 
             if variant_type != 'SNP':
                 reference_aa, observed_aa, protein_position_start, protein_position_end = \

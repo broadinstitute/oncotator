@@ -10,6 +10,8 @@ from test.TestUtils import TestUtils
 TestUtils.setupLogging(__file__, __name__)
 class TranscriptProviderUtilsTest(unittest.TestCase):
 
+    _multiprocess_can_split_ = True
+
     def test_convert_genomic_space_to_transcript_space(self):
         base_config_location = "testdata/ensembl/saccer/"
         ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)

@@ -8,6 +8,7 @@ import unittest
 
 TestUtils.setupLogging(__file__, __name__)
 class HasherTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def test_directory_hash(self):
         """Test that we can read a hashcode for a directory."""
         test_dir = "testdata/thaga_janakari_gene_ds/hg19"

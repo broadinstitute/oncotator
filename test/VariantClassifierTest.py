@@ -14,7 +14,7 @@ from oncotator.utils.VariantClassifier import VariantClassifier
 
 TestUtils.setupLogging(__file__, __name__)
 class VariantClassifierTest(unittest.TestCase):
-
+    _multiprocess_can_split_ = True
     variants_indels = lambda: (
         ("22", "22221645", "22221647", "In_Frame_Del", "DEL", "GAG", "-"),
         ("22", "22221645", "22221645", "Frame_Shift_Del", "DEL", "G", "-"),
@@ -31,14 +31,14 @@ class VariantClassifierTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
         genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
-        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, version="TEST")
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title= "GENCODE", version="v18")
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
-        tx = ensembl_ds._choose_transcript(recs, EnsemblTranscriptDatasource.TX_MODE_BEST_EFFECT)
+        tx = ensembl_ds._choose_transcript(recs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL)
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
 
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, vt, ref, alt, start, end)
-        self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc)
+        self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
     @data_provider(variants_indels)
     def test_variant_classification_indels(self, chr, start, end, gt_vc, vt, ref, alt):

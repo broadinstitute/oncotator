@@ -1596,17 +1596,55 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
         if len(txs) == 1:
             return txs
-        return txs[1]
+        if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
+            return self._choose_canonical_transcript(txs)
+        return txs[0]
 
     def _choose_canonical_transcript(self, txs):
         """Use the level tag to choose canonical transcript.
+
+        Choose highest canonical score.
+        """
+        if len(txs) == 0:
+            return None
+        scores = dict()
+        for tx in txs:
+            score = self._calculate_canonical_score(tx)
+            if score not in scores.keys():
+                scores[score] = set()
+            scores[score].add(tx)
+            print(str([score, tx.get_transcript_id()]))
+
+        highest_score = max(scores.keys())
+        highest_scoring_txs = scores[highest_score]
+        if len(highest_scoring_txs) == 1:
+            return list(highest_scoring_txs)[0]
+        else:
+            # TODO: Fix this to use best effect.
+            return list(highest_scoring_txs)[0]
+
+    def _calculate_canonical_score(self, tx):
+        """
         Level 1 is validated
         Level 2 is manual annotation
         Level 3 is automated annotation.
-
+        :param tx: Transcript
+        :return:
         """
+        # higher ranks are more important.
+        lvl_rank = 0
+        lvl = tx.get_other_attributes().get('level', None)[0]
+        if lvl == None:
+            lvl_score = 0
+        else:
+            lvl_score = 4 - int(lvl)
 
+        type_rank = 2
+        type_score = 0
+        if tx.get_gene_type() == "protein_coding":
+            type_score = 1
 
+        return (lvl_score << lvl_rank) + (type_score << type_rank)
 
     def get_overlapping_transcripts(self, chr, start, end):
         records = self._get_binned_transcripts(chr, start, end)
