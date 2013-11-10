@@ -190,7 +190,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         self.assertTrue(len(transcripts) == 4)
 
         seq_index_gp = Shove("file://" + base_output_filename + ".transcript_by_gp_bin.idx", "memory://", optimize=False)
-        transcripts = seq_index_gp["chr22_753"]
+        transcripts = seq_index_gp["22_753"]
         self.assertTrue(transcripts[0].get_strand() == "-")
         self.assertTrue(len(transcripts) == 4)
 

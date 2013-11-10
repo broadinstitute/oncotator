@@ -104,7 +104,19 @@ class VariantClassifier(object):
 
 
     def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False, is_splice_site=False):
+        """ In a nutshell:
+        if indel, then return in frame or frame shift ins/del
+        if SNP, then return splice_site (if applicable), otherwise the proper vc.
 
+        :param variant_type:
+        :param reference_aa:
+        :param observed_aa:
+        :param reference_allele:
+        :param observed_allele:
+        :param is_frameshift_indel:
+        :param is_splice_site:
+        :return:
+        """
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
             if not is_frameshift_indel:
                 vc = 'In_Frame_Ins'
