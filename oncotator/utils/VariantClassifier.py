@@ -104,6 +104,7 @@ class VariantClassifier(object):
 
 
     def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False, is_splice_site=False):
+
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
             if not is_frameshift_indel:
                 vc = 'In_Frame_Ins'
@@ -115,14 +116,17 @@ class VariantClassifier(object):
             else:
                 vc = "Frame_Shift_Del"
         else:
-            if reference_aa == observed_aa:
-                vc = 'Silent'
-            elif reference_aa.find('*') > -1 and observed_aa.find('*') == -1:
-                vc = 'Nonstop_Mutation'
-            elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
-                vc = 'Nonsense_Mutation'
-            elif reference_aa != observed_aa:
-                vc = 'Missense_Mutation'
+            if is_splice_site:
+                vc = "Splice_Site"
+            else:
+                if reference_aa == observed_aa:
+                    vc = 'Silent'
+                elif reference_aa.find('*') > -1 and observed_aa.find('*') == -1:
+                    vc = 'Nonstop_Mutation'
+                elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
+                    vc = 'Nonsense_Mutation'
+                elif reference_aa != observed_aa:
+                    vc = 'Missense_Mutation'
         return vc
 
     def _determine_cds_in_exon_space(self, tx):
