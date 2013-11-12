@@ -1597,7 +1597,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
         #TODO: Need more unit tests.
         if len(txs) == 1:
-            return txs
+            return txs[0]
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
             return self._choose_canonical_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
         return self._choose_best_effect_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
