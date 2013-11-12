@@ -66,6 +66,7 @@ import re
 import copy
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.MutUtils import MutUtils
+from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.dbNSFP import dbnsfp_fieldnames
@@ -1574,7 +1575,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['gene_id'] = self._create_basic_annotation('0')
         else:
             # Choose the best effect transcript
-            chosen_tx = self._choose_transcript(txs, self.get_tx_mode())
+            chosen_tx = self._choose_transcript(txs, self.get_tx_mode(), final_annotation_dict['variant_type'], mutation.ref_allele, mutation.alt_allele, start, end)
             final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
             final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils._determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
             # final_annotation_dict['codon_change'] = self._create_basic_annotation('')
@@ -1592,18 +1593,41 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         mutation.addAnnotations(final_annotation_dict)
         return mutation
 
-    def _choose_transcript(self, txs, tx_mode):
+    def _choose_transcript(self, txs, tx_mode, variant_type, ref_allele, alt_allele, start, end):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
         if len(txs) == 1:
             return txs
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
-            return self._choose_canonical_transcript(txs)
+            return self._choose_canonical_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
         return txs[0]
 
-    def _choose_canonical_transcript(self, txs):
+    def _choose_best_effect_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
+        """Choose the transcript with the most detrimental effect.
+         The rankings are in TranscriptProviderUtils.
+         Ties are broken by which transcript has the longer coding length.
+         """
+        vcer = VariantClassifier()
+        effect_dict = TranscriptProviderUtils.retrieve_effect_dict()
+        best_effect_score = 100000000 # lower score is more likely to get picked
+        best_effect_tx = None
+        for tx in txs:
+            vc = vcer.variant_classify(tx, variant_type, ref_allele, alt_allele, start, end)
+            effect_score = effect_dict.get(vc, 25)
+            if effect_score < best_effect_score:
+                best_effect_score = effect_score
+                best_effect_tx = tx
+            elif (effect_score == best_effect_score) and (len(best_effect_tx.get_seq()) < len(tx.get_seq())):
+                best_effect_score = effect_score
+                best_effect_tx = tx
+
+        return best_effect_tx
+
+    def _choose_canonical_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
         """Use the level tag to choose canonical transcript.
 
         Choose highest canonical score.
+
+        Ties are broken by whichever transcript has the most detrimental effect.
         """
         if len(txs) == 0:
             return None
@@ -1620,8 +1644,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         if len(highest_scoring_txs) == 1:
             return list(highest_scoring_txs)[0]
         else:
-            # TODO: Fix this to use best effect.
-            return list(highest_scoring_txs)[0]
+            return self._choose_best_effect_transcript(highest_scoring_txs, variant_type, ref_allele, alt_allele, start, end)
 
     def _calculate_canonical_score(self, tx):
         """
@@ -1684,13 +1707,13 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             new_start = start - s
             if new_start < 0: new_start = 1
             records = self.get_overlapping_genes(chr, new_start, end)
-            neareast_gene_border = 0
+            nearest_gene_border = 0
             for r in records:
-                if r['end'] > neareast_gene_border:
-                    neareast_gene_border = r['end']
+                if r['end'] > nearest_gene_border:
+                    nearest_gene_border = r['end']
                     nearest_gene = r['gene']
-            if neareast_gene_border:
-                left_dist = start - neareast_gene_border
+            if nearest_gene_border:
+                left_dist = start - nearest_gene_border
                 left_gene = nearest_gene
                 break
 
@@ -1698,19 +1721,35 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         for s in size_extensions:
             new_end = end + s
             records = self.get_overlapping_genes(chr, start, new_end)
-            neareast_gene_border = int(1e9)
+            nearest_gene_border = int(1e9)
             for r in records:
-                if r['start'] < neareast_gene_border:
-                    neareast_gene_border = r['start']
+                if r['start'] < nearest_gene_border:
+                    nearest_gene_border = r['start']
                     nearest_gene = r['gene']
-            if neareast_gene_border < int(1e9):
-                right_dist = neareast_gene_border - end
+            if nearest_gene_border < int(1e9):
+                right_dist = nearest_gene_border - end
                 right_gene = nearest_gene
                 break
 
         return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
 
+    def _renderOtherTranscripts(self, txs, transcriptIndicesToSkip):
+        """
+        Create a list of transcripts that are not being chosen.
 
+        Other transcripts are formatted <gene>_<transcript_id>_<variant_classification>_<protein_change>
+            Note:  There are other areas of Oncotator (e.g. Generic_GeneProteinPositionDatasource) that depend
+                on this format.  Changing it here may introduce bugs in other pieces of code.
 
+        txs -- a list of transcripts to render.
+        transcriptIndicesToSkip -- a list of transcripts that are being used (i.e. not an "other transcript").  This will usually be the canonical or any transcript chosen by tx_mode.
+        """
+        other_transcripts = list()
+        for i, ot in enumerate(txs):
+            if i not in transcriptIndicesToSkip:
+                o = '_'.join([ot.get_gene(), ot.get_transcript_id(),
+                              ot['variant_classification'], ot.get('protein_change', '')])
+                o = o.strip('_')
+                other_transcripts.append(o)
 
-
+        return '|'.join(other_transcripts)

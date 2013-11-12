@@ -37,7 +37,7 @@ class VariantClassifierTest(unittest.TestCase):
     def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt, gene="MAPK1"):
         ensembl_ds = self._create_ensembl_ds_from_testdata(gene)
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
-        tx = ensembl_ds._choose_transcript(recs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL)
+        tx = ensembl_ds._choose_transcript(recs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
 
         vcer = VariantClassifier()
@@ -61,28 +61,6 @@ class VariantClassifierTest(unittest.TestCase):
         b = region2bin(22221612, 22221919)
         bins = region2bins(22221645, 22221645)
         self.assertTrue(b in bins)
-
-    def test_get_protein_sequence(self):
-
-        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
-        base_output_filename = "out/test_get_protein_sequence"
-        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
-        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
-        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
-
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
-        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, version="TEST")
-
-        # Never do this in real code outside of the datasource
-        tx = ensembl_ds.transcript_db["ENST00000215832.6"]
-        vcer = VariantClassifier()
-        gt_seq = "ATGGCGGCGGCGGC"
-        gt_prot = "MAAA"
-        protein_seq = vcer.get_protein_sequence(tx, 22221730 - len(gt_seq), 22221730)
-        self.assertIsNotNone(protein_seq)
-        self.assertEqual(gt_prot, protein_seq)
 
     frameshift_indels = lambda : (
         ("INS", 10, 11,  "A", True),
