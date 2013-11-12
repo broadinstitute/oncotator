@@ -1,3 +1,6 @@
+from Bio import Seq
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+
 
 class Transcript(object):
     """Simple class to hold transcript information in a standard way across Transcript Providing datasources
@@ -19,6 +22,7 @@ class Transcript(object):
         self._stop_codon = stop_codon
         self._other_attributes = {}
         self._gene_type = gene_type
+        self._protein_seq = None
 
     def add_exon(self, start, end, exon_number):
         self._exons.append((start, end, exon_number))
@@ -143,3 +147,36 @@ class Transcript(object):
             return min(all_locations)
         else:
             return max(all_locations)
+
+    def get_protein_seq(self):
+        """lazy loading """
+        if self._protein_seq is None:
+            self._protein_seq = self._determine_protein_seq()
+        return self._protein_seq
+
+    def determine_cds_footprint(self):
+        """ Returns the cds in genomic space.  Note that strand is ignored, so the first return value is always lower.
+        :param tx:
+        :return: cds_start, cds_stop in genomic coordinates.
+        """
+        s = cds_start = self.determine_cds_start()
+        e = cds_stop = self.determine_cds_stop()
+        if cds_stop < cds_start:
+            s = cds_stop
+            e = cds_start
+        return s, e
+
+    def _determine_protein_seq(self):
+        cds_start, cds_stop = self.determine_cds_footprint()
+        protein_seq = self._calculate_protein_sequence(self.get_exons(), self.get_seq(), cds_start, cds_stop, self.get_strand())
+        protein_seq = ''.join([protein_seq, '*'])
+        return protein_seq
+
+    def _calculate_protein_sequence(self, exons, seq, cds_start_genomic_space, cds_stop_genomic_space, strand):
+        cds_start_exon_space, cds_stop_exon_space = TranscriptProviderUtils._convert_genomic_space_to_feature_space(int(cds_start_genomic_space), int(cds_stop_genomic_space), exons, strand)
+
+        prot_seq = Seq.translate(seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
+        if prot_seq[-1] == '*':
+            prot_seq = prot_seq[:-1]
+
+        return prot_seq

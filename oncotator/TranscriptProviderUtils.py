@@ -226,3 +226,4 @@ class TranscriptProviderUtils(object):
                 mutation_end_pos - seq_start_pos + 1] = str(observed_allele)
         mutated_seq = ''.join(mutated_seq)
         return mutated_seq
+

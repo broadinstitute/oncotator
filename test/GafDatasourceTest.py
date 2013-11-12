@@ -213,13 +213,6 @@ class GafDatasourceTest(unittest.TestCase):
         self.assertTrue(m['variant_classification'] == "Intron", "Canonical no longer is Intron.  This test is no longer valid.  This failure can come up when changing the GAF datasource.")
 
 
-    @unittest.skip('This test has been disabled, since the backing implementation is incomplete.')
-    def testBasicInitWithENSEMBL(self):
-        gaf_fname = self.config.get("ENSEMBL", "gaf_fname")
-        gaf_transcripts_fname = self.config.get("ENSEMBL", "gaf_transcript_seqs_fname")
-
-        gafDatasource = Gaf(gaf_fname, gaf_transcripts_fname)
-
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def testSpliceSiteWithinNBases(self):
         """Test that a silent mutation is changed to splice site w/in 10 bases of a splice site """

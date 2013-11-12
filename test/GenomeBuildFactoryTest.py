@@ -192,7 +192,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         seq_index_gp = Shove("file://" + base_output_filename + ".transcript_by_gp_bin.idx", "memory://", optimize=False)
         transcripts = seq_index_gp["22_753"]
         self.assertTrue(transcripts[0].get_strand() == "-")
-        self.assertTrue(len(transcripts) == 4)
+        self.assertTrue(len(transcripts) == 1)
 
         for tx in transcripts:
             if tx.get_transcript_id() != "ENST00000215832.6":

@@ -3,7 +3,7 @@ muc16testdata = lambda : (
     ("19", "8966742", "8966742", "Missense_Mutation", "SNP", "C", "T"),
     ("19", "8966751", "8966751", "Missense_Mutation", "SNP", "C", "T"),
     ("19", "8969281", "8969281", "Missense_Mutation", "SNP", "C", "T"),
-    # ("19", "8969339", "8969339", "Silent", "SNP", "G", "A"),
+    ("19", "8969339", "8969339", "Silent", "SNP", "G", "A"),
     ("19", "8971824", "8971824", "Splice_Site", "SNP", "C", "T"),
     ("19", "8973575", "8973575", "Silent", "SNP", "G", "A"),
     ("19", "8974052", "8974052", "Missense_Mutation", "SNP", "G", "A"),

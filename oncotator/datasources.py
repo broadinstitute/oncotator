@@ -1613,7 +1613,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             if score not in scores.keys():
                 scores[score] = set()
             scores[score].add(tx)
-            print(str([score, tx.get_transcript_id()]))
+            logging.getLogger(__name__).info(str([score, tx.get_transcript_id()]))
 
         highest_score = max(scores.keys())
         highest_scoring_txs = scores[highest_score]

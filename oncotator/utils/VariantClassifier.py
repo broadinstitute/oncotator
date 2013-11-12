@@ -142,27 +142,9 @@ class VariantClassifier(object):
         return vc
 
     def _determine_cds_in_exon_space(self, tx):
-        cds_start_genomic_space, cds_stop_genomic_space = self._determine_cds_footprint(tx)
+        cds_start_genomic_space, cds_stop_genomic_space = tx.determine_cds_footprint()
         cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
         return cds_start, cds_stop
-
-    def _determine_cds_footprint(self, tx):
-        """ Returns the cds in genomic space.  Note that strand is ignored, so the first return value is always lower.
-        :param tx:
-        :return: cds_start, cds_stop in genomic coordinates.
-        """
-        s = cds_start = tx.determine_cds_start()
-        e = cds_stop = tx.determine_cds_stop()
-        if cds_stop < cds_start:
-            s = cds_stop
-            e = cds_start
-        return s, e
-
-    def _determine_protein_seq(self, tx):
-        cds_start, cds_stop = self._determine_cds_footprint(tx)
-        protein_seq = self.get_protein_sequence(tx, cds_start, cds_stop)
-        protein_seq = ''.join([protein_seq, '*'])
-        return protein_seq
 
     def variant_classify(self, tx, variant_type, ref_allele, alt_allele, start, end):
 
@@ -172,11 +154,7 @@ class VariantClassifier(object):
         else:
             is_mirna = False
 
-
         transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
-
-        # TODO: Fix exon_affected
-        exon_affected = "-1"
 
         if tx.get_strand() == '-':
             reference_allele, observed_allele = Bio.Seq.reverse_complement(reference_allele), Bio.Seq.reverse_complement(observed_allele)
@@ -193,7 +171,7 @@ class VariantClassifier(object):
         else:
             ref_tx_seq_has_been_changed = False
 
-        protein_seq = self._determine_protein_seq(tx)
+        protein_seq = tx.get_protein_seq()
         cds_start, cds_stop = self._determine_cds_in_exon_space(tx)
 
         #always use '+' here because strand doesn't matter, since inputs are in transcript space
@@ -229,7 +207,7 @@ class VariantClassifier(object):
             is_splice_site = self._determine_if_splice_site(int(start), int(end), tx, dist=2)
 
             variant_classification = self.infer_variant_classification(variant_type,
-                reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=is_mut_a_frameshift_indel)
+                reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=is_mut_a_frameshift_indel, is_splice_site=is_splice_site)
 
             # TODO: Bring this code back, so that we can handle alternate values for silent mutations
             # # If silent mutation w/in 2 bp of a splice junction, then change to splice site
@@ -242,19 +220,9 @@ class VariantClassifier(object):
                         protein_position_end, reference_aa, observed_aa)
         else:
             variant_classification = self.annotate_mutations_not_fully_within_cds(transcript_seq, observed_allele, cds_overlap_type, transcript_position_start,
-                transcript_position_end, variant_type, tx, exon_affected)
+                transcript_position_end, variant_type, tx)
 
         return variant_classification
-
-    def get_protein_sequence(self, tx, cds_start_genomic_space, cds_stop_genomic_space):
-        tx_seq = tx.get_seq()
-        cds_start_exon_space, cds_stop_exon_space = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
-
-        prot_seq = Seq.translate(tx_seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
-        if prot_seq[-1] == '*':
-            prot_seq = prot_seq[:-1]
-
-        return prot_seq
 
     def is_framshift_indel(self, variant_type, start, end,  observed_allele):
         if variant_type in ['DEL','INS']:
@@ -276,7 +244,7 @@ class VariantClassifier(object):
 
         """
         exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
-        if abs(ldist) < dist or abs(rdist) < dist:
+        if abs(ldist) <= dist or abs(rdist) <= dist:
             return True
         return False
 
@@ -312,7 +280,7 @@ class VariantClassifier(object):
 
         return exon_i, ldist, rdist
 
-    def annotate_mutations_not_fully_within_cds(self, transcript_seq, observed_allele, cds_overlap_type, transcript_position_start, transcript_position_end, variant_type, t, exon_affected):
+    def annotate_mutations_not_fully_within_cds(self, transcript_seq, observed_allele, cds_overlap_type, transcript_position_start, transcript_position_end, variant_type, t):
         if variant_type in ['DEL','INS']:
             vt = ''.join([variant_type[0], variant_type[1:].lower()])
         else:
