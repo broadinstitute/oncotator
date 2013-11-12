@@ -1595,11 +1595,12 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def _choose_transcript(self, txs, tx_mode, variant_type, ref_allele, alt_allele, start, end):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
+        #TODO: Need more unit tests.
         if len(txs) == 1:
             return txs
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
             return self._choose_canonical_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
-        return txs[0]
+        return self._choose_best_effect_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
 
     def _choose_best_effect_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
         """Choose the transcript with the most detrimental effect.
