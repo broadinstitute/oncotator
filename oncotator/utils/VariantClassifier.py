@@ -374,15 +374,15 @@ class VariantClassifier(object):
                                                                               transcript_position_start,
                                                                               transcript_position_end, observed_allele_stranded,
                                                                               "SNP")
-        if tx.get_strand() == "-":
-            # Get the AA for the reversed mutated codon.
-            observed_aa = Bio.Seq.translate(mutated_codon_seq[::-1])
-        else:
-            observed_aa = Bio.Seq.translate(mutated_codon_seq)
-        if ref_tx_seq_has_been_changed:
-            reference_aa = Bio.Seq.translate(reference_codon_seq)
-        else:
-            reference_aa = protein_seq[protein_position_start+1:protein_position_end+2]
+        # if tx.get_strand() == "-":
+        #     # Get the AA for the reversed mutated codon.
+        #     observed_aa = Bio.Seq.translate(mutated_codon_seq[::-1])
+        # else:
+        observed_aa = Bio.Seq.translate(mutated_codon_seq)
+        # if ref_tx_seq_has_been_changed:
+        #     reference_aa = Bio.Seq.translate(reference_codon_seq)
+        # else:
+        reference_aa = protein_seq[protein_position_start+1:protein_position_end+2]
         vc_tmp = self.infer_variant_classification("SNP", reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=False, is_splice_site=is_splice_site)
         return vc_tmp
@@ -434,7 +434,7 @@ class VariantClassifier(object):
             # UTR
             vc_tmp = side + "UTR"
             transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
-            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, alt_allele, tx, "SNP")
+            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, "SNP")
             return vc
 
         # We have a clean SNP in the CDS.  No start codon or stop codon.
@@ -508,12 +508,13 @@ class VariantClassifier(object):
             else:
                 return "5'"
 
-    def _determine_de_novo(self, vc, transcript_position_start, transcript_position_end, alt, tx, variant_type):
+    def _determine_de_novo(self, vc, transcript_position_start, transcript_position_end, ref, alt, tx, variant_type):
         """Returns input vc if not de Novo.  Otherwise, returns updated variant classification.
 
          Will always return original vc if the vc is not None."""
         result = vc
-        if vc == "5'UTR":
+
+        if vc == "5'UTR" and ref != alt:
             tx_seq = tx.get_seq()
             utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
 

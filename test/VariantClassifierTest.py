@@ -111,8 +111,7 @@ class VariantClassifierTest(unittest.TestCase):
     def retrieve_test_transcript(self):
         ensembl_ds = self._create_ensembl_ds_from_testdata("MAPK1")
         tx = ensembl_ds.transcript_db['ENST00000215832.6']
-        self.assertTrue(tx is not None,
-                        "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
+        self.assertTrue(tx is not None, "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
         return tx
 
     variants_snps_splice_sites = lambda: (
