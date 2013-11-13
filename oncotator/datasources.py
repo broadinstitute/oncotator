@@ -1578,7 +1578,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         chr = mutation.chr
         start = int(mutation.start)
         end = int(mutation.end)
-        txs = self.get_overlapping_transcripts(chr, start, end)
+        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end)
+        txs = self._filter_transcripts(txs_unfiltered)
         final_annotation_dict = self._create_blank_set_of_annotations()
         final_annotation_dict['variant_type'] = Annotation(value=TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), datasourceName=self.title)
 
@@ -1612,7 +1613,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['ccds_id'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'ccdsid'))
             final_annotation_dict['gencode_transcript_type'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_type'))
             final_annotation_dict['gencode_transcript_name'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_name'))
-            # final_annotation_dict['gencode_ccds_id'] = self._create_basic_annotation(chosen_tx.get_gene())
+
+            other_transcript_value = self._render_other_transcripts(txs, [], final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
+            final_annotation_dict['other_transcripts'] = self._create_basic_annotation(other_transcript_value)
             # final_annotation_dict['gene_id'].value
 
         mutation.addAnnotations(final_annotation_dict)
@@ -1629,9 +1632,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         """
         return [tx for tx in txs if (not 'tag' in tx.get_other_attributes().keys()) or ('basic' in tx.get_other_attributes()['tag'])]
 
-    def _choose_transcript(self, txs_unfiltered, tx_mode, variant_type, ref_allele, alt_allele, start, end):
+    def _choose_transcript(self, txs, tx_mode, variant_type, ref_allele, alt_allele, start, end):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
-        txs = self._filter_transcripts(txs_unfiltered)
         if len(txs) == 1:
             return txs[0]
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
@@ -1770,7 +1772,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
 
-    def _renderOtherTranscripts(self, txs, transcriptIndicesToSkip, variant_type, ref_allele, alt_allele, start, end):
+    def _render_other_transcripts(self, txs, transcriptIndicesToSkip, variant_type, ref_allele, alt_allele, start, end):
         """
         Create a list of transcripts that are not being chosen.
 
