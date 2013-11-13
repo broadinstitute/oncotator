@@ -49,7 +49,7 @@ class VariantClassifierTest(unittest.TestCase):
 
     variants_snps_missense = lambda: (
         ("22", "22127164", "22127164", "Missense_Mutation", "SNP", "C", "G"),
-        ("22", "22143049", "22143049", "Missense_Mutation", "SNP", "C", "A"),
+        ("22", "22143049", "22143049", "Nonsense_Mutation", "SNP", "C", "A"),
         ("22", "22162014", "22162014", "Missense_Mutation", "SNP", "C", "T")
     )
     @data_provider(variants_snps_missense)
@@ -91,6 +91,7 @@ class VariantClassifierTest(unittest.TestCase):
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
         """ Test all of the MUC16 SNPs."""
+        print(str([chr, start, end, gt_vc, vt, ref, alt]))
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
 
     def test_snp_vc_on_one_transcript_5UTR(self):
@@ -122,7 +123,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22162135", "22162135", "Splice_Site", "SNP", "G", "T"),
         ("22", "22162134", "22162134", "Splice_Site", "SNP", "A", "T"),
         ("22", "22162133", "22162133", "Missense_Mutation", "SNP", "G", "T"),
-        ("22", "22162132", "22162132", "Missense_Mutation", "SNP", "A", "T"),
+        ("22", "22162132", "22162132", "Silent", "SNP", "A", "T"),
 
         ("22", "22127164", "22127164", "Silent", "SNP", "C", "C"),
         ("22", "22127163", "22127163", "Splice_Site", "SNP", "T", "G"),

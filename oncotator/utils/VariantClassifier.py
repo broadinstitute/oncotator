@@ -257,16 +257,51 @@ class VariantClassifier(object):
         """
         exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
 
-        # If we are on the exon side, we need to correct by one base.
-        if start_genomic_space > tx.get_exons()[exon_i][0] and end_genomic_space < tx.get_exons()[exon_i][1]:
-            if abs(start_genomic_space - tx.get_exons()[exon_i][0]) > abs(end_genomic_space - tx.get_exons()[exon_i][1]):
-                rdist += 1
-            if abs(start_genomic_space - tx.get_exons()[exon_i][0]) < abs(end_genomic_space - tx.get_exons()[exon_i][1]):
-                ldist += 1
-
         if abs(ldist) <= dist or abs(rdist) <= dist:
             return True
         return False
+
+    #     exon_i = self.find_overlapping_exon_with_splicesite_buffers(start_genomic_space, end_genomic_space, tx.get_exons(), tx.get_strand(), dist)
+    #     if exon_i is not None:
+    #         return True
+    #     return False
+    #
+    # def find_overlapping_exon_with_splicesite_buffers(self, start, end, exons, strand, dist=2):
+    #     for i,exon in enumerate(exons):
+    #         if i == 0:
+    #             splice_dist_1, splice_dist_2 = 0, -dist
+    #         elif i + 1 == len(exons):
+    #             splice_dist_1, splice_dist_2 = -dist, 0
+    #         else:
+    #             splice_dist_1, splice_dist_2 = -dist, -dist
+    #         if  strand == '+': h1, h2 = exon[0]-splice_dist_1, exon[1]+splice_dist_2
+    #         elif strand == '-': h1, h2 = exon[0]+splice_dist_2, exon[1]-splice_dist_1
+    #         overlap_type = TranscriptProviderUtils.test_overlap_with_strand(start, end, h1, h2, strand)
+    #         if overlap_type is not None:
+    #             return i
+    #
+    #     return None
+    #
+    # def _determine_closest_distances_from_exon(self, exons, start, end):
+    #     """ start and end are in genomic space.
+    #     """
+    #     exon_i = -1
+    #     min_left = float("inf")
+    #     min_right = float("inf")
+    #     for i, exon in enumerate(exons):
+    #         left_start_diff = exon[0] - start
+    #         left_end_diff = exon[0] - end
+    #         right_start_diff = exon[1] - start
+    #         right_end_diff = exon[1] - end
+    #         left_diff = min(abs(left_start_diff), abs(left_end_diff))
+    #         right_diff = max(abs(right_start_diff), abs(right_end_diff))
+    #
+    #         if min(left_diff, right_diff) < min(min_left, min_right):
+    #             exon_i = i
+    #             min_left = left_diff
+    #             min_right = right_diff
+    #
+    #     return exon_i,min_left, min_right
 
     def _determine_closest_distances_from_exon(self, exons, start_genomic_space, end_genomic_space):
         """
@@ -291,8 +326,15 @@ class VariantClassifier(object):
             exon = exons[i]
 
             # Distance from the larger genomic position
-            left_diff = abs(start_genomic_space - exon[0])
-            right_diff = abs(end_genomic_space - exon[1])
+            if start_genomic_space >= exon[0]:
+                left_diff = start_genomic_space - exon[0]
+            else:
+                left_diff = exon[0] - start_genomic_space
+
+            if end_genomic_space >= exon[1]:
+                right_diff = end_genomic_space - exon[1]
+            else:
+                right_diff = exon[1] - (end_genomic_space-1)
 
             if min_val > left_diff or min_val > right_diff:
                 ldist = left_diff
@@ -362,24 +404,16 @@ class VariantClassifier(object):
             ref_tx_seq_has_been_changed = True
         else:
             ref_tx_seq_has_been_changed = False
-        cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start,
-                                                                                         protein_position_end,
-                                                                                         cds_start)
-        reference_codon_seq = new_ref_transcript_seq[cds_codon_start-1:cds_codon_end]
-        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq,
-                                                                              cds_codon_start,
-                                                                              transcript_position_start,
-                                                                              transcript_position_end+1, observed_allele_stranded,
-                                                                              "SNP")
-        # if tx.get_strand() == "-":
-        #     # Get the AA for the reversed mutated codon.
-        #     observed_aa = Bio.Seq.translate(mutated_codon_seq[::-1])
-        # else:
+        cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
+        reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1]
+        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq, cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, "SNP")
+
+
         observed_aa = Bio.Seq.translate(mutated_codon_seq)
-        # if ref_tx_seq_has_been_changed:
-        #     reference_aa = Bio.Seq.translate(reference_codon_seq)
-        # else:
-        reference_aa = protein_seq[protein_position_start-1:protein_position_end]
+        if ref_tx_seq_has_been_changed:
+            reference_aa = Bio.Seq.translate(reference_codon_seq)
+        else:
+            reference_aa = protein_seq[protein_position_start-1:protein_position_end]
         vc_tmp = self.infer_variant_classification("SNP", reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=False, is_splice_site=is_splice_site)
         return vc_tmp

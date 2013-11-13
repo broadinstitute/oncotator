@@ -1593,9 +1593,21 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         mutation.addAnnotations(final_annotation_dict)
         return mutation
 
-    def _choose_transcript(self, txs, tx_mode, variant_type, ref_allele, alt_allele, start, end):
+    def _filter_transcripts(self, txs):
+        """ GENCODE transcripts contain tags that are useful for QC.  If tags are present, this method will remove
+        transcripts with poor QC.
+
+        For now, just accept "basic"
+
+        :param txs: transcripts to possibly prune
+        :return: a list of same or shorter
+        """
+        return [tx for tx in txs if (not 'tag' in tx.get_other_attributes().keys()) or ('basic' in tx.get_other_attributes()['tag'])]
+
+    def _choose_transcript(self, txs_unfiltered, tx_mode, variant_type, ref_allele, alt_allele, start, end):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
         #TODO: Need more unit tests.
+        txs = self._filter_transcripts(txs_unfiltered)
         if len(txs) == 1:
             return txs[0]
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:

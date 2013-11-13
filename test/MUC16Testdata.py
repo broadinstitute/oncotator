@@ -951,7 +951,7 @@ muc16testdata = lambda : (
     ("19", "9077766", "9077766", "Missense_Mutation", "SNP", "G", "A"),
     ("19", "9077809", "9077809", "Missense_Mutation", "SNP", "C", "T"),
     ("19", "9077817", "9077817", "Missense_Mutation", "SNP", "C", "T"),
-    (("19", "9077822", "9077822", "Silent", "SNP", "G", "A"),
+    ("19", "9077822", "9077822", "Silent", "SNP", "G", "A"),
     ("19", "9077847", "9077847", "Missense_Mutation", "SNP", "G", "A"),
     ("19", "9080450", "9080450", "Splice_Site", "SNP", "C", "T"),
     ("19", "9080501", "9080501", "Missense_Mutation", "SNP", "C", "T"),
@@ -1237,5 +1237,4 @@ muc16testdata = lambda : (
     ("19", "9091671", "9091671", "Silent", "SNP", "G", "A"),
     ("19", "9091810", "9091810", "Missense_Mutation", "SNP", "A", "C"),
     ("19", "9091815", "9091815", "5'UTR", "SNP", "G", "A")
-    )
 )
