@@ -1561,6 +1561,19 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         final_annotation_dict['transcript_strand'] = self._create_basic_annotation('')
         return final_annotation_dict
 
+    def _retrieve_gencode_tag_value(self, tx, attribute_name):
+        """
+        If transcript is not gencode, no error is thrown.  Just a blank value.
+        Note that gencode have other attributes, but not plain ol' ENSEMBL
+        :param tx:
+        :param attribute_name:
+        :return: "" if other attributes are not present.  "" if specified tag is not present.  Otherwise, tag value.
+        """
+        attribute_dict = tx.get_other_attributes()
+        if attribute_dict is None:
+            return ""
+        return str(attribute_dict.get(attribute_name, ""))
+
     def annotate_mutation(self, mutation):
         chr = mutation.chr
         start = int(mutation.start)
@@ -1593,6 +1606,14 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['variant_classification'].value = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
             final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())
+            final_annotation_dict['gencode_transcript_tags'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'tag'))
+            final_annotation_dict['gencode_transcript_status'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_status'))
+            final_annotation_dict['havana_transcript'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'havana_transcript'))
+            final_annotation_dict['ccds_id'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'ccdsid'))
+            final_annotation_dict['gene_type'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'gene_type'))
+            final_annotation_dict['gencode_transcript_type'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_type'))
+            final_annotation_dict['gencode_transcript_name'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_name'))
+            # final_annotation_dict['gencode_ccds_id'] = self._create_basic_annotation(chosen_tx.get_gene())
             # final_annotation_dict['gene_id'].value
 
         mutation.addAnnotations(final_annotation_dict)
@@ -1611,7 +1632,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def _choose_transcript(self, txs_unfiltered, tx_mode, variant_type, ref_allele, alt_allele, start, end):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
-        #TODO: Need more unit tests.
         txs = self._filter_transcripts(txs_unfiltered)
         if len(txs) == 1:
             return txs[0]
