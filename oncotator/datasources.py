@@ -1610,7 +1610,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['gencode_transcript_status'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_status'))
             final_annotation_dict['havana_transcript'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'havana_transcript'))
             final_annotation_dict['ccds_id'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'ccdsid'))
-            final_annotation_dict['gene_type'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'gene_type'))
             final_annotation_dict['gencode_transcript_type'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_type'))
             final_annotation_dict['gencode_transcript_name'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_name'))
             # final_annotation_dict['gencode_ccds_id'] = self._create_basic_annotation(chosen_tx.get_gene())

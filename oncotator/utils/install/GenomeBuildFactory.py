@@ -13,7 +13,7 @@ class GenomeBuildFactory(object):
         The methods in this class would typically be run in datasource creation, not during annotation.
     """
 
-    QUALS_TO_CHECK = ['gene_status', 'level', 'source', 'tag', 'ccdsid', 'transcript_name', 'transcript_type', 'havana_gene', 'havana_transcript', 'gene_type', 'transcript_status']
+    QUALS_TO_CHECK = ['gene_status', 'level', 'source', 'tag', 'ccdsid', 'transcript_name', 'transcript_type', 'havana_gene', 'havana_transcript', 'transcript_status']
 
     def __init__(self):
         self._transcript_index = dict()
