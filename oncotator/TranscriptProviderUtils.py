@@ -80,6 +80,16 @@ class TranscriptProviderUtils(object):
             return False
 
     @staticmethod
+    def test_feature_overlap(a_st, a_en, tuple_list):
+        for f in tuple_list:
+            b_st = f[0]
+            b_en = f[1]
+            is_overlap = TranscriptProviderUtils.test_overlap(a_st, a_en, b_st, b_en)
+            if is_overlap:
+                return True
+        return False
+
+    @staticmethod
     def test_overlap_with_strand(a_st, a_en, b_st, b_en, strand):
         if strand == '+':
             if a_st <= b_st and a_en >= b_en: return 'a_encompasses_b'

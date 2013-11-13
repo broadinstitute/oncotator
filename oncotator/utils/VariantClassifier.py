@@ -146,7 +146,7 @@ class VariantClassifier(object):
         cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
         return cds_start, cds_stop
 
-    def variant_classify(self, tx, variant_type, ref_allele, alt_allele, start, end):
+    def variant_classify_old(self, tx, variant_type, ref_allele, alt_allele, start, end):
 
         reference_allele, observed_allele = str(ref_allele), str(alt_allele)
         if tx.get_gene_type() == 'miRNA':
@@ -224,6 +224,22 @@ class VariantClassifier(object):
 
         return variant_classification
 
+    def variant_classify(self, tx, variant_type, ref_allele, alt_allele, start, end):
+        """
+        Important note:  Does not support ONP.
+        :param tx:
+        :param variant_type:
+        :param ref_allele:
+        :param alt_allele:
+        :param start:
+        :param end:
+        :return:
+        """
+        if variant_type == "SNP":
+            return self._variant_classify_snp(tx, ref_allele, alt_allele, start, end)
+        else:
+            return self.variant_classify_old(tx, variant_type, ref_allele, alt_allele, start, end)
+
     def is_framshift_indel(self, variant_type, start, end,  observed_allele):
         if variant_type in ['DEL','INS']:
             if variant_type == 'DEL':
@@ -244,6 +260,14 @@ class VariantClassifier(object):
 
         """
         exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
+
+        # If we are on the exon side, we need to correct by one base.
+        if start_genomic_space > tx.get_exons()[exon_i][0] and end_genomic_space < tx.get_exons()[exon_i][1]:
+            if abs(start_genomic_space - tx.get_exons()[exon_i][0]) > abs(end_genomic_space - tx.get_exons()[exon_i][1]):
+                rdist += 1
+            if abs(start_genomic_space - tx.get_exons()[exon_i][0]) < abs(end_genomic_space - tx.get_exons()[exon_i][1]):
+                ldist += 1
+
         if abs(ldist) <= dist or abs(rdist) <= dist:
             return True
         return False
@@ -252,25 +276,27 @@ class VariantClassifier(object):
         """
         start_genomic_space <= end_genomic_space
 
+        Everything in genomic space.
+
         :param exons:
         :param start_genomic_space:
         :param end_genomic_space:
         :return: exon_i, ldist, rdist
+        ldist is the distance from the closest edge (start/end) to the left side of the exon (lower genomic position)
+        rdist is the distance from the closest edge (start/end) to the right side of the exon (lower genomic position)
         """
         exon_i = ldist = rdist = -1
         min_val = 10000000000
+
+        if start_genomic_space > end_genomic_space:
+            raise ValueError("start value must be less than (or equal) to end value.  " + str([start_genomic_space,end_genomic_space]))
 
         for i in range(0, len(exons)):
             exon = exons[i]
 
             # Distance from the larger genomic position
-            left_distance_from_start = abs(start_genomic_space - exon[0])
-            left_distance_from_end = abs(end_genomic_space - exon[0])
-            right_distance_from_start = abs(start_genomic_space - exon[1])
-            right_distance_from_end = abs(end_genomic_space - exon[1])
-
-            left_diff = min(left_distance_from_start, left_distance_from_end)
-            right_diff = max(right_distance_from_start, right_distance_from_end)
+            left_diff = abs(start_genomic_space - exon[0])
+            right_diff = abs(end_genomic_space - exon[1])
 
             if min_val > left_diff or min_val > right_diff:
                 ldist = left_diff
@@ -316,4 +342,193 @@ class VariantClassifier(object):
                     else:
                         frameness = 'OutOfFrame'
                     result = 'De_novo_Start_' + frameness
+        return result
+
+    def _determine_snp_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_splice_site, tx):
+
+        reference_allele_stranded, observed_allele_stranded = ref_allele, alt_allele
+        if tx.get_strand() == '-':
+            reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref_allele), Bio.Seq.reverse_complement(alt_allele)
+
+        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
+            start, end, tx)
+        transcript_seq = tx.get_seq()
+        protein_seq = tx.get_protein_seq()
+        cds_start, cds_stop = self._determine_cds_in_exon_space(tx)
+        protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(
+            transcript_position_start,
+            transcript_position_end, cds_start)
+        if transcript_seq[transcript_position_start-1:transcript_position_end] != reference_allele_stranded:
+            new_transcript_seq = list(transcript_seq)
+            new_transcript_seq[transcript_position_start-1:transcript_position_end] = reference_allele_stranded
+            transcript_seq = ''.join(new_transcript_seq)
+            ref_tx_seq_has_been_changed = True
+        else:
+            ref_tx_seq_has_been_changed = False
+        cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start,
+                                                                                         protein_position_end,
+                                                                                         cds_start)
+        reference_codon_seq = transcript_seq[cds_codon_start-1:cds_codon_end]
+        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq,
+                                                                              cds_codon_start,
+                                                                              transcript_position_start,
+                                                                              transcript_position_end, observed_allele_stranded,
+                                                                              "SNP")
+        if tx.get_strand() == "-":
+            # Get the AA for the reversed mutated codon.
+            observed_aa = Bio.Seq.translate(mutated_codon_seq[::-1])
+        else:
+            observed_aa = Bio.Seq.translate(mutated_codon_seq)
+        if ref_tx_seq_has_been_changed:
+            reference_aa = Bio.Seq.translate(reference_codon_seq)
+        else:
+            reference_aa = protein_seq[protein_position_start+1:protein_position_end+2]
+        vc_tmp = self.infer_variant_classification("SNP", reference_aa, observed_aa, ref_allele, alt_allele,
+                                                   is_frameshift_indel=False, is_splice_site=is_splice_site)
+        return vc_tmp
+
+    def _variant_classify_snp(self, tx, ref_allele, alt_allele, start, end, dist=2):
+        """Perform classifications for SNPs only.
+        Everything handled in genomic space
+
+        *RNA*
+        x'UTR
+        Splice_Site (Intron)
+        Intron
+        Splice_Site (Exon)
+        {Missense, Silent}
+        {Nonsense, Silent}
+        {Nonstop, Silent}
+        IGR
+        x'Flank
+        De_novo_Start
+
+        """
+        gene_type = tx.get_gene_type()
+        if gene_type != "protein_coding":
+            return gene_type
+
+        s = int(start)
+        e = int(end)
+        is_exon_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
+        is_splice_site = self._determine_if_splice_site(s, e, tx, dist)
+        is_beyond_exons, side, is_flank = self._determine_beyond_exon_info(int(start), int(end), tx)
+        if not is_exon_overlap and not is_beyond_exons:
+            if is_splice_site:
+                # Intron Splice Site
+                return "Splice_Site"
+            else:
+                return "Intron"
+
+        if not is_exon_overlap and is_beyond_exons:
+            if is_flank:
+                return side + "Flank"
+            else:
+                return "IGR"
+
+        is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_cds())
+        # is_start_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_start_codon()[0], tx.get_start_codon()[1])
+        # is_stop_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_stop_codon()[0], tx.get_stop_codon()[1])
+
+        if is_exon_overlap and not is_cds_overlap:
+            # UTR
+            vc_tmp = side + "UTR"
+            transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
+            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, alt_allele, tx, "SNP")
+            return vc
+
+        # We have a clean SNP in the CDS.  No start codon or stop codon.
+        if is_cds_overlap:
+            return self._determine_snp_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_splice_site, tx)
+
+        raise ValueError("Could not determine variant classification.")
+
+
+    def _determine_beyond_exon_info(self, start, end, tx, flank_padding_5prime=3000, flank_padding_3prime=0):
+        """
+        start and end must be completely non-overlapping of the tx exons.  Reminder that tx exons include UTRs.
+        Also, this will return False, closest side (3' or 5'), False if Intron.
+
+        :param start: int
+        :param end: int
+        :param tx: Transcript
+        :return: triplet of is_beyond_exons, side (always a str of 3' or 5' or "" if not is_beyond_exons), is_flank
+        """
+        is_beyond_exons_left = (start < tx.get_start() and end < tx.get_start())
+        is_beyond_exons_right = (start > tx.get_end() and end > tx.get_end())
+        is_beyond_exons = is_beyond_exons_left or is_beyond_exons_right
+        side = self._determine_strand_side(start, end, tx)
+        if not is_beyond_exons:
+            return False, side, False
+        if is_beyond_exons_left:
+            d = min(abs(start - tx.get_start()), abs(end - tx.get_start()))
+        else:
+            d = min(abs(start - tx.get_end()), abs(end - tx.get_end()))
+
+        if side == "5'":
+            is_flank = (d < flank_padding_5prime)
+        else:
+            is_flank = (d < flank_padding_3prime)
+        return is_beyond_exons, side, is_flank
+
+    def _determine_strand_side(self, start, end, tx):
+        """ Determine the closest side (3' or 5') given start and end (in genomic space) and a transcript.
+        This method takes into account transcript strand
+
+        Checks the transcript beginning and end for distance to start and end.
+
+        :param start: int
+        :param end: int
+        :param tx: Transcript
+        :return: str ("3'" or "5'")
+        """
+        strand = tx.get_strand()
+        is_beyond_exons_left = (start < tx.get_start() and end < tx.get_start())
+        is_beyond_exons_right = (start > tx.get_end() and end > tx.get_end())
+        if is_beyond_exons_left and strand == "+":
+            return "5'"
+        if is_beyond_exons_left and strand == "-":
+            return "3'"
+        if is_beyond_exons_right and strand == "+":
+            return "3'"
+        if is_beyond_exons_right and strand == "-":
+            return "5'"
+
+        d_left = min(abs(start - tx.get_start()), abs(end - tx.get_start()))
+        d_right = min(abs(start - tx.get_end()), abs(end - tx.get_end()))
+
+        if d_left <= d_right:
+            if strand == "+":
+                return "5'"
+            else:
+                return "3'"
+        else:
+            if strand == "+":
+                return "3'"
+            else:
+                return "5'"
+
+    def _determine_de_novo(self, vc, transcript_position_start, transcript_position_end, alt, tx, variant_type):
+        """Returns input vc if not de Novo.  Otherwise, returns updated variant classification.
+
+         Will always return original vc if the vc is not None."""
+        result = vc
+        if vc == "5'UTR":
+            tx_seq = tx.get_seq()
+            utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
+
+            utr_region_seq = tx_seq[utr_region_start-1:utr_region_end]
+
+            mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
+                transcript_position_start, transcript_position_end, alt, variant_type)
+
+            # Check for Denovo
+            ATG_position = mutated_utr_region_seq.find('ATG')
+            if ATG_position > -1:
+                ATG_position = utr_region_start + ATG_position
+                if (t['cds_start'] - ATG_position) % 3 == 0:
+                    frameness = 'InFrame'
+                else:
+                    frameness = 'OutOfFrame'
+                result = 'De_novo_Start_' + frameness
         return result

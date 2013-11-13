@@ -1658,7 +1658,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         # higher ranks are more important.
         lvl_rank = 0
         lvl = tx.get_other_attributes().get('level', None)[0]
-        if lvl == None:
+        if lvl is None:
             lvl_score = 0
         else:
             lvl_score = 4 - int(lvl)
@@ -1734,7 +1734,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
 
-    def _renderOtherTranscripts(self, txs, transcriptIndicesToSkip):
+    def _renderOtherTranscripts(self, txs, transcriptIndicesToSkip, variant_type, ref_allele, alt_allele, start, end):
         """
         Create a list of transcripts that are not being chosen.
 
@@ -1745,11 +1745,14 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         txs -- a list of transcripts to render.
         transcriptIndicesToSkip -- a list of transcripts that are being used (i.e. not an "other transcript").  This will usually be the canonical or any transcript chosen by tx_mode.
         """
+        # TODO: Still need to implement protein change here.
+        vcer = VariantClassifier()
         other_transcripts = list()
         for i, ot in enumerate(txs):
             if i not in transcriptIndicesToSkip:
+                vc = vcer.variant_classify(ot, variant_type, ref_allele, alt_allele, start, end)
                 o = '_'.join([ot.get_gene(), ot.get_transcript_id(),
-                              ot['variant_classification'], ot.get('protein_change', '')])
+                              vc, ot.get('protein_change', '')])
                 o = o.strip('_')
                 other_transcripts.append(o)
 

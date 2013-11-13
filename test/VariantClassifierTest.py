@@ -6,8 +6,6 @@ from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils
 from MUC16Testdata import muc16testdata
-__author__ = 'lichtens'
-
 import unittest
 from unittest_data_provider import data_provider
 from oncotator.utils.VariantClassifier import VariantClassifier
@@ -49,8 +47,8 @@ class VariantClassifierTest(unittest.TestCase):
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
 
     variants_snps_missense = lambda: (
-        ("22", "22127164", "22127164", "Missense_Mutation", "SNP", "C", "T"),
-        ("22", "22143049", "22143049", "Missense_Mutation", "SNP", "C", "T"),
+        ("22", "22127164", "22127164", "Missense_Mutation", "SNP", "C", "G"),
+        ("22", "22143049", "22143049", "Missense_Mutation", "SNP", "C", "A"),
         ("22", "22162014", "22162014", "Missense_Mutation", "SNP", "C", "T")
     )
     @data_provider(variants_snps_missense)
@@ -78,7 +76,7 @@ class VariantClassifierTest(unittest.TestCase):
         ([(22221611, 22221919, '1'), (22161952, 22162135, '2'), (22160138, 22160328, '3'), (22153300, 22153417, '4'), (22142982, 22143097, '5'), (22142545, 22142677, '6'), (22127161, 22127271, '7'), (22123483, 22123609, '8'), (22108788, 22118529, '9')],
             22108800, 22108800, 8, 12, 9729),
         ([(5, 10, 1), (15, 20, 2), (25, 40, 3)], 6, 8, 0, 1, 2),
-        ([(25, 40, 1), (15, 20, 2), (5, 10, 3)], 14, 16, 1, 1, 1)
+        ([(25, 40, 1), (15, 20, 2), (5, 10, 3)], 14, 16, 1, 1, 4)
     )
 
     @data_provider(exon_tests)
@@ -124,7 +122,14 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22162135", "22162135", "Splice_Site", "SNP", "G", "T"),
         ("22", "22162134", "22162134", "Splice_Site", "SNP", "A", "T"),
         ("22", "22162133", "22162133", "Missense_Mutation", "SNP", "G", "T"),
-        ("22", "22162132", "22162132", "Missense_Mutation", "SNP", "A", "T")
+        ("22", "22162132", "22162132", "Missense_Mutation", "SNP", "A", "T"),
+
+        ("22", "22127164", "22127164", "Silent", "SNP", "C", "C"),
+        ("22", "22127163", "22127163", "Splice_Site", "SNP", "T", "G"),
+        ("22", "22127162", "22127162", "Splice_Site", "SNP", "C", "A"),
+        ("22", "22127161", "22127161", "Splice_Site", "SNP", "C", "A"),
+        ("22", "22127160", "22127160", "Splice_Site", "SNP", "A", "T"),
+        ("22", "22127159", "22127159", "Intron", "SNP", "T", "A")
     )
     @data_provider(variants_snps_splice_sites)
     def test_snp_vc_on_one_transcript_Splice_Site(self, chr, start, end, gt_vc, vt, ref,alt):
