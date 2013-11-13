@@ -91,7 +91,6 @@ class VariantClassifierTest(unittest.TestCase):
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
         """ Test all of the MUC16 SNPs."""
-        print(str([chr, start, end, gt_vc, vt, ref, alt]))
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
 
     def test_snp_vc_on_one_transcript_5UTR(self):

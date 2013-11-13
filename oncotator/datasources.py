@@ -1517,6 +1517,9 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
         Also, supports gencode
+
+        Though all transcripts for GENCODE can be loaded, it is currently set to ignore any transcripts that are not
+            "basic"
     """
     def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
@@ -1576,16 +1579,18 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         else:
             # Choose the best effect transcript
             chosen_tx = self._choose_transcript(txs, self.get_tx_mode(), final_annotation_dict['variant_type'], mutation.ref_allele, mutation.alt_allele, start, end)
+            vcer = VariantClassifier()
+
             final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
             final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils._determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
             # final_annotation_dict['codon_change'] = self._create_basic_annotation('')
-            # final_annotation_dict['strand'] = self._create_basic_annotation('')
+            final_annotation_dict['strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             # final_annotation_dict['protein_change'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_exon'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
-            # final_annotation_dict['transcript_id'] = self._create_basic_annotation('')
-            # final_annotation_dict['variant_classification'].value = ?
+            final_annotation_dict['transcript_id'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
+            final_annotation_dict['variant_classification'].value = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
             final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())
             # final_annotation_dict['gene_id'].value
