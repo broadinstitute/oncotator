@@ -141,10 +141,6 @@ class VariantClassifier(object):
                     vc = 'Missense_Mutation'
         return vc
 
-    def _determine_cds_in_exon_space(self, tx):
-        cds_start_genomic_space, cds_stop_genomic_space = tx.determine_cds_footprint()
-        cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
-        return cds_start, cds_stop
 
     def variant_classify_old(self, tx, variant_type, ref_allele, alt_allele, start, end):
 
@@ -172,7 +168,7 @@ class VariantClassifier(object):
             ref_tx_seq_has_been_changed = False
 
         protein_seq = tx.get_protein_seq()
-        cds_start, cds_stop = self._determine_cds_in_exon_space(tx)
+        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
 
         #always use '+' here because strand doesn't matter, since inputs are in transcript space
         cds_overlap_type = TranscriptProviderUtils.test_overlap_with_strand(transcript_position_start, transcript_position_end,
@@ -185,7 +181,7 @@ class VariantClassifier(object):
             cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start,
                 protein_position_end, cds_start)
 
-            reference_codon_seq = transcript_seq[cds_codon_start-1:cds_codon_end]
+            reference_codon_seq = transcript_seq[cds_codon_start:cds_codon_end+1]
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
 
             is_mut_a_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end),  observed_allele)
@@ -354,25 +350,26 @@ class VariantClassifier(object):
             start, end, tx)
         transcript_seq = tx.get_seq()
         protein_seq = tx.get_protein_seq()
-        cds_start, cds_stop = self._determine_cds_in_exon_space(tx)
+        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
         protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(
             transcript_position_start,
             transcript_position_end, cds_start)
-        if transcript_seq[transcript_position_start-1:transcript_position_end] != reference_allele_stranded:
-            new_transcript_seq = list(transcript_seq)
-            new_transcript_seq[transcript_position_start-1:transcript_position_end] = reference_allele_stranded
-            transcript_seq = ''.join(new_transcript_seq)
+        new_ref_transcript_seq = transcript_seq
+        if transcript_seq[transcript_position_start:transcript_position_end+1] != reference_allele_stranded:
+            new_ref_transcript_seq = list(transcript_seq)
+            new_ref_transcript_seq[transcript_position_start:transcript_position_end+1] = reference_allele_stranded
+            new_ref_transcript_seq = ''.join(new_ref_transcript_seq)
             ref_tx_seq_has_been_changed = True
         else:
             ref_tx_seq_has_been_changed = False
         cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start,
                                                                                          protein_position_end,
                                                                                          cds_start)
-        reference_codon_seq = transcript_seq[cds_codon_start-1:cds_codon_end]
+        reference_codon_seq = new_ref_transcript_seq[cds_codon_start-1:cds_codon_end]
         mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq,
                                                                               cds_codon_start,
                                                                               transcript_position_start,
-                                                                              transcript_position_end, observed_allele_stranded,
+                                                                              transcript_position_end+1, observed_allele_stranded,
                                                                               "SNP")
         # if tx.get_strand() == "-":
         #     # Get the AA for the reversed mutated codon.
@@ -382,7 +379,7 @@ class VariantClassifier(object):
         # if ref_tx_seq_has_been_changed:
         #     reference_aa = Bio.Seq.translate(reference_codon_seq)
         # else:
-        reference_aa = protein_seq[protein_position_start+1:protein_position_end+2]
+        reference_aa = protein_seq[protein_position_start-1:protein_position_end]
         vc_tmp = self.infer_variant_classification("SNP", reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=False, is_splice_site=is_splice_site)
         return vc_tmp

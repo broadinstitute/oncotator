@@ -1,6 +1,7 @@
 import shutil
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MutationData import MutationData
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
@@ -94,7 +95,7 @@ class VariantClassifierTest(unittest.TestCase):
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take the test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand) and test the entire 5'UTR"""
-        tx = self.retrieve_test_transcript()
+        tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
 
         chr = 22
@@ -108,7 +109,7 @@ class VariantClassifierTest(unittest.TestCase):
             if i < 200 and i >= 189:
                 self.assertTrue(vc != "5'UTR", "Should not be 5'UTR, but saw " + vc + ".  For " + str([ref, alt, start, end]))
 
-    def retrieve_test_transcript(self):
+    def retrieve_test_transcript_MAPK1(self):
         ensembl_ds = self._create_ensembl_ds_from_testdata("MAPK1")
         tx = ensembl_ds.transcript_db['ENST00000215832.6']
         self.assertTrue(tx is not None, "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
@@ -135,12 +136,20 @@ class VariantClassifierTest(unittest.TestCase):
         """Test a lot of positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
         """
-        tx = self.retrieve_test_transcript()
-
+        tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, vt, ref, alt, start, end)
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
+    def test_determine_cds_in_exon_space(self):
+        tx = self.retrieve_test_transcript_MAPK1()
+        vcer = VariantClassifier()
+        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+        s,e = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx.get_start(), tx.get_end(), tx)
+        self.assertTrue(s == 0, "Incorrect exon start: %d, gt: %d" % (s, 0))
+        self.assertTrue(e == 11022, "Incorrect exon end: %d, gt: %d" % (e, 11022))
+        self.assertTrue(cds_start == 189, "incorrect cds_start: %d, gt: %d" % (cds_start, 189))
+        self.assertTrue(cds_stop == 1269, "incorrect cds_stop: %d, gt: %d" % (cds_stop, 1269))
 
 if __name__ == '__main__':
     unittest.main()

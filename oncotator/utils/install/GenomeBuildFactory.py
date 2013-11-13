@@ -70,13 +70,13 @@ class GenomeBuildFactory(object):
             self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
 
         if gff_record['type'] == 'exon':
-            self._transcript_index[transcript_id].add_exon(gff_record['location'][0] + 1, gff_record['location'][1], quals['exon_number'][0])
+            self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
         elif gff_record['type'] == 'CDS':
-            self._transcript_index[transcript_id].add_cds(gff_record['location'][0] + 1, gff_record['location'][1])
+            self._transcript_index[transcript_id].add_cds(gff_record['location'][0], gff_record['location'][1])
         elif gff_record['type'] == 'start_codon':
-            self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0] + 1, gff_record['location'][1])
+            self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0], gff_record['location'][1])
         elif gff_record['type'] == 'stop_codon':
-            self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0] + 1, gff_record['location'][1])
+            self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
 
     def build_ensembl_transcript_index(self, ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol="file"):
         """Create the transcript index (using shove) for ensembl.  Key is transcript ID

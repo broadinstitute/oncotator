@@ -72,6 +72,66 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         guess = TranscriptProviderUtils._transform_to_feature_space(exons, s, strand)
         self.assertTrue(guess == gt, "Did not transform genomic to exon space properly: " + str(exons) +  "   pos: " + str(s) + "  strand: " + strand + "  guess/gt: " + str(guess) + "/" + str(gt))
 
+    def _create_ensembl_ds_from_testdata(self, gene):
+        gencode_input_gtf = "testdata/gencode/" + gene + ".gencode.v18.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa"
+        base_output_filename = "out/test_variant_classification"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18")
+        return ensembl_ds
+
+    def retrieve_test_transcript_MUC16(self):
+        ensembl_ds = self._create_ensembl_ds_from_testdata("MUC16")
+        tx = ensembl_ds.transcript_db['ENST00000397910.4']
+        self.assertTrue(tx is not None, "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
+        return tx
+
+    def retrieve_test_transcript_MAPK1(self):
+        ensembl_ds = self._create_ensembl_ds_from_testdata("MAPK1")
+        tx = ensembl_ds.transcript_db['ENST00000215832.6']
+        self.assertTrue(tx is not None, "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
+        return tx
+
+    # These are stranded, so since the test transcript is "-", these are reverse complement of what you would
+    #  see in genome browser.
+    seq_testdata = lambda: (
+        ("22143048", "22143050", "AGA"),
+        ("22143050", "22143050", "A"),
+        ("22143044", "22143046", "ATG"),
+        ("22108789", "22108795", "CTATAAA")
+    )
+    @data_provider(seq_testdata)
+    def test_seq(self, start, end, gt):
+        """Test that we can successfully determine the codon at an arbitrary location on test transcript"""
+        tx = self.retrieve_test_transcript_MAPK1()
+
+        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
+        transcript_seq = tx.get_seq()
+        seq = transcript_seq[transcript_position_start:transcript_position_end+1]
+        self.assertTrue(seq == gt, "Incorrect seq found guess,gt (%s, %s)" %(seq, gt))
+
+    # start, end, base (stranded), gt_codon (stranded)
+    codon_tests_single_base = lambda: (
+
+        ("22127164", "22127164", "G", "GAG"),
+        ("22127165", "22127165", "C", "GAC")
+    )
+
+    @data_provider(codon_tests_single_base)
+    def test_codon_single_base(self, start, end, ref_base_stranded, gt_codon):
+        """Test that we can grab the proper three bases of a codon for an arbitrary single base """
+        tx = self.retrieve_test_transcript_MAPK1()
+        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
+        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+        protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(transcript_position_start, transcript_position_end, cds_start)
+        cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
+
+        codon_seq = tx.get_seq()[cds_codon_start:cds_codon_end+1]
+        self.assertTrue(codon_seq == gt_codon, "Did not get correct codon (%s): %s    loc: %s-%s" %(gt_codon, codon_seq, start, end))
 
 if __name__ == '__main__':
     unittest.main()

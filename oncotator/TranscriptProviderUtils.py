@@ -237,3 +237,9 @@ class TranscriptProviderUtils(object):
         mutated_seq = ''.join(mutated_seq)
         return mutated_seq
 
+    @staticmethod
+    def determine_cds_in_exon_space(tx):
+        cds_start_genomic_space, cds_stop_genomic_space = tx.determine_cds_footprint()
+        cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
+        return cds_start, cds_stop
+
