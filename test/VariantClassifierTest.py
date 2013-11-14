@@ -13,12 +13,7 @@ from oncotator.utils.VariantClassifier import VariantClassifier
 
 TestUtils.setupLogging(__file__, __name__)
 class VariantClassifierTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
-    variants_indels = lambda: (
-        ("22", "22221645", "22221647", "In_Frame_Del", "DEL", "GAG", "-"),
-        ("22", "22221645", "22221645", "Frame_Shift_Del", "DEL", "G", "-"),
-        ("22",	"22221645", "22221645", "Frame_Shift_Ins", "INS", "-", "A")
-    )
+
     # TODO: Get recently downloaded test data and use that.
 
     def _create_ensembl_ds_from_testdata(self, gene):
@@ -36,16 +31,36 @@ class VariantClassifierTest(unittest.TestCase):
     def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt, gene="MAPK1"):
         ensembl_ds = self._create_ensembl_ds_from_testdata(gene)
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
-        tx = ensembl_ds._choose_transcript(recs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
+        txs = ensembl_ds._filter_transcripts(recs)
+        tx = ensembl_ds._choose_transcript(txs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
 
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, vt, ref, alt, start, end)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2)
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
-    @data_provider(variants_indels)
-    def test_variant_classification_indels(self, chr, start, end, gt_vc, vt, ref, alt):
+    variants_indels_MAPK1 = lambda: (
+        ("22", "22221645", "22221647", "In_Frame_Del", "DEL", "GAG", "-"),
+        ("22", "22221645", "22221645", "Frame_Shift_Del", "DEL", "G", "-"),
+        ("22",	"22221645", "22221645", "Frame_Shift_Ins", "INS", "-", "A")
+    )
+    @data_provider(variants_indels_MAPK1)
+    def test_variant_classification_indels_simple(self, chr, start, end, gt_vc, vt, ref, alt):
+        """Test a small set of indels.  This time from MAPK1"""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+
+    variants_indels_MUC16 = lambda: (
+        ("19", "8979051", "8979051", "Intron", "DEL", "A", "-"),
+        ("19", "9058690", "9058690", "Frame_Shift_Del", "DEL", "T", "-"),
+        ("19", "9064536", "9064536", "Frame_Shift_Del", "DEL", "T", "-"),
+        ("19", "9006152", "9006153", "Intron", "INS", "-", "AA"),
+        ("19", "9006225", "9006226", "Intron", "INS", "-", "CT"),
+        ("19", "9073231", "9073232", "Frame_Shift_Ins", "INS", "-", "A")
+    )
+    @data_provider(variants_indels_MUC16)
+    def test_variant_classification_indels_muc16(self, chr, start, end, gt_vc, vt, ref, alt):
+        """Test another small set of indels.  This time from MUC16"""
+        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
 
     variants_snps_missense = lambda: (
         ("22", "22127164", "22127164", "Missense_Mutation", "SNP", "C", "G"),
@@ -61,7 +76,7 @@ class VariantClassifierTest(unittest.TestCase):
         bins = region2bins(22221645, 22221645)
         self.assertTrue(b in bins)
 
-    frameshift_indels = lambda : (
+    frameshift_indels = lambda: (
         ("INS", 10, 11,  "A", True),
         ("INS", 10, 12,  "ATC", False),
         ("DEL", 10, 10,  "-", True),
@@ -103,7 +118,7 @@ class VariantClassifierTest(unittest.TestCase):
             start = end = (22221919 - i)
             ref = tx.get_seq()[i]
             alt = 'G'
-            vc = vcer.variant_classify(tx, "SNP", ref, alt, start, end)
+            vc = vcer.variant_classify(tx, ref, alt, start, end, "SNP", )
             if i < 189:
                 self.assertTrue(vc == "5'UTR", "Should be 5'UTR, but saw " + vc + ".  For " + str([ref, alt, start, end]))
             if i < 200 and i >= 189:
@@ -138,7 +153,7 @@ class VariantClassifierTest(unittest.TestCase):
         """
         tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, vt, ref, alt, start, end)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
     def test_determine_cds_in_exon_space(self):

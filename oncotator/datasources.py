@@ -1607,6 +1607,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['variant_classification'].value = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
             final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())
+            final_annotation_dict['gene_type'] = self._create_basic_annotation(chosen_tx.get_gene_type())
             final_annotation_dict['gencode_transcript_tags'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'tag'))
             final_annotation_dict['gencode_transcript_status'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_status'))
             final_annotation_dict['havana_transcript'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'havana_transcript'))
@@ -1650,7 +1651,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         best_effect_score = 100000000 # lower score is more likely to get picked
         best_effect_tx = None
         for tx in txs:
-            vc = vcer.variant_classify(tx, variant_type, ref_allele, alt_allele, start, end)
+            vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type)
             effect_score = effect_dict.get(vc, 25)
             if effect_score < best_effect_score:
                 best_effect_score = effect_score

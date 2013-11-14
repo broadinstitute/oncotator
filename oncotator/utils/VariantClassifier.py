@@ -1,7 +1,6 @@
 import Bio
 from Bio import Seq
 import itertools
-import math
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.gaf_annotation import chop
 
@@ -220,21 +219,6 @@ class VariantClassifier(object):
 
         return variant_classification
 
-    def variant_classify(self, tx, variant_type, ref_allele, alt_allele, start, end):
-        """
-        Important note:  Does not support ONP.
-        :param tx:
-        :param variant_type:
-        :param ref_allele:
-        :param alt_allele:
-        :param start:
-        :param end:
-        :return:
-        """
-        if variant_type == "SNP":
-            return self._variant_classify_snp(tx, ref_allele, alt_allele, start, end)
-        else:
-            return self.variant_classify_old(tx, variant_type, ref_allele, alt_allele, start, end)
 
     def is_framshift_indel(self, variant_type, start, end,  observed_allele):
         if variant_type in ['DEL','INS']:
@@ -260,48 +244,6 @@ class VariantClassifier(object):
         if abs(ldist) <= dist or abs(rdist) <= dist:
             return True
         return False
-
-    #     exon_i = self.find_overlapping_exon_with_splicesite_buffers(start_genomic_space, end_genomic_space, tx.get_exons(), tx.get_strand(), dist)
-    #     if exon_i is not None:
-    #         return True
-    #     return False
-    #
-    # def find_overlapping_exon_with_splicesite_buffers(self, start, end, exons, strand, dist=2):
-    #     for i,exon in enumerate(exons):
-    #         if i == 0:
-    #             splice_dist_1, splice_dist_2 = 0, -dist
-    #         elif i + 1 == len(exons):
-    #             splice_dist_1, splice_dist_2 = -dist, 0
-    #         else:
-    #             splice_dist_1, splice_dist_2 = -dist, -dist
-    #         if  strand == '+': h1, h2 = exon[0]-splice_dist_1, exon[1]+splice_dist_2
-    #         elif strand == '-': h1, h2 = exon[0]+splice_dist_2, exon[1]-splice_dist_1
-    #         overlap_type = TranscriptProviderUtils.test_overlap_with_strand(start, end, h1, h2, strand)
-    #         if overlap_type is not None:
-    #             return i
-    #
-    #     return None
-    #
-    # def _determine_closest_distances_from_exon(self, exons, start, end):
-    #     """ start and end are in genomic space.
-    #     """
-    #     exon_i = -1
-    #     min_left = float("inf")
-    #     min_right = float("inf")
-    #     for i, exon in enumerate(exons):
-    #         left_start_diff = exon[0] - start
-    #         left_end_diff = exon[0] - end
-    #         right_start_diff = exon[1] - start
-    #         right_end_diff = exon[1] - end
-    #         left_diff = min(abs(left_start_diff), abs(left_end_diff))
-    #         right_diff = max(abs(right_start_diff), abs(right_end_diff))
-    #
-    #         if min(left_diff, right_diff) < min(min_left, min_right):
-    #             exon_i = i
-    #             min_left = left_diff
-    #             min_right = right_diff
-    #
-    #     return exon_i,min_left, min_right
 
     def _determine_closest_distances_from_exon(self, exons, start_genomic_space, end_genomic_space):
         """
@@ -382,7 +324,7 @@ class VariantClassifier(object):
                     result = 'De_novo_Start_' + frameness
         return result
 
-    def _determine_snp_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_splice_site, tx):
+    def _determine_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type):
 
         reference_allele_stranded, observed_allele_stranded = ref_allele, alt_allele
         if tx.get_strand() == '-':
@@ -406,7 +348,7 @@ class VariantClassifier(object):
             ref_tx_seq_has_been_changed = False
         cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
         reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1]
-        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq, cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, "SNP")
+        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq, cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
 
         observed_aa = Bio.Seq.translate(mutated_codon_seq)
@@ -414,12 +356,13 @@ class VariantClassifier(object):
             reference_aa = Bio.Seq.translate(reference_codon_seq)
         else:
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
-        vc_tmp = self.infer_variant_classification("SNP", reference_aa, observed_aa, ref_allele, alt_allele,
-                                                   is_frameshift_indel=False, is_splice_site=is_splice_site)
+        vc_tmp = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
+                                                   is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site)
         return vc_tmp
 
-    def _variant_classify_snp(self, tx, ref_allele, alt_allele, start, end, dist=2):
-        """Perform classifications for SNPs only.
+    def variant_classify(self, tx, ref_allele, alt_allele, start, end, variant_type, dist=2):
+        """Perform classifications.
+
         Everything handled in genomic space
 
         *RNA*
@@ -438,6 +381,11 @@ class VariantClassifier(object):
         gene_type = tx.get_gene_type()
         if gene_type != "protein_coding":
             return gene_type
+
+        if ref_allele == "-":
+            ref_allele = ""
+        if alt_allele == "-":
+            alt_allele == ""
 
         s = int(start)
         e = int(end)
@@ -465,14 +413,15 @@ class VariantClassifier(object):
             # UTR
             vc_tmp = side + "UTR"
             transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
-            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, "SNP")
+            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, variant_type)
             return vc
 
-        # We have a clean SNP in the CDS.  No start codon or stop codon.
+        # We have a clean overlap in the CDS.  No start codon or stop codon.
         if is_cds_overlap:
-            return self._determine_snp_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_splice_site, tx)
+            is_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end), alt_allele)
+            return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type)
 
-        raise ValueError("Could not determine variant classification.")
+        raise ValueError("Could not determine variant classification:  " + tx.trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
 
 
     def _determine_beyond_exon_info(self, start, end, tx, flank_padding_5prime=3000, flank_padding_3prime=0):
