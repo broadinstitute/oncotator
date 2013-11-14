@@ -2,11 +2,13 @@ from copy import deepcopy
 import logging
 from shove.core import Shove
 from oncotator.Transcript import Transcript
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.index.gaf import region2bin
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
 from BCBio import GFF
 from Bio import SeqIO
+from Bio import Seq
 
 class GenomeBuildFactory(object):
     """ Responsible for creating indices for genome builds (through ENSEMBL) and creating a set of datasource files.
@@ -17,6 +19,23 @@ class GenomeBuildFactory(object):
 
     def __init__(self):
         self._transcript_index = dict()
+
+    def _determine_protein_seq(self, tx):
+        cds_start, cds_stop = tx.determine_cds_footprint()
+        if cds_start == -1 or cds_stop == -1:
+            return ""
+        protein_seq = self._calculate_protein_sequence(tx.get_exons(), tx.get_seq(), cds_start, cds_stop, tx.get_strand())
+        protein_seq = ''.join([protein_seq, '*'])
+        return protein_seq
+
+    def _calculate_protein_sequence(self, exons, seq, cds_start_genomic_space, cds_stop_genomic_space, strand):
+        cds_start_exon_space, cds_stop_exon_space = TranscriptProviderUtils._convert_genomic_space_to_feature_space(int(cds_start_genomic_space), int(cds_stop_genomic_space), exons, strand)
+
+        prot_seq = Seq.translate(seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
+        if prot_seq[-1] == '*':
+            prot_seq = prot_seq[:-1]
+
+        return prot_seq
 
     def _convertGFFRecordToTranscript(self, gff_record, seq_dict, seq_dict_keys):
         """
@@ -114,6 +133,8 @@ class GenomeBuildFactory(object):
         logging.getLogger(__name__).info("Populating final db with internal transcript index.")
         transcript_index_keys = self._transcript_index.keys()
         for k in transcript_index_keys:
+            protein_sequence = self._determine_protein_seq(self._transcript_index[k])
+            self._transcript_index[k].set_protein_seq(protein_sequence)
             shove[k] = self._transcript_index[k]
 
         logging.getLogger(__name__).info("Transcript index created " + str(shove.keys()) + " transcripts.")
