@@ -419,6 +419,8 @@ class VariantClassifier(object):
         return is_cds_overlap
 
     def _determine_codon_overlap(self, s, e, codon_tuple, variant_type):
+        if codon_tuple is None:
+            return False
         if variant_type == VariantClassification.VT_INS:
             is_codon_overlap = TranscriptProviderUtils.test_overlap(s, s, codon_tuple[0], codon_tuple[1])
         else:
