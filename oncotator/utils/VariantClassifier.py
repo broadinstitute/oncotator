@@ -411,6 +411,20 @@ class VariantClassifier(object):
             is_beyond_exons, side, is_flank = self._determine_beyond_exon_info(int(start), int(start), tx)
         return is_beyond_exons, side, is_flank
 
+    def _determine_if_cds_overlap(self, s, e, tx, variant_type):
+        if variant_type == VariantClassification.VT_INS:
+            is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_cds())
+        else:
+            is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_cds())
+        return is_cds_overlap
+
+    def _determine_codon_overlap(self, s, e, codon_tuple, variant_type):
+        if variant_type == VariantClassification.VT_INS:
+            is_codon_overlap = TranscriptProviderUtils.test_overlap(s, s, codon_tuple[0], codon_tuple[1])
+        else:
+            is_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, codon_tuple[0], codon_tuple[1])
+        return is_codon_overlap
+
     def variant_classify(self, tx, ref_allele, alt_allele, start, end, variant_type, dist=2):
         """Perform classifications.
 
@@ -460,16 +474,14 @@ class VariantClassifier(object):
             else:
                 return "IGR"
 
-    #TODO: Handle Insertions
-        is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_cds())
-
-        is_start_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_start_codon()[0], tx.get_start_codon()[1])
-        is_stop_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_stop_codon()[0], tx.get_stop_codon()[1])
+        is_start_codon_overlap = self._determine_codon_overlap(s, e, tx.get_start_codon(), variant_type)
+        is_stop_codon_overlap = self._determine_codon_overlap(s, e, tx.get_stop_codon(), variant_type)
         if is_start_codon_overlap and not variant_type.endswith("NP"):
             return 'Start_Codon_' + variant_type.capitalize()
         if is_stop_codon_overlap and not variant_type.endswith("NP"):
             return 'Stop_Codon_' + variant_type.capitalize()
 
+        is_cds_overlap = self._determine_if_cds_overlap(s, e, tx, variant_type)
         if is_exon_overlap and not is_cds_overlap:
             # UTR
             vc_tmp = side + "UTR"
