@@ -234,6 +234,10 @@ class VariantClassifier(object):
     def _determine_if_splice_site_overlap(self, start_genomic_space, end_genomic_space, tx, variant_type, dist=2):
 
         """
+
+        Overlap of start and stop codon (i.e. start of first exon and end of last exon -- stranded) will not be a
+            Splice_Site.  This method will return is_splice_site_overlap of False
+
          If overlap is detected, but the start or end is within dist bp, then this is a splice site.
          start <= end
         INS events only call splice site when they start in the splice site
@@ -456,9 +460,15 @@ class VariantClassifier(object):
             else:
                 return "IGR"
 
+    #TODO: Handle Insertions
         is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_cds())
-        # is_start_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_start_codon()[0], tx.get_start_codon()[1])
-        # is_stop_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_stop_codon()[0], tx.get_stop_codon()[1])
+
+        is_start_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_start_codon()[0], tx.get_start_codon()[1])
+        is_stop_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, tx.get_stop_codon()[0], tx.get_stop_codon()[1])
+        if is_start_codon_overlap and not variant_type.endswith("NP"):
+            return 'Start_Codon_' + variant_type.capitalize()
+        if is_stop_codon_overlap and not variant_type.endswith("NP"):
+            return 'Stop_Codon_' + variant_type.capitalize()
 
         if is_exon_overlap and not is_cds_overlap:
             # UTR

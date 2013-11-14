@@ -148,10 +148,19 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22127163", "22127166", "Splice_Site", "DEL", "TCGT", "-"),
         ("22", "22127163", "22127166", "Splice_Site", "INS", "-", "AAAA"),
         ("22", "22127162", "22127166", "Splice_Site", "INS", "-", "AAAAA"),
-        ("22", "22127155", "22127166", "Intron", "INS", "-", "AAAAAAAAAAAA")
+        ("22", "22127167", "22127171", "Frame_Shift_Ins", "INS", "-", "AAAAA"),
+        ("22", "22127155", "22127166", "Intron", "INS", "-", "AAAAAAAAAAAA"),
+        ("22", "22221735", "22221735", "5'UTR", "INS", "-", "A"),
+        ("22", "22123486", "22123486", "3'UTR", "INS", "-", "A"),
+        ("22", "22123494", "22123494", "Stop_Codon_Del", "DEL", "A", "-"),
+        ("22", "22221729", "22221729", "Start_Codon_Del", "DEL", "A", "-"),
+        # ref is wrong here
+        ("22", "22221735", "22221735", "5'UTR", "DEL", "A", "-"),
+        # ref is wrong here
+        ("22", "22123486", "22123486", "3'UTR", "DEL", "A", "-")
 
-        #TODO: Need UTR/codon side tests
-        #TODO: Fix in frame calculation when only partially overlapping an exon.  When secondary vc is implemented
+        #TODO: For SNPs:  Test nonstop and nonsense mutations
+        #TODO: Fix in frame calculation when only partially overlapping an exon.  (No need until secondary vc is implemented)
     )
     @data_provider(variants_indels_splice_sites)
     def test_indels_vc_on_one_transcript_splice_site(self, chr, start, end, gt_vc, vt, ref, alt):
