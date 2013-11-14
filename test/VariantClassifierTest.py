@@ -46,7 +46,7 @@ class VariantClassifierTest(unittest.TestCase):
     )
     @data_provider(variants_indels_MAPK1)
     def test_variant_classification_indels_simple(self, chr, start, end, gt_vc, vt, ref, alt):
-        """Test a small set of indels.  This time from MAPK1"""
+        """Test a small set of indels, from MAPK1.  These are all in frame or frame shifts cleanly within exons."""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
 
     variants_indels_MUC16 = lambda: (
@@ -59,7 +59,7 @@ class VariantClassifierTest(unittest.TestCase):
     )
     @data_provider(variants_indels_MUC16)
     def test_variant_classification_indels_muc16(self, chr, start, end, gt_vc, vt, ref, alt):
-        """Test another small set of indels.  This time from MUC16"""
+        """Test small set of indels, from MUC16.  These are all introns or frame shifts cleanly within exon /intron."""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
 
     variants_snps_missense = lambda: (
@@ -87,21 +87,6 @@ class VariantClassifierTest(unittest.TestCase):
     def test_is_framshift_indel(self, vt, s, e, alt, gt):
         vcer = VariantClassifier()
         self.assertTrue(vcer.is_framshift_indel(vt, s, e, alt) == gt)
-
-    exon_tests = lambda: (
-        ([(22221611, 22221919, '1'), (22161952, 22162135, '2'), (22160138, 22160328, '3'), (22153300, 22153417, '4'), (22142982, 22143097, '5'), (22142545, 22142677, '6'), (22127161, 22127271, '7'), (22123483, 22123609, '8'), (22108788, 22118529, '9')],
-            22108800, 22108800, 8, 12, 9729),
-        ([(5, 10, 1), (15, 20, 2), (25, 40, 3)], 6, 8, 0, 1, 2),
-        ([(25, 40, 1), (15, 20, 2), (5, 10, 3)], 14, 16, 1, 1, 4)
-    )
-
-    @data_provider(exon_tests)
-    def test_determine_closest_distances_from_exon(self, exons, start_genomic_space, end_genomic_space, gt_exon_i, gt_exon_ld, gt_exon_rd):
-        vcer = VariantClassifier()
-        guess_exon_i, guess_exon_ld, guess_exon_rd = vcer._determine_closest_distances_from_exon(exons, start_genomic_space, end_genomic_space)
-        self.assertTrue(guess_exon_i == gt_exon_i, "guess, gt exon did not match: " + str([guess_exon_i, gt_exon_i]))
-        self.assertTrue(gt_exon_ld == guess_exon_ld, "guess, gt ld did not match: " + str([guess_exon_ld, gt_exon_ld]))
-        self.assertTrue(gt_exon_rd == guess_exon_rd, "guess, gt rd did not match: " + str([guess_exon_rd, gt_exon_rd]))
 
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
@@ -138,7 +123,6 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22162134", "22162134", "Splice_Site", "SNP", "A", "T"),
         ("22", "22162133", "22162133", "Missense_Mutation", "SNP", "G", "T"),
         ("22", "22162132", "22162132", "Silent", "SNP", "A", "T"),
-
         ("22", "22127164", "22127164", "Silent", "SNP", "C", "C"),
         ("22", "22127163", "22127163", "Splice_Site", "SNP", "T", "G"),
         ("22", "22127162", "22127162", "Splice_Site", "SNP", "C", "A"),
@@ -147,8 +131,31 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22127159", "22127159", "Intron", "SNP", "T", "A")
     )
     @data_provider(variants_snps_splice_sites)
-    def test_snp_vc_on_one_transcript_Splice_Site(self, chr, start, end, gt_vc, vt, ref,alt):
-        """Test a lot of positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
+    def test_snp_vc_on_one_transcript_splice_site(self, chr, start, end, gt_vc, vt, ref, alt):
+        """Test several positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
+        >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
+        """
+        tx = self.retrieve_test_transcript_MAPK1()
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
+
+    variants_indels_splice_sites = lambda: (
+        ("22", "22127155", "22127158", "Intron", "DEL", "CTCT", "-"),
+        ("22", "22127155", "22127160", "Splice_Site", "DEL", "CTCTTA", "-"),
+        ("22", "22127155", "22127163", "Splice_Site", "DEL", "CTCTTACCT", "-"),
+        ("22", "22127155", "22127166", "Splice_Site", "DEL", "CTCTTACCTCGT", "-"),
+        ("22", "22127163", "22127166", "Splice_Site", "DEL", "TCGT", "-"),
+        ("22", "22127163", "22127166", "Splice_Site", "INS", "-", "AAAA"),
+        ("22", "22127162", "22127166", "Splice_Site", "INS", "-", "AAAAA"),
+        ("22", "22127155", "22127166", "Intron", "INS", "-", "AAAAAAAAAAAA")
+
+        #TODO: Need UTR/codon side tests
+        #TODO: Fix in frame calculation when only partially overlapping an exon.  When secondary vc is implemented
+    )
+    @data_provider(variants_indels_splice_sites)
+    def test_indels_vc_on_one_transcript_splice_site(self, chr, start, end, gt_vc, vt, ref, alt):
+        """Test several positions on one MAPK1 transcript for indels: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
         """
         tx = self.retrieve_test_transcript_MAPK1()

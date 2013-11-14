@@ -2,6 +2,7 @@ import Bio
 from Bio import Seq
 import itertools
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.gaf_annotation import chop
 
 
@@ -116,6 +117,9 @@ class VariantClassifier(object):
         :param is_splice_site:
         :return:
         """
+        #TODO: Replace with constants in the VariantClassification class
+        if is_splice_site:
+            return "Splice_Site"
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
             if not is_frameshift_indel:
                 vc = 'In_Frame_Ins'
@@ -127,17 +131,14 @@ class VariantClassifier(object):
             else:
                 vc = "Frame_Shift_Del"
         else:
-            if is_splice_site:
-                vc = "Splice_Site"
-            else:
-                if reference_aa == observed_aa:
-                    vc = 'Silent'
-                elif reference_aa.find('*') > -1 and observed_aa.find('*') == -1:
-                    vc = 'Nonstop_Mutation'
-                elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
-                    vc = 'Nonsense_Mutation'
-                elif reference_aa != observed_aa:
-                    vc = 'Missense_Mutation'
+            if reference_aa == observed_aa:
+                vc = 'Silent'
+            elif reference_aa.find('*') > -1 and observed_aa.find('*') == -1:
+                vc = 'Nonstop_Mutation'
+            elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
+                vc = 'Nonsense_Mutation'
+            elif reference_aa != observed_aa:
+                vc = 'Missense_Mutation'
         return vc
 
 
@@ -199,7 +200,7 @@ class VariantClassifier(object):
 
             observed_aa = Bio.Seq.translate(mutated_codon_seq)
 
-            is_splice_site = self._determine_if_splice_site(int(start), int(end), tx, dist=2)
+            is_splice_site = self._determine_if_splice_site_overlap(int(start), int(end), tx, dist=2)
 
             variant_classification = self.infer_variant_classification(variant_type,
                 reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=is_mut_a_frameshift_indel, is_splice_site=is_splice_site)
@@ -230,20 +231,52 @@ class VariantClassifier(object):
                 return True
         return False
 
-    def _determine_if_splice_site(self, start_genomic_space, end_genomic_space, tx, dist=2):
+    def _determine_if_splice_site_overlap(self, start_genomic_space, end_genomic_space, tx, variant_type, dist=2):
 
         """
          If overlap is detected, but the start or end is within dist bp, then this is a splice site.
-        :param end:
-        :param start:
-        :param t:
+         start <= end
+        INS events only call splice site when they start in the splice site
+
+        :param start_genomic_space: int in genomic space
+        :param end_genomic_space: int in genomic space
+        :param tx: Transcript
+        :param variant_type:
+        :param dist:
+        :return is_splice_site_overlap, exon_i, is_right_overlap (Higher genomic position --> True)
 
         """
-        exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
+        exons = tx.get_exons()
+        strand = tx.get_strand()
 
-        if abs(ldist) <= dist or abs(rdist) <= dist:
-            return True
-        return False
+        # If this is an insertion, we only want to count a splice site if it starts in the splice site regions
+        if variant_type == VariantClassification.VT_INS:
+            end_genomic_space = start_genomic_space
+
+        for i,exon in enumerate(exons):
+            is_internal_exon = (i > 0) and (i < (len(exons)-1))
+            is_check_left = is_internal_exon or (strand == "-" and i == 0) or (strand == "+" and i == (len(exons)-1))
+            is_check_right = is_internal_exon or (strand == "+" and i == 0) or (strand == "-" and i == (len(exons)-1))
+            if is_check_left:
+                splice_site_left = (exon[0]-dist+1, exon[0]+(dist-1)+1)
+                overlap_type_left = TranscriptProviderUtils.test_overlap(start_genomic_space, end_genomic_space, splice_site_left[0], splice_site_left[1])
+                if overlap_type_left:
+                    return True, i, False
+            if is_check_right:
+                splice_site_right = (exon[1]-(dist-1), exon[1] + dist)
+                overlap_type_right = TranscriptProviderUtils.test_overlap(start_genomic_space, end_genomic_space, splice_site_right[0], splice_site_right[1])
+                if overlap_type_right:
+                    return True, i, True
+
+        return False, -1, None, False
+
+
+
+        # exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
+        #
+        # if abs(ldist) <= dist or abs(rdist) <= dist:
+        #     return True
+        # return False
 
     def _determine_closest_distances_from_exon(self, exons, start_genomic_space, end_genomic_space):
         """
@@ -360,6 +393,20 @@ class VariantClassifier(object):
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site)
         return vc_tmp
 
+    def _determine_if_exon_overlap(self, e, s, tx, variant_type):
+        if variant_type != VariantClassification.VT_INS:
+            is_exon_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
+        else:
+            is_exon_overlap = TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_exons())
+        return is_exon_overlap
+
+    def _determine_beyond_exon_info_vt(self, start, end, tx, variant_type):
+        if variant_type != VariantClassification.VT_INS:
+            is_beyond_exons, side, is_flank = self._determine_beyond_exon_info(int(start), int(end), tx)
+        else:
+            is_beyond_exons, side, is_flank = self._determine_beyond_exon_info(int(start), int(start), tx)
+        return is_beyond_exons, side, is_flank
+
     def variant_classify(self, tx, ref_allele, alt_allele, start, end, variant_type, dist=2):
         """Perform classifications.
 
@@ -389,9 +436,13 @@ class VariantClassifier(object):
 
         s = int(start)
         e = int(end)
-        is_exon_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
-        is_splice_site = self._determine_if_splice_site(s, e, tx, dist)
-        is_beyond_exons, side, is_flank = self._determine_beyond_exon_info(int(start), int(end), tx)
+        is_exon_overlap = self._determine_if_exon_overlap(e, s, tx, variant_type)
+
+        is_splice_site_tuple = self._determine_if_splice_site_overlap(s, e, tx, variant_type, dist)
+        is_splice_site = is_splice_site_tuple[0]
+
+        is_beyond_exons, side, is_flank = self._determine_beyond_exon_info_vt(start, end, tx, variant_type)
+
         if not is_exon_overlap and not is_beyond_exons:
             if is_splice_site:
                 # Intron Splice Site

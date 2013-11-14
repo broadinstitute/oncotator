@@ -22,6 +22,9 @@ class VariantClassification(object):
     STOP_CODON_DEL = "Stop_Codon_Del"
     DE_NOVO_START = "De_novo_Start"
 
+    VT_INS = "INS"
+    VT_DEL = "DEL"
+
     def __init__(self):
         self._vc_primary = ""
         self._vc_secondary = ""

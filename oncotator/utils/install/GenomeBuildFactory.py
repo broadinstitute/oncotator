@@ -193,17 +193,6 @@ class GenomeBuildFactory(object):
         output_db.close()
         transcript_db.close()
 
-    # def build_ensembl_protein_seqs(self):
-    #     prot_seq_db = shelve.open(os.path.join(output_dir, 'Ensembl_protein_seqs.fa.shlv'), 'c')
-    #     for prot_rec in SeqIO.parse(proteins_file, 'fasta'):
-    #         tmp = re.search('ENST\d+', prot_rec.description)
-    #         if tmp == None:
-    #             continue
-    #         id_str = tmp.group(0)
-    #         prot_seq_db[id_str] = str(prot_rec.seq)
-    #
-    #     prot_seq_db.close()
-
     def construct_ensembl_indices(self, ensembl_input_gtf, ensembl_input_fasta, base_output_filename):
         """
 
