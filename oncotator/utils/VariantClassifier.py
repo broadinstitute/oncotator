@@ -362,7 +362,19 @@ class VariantClassifier(object):
         return result
 
     def _determine_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type):
+        """
+        Note: This method can also handle start and stop codons.
 
+        :param start:
+        :param end:
+        :param ref_allele:
+        :param alt_allele:
+        :param is_frameshift_indel:
+        :param is_splice_site:
+        :param tx:
+        :param variant_type:
+        :return:
+        """
         reference_allele_stranded, observed_allele_stranded = ref_allele, alt_allele
         if tx.get_strand() == '-':
             reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref_allele), Bio.Seq.reverse_complement(alt_allele)
@@ -484,15 +496,15 @@ class VariantClassifier(object):
             return 'Stop_Codon_' + variant_type.capitalize()
 
         is_cds_overlap = self._determine_if_cds_overlap(s, e, tx, variant_type)
-        if is_exon_overlap and not is_cds_overlap:
+        if is_exon_overlap and not is_cds_overlap and not is_start_codon_overlap and not is_stop_codon_overlap:
             # UTR
             vc_tmp = side + "UTR"
             transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
             vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, variant_type)
             return vc
 
-        # We have a clean overlap in the CDS.  No start codon or stop codon.
-        if is_cds_overlap:
+        # We have a clean overlap in the CDS.  Includes start codon or stop codon.
+        if is_cds_overlap or is_stop_codon_overlap or is_start_codon_overlap:
             is_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end), alt_allele)
             return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type)
 
@@ -570,19 +582,23 @@ class VariantClassifier(object):
         result = vc
 
         if vc == "5'UTR" and ref != alt:
+            reference_allele_stranded, observed_allele_stranded = ref, alt
+            if tx.get_strand() == '-':
+                reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref), Bio.Seq.reverse_complement(alt)
             tx_seq = tx.get_seq()
             utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
 
             utr_region_seq = tx_seq[utr_region_start-1:utr_region_end]
 
             mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
-                transcript_position_start, transcript_position_end, alt, variant_type)
+                transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
             # Check for Denovo
             ATG_position = mutated_utr_region_seq.find('ATG')
             if ATG_position > -1:
+                cds_start_in_exon_space,cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
                 ATG_position = utr_region_start + ATG_position
-                if (t['cds_start'] - ATG_position) % 3 == 0:
+                if (cds_start_in_exon_space - ATG_position) % 3 == 0:
                     frameness = 'InFrame'
                 else:
                     frameness = 'OutOfFrame'

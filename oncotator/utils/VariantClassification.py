@@ -10,6 +10,7 @@ class VariantClassification(object):
     THREE_PRIME_PRIME_FLANK = "3'Flank"
     MISSENSE = "Missense_Mutation"
     NONSENSE = "Nonsense_Mutation"
+    NONSTOP = "Nonstop_Mutation"
     SILENT = "Silent"
     SPLICE_SITE = "Splice_Site"
     IN_FRAME_DEL = "In_Frame_Del"
@@ -20,7 +21,8 @@ class VariantClassification(object):
     START_CODON_DEL = "Start_Codon_Del"
     STOP_CODON_INS = "Stop_Codon_Ins"
     STOP_CODON_DEL = "Stop_Codon_Del"
-    DE_NOVO_START = "De_novo_Start"
+    DE_NOVO_START_IN_FRAME = "De_novo_Start_InFrame"
+    DE_NOVO_START_OUT_FRAME = "De_novo_Start_OutOfFrame"
 
     VT_INS = "INS"
     VT_DEL = "DEL"

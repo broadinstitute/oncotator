@@ -465,6 +465,20 @@ class GafDatasourceTest(unittest.TestCase):
         new_hashcode = gafDatasource.get_hashcode()
         self.assertTrue(old_hashcode != new_hashcode)
 
+    def test_start_codon(self):
+        """Test a start codon hit in a GAF datasource"""
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+
+        # 1	228646357 nearest Gene=HIST3H2A C>T
+        m = MutationData()
+        m.start = str(22221729)
+        m.end = str(22221729)
+        m.chr="22"
+        m.ref_allele = 'A'
+        m.alt_allele = 'T'
+        m = gafDatasource.annotate_mutation(m)
+        pass
+
     def _flattenChunks(self, chunks):
         [[(yield m) for m in c] for c in chunks]
 

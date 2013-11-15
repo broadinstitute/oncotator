@@ -4,6 +4,7 @@ from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
+from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils
 from MUC16Testdata import muc16testdata
@@ -140,6 +141,25 @@ class VariantClassifierTest(unittest.TestCase):
         vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
+    # Stop codons: TAA, TAG, TGA
+    # Reminder: this is a negative transcript and the stop codons listed on previous line are not reverse complemented
+    variants_nonsense_nonstop = lambda: (
+        ("22", "22123493", "22123493", VariantClassification.SILENT, "SNP", "T", "C"),
+        ("22", "22123494", "22123494", VariantClassification.NONSTOP, "SNP", "T", "A"),
+        ("22", "22123495", "22123495", VariantClassification.NONSTOP, "SNP", "A", "G"),
+        ("22", "22123563", "22123563", VariantClassification.NONSENSE, "SNP", "A", "T")
+    )
+    @data_provider(variants_nonsense_nonstop)
+    def test_vc_on_one_transcript_nonsense_nonstop(self, chr, start, end, gt_vc, vt, ref, alt):
+        """Test several positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
+        >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
+        """
+        tx = self.retrieve_test_transcript_MAPK1()
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
+
+
     variants_indels_splice_sites = lambda: (
         ("22", "22127155", "22127158", "Intron", "DEL", "CTCT", "-"),
         ("22", "22127155", "22127160", "Splice_Site", "DEL", "CTCTTA", "-"),
@@ -154,12 +174,12 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22123486", "22123486", "3'UTR", "INS", "-", "A"),
         ("22", "22123494", "22123494", "Stop_Codon_Del", "DEL", "A", "-"),
         ("22", "22221729", "22221729", "Start_Codon_Del", "DEL", "A", "-"),
-        # ref is wrong here
-        ("22", "22221735", "22221735", "5'UTR", "DEL", "A", "-"),
-        # ref is wrong here
+        ("22", "22221735", "22221735", "5'UTR", "DEL", "G", "-"),
+        # ref is wrong here, but test should still pass
         ("22", "22123486", "22123486", "3'UTR", "DEL", "A", "-")
 
-        #TODO: For SNPs:  Test nonstop and nonsense mutations
+        #TODO: Test DeNovo mutations
+        #TODO: Test RNA VCs
         #TODO: Fix in frame calculation when only partially overlapping an exon.  (No need until secondary vc is implemented)
     )
     @data_provider(variants_indels_splice_sites)
@@ -181,6 +201,27 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(e == 11022, "Incorrect exon end: %d, gt: %d" % (e, 11022))
         self.assertTrue(cds_start == 189, "incorrect cds_start: %d, gt: %d" % (cds_start, 189))
         self.assertTrue(cds_stop == 1269, "incorrect cds_stop: %d, gt: %d" % (cds_stop, 1269))
+
+    denovo_and_start_codon_test_data = lambda: (
+        ("22", "22221735", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "CAT"),
+        ("22", "22221735", "22221739", VariantClassification.DE_NOVO_START_IN_FRAME, "INS", "-", "ACATAA"),
+        ("22", "22221735", "22221740", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "AACATAA"),
+        ("22", "22221737", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "A"),
+        ("22", "22221754", "22221754", VariantClassification.DE_NOVO_START_IN_FRAME, "SNP", "C", "T"),
+        # Start codon hit
+        ("22", "22221729", "22221729", VariantClassification.MISSENSE, "SNP", "A", "T")
+
+    )
+    @data_provider(denovo_and_start_codon_test_data)
+    def test_denovo_and_start_codon_on_one_transcript(self, chr, start, end, gt_vc, vt, ref, alt):
+        """Test several positions on one MAPK1 transcript for de novo and start codon: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
+        >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
+        """
+        tx = self.retrieve_test_transcript_MAPK1()
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
+
 
 if __name__ == '__main__':
     unittest.main()
