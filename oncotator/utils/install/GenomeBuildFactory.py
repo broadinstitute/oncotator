@@ -32,7 +32,7 @@ class GenomeBuildFactory(object):
         cds_start_exon_space, cds_stop_exon_space = TranscriptProviderUtils._convert_genomic_space_to_feature_space(int(cds_start_genomic_space), int(cds_stop_genomic_space), exons, strand)
 
         prot_seq = Seq.translate(seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
-        if prot_seq[-1] == '*':
+        if len(prot_seq) > 0 and prot_seq[-1] == '*':
             prot_seq = prot_seq[:-1]
 
         return prot_seq
