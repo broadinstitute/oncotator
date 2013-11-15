@@ -142,86 +142,7 @@ class VariantClassifier(object):
         return vc
 
 
-    def variant_classify_old(self, tx, variant_type, ref_allele, alt_allele, start, end):
-
-        reference_allele, observed_allele = str(ref_allele), str(alt_allele)
-        if tx.get_gene_type() == 'miRNA':
-            is_mirna = True
-        else:
-            is_mirna = False
-
-        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
-
-        if tx.get_strand() == '-':
-            reference_allele, observed_allele = Bio.Seq.reverse_complement(reference_allele), Bio.Seq.reverse_complement(observed_allele)
-
-        transcript_seq = tx.get_seq()
-
-        # Fix to correct reference transcript sequence when it differs from genomic reference
-        # -1 here to account for zero-base python lists
-        if variant_type == 'SNP' and transcript_seq[transcript_position_start-1:transcript_position_end] != reference_allele:
-            new_transcript_seq = list(transcript_seq)
-            new_transcript_seq[transcript_position_start-1:transcript_position_end] = reference_allele
-            transcript_seq = ''.join(new_transcript_seq)
-            ref_tx_seq_has_been_changed = True
-        else:
-            ref_tx_seq_has_been_changed = False
-
-        protein_seq = tx.get_protein_seq()
-        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
-
-        #always use '+' here because strand doesn't matter, since inputs are in transcript space
-        cds_overlap_type = TranscriptProviderUtils.test_overlap_with_strand(transcript_position_start, transcript_position_end,
-            cds_start, cds_stop, '+')
-
-        if cds_overlap_type == 'a_within_b':
-            protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(transcript_position_start,
-                transcript_position_end, cds_start)
-
-            cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start,
-                protein_position_end, cds_start)
-
-            reference_codon_seq = transcript_seq[cds_codon_start:cds_codon_end+1]
-            reference_aa = protein_seq[protein_position_start-1:protein_position_end]
-
-            is_mut_a_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end),  observed_allele)
-
-            if variant_type == 'INS' and protein_position_start != protein_position_end:
-                #treat differently if insertion falls between codons
-                reference_codon_seq = ''
-                mutated_codon_seq = observed_allele
-                reference_aa = ''
-            else:
-                mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq,
-                    cds_codon_start, transcript_position_start, transcript_position_end, observed_allele, variant_type)
-
-            if ref_tx_seq_has_been_changed:
-                reference_aa = Bio.Seq.translate(reference_codon_seq)
-
-            observed_aa = Bio.Seq.translate(mutated_codon_seq)
-
-            is_splice_site = self._determine_if_splice_site_overlap(int(start), int(end), tx, dist=2)
-
-            variant_classification = self.infer_variant_classification(variant_type,
-                reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=is_mut_a_frameshift_indel, is_splice_site=is_splice_site)
-
-            # TODO: Bring this code back, so that we can handle alternate values for silent mutations
-            # # If silent mutation w/in 2 bp of a splice junction, then change to splice site
-            # if variant_classification.lower() == "silent":
-            #     self._determine_if_splice_site(int(start), int(end), tx, dist=2)
-
-            if variant_type != 'SNP':
-                reference_aa, observed_aa, protein_position_start, protein_position_end = \
-                    self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
-                        protein_position_end, reference_aa, observed_aa)
-        else:
-            variant_classification = self.annotate_mutations_not_fully_within_cds(transcript_seq, observed_allele, cds_overlap_type, transcript_position_start,
-                transcript_position_end, variant_type, tx)
-
-        return variant_classification
-
-
-    def is_framshift_indel(self, variant_type, start, end,  observed_allele):
+    def is_frameshift_indel(self, variant_type, start, end,  observed_allele):
         if variant_type in ['DEL','INS']:
             if variant_type == 'DEL':
                 dl = (end-start+1) % 3
@@ -274,92 +195,6 @@ class VariantClassifier(object):
 
         return False, -1, None, False
 
-
-
-        # exon_i, ldist, rdist = self._determine_closest_distances_from_exon(tx.get_exons(), start_genomic_space, end_genomic_space)
-        #
-        # if abs(ldist) <= dist or abs(rdist) <= dist:
-        #     return True
-        # return False
-
-    def _determine_closest_distances_from_exon(self, exons, start_genomic_space, end_genomic_space):
-        """
-        start_genomic_space <= end_genomic_space
-
-        Everything in genomic space.
-
-        :param exons:
-        :param start_genomic_space:
-        :param end_genomic_space:
-        :return: exon_i, ldist, rdist
-        ldist is the distance from the closest edge (start/end) to the left side of the exon (lower genomic position)
-        rdist is the distance from the closest edge (start/end) to the right side of the exon (lower genomic position)
-        """
-        exon_i = ldist = rdist = -1
-        min_val = 10000000000
-
-        if start_genomic_space > end_genomic_space:
-            raise ValueError("start value must be less than (or equal) to end value.  " + str([start_genomic_space,end_genomic_space]))
-
-        for i in range(0, len(exons)):
-            exon = exons[i]
-
-            # Distance from the larger genomic position
-            if start_genomic_space >= exon[0]:
-                left_diff = start_genomic_space - exon[0]
-            else:
-                left_diff = exon[0] - start_genomic_space
-
-            if end_genomic_space >= exon[1]:
-                right_diff = end_genomic_space - exon[1]
-            else:
-                right_diff = exon[1] - (end_genomic_space-1)
-
-            if min_val > left_diff or min_val > right_diff:
-                ldist = left_diff
-                rdist = right_diff
-                exon_i = i
-                min_val = min(left_diff, right_diff)
-
-        return exon_i, ldist, rdist
-
-    def annotate_mutations_not_fully_within_cds(self, transcript_seq, observed_allele, cds_overlap_type, transcript_position_start, transcript_position_end, variant_type, t):
-        if variant_type in ['DEL','INS']:
-            vt = ''.join([variant_type[0], variant_type[1:].lower()])
-        else:
-            vt = 'variant_type'
-
-        result = ""
-        if cds_overlap_type == 'a_overlaps_b_left_border':
-            result = 'Start_Codon_' + vt
-        elif cds_overlap_type == 'a_overlaps_b_right_border':
-            result = 'Stop_Codon_' + vt
-        else:
-            cds_start_in_exon_space,cds_end_in_exon_space = self._determine_cds_in_exon_space(t)
-
-            if transcript_position_start < cds_start_in_exon_space and transcript_position_start < cds_end_in_exon_space: p = 5
-            elif transcript_position_start > cds_start_in_exon_space and transcript_position_start > cds_end_in_exon_space: p = 3
-            vc = "%d'UTR" % (p)
-            result = vc
-            if vc == "5'UTR":
-                utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
-
-                utr_region_seq = transcript_seq[utr_region_start-1:utr_region_end]
-                # TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq,
-                #     cds_codon_start, transcript_position_start, transcript_position_end, observed_allele, variant_type)
-                mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
-                    transcript_position_start, transcript_position_end, observed_allele, variant_type)
-
-                # Check for Denovo
-                ATG_position = mutated_utr_region_seq.find('ATG')
-                if ATG_position > -1:
-                    ATG_position = utr_region_start + ATG_position
-                    if (t['cds_start'] - ATG_position) % 3 == 0:
-                        frameness = 'InFrame'
-                    else:
-                        frameness = 'OutOfFrame'
-                    result = 'De_novo_Start_' + frameness
-        return result
 
     def _determine_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type):
         """
@@ -505,7 +340,7 @@ class VariantClassifier(object):
 
         # We have a clean overlap in the CDS.  Includes start codon or stop codon.
         if is_cds_overlap or is_stop_codon_overlap or is_start_codon_overlap:
-            is_frameshift_indel = self.is_framshift_indel(variant_type, int(start), int(end), alt_allele)
+            is_frameshift_indel = self.is_frameshift_indel(variant_type, int(start), int(end), alt_allele)
             return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type)
 
         raise ValueError("Could not determine variant classification:  " + tx.trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
@@ -586,9 +421,12 @@ class VariantClassifier(object):
             if tx.get_strand() == '-':
                 reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref), Bio.Seq.reverse_complement(alt)
             tx_seq = tx.get_seq()
+
+            if variant_type == VariantClassification.VT_INS:
+                transcript_position_end = transcript_position_start
             utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
 
-            utr_region_seq = tx_seq[utr_region_start-1:utr_region_end]
+            utr_region_seq = tx_seq[utr_region_start:utr_region_end+1]
 
             mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
                 transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
@@ -596,7 +434,7 @@ class VariantClassifier(object):
             # Check for Denovo
             ATG_position = mutated_utr_region_seq.find('ATG')
             if ATG_position > -1:
-                cds_start_in_exon_space,cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+                cds_start_in_exon_space, cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
                 ATG_position = utr_region_start + ATG_position
                 if (cds_start_in_exon_space - ATG_position) % 3 == 0:
                     frameness = 'InFrame'

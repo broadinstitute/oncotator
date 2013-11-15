@@ -62,6 +62,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.MultiprocessingUtils import LoggingPool
 from oncotator.utils.MutUtils import MutUtils
 from TestUtils  import TestUtils
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 def annotate_mutation_global(t):
@@ -469,7 +470,6 @@ class GafDatasourceTest(unittest.TestCase):
         """Test a start codon hit in a GAF datasource"""
         gafDatasource = TestUtils.createGafDatasource(self.config)
 
-        # 1	228646357 nearest Gene=HIST3H2A C>T
         m = MutationData()
         m.start = str(22221729)
         m.end = str(22221729)
@@ -477,7 +477,39 @@ class GafDatasourceTest(unittest.TestCase):
         m.ref_allele = 'A'
         m.alt_allele = 'T'
         m = gafDatasource.annotate_mutation(m)
-        pass
+        self.assertTrue(m['variant_classification'] == VariantClassification.MISSENSE)
+
+    def test_denovo(self):
+        """GAF de novo test """
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+
+        m = MutationData()
+        m.start = str(22221735)
+        m.end = str(22221737)
+        m.chr="22"
+        m.ref_allele = ''
+        m.alt_allele = 'CAT'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == 'De_novo_Start_OutOfFrame')
+
+        m = MutationData()
+        m.start = str(22221735)
+        m.end = str(22221740)
+        m.chr="22"
+        m.ref_allele = ''
+        m.alt_allele = 'AACATAA'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == 'De_novo_Start_OutOfFrame')
+
+        m = MutationData()
+        m.start = str(22221735)
+        m.end = str(22221739)
+        m.chr="22"
+        m.ref_allele = ''
+        m.alt_allele = 'ACATAA'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == 'De_novo_Start_InFrame')
+
 
     def _flattenChunks(self, chunks):
         [[(yield m) for m in c] for c in chunks]
