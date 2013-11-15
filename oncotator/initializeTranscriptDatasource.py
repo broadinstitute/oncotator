@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
+from oncotator.utils.version import VERSION
 
 
 def setup_logging():
@@ -12,6 +13,7 @@ def setup_logging():
     #    Output on the console will be the same as what is in the log file.
     logging_format = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
     logging.basicConfig(level=logging.INFO, format=logging_format)
+    logging.getLogger(__name__).info("Version: " + VERSION)
 
 
 def parseOptions():
