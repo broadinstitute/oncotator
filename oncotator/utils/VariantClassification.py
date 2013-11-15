@@ -17,10 +17,12 @@ class VariantClassification(object):
     IN_FRAME_INS = "In_Frame_Ins"
     FRAME_SHIFT_INS = "Frame_Shift_Ins"
     FRAME_SHIFT_DEL = "Frame_Shift_Del"
+    START_CODON_SNP = "Start_Codon_SNP"
     START_CODON_INS = "Start_Codon_Ins"
     START_CODON_DEL = "Start_Codon_Del"
     STOP_CODON_INS = "Stop_Codon_Ins"
     STOP_CODON_DEL = "Stop_Codon_Del"
+    # Note: A STOP_CODON_SNP is a nonstop mutation
     DE_NOVO_START_IN_FRAME = "De_novo_Start_InFrame"
     DE_NOVO_START_OUT_FRAME = "De_novo_Start_OutOfFrame"
 

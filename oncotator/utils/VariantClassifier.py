@@ -103,7 +103,7 @@ class VariantClassifier(object):
         return reference_aa, observed_aa, protein_position_start, protein_position_end
 
 
-    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False, is_splice_site=False):
+    def infer_variant_classification(self, variant_type, reference_aa, observed_aa, reference_allele, observed_allele, is_frameshift_indel=False, is_splice_site=False, is_start_codon=False):
         """ In a nutshell:
         if indel, then return in frame or frame shift ins/del
         if SNP, then return splice_site (if applicable), otherwise the proper vc.
@@ -117,7 +117,8 @@ class VariantClassifier(object):
         :param is_splice_site:
         :return:
         """
-        #TODO: Replace with constants in the VariantClassification class
+        #TODO: Replace the rest with constants in the VariantClassification class
+        #TODO: Cleanup since the flag to start codon is a bit of a hack.
         if is_splice_site:
             return "Splice_Site"
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
@@ -138,7 +139,10 @@ class VariantClassifier(object):
             elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
                 vc = 'Nonsense_Mutation'
             elif reference_aa != observed_aa:
-                vc = 'Missense_Mutation'
+                if is_start_codon:
+                    vc = VariantClassification.START_CODON_SNP
+                else:
+                    vc = VariantClassification.MISSENSE
         return vc
 
 
@@ -196,7 +200,7 @@ class VariantClassifier(object):
         return False, -1, None, False
 
 
-    def _determine_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type):
+    def _determine_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type, is_start_codon):
         """
         Note: This method can also handle start and stop codons.
 
@@ -241,7 +245,7 @@ class VariantClassifier(object):
         else:
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
         vc_tmp = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
-                                                   is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site)
+                                                   is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
         return vc_tmp
 
     def _determine_if_exon_overlap(self, e, s, tx, variant_type):
@@ -341,7 +345,7 @@ class VariantClassifier(object):
         # We have a clean overlap in the CDS.  Includes start codon or stop codon.
         if is_cds_overlap or is_stop_codon_overlap or is_start_codon_overlap:
             is_frameshift_indel = self.is_frameshift_indel(variant_type, int(start), int(end), alt_allele)
-            return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type)
+            return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type, is_start_codon_overlap)
 
         raise ValueError("Could not determine variant classification:  " + tx.trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
 
