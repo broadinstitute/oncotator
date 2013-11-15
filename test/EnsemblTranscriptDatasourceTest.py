@@ -115,6 +115,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_simple_annotate_with_nonhuman(self):
         """Test a very simple annotation with a nonhuman genome (saccer)"""
+        #TODO: Build the saccer datasource dynamically for each test.
         base_config_location = "testdata/ensembl/saccer/"
 
         ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
