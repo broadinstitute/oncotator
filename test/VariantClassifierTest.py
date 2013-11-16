@@ -179,6 +179,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22123486", "22123486", "3'UTR", "DEL", "A", "-")
 
         #TODO: Test RNA VCs
+        #TODO: Test "+" strand transcript
         #TODO: Fix in frame calculation when only partially overlapping an exon.  (No need until secondary vc is implemented)
     )
     @data_provider(variants_indels_splice_sites)
@@ -202,15 +203,12 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(cds_stop == 1269, "incorrect cds_stop: %d, gt: %d" % (cds_stop, 1269))
 
     denovo_and_start_codon_test_data = lambda: (
+        ("22", "22221729", "22221729", VariantClassification.START_CODON_SNP, "SNP", "A", "T"),
         ("22", "22221735", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "CAT"),
         ("22", "22221735", "22221740", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "ACATAA"),
         ("22", "22221735", "22221741", VariantClassification.DE_NOVO_START_IN_FRAME, "INS", "-", "AACATAA"),
-        ("22", "22221737", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "A"),
-        ("22", "22221754", "22221754", VariantClassification.DE_NOVO_START_IN_FRAME, "SNP", "C", "T"),
-        # Start codon hit
-        #TODO: Should this be a missense?
-        ("22", "22221729", "22221729", VariantClassification.MISSENSE, "SNP", "A", "T")
-
+        ("22", "22221754", "22221754", VariantClassification.DE_NOVO_START_OUT_FRAME, "SNP", "C", "A"),
+        ("22", "22221737", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "A")
     )
     @data_provider(denovo_and_start_codon_test_data)
     def test_denovo_and_start_codon_on_one_transcript(self, chr, start, end, gt_vc, vt, ref, alt):

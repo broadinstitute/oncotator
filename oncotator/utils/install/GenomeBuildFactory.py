@@ -13,6 +13,9 @@ from Bio import Seq
 class GenomeBuildFactory(object):
     """ Responsible for creating indices for genome builds (through ENSEMBL) and creating a set of datasource files.
         The methods in this class would typically be run in datasource creation, not during annotation.
+
+        NOTE: This class only supports ENSEMBL/GENCODE, but there is only a minimal amount of ENSEMBL/GENCODE specific
+        code
     """
 
     QUALS_TO_CHECK = ['gene_status', 'level', 'source', 'tag', 'ccdsid', 'transcript_name', 'transcript_type', 'havana_gene', 'havana_transcript', 'transcript_status']
@@ -74,13 +77,6 @@ class GenomeBuildFactory(object):
 
             seq = seq_dict.get(transcript_id, None)
 
-            if seq is None:
-                # Try to parse the key.  Some fasta files embed the transcript id in with a lot of other info.
-                for k in seq_dict_keys:
-                    if k.find(transcript_id) != -1:
-                        seq = seq_dict.get(k)
-                        break
-
             if seq is not None:
                 genome_seq_as_str = str(seq.seq)
             else:
@@ -97,6 +93,33 @@ class GenomeBuildFactory(object):
         elif gff_record['type'] == 'stop_codon':
             self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
 
+    def _create_seq_dict(self, seq_fasta_fp):
+        """Create a dictionary with keys to the sequenced bases.  Note that this includes strand.
+        So if the ref is CGAT and strand is negative, this dict will have ATCG for the sequence
+
+        This method assumes that no transcripts have "|" or ">" in the ID.
+
+        This method will extract the transcript id from the GENCODE fasta.  Example:
+        >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
+
+        :param seq_fasta_fp: open readable filepointer to a fasta file (.fa)
+        :returns seq_dict: keys (usually transcript id, but can be more)
+        """
+        seq_dict = SeqIO.to_dict(SeqIO.parse(seq_fasta_fp, "fasta"))
+
+        # Check for faulty parsing and create new entries that are simply the transcript id
+        # For example: >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
+        seq_dict_keys = seq_dict.keys()
+        for k in seq_dict_keys:
+            key_list = k.split("|")
+            if len(key_list) != 1:
+                for id in key_list:
+                    new_id = id.replace(">", "")
+                    if new_id.startswith("ENST"):
+                        seq_dict[new_id] = seq_dict[k]
+
+        return seq_dict
+
     def build_ensembl_transcript_index(self, ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol="file"):
         """Create the transcript index (using shove) for ensembl.  Key is transcript ID
         :param ensembl_input_gtf:
@@ -111,7 +134,7 @@ class GenomeBuildFactory(object):
 
         in_seq_file = ensembl_input_fasta
         in_seq_handle = open(in_seq_file)
-        seq_dict = SeqIO.to_dict(SeqIO.parse(in_seq_handle, "fasta"))
+        seq_dict = self._create_seq_dict(in_seq_handle)
         in_seq_handle.close()
         logging.getLogger(__name__).info("Parsed fasta file: " + in_seq_file)
 
