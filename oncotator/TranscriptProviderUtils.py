@@ -129,7 +129,7 @@ class TranscriptProviderUtils(object):
         return genome_change
 
     @staticmethod
-    def _render_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
+    def render_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
         """
 
         :param variant_type:
@@ -161,8 +161,41 @@ class TranscriptProviderUtils(object):
 
 
     @staticmethod
-    def _render_protein_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
-        pass
+    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, strand):
+        if variant_classification.startswith('Splice_Site'):
+            if prot_position_start > 0:
+                protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
+        elif variant_classification.startswith('Frame_Shift'):
+            protein_change = 'p.%s%dfs' % (ref_prot_allele, prot_position_start)
+        elif alt_prot_allele == '-' or alt_prot_allele == '':
+            protein_change = 'p.%s%ddel' % (ref_prot_allele, prot_position_start)
+        elif ref_prot_allele == '-' or ref_prot_allele == '':
+            protein_change = 'p.%d_%dins%s' % (prot_position_start,
+                prot_position_end, alt_prot_allele)
+        elif len(ref_prot_allele) == 1 and len(alt_prot_allele) == 1:
+            protein_change = 'p.%s%d%s' % (ref_prot_allele, prot_position_start, alt_prot_allele)
+        else:
+            protein_change = 'p.%d_%d%s>%s' % (prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele)
+        return protein_change
+
+    @staticmethod
+    def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq):
+        codon_change = ''
+        if variant_classification.startswith('Frame_Shift'):
+            codon_change = 'c.(%d-%d)%sfs' % (codon_position_start, codon_position_end, ref_codon_seq)
+        elif variant_type.endswith('NP'):
+            codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+        elif variant_type == 'DEL':
+            if alt_codon_seq == '': #full codon deleted
+                codon_change = 'c.(%d-%d)%sdel' % (codon_position_start, codon_position_end, ref_codon_seq)
+            else:
+                codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+        elif variant_type == 'INS':
+            if ref_codon_seq == '': #insertion between codons
+                codon_change = 'c.(%d-%d)ins%s' % (codon_position_start, codon_position_end, alt_codon_seq)
+            else:
+                codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+        return codon_change
 
     # TODO: These transforms should be in a separate class.
     @staticmethod

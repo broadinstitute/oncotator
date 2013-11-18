@@ -150,13 +150,24 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
     @data_provider(transcript_change_testdata)
     def test_render_transcript_change(self, variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, gt):
         """Simple test of transcript change, once parameters have been rendered. """
-        guess = TranscriptProviderUtils._render_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
+        guess = TranscriptProviderUtils.render_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
     protein_change_testdata = lambda: (
-
+        ("SNP", "Missense_Mutation", 2118, 2118, "S", "L", "-", "p.S2118L"),
+        ("SNP", "Nonsense_Mutation", 2013, 2013, "Q", "*", "-", "p.Q2013*"),
+        ("SNP", "Splice_Site", 106, 106, "V", "A", "-", "p.V106_splice"),
+        ("DEL", "In_Frame_Del", 454, 454, "K", "-",	"+", "p.K454del"),
+        ("SNP", "Nonstop_Mutation", 246, 246, "*", "S", "+", "p.*246S"),
+        ("INS", "In_Frame_Ins", 108, 108, "-", "AAGCCGCTGCCACCTCCA", "-", "p.108_108F>FGGGSGF"),
+        ("INS", "In_Frame_Ins", 29, 30, "-", "GGCTGTGGCTCCGGCTGTGGG", "+", "p.29_30insGCGSGCG"),
+        ("INS", "Frame_Shift_Ins", 179, 179, "-", "C", "+", "p.C179fs")
     )
-
+    @data_provider(protein_change_testdata)
+    def test_render_protein_change(self, variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand, gt):
+        """Simple test of protein change, once parameters have been rendered. """
+        guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand)
+        self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
 if __name__ == '__main__':
     unittest.main()
