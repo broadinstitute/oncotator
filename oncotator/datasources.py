@@ -1251,7 +1251,7 @@ class ReferenceDatasource(Datasource):
         
         # TODO: Low priority: Read window sizes from a config file.
         self.directoryName = src_dir
-        self.windowSizeRef = windowSizeRef
+        self.windowSizeRef = int(windowSizeRef)
         self.windowSizeGC = windowSizeGCContent
         self.logger = logging.getLogger(__name__)
         super(ReferenceDatasource, self).__init__(src_dir, title=title, version=version)
