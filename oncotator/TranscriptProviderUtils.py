@@ -139,6 +139,7 @@ class TranscriptProviderUtils(object):
         :param ref_allele_stranded: ref_allele with strand already accounted
         :param alt_allele_stranded: alt_allele with strand already accounted
         """
+        transcript_change = ""
         if variant_classification.startswith('Splice_Site'):
             return 'c.%d_splice' % (exon_position_start)
 
@@ -162,6 +163,7 @@ class TranscriptProviderUtils(object):
 
     @staticmethod
     def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, strand):
+        protein_change = ""
         if variant_classification.startswith('Splice_Site'):
             if prot_position_start > 0:
                 protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
