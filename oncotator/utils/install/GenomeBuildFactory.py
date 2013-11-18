@@ -150,7 +150,7 @@ class GenomeBuildFactory(object):
 
             self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
             ctr += 1
-            if (ctr % 100 ) == 0:
+            if (ctr % 10000 ) == 0:
                 logging.getLogger(__name__).info("Added " + str(ctr) + " lines of the gtf into internal transcript index.")
 
         logging.getLogger(__name__).info("Populating final db with internal transcript index.")
