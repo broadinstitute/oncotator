@@ -26,7 +26,7 @@ class VariantClassifierTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18")
         return ensembl_ds
 

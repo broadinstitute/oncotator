@@ -120,10 +120,13 @@ class GenomeBuildFactory(object):
 
         return seq_dict
 
-    def build_ensembl_transcript_index(self, ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol="file"):
-        """Create the transcript index (using shove) for ensembl.  Key is transcript ID
-        :param ensembl_input_gtf:
-        :param ensembl_input_fasta: sequence data for transcripts corresponding to what is in the gtf
+    def build_ensembl_transcript_index(self, ensembl_input_gtfs, ensembl_input_fastas, output_filename, protocol="file"):
+        """Create the transcript index (using shove) for ensembl.  Key is transcript ID.
+
+        Note:  This method will hold the entire transcript index in RAM.
+
+        :param ensembl_input_gtfs: (list)
+        :param ensembl_input_fastas: (list) sequence data for transcripts corresponding to what is in the gtfs
         :param output_filename:
         :param protocol: shove protocol.  Usually "file" or "sqlite"
         """
@@ -132,26 +135,29 @@ class GenomeBuildFactory(object):
         shove = Shove(protocol + "://" + output_filename, "memory://")
         logging.getLogger(__name__).info("Transcript index being created: " + protocol + "://" + output_filename)
 
-        in_seq_file = ensembl_input_fasta
-        in_seq_handle = open(in_seq_file)
-        seq_dict = self._create_seq_dict(in_seq_handle)
-        in_seq_handle.close()
-        logging.getLogger(__name__).info("Parsed fasta file: " + in_seq_file)
+        seq_dict = {}
+        for in_seq_file in ensembl_input_fastas:
+            in_seq_handle = open(in_seq_file)
+            seq_dict.update(self._create_seq_dict(in_seq_handle))
+            in_seq_handle.close()
+            logging.getLogger(__name__).info("Parsed fasta file: " + in_seq_file)
 
-        in_file = ensembl_input_gtf
-        in_handle = open(in_file)
-        seq_dict_keys = seq_dict.keys()
-        ctr = 0
-        for rec in GFF.parse_simple(in_file): #(in_handle, base_dict=seq_dict):
+        for file_ctr, in_file in enumerate(ensembl_input_gtfs):
+            in_handle = open(in_file)
+            seq_dict_keys = seq_dict.keys()
+            ctr = 0
+            for rec in GFF.parse_simple(in_file): #(in_handle, base_dict=seq_dict):
 
-            # transcript id seems to always be a list of length 1
-            if len(rec['quals']['transcript_id']) > 1:
-                logging.getLogger(__name__).warn("ensembl records had more than one transcript id: " + str(rec['quals']['transcript_id']))
+                # transcript id seems to always be a list of length 1
+                if len(rec['quals']['transcript_id']) > 1:
+                    logging.getLogger(__name__).warn("ensembl records had more than one transcript id: " + str(rec['quals']['transcript_id']))
 
-            self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
-            ctr += 1
-            if (ctr % 10000 ) == 0:
-                logging.getLogger(__name__).info("Added " + str(ctr) + " lines of the gtf into internal transcript index.")
+                self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
+                ctr += 1
+                if (ctr % 10000) == 0:
+                    logging.getLogger(__name__).info("Added " + str(ctr) + " lines of gtf " + str(file_ctr+1) + " of " + str(len(ensembl_input_gtfs)) + " (" + in_file + ") into internal transcript index.")
+            in_handle.close()
+            logging.getLogger(__name__).info("Finished " + str(ctr) + " lines of gtf (" + in_file + ")")
 
         logging.getLogger(__name__).info("Populating final db with internal transcript index.")
         transcript_index_keys = self._transcript_index.keys()
@@ -162,7 +168,7 @@ class GenomeBuildFactory(object):
 
         logging.getLogger(__name__).info("Transcript index created " + str(len(shove.keys())) + " transcripts.")
         shove.close()
-        in_handle.close()
+
 
     def build_ensembl_transcripts_by_gene_index(self, ensembl_transcript_index_fname, output_filename, protocol="file"):
         """ Create an index for gene --> transcripts using a transcript index created in build_ensembl_transcript_index
@@ -218,15 +224,15 @@ class GenomeBuildFactory(object):
         output_db.close()
         transcript_db.close()
 
-    def construct_ensembl_indices(self, ensembl_input_gtf, ensembl_input_fasta, base_output_filename):
+    def construct_ensembl_indices(self, ensembl_input_gtfs, ensembl_input_fastas, base_output_filename):
         """
 
-        :param ensembl_input_gtf: gtf input file
-        :param ensembl_input_fasta: fasta input file
+        :param ensembl_input_gtfs: (list) gtf input files
+        :param ensembl_input_fastas: (list) fasta input files
         :param base_output_filename: Just the base output filename, such as "my_ensembl" without any extensions.
         :return:
         """
         ensembl_transcript_index_filename = base_output_filename + ".transcript.idx"
-        self.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, ensembl_transcript_index_filename)
+        self.build_ensembl_transcript_index(ensembl_input_gtfs, ensembl_input_fastas, ensembl_transcript_index_filename)
         self.build_ensembl_transcripts_by_gene_index(ensembl_transcript_index_filename, base_output_filename + ".transcript_by_gene.idx")
         self.build_ensembl_transcripts_by_genomic_location_index(ensembl_transcript_index_filename, base_output_filename + ".transcript_by_gp_bin.idx")

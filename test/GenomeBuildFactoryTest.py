@@ -69,7 +69,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         output_filename = "out/test_ensembl_gtf.db"
         protocol = "file"
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol=protocol)
+        genome_build_factory.build_ensembl_transcript_index([ensembl_input_gtf], [ensembl_input_fasta], output_filename, protocol=protocol)
         self.assertTrue(os.path.exists(output_filename))
 
         shove = Shove(protocol + "://" + output_filename, "memory://")
@@ -101,7 +101,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, transcript_index_filename, protocol=protocol)
+        genome_build_factory.build_ensembl_transcript_index([ensembl_input_gtf], [ensembl_input_fasta], transcript_index_filename, protocol=protocol)
         genome_build_factory.build_ensembl_transcripts_by_gene_index(transcript_index_filename, output_filename)
 
         # Now load the index and look something up.
@@ -122,7 +122,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
 
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, transcript_index_filename, protocol=protocol)
+        genome_build_factory.build_ensembl_transcript_index([ensembl_input_gtf], [ensembl_input_fasta], transcript_index_filename, protocol=protocol)
         genome_build_factory.build_ensembl_transcripts_by_genomic_location_index(transcript_index_filename, output_filename, protocol=protocol)
 
         # Now load the index and look something up.
@@ -143,7 +143,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([ensembl_input_gtf], [ensembl_input_fasta], base_output_filename)
 
         self.assertTrue(os.path.exists(base_output_filename + ".transcript.idx"))
         self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gene.idx"))
@@ -159,7 +159,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([ensembl_input_gtf], [ensembl_input_fasta], base_output_filename)
 
         seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", optimize=False)
         transcripts = seq_index['SEO1']
@@ -183,7 +183,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
 
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
 
         seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
         transcripts = seq_index["MAPK1"]
@@ -209,7 +209,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
 
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
         seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
         transcripts = seq_index["CP"]
 
@@ -221,3 +221,22 @@ class GenomeBuildFactoryTest(unittest.TestCase):
                 is_troubled_transcript_seen = True
                 break
         self.assertTrue(is_troubled_transcript_seen)
+
+    def test_multiple_gtf_initialization(self):
+        """Test that we can create a datasource from multiple gtf & fastas"""
+        gencode_input_gtfs = ["testdata/gencode/CP.gencode.annotation.gtf", "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"]
+        gencode_input_fastas = ["testdata/gencode/CP.gencode.pc_transcripts.fa", "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"]
+        base_output_filename = "out/test_multi_gencode"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
+
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices(gencode_input_gtfs, gencode_input_fastas, base_output_filename)
+        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://", optimize=False)
+        transcripts = seq_index["CP"]
+        self.assertTrue(len(transcripts) == 15)
+        transcripts = seq_index["MAPK1"]
+        self.assertTrue(len(transcripts) == 4)
+        for tx in transcripts:
+            self.assertTrue(tx.get_transcript_id() == "ENST00000491588.1" or len(tx.get_seq()) > 100, "No seq data for " + tx.get_transcript_id() )

@@ -18,11 +18,13 @@ def setup_logging():
 
 def parseOptions():
 
-    epilog = ""
+    epilog = """    This utility can require a lot of RAM (~4GB for gencode.v18).
+    Creation of a gencode datasource can require as much as two hours.
+    """
     desc = "Create a gencode/ensembl based datasource."
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
-    parser.add_argument("gtf_file", type=str, help="Location of the gtf file")
-    parser.add_argument("fasta_file", type=str, help="Location of the fasta file (cDNA) associated with the gtf file")
+    parser.add_argument("gtf_files", type=str, help="Location of the gtf files.  Multiple files can be specified as a comma separated list (e.g. file1,file2) without spaces ")
+    parser.add_argument("fasta_files", type=str, help="Location of the fasta file (cDNA) associated with the gtf files.  Multiple files can be specified as a comma separated list (e.g. file1,file2) without spaces")
     parser.add_argument("output_dir", type=str, help="Datasource output location")
     parser.add_argument("genome_build", type=str, help="Genome build -- this must be specified correctly by the user.  For example, hg19.")
 
@@ -37,8 +39,8 @@ def parseOptions():
 def main():
     setup_logging()
     args = parseOptions()
-    gtf_file = args.gtf_file
-    fasta_file = args.fasta_file
+    gtf_files = args.gtf_files.split(",")
+    fasta_files = args.fasta_files.split(",")
     output_dir = args.output_dir
     genome_build = args.genome_build
 
@@ -51,7 +53,7 @@ def main():
 
         logging.getLogger(__name__).info("Starting index construction (temp location: " + ds_build_dir + ") ...")
         factory = GenomeBuildFactory()
-        factory.construct_ensembl_indices(gtf_file, fasta_file, ds_build_dir + os.path.basename(gtf_file))
+        factory.construct_ensembl_indices(gtf_files, fasta_files, ds_build_dir + os.path.basename(gtf_files))
 
         logging.getLogger(__name__).info("Creating datasource md5...")
         DatasourceInstallUtils.create_datasource_md5_file(ds_build_dir)
