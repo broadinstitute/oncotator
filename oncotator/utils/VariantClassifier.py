@@ -246,7 +246,9 @@ class VariantClassifier(object):
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
         vc_tmp = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
-        return vc_tmp
+
+        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_protein_start="", alt_protein_end="")
+        return final_vc
 
     def _determine_if_exon_overlap(self, e, s, tx, variant_type):
         if variant_type != VariantClassification.VT_INS:
@@ -317,30 +319,41 @@ class VariantClassifier(object):
         if not is_exon_overlap and not is_beyond_exons:
             if is_splice_site:
                 # Intron Splice Site
-                return "Splice_Site"
+                return VariantClassification(VariantClassification.SPLICE_SITE, variant_type, tx.get_transcript_id(), vc_secondary=VariantClassification.INTRON)
             else:
-                return "Intron"
+                return VariantClassification(VariantClassification.INTRON, variant_type, tx.get_transcript_id())
 
         if not is_exon_overlap and is_beyond_exons:
             if is_flank:
-                return side + "Flank"
+                # Flanks
+                if side.startswith("3"):
+                    return VariantClassification(VariantClassification.THREE_PRIME_PRIME_FLANK, variant_type, transcript_id=tx.get_transcript_id())
+                else:
+                    return VariantClassification(VariantClassification.FIVE_PRIME_PRIME_FLANK, variant_type, transcript_id=tx.get_transcript_id())
+
             else:
-                return "IGR"
+                # IGR
+                return VariantClassification(VariantClassification.IGR, variant_type)
 
         is_start_codon_overlap = self._determine_codon_overlap(s, e, tx.get_start_codon(), variant_type)
         is_stop_codon_overlap = self._determine_codon_overlap(s, e, tx.get_stop_codon(), variant_type)
+
+        # TODO:  Need to populate more of the variant classification.
         if is_start_codon_overlap and not variant_type.endswith("NP"):
-            return 'Start_Codon_' + variant_type.capitalize()
+            return VariantClassification('Start_Codon_' + variant_type.capitalize(), variant_type, transcript_id=tx.get_transcript_id())
         if is_stop_codon_overlap and not variant_type.endswith("NP"):
-            return 'Stop_Codon_' + variant_type.capitalize()
+            return VariantClassification('Stop_Codon_' + variant_type.capitalize(), variant_type, transcript_id=tx.get_transcript_id())
 
         is_cds_overlap = self._determine_if_cds_overlap(s, e, tx, variant_type)
         if is_exon_overlap and not is_cds_overlap and not is_start_codon_overlap and not is_stop_codon_overlap:
             # UTR
-            vc_tmp = side + "UTR"
+            if side.startswith("3"):
+                vc_tmp = VariantClassification.THREE_PRIME_UTR
+            else:
+                vc_tmp = VariantClassification.FIVE_PRIME_UTR
             transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
             vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, variant_type)
-            return vc
+            return VariantClassification(vc, variant_type, transcript_id=tx.get_transcript_id())
 
         # We have a clean overlap in the CDS.  Includes start codon or stop codon.
         if is_cds_overlap or is_stop_codon_overlap or is_start_codon_overlap:

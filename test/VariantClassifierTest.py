@@ -38,7 +38,7 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
 
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
     variants_indels_MAPK1 = lambda: (
@@ -105,7 +105,7 @@ class VariantClassifierTest(unittest.TestCase):
             start = end = (22221919 - i)
             ref = tx.get_seq()[i]
             alt = 'G'
-            vc = vcer.variant_classify(tx, ref, alt, start, end, "SNP", )
+            vc = vcer.variant_classify(tx, ref, alt, start, end, "SNP").get_vc()
             if i < 189:
                 self.assertTrue(vc == "5'UTR", "Should be 5'UTR, but saw " + vc + ".  For " + str([ref, alt, start, end]))
             if i < 200 and i >= 189:
@@ -139,7 +139,7 @@ class VariantClassifierTest(unittest.TestCase):
         """
         tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
     # Stop codons: TAA, TAG, TGA
@@ -157,7 +157,7 @@ class VariantClassifierTest(unittest.TestCase):
         """
         tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
 
@@ -190,7 +190,7 @@ class VariantClassifierTest(unittest.TestCase):
         """
         tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
     def test_determine_cds_in_exon_space(self):
@@ -218,7 +218,7 @@ class VariantClassifierTest(unittest.TestCase):
         """
         tx = self.retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
 
@@ -239,6 +239,9 @@ class VariantClassifierTest(unittest.TestCase):
             observed_allele_stranded = Bio.Seq.reverse_complement(alt_allele)
         mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(seq_stranded, seq_index, exon_position_start, exon_position_end, observed_allele_stranded, variant_type)
         self.assertTrue(gt == mutated_codon_seq, "GT: " + gt +  " Guess: " + mutated_codon_seq + "  " + str([seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt]))
+
+    #TODO: Test secondary VC
+        #TODO: Test Flank (if not already done in MUC16 test)
 
 if __name__ == '__main__':
     unittest.main()

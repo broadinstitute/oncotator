@@ -1604,7 +1604,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             # final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
             final_annotation_dict['transcript_id'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
-            final_annotation_dict['variant_classification'].value = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
+            final_annotation_dict['variant_classification'].value = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end).get_vc()
             final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())
             final_annotation_dict['gene_type'] = self._create_basic_annotation(chosen_tx.get_gene_type())
@@ -1651,7 +1651,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         best_effect_score = 100000000 # lower score is more likely to get picked
         best_effect_tx = None
         for tx in txs:
-            vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type)
+            vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
             effect_score = effect_dict.get(vc, 25)
             if effect_score < best_effect_score:
                 best_effect_score = effect_score
@@ -1789,7 +1789,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         other_transcripts = list()
         for i, ot in enumerate(txs):
             if i not in transcriptIndicesToSkip:
-                vc = vcer.variant_classify(ot, variant_type, ref_allele, alt_allele, start, end)
+                vc = vcer.variant_classify(ot, variant_type, ref_allele, alt_allele, start, end).get_vc()
                 o = '_'.join([ot.get_gene(), ot.get_transcript_id(),
                               vc, ot.get('protein_change', '')])
                 o = o.strip('_')

@@ -31,16 +31,24 @@ class VariantClassification(object):
     VT_DEL = "DEL"
     VT_SNP = "SNP"
 
-    def __init__(self):
-        self._vc_primary = ""
-        self._vc_secondary = ""
-        self._transcript_id = ""
-        self._alt_codon = ""
-        self._ref_codon = ""
-        self._ref_aa = ""
-        self._ref_protein_start = ""
-        self._ref_protein_end = ""
-        self._alt_aa = ""
-        self._alt_protein_start = ""
-        self._alt_protein_end = ""
+    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", ref_codon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end=""):
+        self._vc_primary = vc_primary
+        self._vc_secondary = vc_secondary
+        self._transcript_id = transcript_id
+        self._alt_codon = alt_codon
+        self._ref_codon = ref_codon
+        self._ref_aa = ref_aa
+        self._ref_protein_start = ref_protein_start
+        self._ref_protein_end = ref_protein_end
+        self._alt_aa = alt_aa
+        self._alt_protein_start = alt_protein_start
+        self._alt_protein_end = alt_protein_end
+        self._vt = vt
+
+
+    def get_vc(self):
+        """Returns primary variant classification """
+        return self._vc_primary
+
+
 
