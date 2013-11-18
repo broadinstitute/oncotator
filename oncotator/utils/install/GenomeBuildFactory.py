@@ -70,9 +70,9 @@ class GenomeBuildFactory(object):
                 self._transcript_index[transcript_id].set_strand("+")
             else:
                 self._transcript_index[transcript_id].set_strand("-")
-
+            qual_keys = quals.keys()
             for attribute in GenomeBuildFactory.QUALS_TO_CHECK:
-                if attribute in quals.keys():
+                if attribute in qual_keys:
                     self._transcript_index[transcript_id].add_other_attribute(attribute, quals[attribute])
 
             seq = seq_dict.get(transcript_id, None)

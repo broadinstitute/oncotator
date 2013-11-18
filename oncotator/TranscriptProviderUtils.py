@@ -1,4 +1,6 @@
 import math
+import Bio
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 class TranscriptProviderUtils(object):
@@ -125,6 +127,37 @@ class TranscriptProviderUtils(object):
             genome_change = 'g.chr%s:%d_%dins%s' % (chr, start, end,
                                                     alt_allele)
         return genome_change
+
+    @staticmethod
+    def _determine_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
+        """
+
+        :param variant_type:
+        :param variant_classification:
+        :param exon_position_start: Coordinates in transcript/exon space
+        :param exon_position_end: Coordinates in transcript/exon space
+        :param ref_allele_stranded: ref_allele with strand already accounted
+        :param alt_allele_stranded: alt_allele with strand already accounted
+        """
+        if variant_classification.startswith('Splice_Site'):
+            return 'c.%d_splice' % (exon_position_start)
+
+        if variant_type == VariantClassification.VT_SNP:
+            transcript_change = 'c.%d%s>%s' % (exon_position_start, ref_allele_stranded, alt_allele_stranded)
+        elif variant_type.endswith('NP'):
+            transcript_change = 'c.%d_%d%s>%s' % (exon_position_start,
+                exon_position_end, ref_allele_stranded, alt_allele_stranded)
+        elif variant_type == VariantClassification.VT_DEL:
+            if exon_position_start == exon_position_end:
+                transcript_change = 'c.%ddel%s' % (exon_position_start, ref_allele_stranded)
+            else:
+                transcript_change = 'c.%d_%ddel%s' % (exon_position_start,
+                    exon_position_end, ref_allele_stranded)
+        elif variant_type == VariantClassification.VT_INS:
+            transcript_change = 'c.%d_%dins%s' % (exon_position_start,
+                exon_position_end, alt_allele_stranded)
+
+        return transcript_change
 
     # TODO: These transforms should be in a separate class.
     @staticmethod

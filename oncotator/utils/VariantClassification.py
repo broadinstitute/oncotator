@@ -25,9 +25,11 @@ class VariantClassification(object):
     # Note: A STOP_CODON_SNP is a nonstop mutation
     DE_NOVO_START_IN_FRAME = "De_novo_Start_InFrame"
     DE_NOVO_START_OUT_FRAME = "De_novo_Start_OutOfFrame"
+    RNA = "RNA"
 
     VT_INS = "INS"
     VT_DEL = "DEL"
+    VT_SNP = "SNP"
 
     def __init__(self):
         self._vc_primary = ""
