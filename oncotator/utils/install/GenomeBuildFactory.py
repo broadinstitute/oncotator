@@ -57,6 +57,7 @@ class GenomeBuildFactory(object):
         try:
             tx = self._transcript_index[transcript_id]
         except KeyError:
+
             # Create the initial record for this transcript.
             contig = MutUtils.convertChromosomeStringToMutationDataFormat(gff_record['rec_id'])
             tx = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=contig)
@@ -187,7 +188,7 @@ class GenomeBuildFactory(object):
 
         transcript_keys = transcript_db.keys()
 
-        for tx_id in transcript_keys:
+        for i,tx_id in enumerate(transcript_keys):
             tx = transcript_db[tx_id]
             gene = tx.get_gene()
             try:
@@ -197,7 +198,9 @@ class GenomeBuildFactory(object):
                 tmpList = output_db[gene]
             tmpList.append(tx)
             output_db[gene] = tmpList
-
+            if i % 10000 == 0:
+                logging.getLogger(__name__).info("Gene index added " + str(i+1) + " transcripts so far.")
+        logging.getLogger(__name__).info("Finished gene index with " + str(len(output_db.keys())) + " genes.")
         output_db.close()
         transcript_db.close()
 
