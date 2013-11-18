@@ -160,7 +160,7 @@ class GenomeBuildFactory(object):
             self._transcript_index[k].set_protein_seq(protein_sequence)
             shove[k] = self._transcript_index[k]
 
-        logging.getLogger(__name__).info("Transcript index created " + str(shove.keys()) + " transcripts.")
+        logging.getLogger(__name__).info("Transcript index created " + str(len(shove.keys())) + " transcripts.")
         shove.close()
         in_handle.close()
 
@@ -180,13 +180,13 @@ class GenomeBuildFactory(object):
         for tx_id in transcript_keys:
             tx = transcript_db[tx_id]
             gene = tx.get_gene()
-            if gene not in output_db.keys():
-                output_db[gene] = [tx]
-            else:
-                # This must be done like this, since we have to store the new value in the db.
+            try:
                 tmpList = output_db[gene]
-                tmpList.append(tx)
-                output_db[gene] = tmpList
+            except KeyError:
+                output_db[gene] = []
+                tmpList = output_db[gene]
+            tmpList.append(tx)
+            output_db[gene] = tmpList
 
         output_db.close()
         transcript_db.close()
@@ -206,12 +206,14 @@ class GenomeBuildFactory(object):
             end = tx.get_end()
             genomic_location_bin = region2bin(start, end)
             key = tx.get_contig() + "_" + str(genomic_location_bin)
-            if key not in output_db:
-                output_db[key] = [tx]
-            else:
+            try:
                 tmpList = output_db[key]
-                tmpList.append(tx)
-                output_db[key] = tmpList
+            except KeyError:
+                output_db[key] = []
+                tmpList = output_db[key]
+
+            tmpList.append(tx)
+            output_db[key] = tmpList
 
         output_db.close()
         transcript_db.close()
