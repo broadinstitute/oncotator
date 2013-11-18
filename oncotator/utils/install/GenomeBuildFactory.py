@@ -84,13 +84,14 @@ class GenomeBuildFactory(object):
 
             self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
 
-        if gff_record['type'] == 'exon':
+        gff_type = gff_record['type']
+        if gff_type == 'exon':
             self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
-        elif gff_record['type'] == 'CDS':
+        elif gff_type == 'CDS':
             self._transcript_index[transcript_id].add_cds(gff_record['location'][0], gff_record['location'][1])
-        elif gff_record['type'] == 'start_codon':
+        elif gff_type == 'start_codon':
             self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0], gff_record['location'][1])
-        elif gff_record['type'] == 'stop_codon':
+        elif gff_type == 'stop_codon':
             self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
 
     def _create_seq_dict(self, seq_fasta_fp):
