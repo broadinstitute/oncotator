@@ -129,7 +129,7 @@ class TranscriptProviderUtils(object):
         return genome_change
 
     @staticmethod
-    def _determine_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
+    def _render_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
         """
 
         :param variant_type:
@@ -158,6 +158,11 @@ class TranscriptProviderUtils(object):
                 exon_position_end, alt_allele_stranded)
 
         return transcript_change
+
+
+    @staticmethod
+    def _render_protein_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
+        pass
 
     # TODO: These transforms should be in a separate class.
     @staticmethod

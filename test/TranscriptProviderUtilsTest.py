@@ -46,7 +46,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
 
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, version="TEST")
         tx = ensembl_ds.get_overlapping_transcripts("22", "22108790", "22108790")
 
@@ -81,7 +81,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gencode_input_gtf, gencode_input_fasta, base_output_filename)
+        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18")
         return ensembl_ds
 
@@ -148,10 +148,14 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "", "TTCTTAAG", "c.3990_3997insTTCTTAAG")
     )
     @data_provider(transcript_change_testdata)
-    def test_determine_transcript_change(self, variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, gt):
+    def test_render_transcript_change(self, variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, gt):
         """Simple test of transcript change, once parameters have been rendered. """
-        guess = TranscriptProviderUtils._determine_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
+        guess = TranscriptProviderUtils._render_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
+
+    protein_change_testdata = lambda: (
+
+    )
 
 
 if __name__ == '__main__':
