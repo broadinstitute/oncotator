@@ -171,7 +171,7 @@ class GenomeBuildFactory(object):
             self._transcript_index[k].set_protein_seq(protein_sequence)
             shove[k] = self._transcript_index[k]
 
-        logging.getLogger(__name__).info("Transcript index created " + str(len(shove.keys())) + " transcripts.")
+        logging.getLogger(__name__).info("Transcript index created " + str(len(shove.keys())) + " transcripts: " + protocol + "://" + output_filename)
         shove.close()
 
 
