@@ -417,6 +417,13 @@ class VariantClassifier(object):
     def _determine_de_novo(self, vc, transcript_position_start, transcript_position_end, ref, alt, tx, variant_type):
         """Returns input vc if not de Novo.  Otherwise, returns updated variant classification.
 
+        :param vc: Current variant classification.  Note that if this is not 5'UTR, this method will just return this input.
+        :param transcript_position_start:
+        :param transcript_position_end:
+        :param ref: (str) Does not take into account strandedness (e.g. m.ref_allele)
+        :param alt: (str) Does not take into account strandedness (e.g. m.alt_allele)
+        :param tx: transcript
+        :param variant_type:
          Will always return original vc if the vc is not None."""
         result = vc
 
