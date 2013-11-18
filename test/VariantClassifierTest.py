@@ -1,4 +1,5 @@
 import shutil
+import Bio
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
@@ -220,6 +221,24 @@ class VariantClassifierTest(unittest.TestCase):
         vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
+
+    test_mutating_sequences = lambda: (
+        ("AGGC", 0, 1, 1, "T", "SNP", "-", "AAGC"),
+        ("AGGC", 0, 1, 1, "-", "DEL", "-", "AGC"),
+        ("AGGC", 0, 1, 1, "-", "DEL", "+", "AGC"),
+        ("AGGC", 0, 1, 3, "-", "DEL", "+", "A"),
+        ("TAGGC", 0, 1, 3, "AAA", "INS", "+", "TAAAAGGC"),
+        ("TTAGGC", 0, 1, 3, "AAA", "INS", "-", "TTTTTAGGC")
+
+    )
+    @data_provider(test_mutating_sequences)
+    def test_mutating_sequences(self, seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt):
+        """Test that we can take a sequence, apply various mutations, and retrieve a correct sequence back."""
+        observed_allele_stranded = alt_allele
+        if strand == "-":
+            observed_allele_stranded = Bio.Seq.reverse_complement(alt_allele)
+        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(seq_stranded, seq_index, exon_position_start, exon_position_end, observed_allele_stranded, variant_type)
+        self.assertTrue(gt == mutated_codon_seq, "GT: " + gt +  " Guess: " + mutated_codon_seq + "  " + str([seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt]))
 
 if __name__ == '__main__':
     unittest.main()

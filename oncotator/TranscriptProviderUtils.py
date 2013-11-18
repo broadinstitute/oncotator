@@ -225,12 +225,23 @@ class TranscriptProviderUtils(object):
 
     @staticmethod
     def mutate_reference_sequence(seq, seq_start_pos, mutation_start_pos, mutation_end_pos, observed_allele, variant_type):
+        """
+        :param seq: (str) the sequence (stranded).
+        :param seq_start_pos: (int) Start position of the sequence.  Would normally be zero, but does not have to be.
+        :param mutation_start_pos: (int)  This is not relative to the seq_start_pos.  This is on the same scale.
+            In other words, this is in exon space.
+        :param mutation_end_pos: (int) This is not relative to the seq_start_pos.  This is on the same scale.
+            In other words, this is in exon space.
+        :param observed_allele: (str) alt allele, stranded.
+        :param variant_type:
+        :return: Updated sequence using the observed allele
+        """
         mutated_seq = list(seq)
         if variant_type == 'DEL':
             del(mutated_seq[mutation_start_pos - seq_start_pos: \
                 mutation_end_pos - seq_start_pos + 1])
         elif variant_type == 'INS':
-            mutated_seq.insert(mutation_end_pos - seq_start_pos, observed_allele)
+            mutated_seq.insert(mutation_end_pos - seq_start_pos -1, observed_allele)
         else: #SNP or ONP
             mutated_seq[mutation_start_pos - seq_start_pos: \
                 mutation_end_pos - seq_start_pos + 1] = str(observed_allele)

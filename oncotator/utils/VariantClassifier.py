@@ -420,7 +420,7 @@ class VariantClassifier(object):
          Will always return original vc if the vc is not None."""
         result = vc
 
-        if vc == "5'UTR" and ref != alt:
+        if vc == VariantClassification.FIVE_PRIME_UTR and ref != alt:
             reference_allele_stranded, observed_allele_stranded = ref, alt
             if tx.get_strand() == '-':
                 reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref), Bio.Seq.reverse_complement(alt)
@@ -439,6 +439,7 @@ class VariantClassifier(object):
             ATG_position = mutated_utr_region_seq.find('ATG')
             if ATG_position > -1:
                 cds_start_in_exon_space, cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+
                 ATG_position = utr_region_start + ATG_position
                 if (cds_start_in_exon_space - ATG_position) % 3 == 0:
                     frameness = 'InFrame'
