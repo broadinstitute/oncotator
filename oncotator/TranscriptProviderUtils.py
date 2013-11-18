@@ -162,7 +162,7 @@ class TranscriptProviderUtils(object):
 
 
     @staticmethod
-    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, strand):
+    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele):
         protein_change = ""
         if variant_classification.startswith('Splice_Site'):
             if prot_position_start > 0:

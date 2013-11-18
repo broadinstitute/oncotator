@@ -1597,14 +1597,21 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
             final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
             final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils._determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
-            # final_annotation_dict['codon_change'] = self._create_basic_annotation('')
             final_annotation_dict['strand'] = self._create_basic_annotation(chosen_tx.get_strand())
-            # final_annotation_dict['protein_change'] = self._create_basic_annotation('')
+
             # final_annotation_dict['transcript_exon'] = self._create_basic_annotation('')
             # final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
-            # final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
+
             final_annotation_dict['transcript_id'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
-            final_annotation_dict['variant_classification'].value = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end).get_vc()
+
+            variant_classfication = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value,
+                                             mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
+            final_annotation_dict['variant_classification'].value = variant_classfication.get_vc()
+            final_annotation_dict['secondary_variant_classification'].value = variant_classfication.get_secondary_vc()
+            final_annotation_dict['protein_change'] = self._create_basic_annotation(vcer.generate_protein_change_from_vc(variant_classfication))
+            final_annotation_dict['codon_change'] = self._create_basic_annotation(vcer.generate_codon_change_from_vc(variant_classfication))
+            final_annotation_dict['transcript_change'] = self._create_basic_annotation(vcer.generate_transcript_change_from_vc(variant_classfication))
+
             final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())
             final_annotation_dict['gene_type'] = self._create_basic_annotation(chosen_tx.get_gene_type())

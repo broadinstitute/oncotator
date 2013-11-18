@@ -467,3 +467,44 @@ class VariantClassifier(object):
                     frameness = 'OutOfFrame'
                 result = 'De_novo_Start_' + frameness
         return result
+
+    # TODO: Need unit tests for below generate*from_vc methods
+    def generate_protein_change_from_vc(self, vc):
+        """
+
+        :param vc: VariantClassification
+        :return:
+        """
+        prot_position_start = vc.get_ref_protein_start()
+        prot_position_end = vc.get_ref_protein_end()
+        ref_prot_allele = vc.get_ref_aa()
+        alt_prot_allele = vc.get_alt_aa()
+        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele)
+        return result
+
+    def generate_codon_change_from_vc(self, vc):
+        """
+
+        :param vc:
+        :return:
+        """
+        codon_position_start = vc.get_ref_codon_start_in_exon()
+        codon_position_end = vc.get_ref_codon_end_in_exon()
+        ref_codon_seq = vc.get_ref_codon()
+        alt_codon_seq = vc.get_alt_codon()
+        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+        return result
+
+    def generate_transcript_change_from_vc(self, vc):
+        """
+
+        :param vc:
+        :return:
+        """
+        #TODO: This is not correct.  These need to be the transcript positions, not the codon positions.
+        exon_position_start = vc.get_ref_codon_start_in_exon()
+        exon_position_end = vc.get_ref_codon_end_in_exon()
+        ref_allele_stranded = vc.get_ref_codon()
+        alt_allele_stranded = vc.get_alt_codon()
+        result = TranscriptProviderUtils.render_transcript_change(vc.get_vt(), vc.get_vc(), exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
+        return result

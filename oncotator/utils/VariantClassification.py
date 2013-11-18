@@ -31,7 +31,7 @@ class VariantClassification(object):
     VT_DEL = "DEL"
     VT_SNP = "SNP"
 
-    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", ref_codon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end=""):
+    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="", alt_codon_end_in_exon="", ref_codon="", ref_codon_start_in_exon="", ref_codon_end_in_exon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end=""):
         self._vc_primary = vc_primary
         self._vc_secondary = vc_secondary
         self._transcript_id = transcript_id
@@ -44,11 +44,57 @@ class VariantClassification(object):
         self._alt_protein_start = alt_protein_start
         self._alt_protein_end = alt_protein_end
         self._vt = vt
+        self._alt_codon_start_in_exon = alt_codon_start_in_exon
+        self._alt_codon_end_in_exon = alt_codon_end_in_exon
+        self._ref_codon_start_in_exon = ref_codon_start_in_exon
+        self._ref_codon_end_in_exon = ref_codon_end_in_exon
 
 
     def get_vc(self):
         """Returns primary variant classification """
         return self._vc_primary
 
+    def get_secondary_vc(self):
+        return self._vc_secondary
 
+    def get_transcript_id(self):
+        return self._transcript_id
 
+    def get_alt_codon(self):
+        return self._alt_codon
+
+    def get_vt(self):
+        return self._vt
+
+    def get_ref_codon(self):
+        return self._ref_codon
+
+    def get_ref_aa(self):
+        return self._ref_aa
+
+    def get_ref_protein_start(self):
+        return self._ref_protein_start
+
+    def get_ref_protein_end(self):
+        return self._ref_protein_end
+
+    def get_alt_aa(self):
+        return self._alt_aa
+
+    def get_alt_protein_start(self):
+        return self._alt_protein_start
+
+    def get_alt_protein_end(self):
+        return self._alt_protein_end
+
+    def get_alt_codon_start_in_exon(self):
+        return self._alt_codon_start_in_exon
+
+    def get_alt_codon_end_in_exon(self):
+        return self._alt_codon_end_in_exon
+
+    def get_ref_codon_start_in_exon(self):
+        return self._ref_codon_start_in_exon
+
+    def get_ref_codon_end_in_exon(self):
+        return self._ref_codon_end_in_exon
