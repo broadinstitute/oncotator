@@ -54,8 +54,10 @@ class GenomeBuildFactory(object):
         quals = gff_record['quals']
         transcript_id = quals['transcript_id'][0]
 
-
-        if transcript_id not in self._transcript_index.keys():
+        try:
+            tx = self._transcript_index[transcript_id]
+        except KeyError:
+            # Create the initial record for this transcript.
             contig = MutUtils.convertChromosomeStringToMutationDataFormat(gff_record['rec_id'])
             tx = Transcript(transcript_id, gene=quals['gene_name'][0], gene_id=quals['gene_id'][0], contig=contig)
             self._transcript_index[transcript_id] = tx
@@ -83,16 +85,17 @@ class GenomeBuildFactory(object):
                 genome_seq_as_str = ""
 
             self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
+            tx = self._transcript_index[transcript_id]
 
         gff_type = gff_record['type']
         if gff_type == 'exon':
-            self._transcript_index[transcript_id].add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
+            tx.add_exon(gff_record['location'][0], gff_record['location'][1], quals['exon_number'][0])
         elif gff_type == 'CDS':
-            self._transcript_index[transcript_id].add_cds(gff_record['location'][0], gff_record['location'][1])
+            tx.add_cds(gff_record['location'][0], gff_record['location'][1])
         elif gff_type == 'start_codon':
-            self._transcript_index[transcript_id].set_start_codon(gff_record['location'][0], gff_record['location'][1])
+            tx.set_start_codon(gff_record['location'][0], gff_record['location'][1])
         elif gff_type == 'stop_codon':
-            self._transcript_index[transcript_id].set_stop_codon(gff_record['location'][0], gff_record['location'][1])
+            tx.set_stop_codon(gff_record['location'][0], gff_record['location'][1])
 
     def _create_seq_dict(self, seq_fasta_fp):
         """Create a dictionary with keys to the sequenced bases.  Note that this includes strand.
