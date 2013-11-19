@@ -57,7 +57,7 @@ def main():
 
         logging.getLogger(__name__).info("Creating config file...")
         #TODO: This needs to be altered to incorporate new features.
-        config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile="", ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="")
+        config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile=os.path.basename(gtf_files[0]), ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="")
         config_filename = ds_build_dir + "/" + name + ".config"
         logging.getLogger(__name__).info("config file being written to: " + os.path.abspath(config_filename))
         fp = file(config_filename, 'w')
