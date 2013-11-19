@@ -167,15 +167,22 @@ class OutputDataManager:
         :return: correctly formatted Vcf header
         """
         headers = ["##fileformat=VCFv4.1"]  # 'fileformat' is a required field; fixed since output vcf will be v4.1
+        contigs = []
         if (comments is not None) and (len(comments) > 0):  # detect any
-            for i in xrange(len(comments)):
-                comment = comments[i]
-                if comment.startswith("fileformat=VCFv4."):
-                    comments.pop(i)
-                    break
-        # Last line of the comments ("Oncotator v1.0.0.0rc20|") is NOT included in the header
-        headers += [string.join(["##", comment], "") for comment in comments[0:len(comments)-1]]
+            for comment in comments:
+                comment = string.replace(comment, " ", "_")
+                if not comment.startswith("fileformat"):
+                    if comment.startswith("contig=<"):
+                        comment = string.join(["##", comment], "")
+                        contigs.append(comment)
+                    elif comment.startswith("Oncotator"):
+                        comment = string.join(["##oncotator_version=", comment], "")
+                        headers.append(comment)
+                    else:
+                        comment = string.join(["##", comment], "")
+                        headers.append(comment)
 
+        headers += contigs
         annotations = self.annotationTable.values()
         for annotation in annotations:
             headers += [self._annotation2str(annotation.getFieldType(), annotation.getID(), annotation.getDescription(),

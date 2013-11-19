@@ -1,8 +1,9 @@
 ##fileformat=VCFv4.1
 ##fileDate=20090805
 ##source=myImputationProgramV3.1
-##reference=1000GenomesPilot-NCBI36
 ##phasing=partial
+##source=<ID=myImputationProgramV3.1>
+##reference=<ID=hg19,Source=http://www.bcgsc.ca/downloads/genomes/Homo_sapiens/hg19/1000genomes/bwa_ind/genome/GRCh37-lite.fa>
 ##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
 ##INFO=<ID=AF,Number=.,Type=Float,Description="Allele Frequency">
@@ -15,6 +16,7 @@
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
+##contig=<ID=20,length=62435964,assembly=B36,md5=f126cdf8a6e0c7f379d618ff66beb2da,species="Homo sapiens",taxonomy=x>
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT
 20	14370	rs6054257	G	A	29	PASS	DB	GT:GQ:DP:HQ
 20	17330	.	T	A	3	q10	DP=11;AF=0.017	GT:GQ:DP:HQ

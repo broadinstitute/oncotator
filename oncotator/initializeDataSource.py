@@ -61,16 +61,16 @@ Simple script to create a datasource given some information from the user and an
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 import tempfile
-import hashlib
-import time
 import shutil
 import os
 
 
-supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv']
+supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv']
+
+
 def parseOptions():
     # Setup argument parser
-    epilog= """
+    epilog = """
     IMPORTANT NOTE: Tabix not yet supported, though described below.
     
    Detailed parameter information:
@@ -102,7 +102,11 @@ def parseOptions():
        "transcript_tsv" -- tsv file referenced by transcript_id
             TSV has the same requirements as gene_tsv, except that the single column must be for transcript_id.
              Note:  This is inherently coupled with the transcript providing datasource used.
-           
+
+       "indexed_vcf" -- vcf file referenced by chromosome and position
+
+       "indexed_tsv" -- tsv file referenced by chromosome, start position and end position
+
    datasource filename -- input data file.  In the case of tabix_gp_tsv, it would be the source tsv file.
    name -- arbitrary name for the datasource.  This will be the folder moved into the the destination db dir.  Must be unique from other datasources.  
        This will be a prefix on all annotations from this datasource.
@@ -130,8 +134,8 @@ def parseOptions():
 
 
     """
-    
-    desc= """
+
+    desc = """
 
     This convenience script creates datasources in the given directory for simple datasource types. 
         
@@ -142,32 +146,56 @@ def parseOptions():
     IMPORTANT NOTE:  If this script detects another directory in dbDir with the same name as being created, this script will fail, not overwrite.
     """
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
-    parser.add_argument("ds_type", type=str, help="datasource type.  Type of datasource to create.", choices=supportedDSTypes)
-    parser.add_argument("ds_file", type=str, help="datasource filename.  Headers must be on the first line.  This is the source file that contains annotation data.")
-    parser.add_argument("name", type=str, help="datasource name. Plain name for the datasource.  E.g. 'MutSig_Published_Results'")
-    parser.add_argument("version", type=str, help="version of the datasource.  This should be the version of the data itself, such as '3.0' for Gaf 3.0")
-    parser.add_argument("dbDir", type=str, help="Main datasource directory that contains other datasources.  I.e. the destination directory for the newly created datasource.")
+    parser.add_argument("ds_type", type=str, help="datasource type.  Type of datasource to create.",
+                        choices=supportedDSTypes)
+    parser.add_argument("ds_file", type=str,
+                        help="datasource filename.  Headers must be on the first line.  This is the source file that contains annotation data.")
+    parser.add_argument("name", type=str,
+                        help="datasource name. Plain name for the datasource.  E.g. 'MutSig_Published_Results'")
+    parser.add_argument("version", type=str,
+                        help="version of the datasource.  This should be the version of the data itself, such as '3.0' for Gaf 3.0")
+    parser.add_argument("dbDir", type=str,
+                        help="Main datasource directory that contains other datasources.  I.e. the destination directory for the newly created datasource.")
     parser.add_argument("ds_foldername", type=str, help="Name of the folder that should appear in dbDir")
     parser.add_argument("genome_build", type=str, help="Genome build.  For example, hg19.", choices=['hg19'])
-    parser.add_argument("index_columns", type=str, help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.  For gp_tsv, this parameter MUST be three entries corresponding to chr, start, and end.  gene_tsv and transcipt_tsv have only one entry.")
-        
+    parser.add_argument("index_columns", type=str,
+                        help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.  For gp_tsv, this parameter MUST be three entries corresponding to chr, start, and end.  gene_tsv and transcipt_tsv have only one entry.")
+
+    # parameters specified for indexed tsv only
+    parser.add_argument("--columns", type=str,
+                        help="Comma separated list of columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv only.")
+    parser.add_argument("--annotation_columns", type=str,
+                        help="Comma separated list of annotation columns. MUST be the name of the columns.  This (optional) parameter is specified for indexed_tsv only.")
+
     # Process arguments
     args = parser.parse_args()
-    
+
     return args
+
 
 def validateArgs(args):
     """ Throw an exception if poor arguments were chosen."""
     if args.ds_type not in supportedDSTypes:
-        raise ValueError("Unsupported datasource type: " + args.ds_type +".  Must be one of: " + str(supportedDSTypes))
-    if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and len(args.index_columns.split(',')) <> 3:
+        raise ValueError("Unsupported datasource type: " + args.ds_type + ".  Must be one of: " + str(supportedDSTypes))
+    if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and len(
+            args.index_columns.split(',')) != 3:
         raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3")
-    if os.path.exists(args.dbDir + "/" + args.ds_foldername):
-        raise ValueError("Destination path already exists.  Please remove or choose a different location: " + args.dbDir + "/" + args.ds_foldername)
+    if os.path.exists(args.dbDir + os.sep + args.ds_foldername):
+        raise ValueError("Destination path already exists.  Please remove or choose a different location: " +
+                         args.dbDir + os.sep + args.ds_foldername)
+    if args.ds_type in ("indexed_tsv",):
+        if not args.columns:
+            raise ValueError("columns field was not specified.  Must be a comma separated list.")
 
-def createDS(tmpDir):
-    
-    # Parse the arguments
+
+def createDatasource(tmpDir):
+    # Parse the input arguments.
+    """
+
+
+    :param tmpDir: temporary directory
+    """
+
     args = parseOptions()
     validateArgs(args)
     index_columns = args.index_columns
@@ -178,37 +206,49 @@ def createDS(tmpDir):
     dbDir = args.dbDir
     genome_build = args.genome_build
     ds_file = args.ds_file
-    
-    # Create appropriate subdirectory in tmp dir
-    destDir = tmpDir + "/" + ds_foldername + "/" + genome_build
+
+    # Parameters for indexed_tsv only.
+    ds_columns = args.columns
+    ds_annotation_columns = args.annotation_columns
+    if ds_type in ("indexed_tsv",):
+        if ds_annotation_columns is None:  # Default: annotate with all columns
+            ds_annotation_columns = ds_columns
+
+    # Create appropriate subdirectory in tmp dir.
+    destDir = tmpDir + os.sep + ds_foldername + os.sep + genome_build
     os.makedirs(destDir)
-    
+
     # Copy the tsv file into genome build dir
-    DatasourceInstallUtils.create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns)
-    print("Config file created: " + destDir + "/" + ds_foldername + ".config")
-    
-    # Last step:  Copy the directory to the destination dbDir
-    shutil.copytree(symlinks=True, src=tmpDir + "/" + ds_foldername, dst= dbDir + "/" + ds_foldername)
-    print("Datasource copied from temp location to " + dbDir + "/" + ds_foldername)
+    DatasourceInstallUtils.create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version,
+                                             index_columns, ds_columns, ds_annotation_columns)
+
+    print("Config file created: " + destDir + os.sep + ds_foldername + ".config")
+
+    # Last step:  Copy the directory to the destination dbDir.
+    shutil.copytree(symlinks=True, src=tmpDir + os.sep + ds_foldername, dst=dbDir + os.sep + ds_foldername)
+    print("Datasource copied from temp location to " + dbDir + os.sep + ds_foldername)
+
 
 def main():
-    # create temp dir
-    m = hashlib.md5()
-    m.update(str(time.time()))
-    tmpDirName = tempfile.gettempdir() + "/initDS_" + str(m.hexdigest())
-    os.makedirs(tmpDirName) 
+    # Attempt to create the corresponding data source.
+    """
+
+
+    :raise:
+    """
+    tmpDir = None
     try:
-        createDS(tmpDirName)
-    except Exception as e:
-        import traceback
-        print((e.__repr__()) + " " + traceback.format_exc())
-    
-    # Remove the tempdir
-    print("Done...")
-    print("Removing ..." + tmpDirName + '/')
-    shutil.rmtree(tmpDirName)
+        tmpDir = tempfile.mkdtemp()
+        createDatasource(tmpDir)
+    finally:
+        try:
+            print("Done...")
+            print("Removing ..." + tmpDir + '/')
+            shutil.rmtree(tmpDir)  # delete directory
+        except OSError as exc:
+            if exc.errno != 2:  # code 2 - no such file or directory
+                raise  # re-raise exception
+
 
 if __name__ == '__main__':
     main()
-    
-    

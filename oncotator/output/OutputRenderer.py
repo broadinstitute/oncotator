@@ -55,6 +55,7 @@ Created on Nov 7, 2012
 """
 from abc import abstractmethod
 
+
 class OutputRenderer(object):
     """
     This is the base class for rendering MutationData instances.

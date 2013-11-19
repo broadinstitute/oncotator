@@ -69,9 +69,9 @@ from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceCreator import DatasourceCreator
 import vcf
 from oncotator.utils.TagConstants import TagConstants
-from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
+
 
 class VcfInputMutationCreatorTest(unittest.TestCase):
 

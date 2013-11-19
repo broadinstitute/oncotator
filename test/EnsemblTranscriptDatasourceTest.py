@@ -50,7 +50,7 @@ import ConfigParser
 import logging
 
 import unittest
-from oncotator.datasources import EnsemblTranscriptDatasource
+from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.utils.ConfigUtils import ConfigUtils
 from test.TestUtils import TestUtils
 

@@ -188,7 +188,7 @@ class AnnotatorTest(unittest.TestCase):
         """Test that we can initialize an Annotator, without an input or output and then feed mutations, one at a time... using a runspec"""
 
         # Locate the datasource directory and create a runspec
-        dbDir = self.config.get('DEFAULT',"dbDir")
+        dbDir = self.config.get('DEFAULT', "dbDir")
         ds = DatasourceCreator.createDatasources(dbDir)
         runSpec = RunSpecification()
         runSpec.initialize(None, None, datasources=ds)

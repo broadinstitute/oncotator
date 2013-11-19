@@ -52,7 +52,7 @@ from oncotator.Annotator import Annotator
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MissingAnnotationException import MissingAnnotationException
 from oncotator.MutationData import MutationData
-from oncotator.datasources import Generic_GeneProteinPositionDatasource
+from oncotator.datasources.GenericGeneProteinPositionDatasource import GenericGeneProteinPositionDatasource
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.utils.GenericTsvReader import GenericTsvReader
@@ -76,7 +76,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
     def testBasicAnnotation(self):
         ''' Test an extremely simple case.
         '''
-        datasource = Generic_GeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
+        datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
 
         m = MutationData()
         m.createAnnotation("gene", "TP53")
@@ -117,7 +117,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
     def testMissingAnnotations(self):
         ''' Tests that if the required annotations ("gene", "protein_change", and "other_transcripts") are missing, an excpetion is thrown.
         '''
-        datasource = Generic_GeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="SmallNatVar", version="test")
+        datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="SmallNatVar", version="test")
 
         m = MutationData()
         m.createAnnotation("gene", "TP53")

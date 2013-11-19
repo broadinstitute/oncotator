@@ -59,11 +59,18 @@ from oncotator.utils.MutUtils import MutUtils
 
 __author__ = 'lichtens'
 
-class TsvFileSorter(object):
-    """ Static class for sorting a tsv file in place.
 
-    """
+class TsvFileSorter(object):
     def __init__(self, filename, commentPrepend='#', delimiter='\t', lineterminator='\n'):
+        """
+
+
+        :type self: object
+        :param filename: file that needs to be sorted
+        :param commentPrepend: character that indicates beginning of a comment line
+        :param delimiter: separates column values
+        :param lineterminator: character that signifies the end of line
+        """
         self.readfilename = filename
         self._Pair = collections.namedtuple(typename="Pair", field_names=["key", "value"])
         self.delimiter = delimiter
@@ -79,7 +86,17 @@ class TsvFileSorter(object):
             yield pair.value
 
     def _yieldPartitions(self, iterable, func, fieldnameIndexes, length):
+        """
+
+
+        :param iterable: lines of text
+        :param func: function that converts each row of the input file to an unique key
+        :param fieldnameIndexes:
+        :param length: determines the number of lines in the buffer
+        """
         isKeyTuple = False
+
+        # Take the first "length" number of items and return them as list.
         lines = list(itertools.islice(iterable, length))
         data = collections.OrderedDict()
 
@@ -106,7 +123,6 @@ class TsvFileSorter(object):
                     if not isKeyTuple:
                         raise CallbackException("The value returned by the callback must be a tuple. Instead, a value "
                                                 "of %s was returned." % (type(key)))
-
                 pairs[i] = self._Pair(key, line)
 
             partition = sorted(pairs, key=operator.attrgetter("key"))
@@ -116,6 +132,13 @@ class TsvFileSorter(object):
             yield partition
 
     def sortFile(self, filename, func, length=50000):
+        """
+
+
+        :param filename: sorted filename
+        :param func: function that converts each row of the input file to an unique key
+        :param length: maximum number of lines in a partition
+        """
         reader = GenericTsvReader(filename=self.readfilename, commentPrepend=self.commentPrepend,
                                   delimiter=self.delimiter)
         comments = reader.getComments()

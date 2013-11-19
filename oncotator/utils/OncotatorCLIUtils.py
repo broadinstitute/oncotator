@@ -47,7 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 import os
-from oncotator.datasources import TranscriptProvider
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 import logging

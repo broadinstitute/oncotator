@@ -58,7 +58,7 @@ import unittest
 
 import os
 
-from oncotator.datasources import Generic_GenomicMutation_Datasource
+from oncotator.datasources.GenericGenomicMutationDatasource import GenericGenomicMutationDatasource
 from oncotator.MutationData import MutationData
 import logging
 
@@ -77,7 +77,7 @@ class GenericGenomicMutationDatasourceTest(unittest.TestCase):
 
 
     def testBasicAnnotation(self):
-        ds = Generic_GenomicMutation_Datasource('testdata/small_cosmic_2/cosmic_v65_chr18.tsv')
+        ds = GenericGenomicMutationDatasource('testdata/small_cosmic_2/cosmic_v65_chr18.tsv')
     
         m = MutationData()
         m.chr = '18'

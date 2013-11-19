@@ -50,9 +50,8 @@ from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
 from oncotator.DatasourceCreator import DatasourceCreator
-from oncotator.datasources import Gaf
-from oncotator.datasources import dbSNP
-from oncotator.utils import ConfigUtils
+from oncotator.datasources.Gaf import Gaf
+from oncotator.datasources.dbSNP import dbSNP
 import logging
 
 

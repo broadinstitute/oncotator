@@ -270,13 +270,14 @@ class VcfOutputRenderer(OutputRenderer):
         self.logger.info("Intermediate tsv file sorted.")
 
         # Write the header
-        filePointer = file(self._filename, 'w')
+        tempTemplateFile = tempfile.NamedTemporaryFile(dir=path)
+        filePointer = file(tempTemplateFile.name, 'w')
         header = dm.getHeader()
         filePointer.write(header)
         filePointer.close()
 
         self.logger.info("Render starting...")
-        self._renderSortedTsv(self._filename, sortedTempTsvFile.name, self.sampleNames, dm)
+        self._renderSortedTsv(tempTemplateFile.name, self._filename, sortedTempTsvFile.name, self.sampleNames, dm)
         self.logger.info("Rendered all mutations.")
         return self._filename
 
@@ -296,7 +297,7 @@ class VcfOutputRenderer(OutputRenderer):
             isNew = True
         return isNew
 
-    def _renderSortedTsv(self, vcfFilename, tsvFilename, sampleNames, dataManager):
+    def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager):
         """
 
         :param vcfFilename:
@@ -304,7 +305,7 @@ class VcfOutputRenderer(OutputRenderer):
         :param sampleNames:
         :param dataManager:
         """
-        tempVcfReader = vcf.Reader(filename=vcfFilename, strict_whitespace=True)
+        tempVcfReader = vcf.Reader(filename=templateFilename, strict_whitespace=True)
         pointer = file(vcfFilename, "w")
         vcfWriter = vcf.Writer(pointer, tempVcfReader, self.lineterminator)
         tsvReader = GenericTsvReader(tsvFilename, delimiter=self.delimiter)
@@ -325,6 +326,8 @@ class VcfOutputRenderer(OutputRenderer):
                         vcfWriter.flush()
 
                 chrom = m["chr"]
+                if chrom.startswith("GL"):
+                    chrom = "<" + chrom + ">"
                 pos = m["start"]
                 refAllele = m["ref_allele"]
 

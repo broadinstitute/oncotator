@@ -348,13 +348,6 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
 
-        alt = record.ALT[index]
-        if alt is None:
-            alt = ""
-        else:
-            alt = str(alt)
-
-        endPos = int(record.POS) + len(alt) - 1
         ref = record.REF
         if ref == ".":
             ref = ""
@@ -396,18 +389,53 @@ class VcfInputMutationCreator(InputMutationCreator):
         """ Resets the internal state, so that mutations can be generated. """
         self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
 
-    def getComments(self):
-        """ Comments often need to be passed into the output.  Get the comments from the input file."""
-        comments = list()
+    def _parse_miscellaneous_metadata(self):
+        comments = []
         keys = self.vcf_reader.metadata.keys()
         for key in keys:
-            val = self.vcf_reader.metadata[key]
-            if isinstance(val, list):
-                val = string.join(map(str, val), ";")
-            if isinstance(val, dict):
-                val = string.join(map(str, val), ";")
-            comment = string.join([key, val], "=")
-            comments.append(comment)
+            vals = self.vcf_reader.metadata[key]
+            if isinstance(vals, list):
+                for itm in vals:
+                    if isinstance(itm, dict):
+                        val = [string.join([str(k), str(v)], "=") for k, v in itm.iteritems()]
+                        val = string.join(val, ",")
+                        val = string.join(["<", ">"], val)
+                    else:
+                        val = str(itm)
+
+                    comment = string.join([key, val], "=")
+                    comments.append(comment)
+            elif isinstance(vals, dict):
+                val = [string.join([str(k), str(v)], "=") for k, v in vals.iteritems()]
+                val = string.join(val, ",")
+                val = string.join(["<", ">"], val)
+
+                comment = string.join([key, val], "=")
+                comments.append(comment)
+            else:
+                val = str(vals)
+                comment = string.join([key, val], "=")
+                comments.append(comment)
+        return comments
+
+    def _parse_contigs_metadata(self):
+        comments = []
+        keys = self.vcf_reader.contigs.keys()
+        for key in keys:
+            val = self.vcf_reader.contigs[key]
+            ID = val.id
+            length = str(val.length)
+            val = string.join(["contig=<ID=", ID, ",length=", length, ">"], "")
+            comments.append(val)
+        return comments
+
+    def _parse_alts_metadata(self):
+        pass
+
+    def getComments(self):
+        """ Comments often need to be passed into the output.  Get the comments from the input file."""
+        comments = self._parse_miscellaneous_metadata()
+        comments += self._parse_contigs_metadata()
         return comments
 
     def _addFormatFields2Metadata(self, metadata):

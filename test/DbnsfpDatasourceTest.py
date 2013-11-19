@@ -50,11 +50,9 @@
 import unittest
 import logging
 
-import pysam
-
 from oncotator.MutationData import MutationData
-from oncotator.datasources import dbNSFP
-from TestUtils  import TestUtils
+from oncotator.datasources.dbNSFP import dbNSFP
+from TestUtils import TestUtils
 
 
 TestUtils.setupLogging(__file__, __name__)
