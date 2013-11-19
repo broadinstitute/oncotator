@@ -27,6 +27,8 @@ def parseOptions():
     parser.add_argument("fasta_files", type=str, help="Location of the fasta file (cDNA) associated with the gtf files.  Multiple files can be specified as a comma separated list (e.g. file1,file2) without spaces")
     parser.add_argument("output_dir", type=str, help="Datasource output location.  This directory should NOT already exist.")
     parser.add_argument("genome_build", type=str, help="Genome build -- this must be specified correctly by the user.  For example, hg19.")
+    parser.add_argument("--name", type=str, help="name of the datasource.  For example, ensembl.  Or GENCODE", default="ensembl")
+    parser.add_argument("version", type=str, help="version.  For example, v18")
 
     # Process arguments
     args = parser.parse_args()
@@ -43,6 +45,8 @@ def main():
     fasta_files = args.fasta_files.split(",")
     output_dir = args.output_dir
     genome_build = args.genome_build
+    name = args.name
+    ver = args.version
 
     # create temp dir
     tmpDir = tempfile.mkdtemp(prefix="onco_ensembl_ds_")
@@ -51,12 +55,22 @@ def main():
         ds_build_dir = tmpDir + "/" + genome_build + "/"
         os.mkdir(ds_build_dir)
 
+        logging.getLogger(__name__).info("Creating config file...")
+        #TODO: This needs to be altered to incorporate new features.
+        config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile="", ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="")
+        config_filename = ds_build_dir + "/" + name + ".config"
+        logging.getLogger(__name__).info("config file being written to: " + os.path.abspath(config_filename))
+        fp = file(config_filename, 'w')
+        fp.write(config_text)
+        fp.close()
+
         logging.getLogger(__name__).info("Starting index construction (temp location: " + ds_build_dir + ") ...")
         factory = GenomeBuildFactory()
         factory.construct_ensembl_indices(gtf_files, fasta_files, ds_build_dir + os.path.basename(gtf_files[0]))
 
         logging.getLogger(__name__).info("Creating datasource md5...")
         DatasourceInstallUtils.create_datasource_md5_file(ds_build_dir)
+
 
         logging.getLogger(__name__).info("Copying created datasource from temp directory to final location (" + output_dir + ")...")
         shutil.copytree(symlinks=True, src=tmpDir, dst=output_dir)
