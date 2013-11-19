@@ -25,7 +25,7 @@ def parseOptions():
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
     parser.add_argument("gtf_files", type=str, help="Location of the gtf files.  Multiple files can be specified as a comma separated list (e.g. file1,file2) without spaces ")
     parser.add_argument("fasta_files", type=str, help="Location of the fasta file (cDNA) associated with the gtf files.  Multiple files can be specified as a comma separated list (e.g. file1,file2) without spaces")
-    parser.add_argument("output_dir", type=str, help="Datasource output location")
+    parser.add_argument("output_dir", type=str, help="Datasource output location.  This directory should NOT already exist.")
     parser.add_argument("genome_build", type=str, help="Genome build -- this must be specified correctly by the user.  For example, hg19.")
 
     # Process arguments
