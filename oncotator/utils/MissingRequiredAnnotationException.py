@@ -46,117 +46,17 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-import os
-import shutil
-import unittest
-from shove.core import Shove
-from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
-from oncotator.index.gaf import region2bin,region2bins
 
-class GenomeBuildFactoryTest(unittest.TestCase):
+class MissingRequiredAnnotationException(Exception):
+    """
+    Exception class arising when a required annotation is missing.
+    """
 
-    def test_build_ensembl_transcript_index(self):
-        """Build the gtf portion of the ensembl transcript db
+    def __init__(self, value):
         """
-        # cat ~/oncotator_pycharm/oncotator/test/testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf | cut -f 9 | cut -f 5 --delimiter=" " | sort | uniq | sed -r "s/;//g" | sed -r "s/\"//g"
-        #  snR84, tK(UUU)K, YAL067C, YAL067W-A, YAL068C, YAL068W-A, YAL069W, YBR278W, YBR279W, YBR280C, YBR281C, YDR528W, YDR529C, YKR074W,
-        #
-        # grep -Pzo  ">(snR84|tK\(UUU\)K|YAL067C|YAL067W-A|YAL068C|YAL068W-A|YAL069W|YBR278W|YBR279W|YBR280C|YBR281C|YDR528W|YDR529C|YKR074W)([A-Za-z_0-9 \:\-\n]+)" Saccharomyces_cerevisiae.EF4.71.cdna.all.fa >Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa
-        #
-        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
-        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
+        
+        """
+        self.value = value
 
-        output_filename = "out/test_ensemble_gtf.db"
-        protocol = "file"
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, output_filename, protocol=protocol)
-        self.assertTrue(os.path.exists(output_filename))
-
-        shove = Shove(protocol + "://" + output_filename, "memory://")
-        self.assertTrue(len(shove.keys()) > 0)
-        self.assertTrue("YDR529C" in shove.keys())
-        t = shove["YDR529C"]
-        self.assertTrue(t.get_seq() is not None)
-        self.assertTrue(t.get_seq() is not "")
-        self.assertTrue(len(t.get_cds()) > 0)
-        self.assertTrue(len(t.get_exons()) > 0)
-        shutil.rmtree(output_filename)
-
-    def test_region2bin(self):
-        """Simple test that the region2bin works for genomic position indexing """
-
-        # Footprint for PIK3CA transcript chr3:178,866,311-178,952,497  uc003fjk.3
-        guess = region2bin(178866311, 178952497)
-
-        self.assertTrue(guess == 243)
-
-    def test_build_ensembl_transcripts_by_gene_index(self):
-        """Test building an index for getting a transcript given a gene."""
-        protocol = "file"
-        transcript_index_filename = "out/test_ensemble_gtf_for_gene.db"
-        output_filename = "out/test_ensemble_gtf_for_gene.db.gene.idx"
-        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
-        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
-
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, transcript_index_filename, protocol=protocol)
-        genome_build_factory.build_ensembl_transcripts_by_gene_index(transcript_index_filename, output_filename)
-
-        # Now load the index and look something up.
-        gene_index = Shove(protocol + "://" + output_filename)
-        self.assertTrue(len(gene_index['SEO1']) == 1)
-        tx = gene_index['SEO1'][0]
-
-        self.assertTrue(tx.get_transcript_id()=="YAL067C")
-
-    def test_build_ensembl_transcripts_by_genomic_location_index(self):
-        """Test that we can get an ensembl transcript from a genomic position"""
-        protocol = "file"
-        transcript_index_filename = "out/test_ensemble_gtf_for_gp.db"
-        output_filename = "out/test_ensemble_gtf_for_gp.db.idx"
-        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
-        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
-
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.build_ensembl_transcript_index(ensembl_input_gtf, ensembl_input_fasta, transcript_index_filename, protocol=protocol)
-        genome_build_factory.build_ensembl_transcripts_by_genomic_location_index(transcript_index_filename, output_filename, protocol=protocol)
-
-        # Now load the index and look something up.
-        gp_index = Shove(protocol + "://" + output_filename)
-        gt_transcript_id = "YAL067C"
-        bins = region2bins(1496172, 1496400)
-
-        for bin in bins:
-            key = 'I_' + str(bin)
-            if key in gp_index.keys():
-                self.assertTrue(gp_index[key] == gt_transcript_id)
-
-    def test_construct_full_indices(self):
-        """Attempt to construct all three ensembl indices with one command. """
-        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
-        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
-        base_output_filename = "out/test_full_indices_ensembl"
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
-
-        self.assertTrue(os.path.exists(base_output_filename + ".transcript.idx"))
-        self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gene.idx"))
-        self.assertTrue(os.path.exists(base_output_filename + ".transcript_by_gp_bin.idx"))
-
-    @unittest.skip(" This needs to be rebuilt.  This test should be re-enabled in the ensembl branch")
-    def test_retrieving_sequence(self):
-        """Ensure we can retrieve a sequence from an ensembl transcript given a gene.  """
-        #TODO: Rebuild the datasource otherwise strand test fails below.
-        ensembl_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
-        ensembl_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
-        base_output_filename = "out/test_full_indices_ensembl"
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(ensembl_input_gtf, ensembl_input_fasta, base_output_filename)
-
-        seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", "memory://")
-        transcripts = seq_index['SEO1']
-
-        self.assertTrue(transcripts[0].get_seq().startswith('ATGTATTCAATTGTTAAAGAGATTATTGTAGATCCTTACAAAAGACTAAAATGGGGTTTT'))
-
-        transcripts = seq_index['PAU8']
-        self.assertTrue(transcripts[0].get_strand() == "-")
+    def __str__(self):
+        return repr(self.value)
