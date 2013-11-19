@@ -247,7 +247,9 @@ class VariantClassifier(object):
         vc_tmp = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
 
-        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_protein_start="", alt_protein_end="")
+        cds_start_exon_space, cds_end_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+
+        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space)
         return final_vc
 
     def _determine_if_exon_overlap(self, e, s, tx, variant_type):
@@ -484,15 +486,20 @@ class VariantClassifier(object):
 
     def generate_codon_change_from_vc(self, vc):
         """
-
         :param vc:
+        :param tx:
         :return:
         """
-        codon_position_start = vc.get_ref_codon_start_in_exon()
-        codon_position_end = vc.get_ref_codon_end_in_exon()
+        #TODO: Add xform into cds space
+
+        codon_position_start_cds_space = vc.get_ref_codon_start_in_exon() - vc.get_cds_start_in_exon_space()+1
+        codon_position_end_cds_space = vc.get_ref_codon_end_in_exon() - vc.get_cds_start_in_exon_space()+1
+        if codon_position_start_cds_space == "" or codon_position_end_cds_space == "":
+            return ""
+
         ref_codon_seq = vc.get_ref_codon()
         alt_codon_seq = vc.get_alt_codon()
-        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq)
         return result
 
     def generate_transcript_change_from_vc(self, vc):
@@ -506,5 +513,7 @@ class VariantClassifier(object):
         exon_position_end = vc.get_ref_codon_end_in_exon()
         ref_allele_stranded = vc.get_ref_codon()
         alt_allele_stranded = vc.get_alt_codon()
+
         result = TranscriptProviderUtils.render_transcript_change(vc.get_vt(), vc.get_vc(), int(exon_position_start), int(exon_position_end), ref_allele_stranded, alt_allele_stranded)
-        return result
+        raise NotImplementedError("This method is not finished")
+        # return result

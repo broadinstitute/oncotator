@@ -31,7 +31,7 @@ class VariantClassification(object):
     VT_DEL = "DEL"
     VT_SNP = "SNP"
 
-    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="", alt_codon_end_in_exon="", ref_codon="", ref_codon_start_in_exon="", ref_codon_end_in_exon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end=""):
+    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="", alt_codon_end_in_exon="", ref_codon="", ref_codon_start_in_exon="", ref_codon_end_in_exon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end="", cds_start_in_exon_space=""):
         self._vc_primary = vc_primary
         self._vc_secondary = vc_secondary
         self._transcript_id = transcript_id
@@ -48,6 +48,7 @@ class VariantClassification(object):
         self._alt_codon_end_in_exon = alt_codon_end_in_exon
         self._ref_codon_start_in_exon = ref_codon_start_in_exon
         self._ref_codon_end_in_exon = ref_codon_end_in_exon
+        self._cds_start_in_exon_space = cds_start_in_exon_space
 
 
     def get_vc(self):
@@ -98,3 +99,6 @@ class VariantClassification(object):
 
     def get_ref_codon_end_in_exon(self):
         return self._ref_codon_end_in_exon
+
+    def get_cds_start_in_exon_space(self):
+        return self._cds_start_in_exon_space

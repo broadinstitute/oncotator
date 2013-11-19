@@ -182,21 +182,34 @@ class TranscriptProviderUtils(object):
 
     @staticmethod
     def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq):
+        """
+
+        :param variant_type:
+        :param variant_classification: (str)
+        :param codon_position_start:
+        :param codon_position_end:
+        :param ref_codon_seq:
+        :param alt_codon_seq:
+        :return:
+        """
+        updated_ref_seq = ref_codon_seq
+        updated_alt_seq = alt_codon_seq
+
         codon_change = ''
         if variant_classification.startswith('Frame_Shift'):
-            codon_change = 'c.(%d-%d)%sfs' % (codon_position_start, codon_position_end, ref_codon_seq)
+            codon_change = 'c.(%d-%d)%sfs' % (codon_position_start, codon_position_end, updated_ref_seq)
         elif variant_type.endswith('NP'):
-            codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+            codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, updated_ref_seq, updated_alt_seq)
         elif variant_type == 'DEL':
             if alt_codon_seq == '': #full codon deleted
-                codon_change = 'c.(%d-%d)%sdel' % (codon_position_start, codon_position_end, ref_codon_seq)
+                codon_change = 'c.(%d-%d)%sdel' % (codon_position_start, codon_position_end, updated_ref_seq)
             else:
-                codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+                codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, updated_ref_seq, updated_alt_seq)
         elif variant_type == 'INS':
             if ref_codon_seq == '': #insertion between codons
                 codon_change = 'c.(%d-%d)ins%s' % (codon_position_start, codon_position_end, alt_codon_seq)
             else:
-                codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq)
+                codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, updated_ref_seq, updated_alt_seq)
         return codon_change
 
     # TODO: These transforms should be in a separate class.

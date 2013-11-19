@@ -109,6 +109,13 @@ class VariantClassifierTest(unittest.TestCase):
         transcript_change = vcer.generate_transcript_change_from_vc(vc)
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s" % (transcript_change_gt, transcript_change))
 
+    @data_provider(muc16_change_testdata)
+    def test_muc16_change_codon(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
+        vc = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
+        vcer = VariantClassifier()
+        codon_change = vcer.generate_codon_change_from_vc(vc)
+        self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): (%s)" % (codon_change_gt, codon_change))
+
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
         """ Test all of the MUC16 SNPs."""

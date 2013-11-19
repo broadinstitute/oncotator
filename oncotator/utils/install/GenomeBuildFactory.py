@@ -171,7 +171,7 @@ class GenomeBuildFactory(object):
             self._transcript_index[k].set_protein_seq(protein_sequence)
             shove[k] = self._transcript_index[k]
             if i % 10000 == 0:
-                logging.getLogger(__name__).info("Saved %0.1f%% of transcript index to disk." % (float(i*100)/float(len(transcript_index_keys))))
+                logging.getLogger(__name__).info("Saved %0.1f%% of transcript index to disk with protein sequence." % (float(i*100)/float(len(transcript_index_keys))))
 
         logging.getLogger(__name__).info("Transcript index created " + str(len(shove.keys())) + " transcripts: " + protocol + "://" + output_filename)
         shove.close()
