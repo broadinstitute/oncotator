@@ -95,12 +95,14 @@ class VariantClassifierTest(unittest.TestCase):
 
     # ("MUC16", "19", "9057555", "9057555", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9057555C>A", "-", "c.29891G>T", "c.(29890-29892)gGg>gTg", "p.G9964V"),
     @data_provider(muc16_change_testdata)
-    def test_muc16_change(self, gene, chr, start, end, gt_vc, vt, ref, alt, gt_genome_change, strand, transcript_change, codon_change, protein_change):
+    def test_muc16_change(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         """ Test all of the MUC16 changes (protein, genome, codon, and transcript)."""
         vc = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
         vcer = VariantClassifier()
         genome_change = TranscriptProviderUtils.determine_genome_change(chr, start, end, ref, alt, vc.get_vt())
-        self.assertTrue(genome_change==gt_genome_change)
+        self.assertTrue(genome_change == genome_change_gt, "Genome change did not match gt (%s): %s" %(genome_change_gt, genome_change))
+        transcript_change = vcer.generate_transcript_change_from_vc(vc)
+        self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s" %(transcript_change_gt, transcript_change))
 
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):

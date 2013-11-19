@@ -506,5 +506,5 @@ class VariantClassifier(object):
         exon_position_end = vc.get_ref_codon_end_in_exon()
         ref_allele_stranded = vc.get_ref_codon()
         alt_allele_stranded = vc.get_alt_codon()
-        result = TranscriptProviderUtils.render_transcript_change(vc.get_vt(), vc.get_vc(), exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
+        result = TranscriptProviderUtils.render_transcript_change(vc.get_vt(), vc.get_vc(), int(exon_position_start), int(exon_position_end), ref_allele_stranded, alt_allele_stranded)
         return result
