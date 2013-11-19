@@ -1596,7 +1596,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             vcer = VariantClassifier()
 
             final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
-            final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils._determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
+            final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils.determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
             final_annotation_dict['strand'] = self._create_basic_annotation(chosen_tx.get_strand())
 
             # final_annotation_dict['transcript_exon'] = self._create_basic_annotation('')

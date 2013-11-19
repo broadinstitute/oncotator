@@ -108,7 +108,7 @@ class TranscriptProviderUtils(object):
             else: return None
 
     @staticmethod
-    def _determine_genome_change(chr, start, end, ref_allele, alt_allele, variant_type):
+    def determine_genome_change(chr, start, end, ref_allele, alt_allele, variant_type):
         genome_change = ''
         start = int(start)
         end = int(end)

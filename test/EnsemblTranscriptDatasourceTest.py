@@ -152,6 +152,10 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         m2 = ensembl_ds.annotate_mutation(m)
 
+    def test_gencode_simple_annotate(self):
+        """Test a simple mutation. """
+
+
 
 
 if __name__ == '__main__':

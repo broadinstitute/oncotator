@@ -166,10 +166,12 @@ class GenomeBuildFactory(object):
 
         logging.getLogger(__name__).info("Populating final db with internal transcript index.")
         transcript_index_keys = self._transcript_index.keys()
-        for k in transcript_index_keys:
+        for i,k in enumerate(transcript_index_keys):
             protein_sequence = self._determine_protein_seq(self._transcript_index[k])
             self._transcript_index[k].set_protein_seq(protein_sequence)
             shove[k] = self._transcript_index[k]
+            if i % 10000 == 0:
+                logging.getLogger(__name__).info("Saved %0.1f%% of transcript index to disk." % (float(i)/float(len(transcript_index_keys))))
 
         logging.getLogger(__name__).info("Transcript index created " + str(len(shove.keys())) + " transcripts: " + protocol + "://" + output_filename)
         shove.close()
@@ -198,8 +200,8 @@ class GenomeBuildFactory(object):
                 tmpList = output_db[gene]
             tmpList.append(tx)
             output_db[gene] = tmpList
-            if i % 10000 == 0:
-                logging.getLogger(__name__).info("Gene index added " + str(i+1) + " transcripts so far.")
+            if (i+1) % 10000 == 0:
+                logging.getLogger(__name__).info("Gene index added " + str(i) + " transcripts so far.")
         logging.getLogger(__name__).info("Finished gene index with " + str(len(output_db.keys())) + " genes.")
         output_db.close()
         transcript_db.close()
@@ -213,7 +215,7 @@ class GenomeBuildFactory(object):
 
         transcript_keys = transcript_db.keys()
 
-        for tx_id in transcript_keys:
+        for i,tx_id in enumerate(transcript_keys):
             tx = transcript_db[tx_id]
             start = tx.get_start()
             end = tx.get_end()
@@ -227,6 +229,8 @@ class GenomeBuildFactory(object):
 
             tmpList.append(tx)
             output_db[key] = tmpList
+            if (i+1) % 10000 == 0:
+                logging.getLogger(__name__).info("Genomic position index added " + str(i) + " transcripts so far.")
 
         output_db.close()
         transcript_db.close()

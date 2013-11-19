@@ -765,7 +765,7 @@ def infer_output_fields(data, gaf):
     for i,m in enumerate(data):
         if m['variant_type'] != 'ERR':
 
-            genome_change = TranscriptProviderUtils._determine_genome_change(m.chr, m.start, m.end, m.ref_allele, m.alt_allele, m['variant_type'])
+            genome_change = TranscriptProviderUtils.determine_genome_change(m.chr, m.start, m.end, m.ref_allele, m.alt_allele, m['variant_type'])
             m.createAnnotation('genome_change', genome_change, gaf.title)
             
             for t in m['transcripts']:

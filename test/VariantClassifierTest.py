@@ -7,6 +7,7 @@ from oncotator.datasources import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
+from test.MUC16ChangeTestdata import muc16_change_testdata
 from test.TestUtils import TestUtils
 from MUC16Testdata import muc16testdata
 import unittest
@@ -38,8 +39,10 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
 
         vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2).get_vc()
+        variant_classification = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2)
+        vc = variant_classification.get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
+        return variant_classification
 
     variants_indels_MAPK1 = lambda: (
         ("22", "22221645", "22221647", "In_Frame_Del", "DEL", "GAG", "-"),
@@ -89,6 +92,15 @@ class VariantClassifierTest(unittest.TestCase):
     def test_is_framshift_indel(self, vt, s, e, alt, gt):
         vcer = VariantClassifier()
         self.assertTrue(vcer.is_frameshift_indel(vt, s, e, alt) == gt)
+
+    # ("MUC16", "19", "9057555", "9057555", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9057555C>A", "-", "c.29891G>T", "c.(29890-29892)gGg>gTg", "p.G9964V"),
+    @data_provider(muc16_change_testdata)
+    def test_muc16_change(self, gene, chr, start, end, gt_vc, vt, ref, alt, gt_genome_change, strand, transcript_change, codon_change, protein_change):
+        """ Test all of the MUC16 changes (protein, genome, codon, and transcript)."""
+        vc = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, gene="MUC16")
+        vcer = VariantClassifier()
+        genome_change = TranscriptProviderUtils.determine_genome_change(chr, start, end, ref, alt, vc.get_vt())
+        self.assertTrue(genome_change==gt_genome_change)
 
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
