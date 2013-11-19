@@ -85,6 +85,7 @@ class GenericGenomicMutationDatasourceTest(unittest.TestCase):
         m.end = '48604683'
         m.ref_allele = 'G'
         m.alt_allele = 'A'
+        m.createAnnotation('strand', '+')
     
         guess = ds.annotate_mutation(m)
         self.assertTrue(guess['_cosmic_muts_disease_counts'], 'Unable to annotate mutation correctly')
