@@ -1521,6 +1521,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         Though all transcripts for GENCODE can be loaded, it is currently set to ignore any transcripts that are not
             "basic"
     """
+    """This is the list of annotations that get populated by this datasource"""
+    POPULATED_ANNOTATION_NAMES = set(['variant_type', 'variant_classification', 'other_transcripts', 'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand', 'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change', 'transcript_change', 'transcript_strand', 'gene', 'gene_type', 'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript', 'ccds_id', 'gencode_transcript_type', 'gencode_transcript_name'])
     def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
@@ -1549,16 +1551,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         return Annotation(value=value, datasourceName=self.title)
 
     def _create_blank_set_of_annotations(self):
+        #TODO: Make a list of the annotations that will be populated then default all to ""
         final_annotation_dict = dict()
-        final_annotation_dict['annotation_transcript'] = self._create_basic_annotation('')
-        final_annotation_dict['codon_change'] = self._create_basic_annotation('')
-        final_annotation_dict['strand'] = self._create_basic_annotation('')
-        final_annotation_dict['protein_change'] = self._create_basic_annotation('')
-        final_annotation_dict['transcript_exon'] = self._create_basic_annotation('')
-        final_annotation_dict['transcript_position'] = self._create_basic_annotation('')
-        final_annotation_dict['transcript_change'] = self._create_basic_annotation('')
-        final_annotation_dict['transcript_id'] = self._create_basic_annotation('')
-        final_annotation_dict['transcript_strand'] = self._create_basic_annotation('')
+        for k in EnsemblTranscriptDatasource.POPULATED_ANNOTATION_NAMES:
+            final_annotation_dict[k] = self._create_basic_annotation('')
+
         return final_annotation_dict
 
     def _retrieve_gencode_tag_value(self, tx, attribute_name):
@@ -1592,7 +1589,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['gene_id'] = self._create_basic_annotation('0')
         else:
             # Choose the best effect transcript
-            chosen_tx = self._choose_transcript(txs, self.get_tx_mode(), final_annotation_dict['variant_type'], mutation.ref_allele, mutation.alt_allele, start, end)
+            chosen_tx = self._choose_transcript(txs, self.get_tx_mode(), final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, start, end)
             vcer = VariantClassifier()
 
             final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
@@ -1604,10 +1601,10 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
             final_annotation_dict['transcript_id'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
 
-            variant_classfication = vcer.variant_classify(chosen_tx, final_annotation_dict['variant_type'].value,
-                                             mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
-            final_annotation_dict['variant_classification'].value = variant_classfication.get_vc()
-            final_annotation_dict['secondary_variant_classification'].value = variant_classfication.get_secondary_vc()
+            variant_classfication = vcer.variant_classify(tx=chosen_tx, variant_type=final_annotation_dict['variant_type'].value,
+                                             ref_allele=mutation.ref_allele, alt_allele=mutation.alt_allele, start=mutation.start, end=mutation.end)
+            final_annotation_dict['variant_classification'] = self._create_basic_annotation(variant_classfication.get_vc())
+            final_annotation_dict['secondary_variant_classification'] = self._create_basic_annotation(variant_classfication.get_secondary_vc())
             final_annotation_dict['protein_change'] = self._create_basic_annotation(vcer.generate_protein_change_from_vc(variant_classfication))
             final_annotation_dict['codon_change'] = self._create_basic_annotation(vcer.generate_codon_change_from_vc(variant_classfication))
             final_annotation_dict['transcript_change'] = self._create_basic_annotation(vcer.generate_transcript_change_from_vc(variant_classfication))
@@ -1684,7 +1681,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             if score not in scores.keys():
                 scores[score] = set()
             scores[score].add(tx)
-            logging.getLogger(__name__).info(str([score, tx.get_transcript_id()]))
 
         highest_score = max(scores.keys())
         highest_scoring_txs = scores[highest_score]
@@ -1796,9 +1792,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         other_transcripts = list()
         for i, ot in enumerate(txs):
             if i not in transcriptIndicesToSkip:
-                vc = vcer.variant_classify(ot, variant_type, ref_allele, alt_allele, start, end).get_vc()
+                vc = vcer.variant_classify(tx=ot, variant_type=variant_type, ref_allele=ref_allele, alt_allele=alt_allele, start=start, end=end)
                 o = '_'.join([ot.get_gene(), ot.get_transcript_id(),
-                              vc, ot.get('protein_change', '')])
+                              vc.get_vc(), vcer.generate_protein_change_from_vc(vc)])
                 o = o.strip('_')
                 other_transcripts.append(o)
 

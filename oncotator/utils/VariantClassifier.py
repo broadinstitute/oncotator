@@ -302,7 +302,7 @@ class VariantClassifier(object):
         """
         gene_type = tx.get_gene_type()
         if gene_type != "protein_coding":
-            return gene_type
+            return VariantClassification(VariantClassification.RNA, variant_type, tx.get_transcript_id())
 
         if ref_allele == "-":
             ref_allele = ""
@@ -479,9 +479,11 @@ class VariantClassifier(object):
         """
         prot_position_start = vc.get_ref_protein_start()
         prot_position_end = vc.get_ref_protein_end()
+        if prot_position_start == "" or prot_position_end == "":
+            return ""
         ref_prot_allele = vc.get_ref_aa()
         alt_prot_allele = vc.get_alt_aa()
-        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele)
+        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), int(prot_position_start), int(prot_position_end), ref_prot_allele, alt_prot_allele)
         return result
 
     def generate_codon_change_from_vc(self, vc):
@@ -492,10 +494,11 @@ class VariantClassifier(object):
         """
         #TODO: Add xform into cds space
 
-        codon_position_start_cds_space = vc.get_ref_codon_start_in_exon() - vc.get_cds_start_in_exon_space()+1
-        codon_position_end_cds_space = vc.get_ref_codon_end_in_exon() - vc.get_cds_start_in_exon_space()+1
-        if codon_position_start_cds_space == "" or codon_position_end_cds_space == "":
+        if vc.get_ref_codon_start_in_exon() == "" or vc.get_ref_codon_end_in_exon() == "":
             return ""
+
+        codon_position_start_cds_space = int(vc.get_ref_codon_start_in_exon()) - int(vc.get_cds_start_in_exon_space())+1
+        codon_position_end_cds_space = int(vc.get_ref_codon_end_in_exon()) - int(vc.get_cds_start_in_exon_space())+1
 
         ref_codon_seq = vc.get_ref_codon()
         alt_codon_seq = vc.get_alt_codon()
@@ -509,11 +512,12 @@ class VariantClassifier(object):
         :return:
         """
         #TODO: This is not correct.  These need to be the transcript positions, not the codon positions.
+        if vc.get_ref_codon_start_in_exon() == "" or vc.get_ref_codon_end_in_exon() == "":
+            return ""
         exon_position_start = vc.get_ref_codon_start_in_exon()
         exon_position_end = vc.get_ref_codon_end_in_exon()
         ref_allele_stranded = vc.get_ref_codon()
         alt_allele_stranded = vc.get_alt_codon()
 
         result = TranscriptProviderUtils.render_transcript_change(vc.get_vt(), vc.get_vc(), int(exon_position_start), int(exon_position_end), ref_allele_stranded, alt_allele_stranded)
-        raise NotImplementedError("This method is not finished")
-        # return result
+        return result
