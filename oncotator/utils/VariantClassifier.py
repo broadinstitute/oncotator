@@ -564,4 +564,7 @@ class VariantClassifier(object):
             if dist_from_exon < 1: dist_from_exon = 1
         else:
             dist_from_exon = 0
+
+        if t.get_strand() == "-":
+            dist_from_exon *= -1
         return dist_from_exon
