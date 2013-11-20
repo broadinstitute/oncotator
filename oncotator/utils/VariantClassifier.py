@@ -200,6 +200,13 @@ class VariantClassifier(object):
         return False, -1, None, False
 
 
+    def _get_stranded_alleles(self, ref_allele, alt_allele, tx):
+        reference_allele_stranded, observed_allele_stranded = ref_allele, alt_allele
+        if tx.get_strand() == '-':
+            reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(
+                ref_allele), Bio.Seq.reverse_complement(alt_allele)
+        return observed_allele_stranded, reference_allele_stranded
+
     def _determine_vc_for_cds_overlap(self, start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type, is_start_codon):
         """
         Note: This method can also handle start and stop codons.
@@ -214,9 +221,7 @@ class VariantClassifier(object):
         :param variant_type:
         :return:
         """
-        reference_allele_stranded, observed_allele_stranded = ref_allele, alt_allele
-        if tx.get_strand() == '-':
-            reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref_allele), Bio.Seq.reverse_complement(alt_allele)
+        observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
 
         transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
             start, end, tx)
@@ -235,7 +240,8 @@ class VariantClassifier(object):
         else:
             ref_tx_seq_has_been_changed = False
         cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
-        reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1]
+        # reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1]
+        reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
         mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
 
@@ -249,7 +255,7 @@ class VariantClassifier(object):
 
         cds_start_exon_space, cds_end_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
 
-        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space)
+        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space, ref_allele_stranded=reference_allele_stranded, alt_allele_stranded=observed_allele_stranded)
         return final_vc
 
     def _determine_if_exon_overlap(self, e, s, tx, variant_type):
@@ -505,19 +511,20 @@ class VariantClassifier(object):
         result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq)
         return result
 
-    def generate_transcript_change_from_vc(self, vc):
+    def generate_transcript_change_from_tx(self, tx, variant_type, vc, start_genomic_space, end_genomic_space, ref_allele, alt_allele):
         """
 
         :param vc:
         :return:
         """
-        #TODO: This is not correct.  These need to be the transcript positions, not the codon positions.
-        if vc.get_ref_codon_start_in_exon() == "" or vc.get_ref_codon_end_in_exon() == "":
-            return ""
-        exon_position_start = vc.get_ref_codon_start_in_exon()
-        exon_position_end = vc.get_ref_codon_end_in_exon()
-        ref_allele_stranded = vc.get_ref_codon()
-        alt_allele_stranded = vc.get_alt_codon()
 
-        result = TranscriptProviderUtils.render_transcript_change(vc.get_vt(), vc.get_vc(), int(exon_position_start), int(exon_position_end), ref_allele_stranded, alt_allele_stranded)
+        exon_position_start,exon_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(int(start_genomic_space), int(end_genomic_space), tx)
+        cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())+1
+        cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())+1
+
+        if cds_position_start_cds_space < 0 or cds_position_end_cds_space < 0:
+            return ""
+
+        observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
+        result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded)
         return result
