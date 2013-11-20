@@ -362,9 +362,11 @@ class VcfOutputRenderer(OutputRenderer):
         for name in IDs:
             val = m.get(name, "")
             recordFactory.addID(val)
-
-        qual = quals[0]
-        recordFactory.addQual(m[qual])
+        if len(quals) == 0:
+            qual = "qual"
+        else:
+            qual = quals[0]
+        recordFactory.addQual(m.get(qual,"."))
 
         for name in filts:
             ID = dataManager.getFieldID(name)

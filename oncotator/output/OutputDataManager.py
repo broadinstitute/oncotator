@@ -173,8 +173,11 @@ class OutputDataManager:
                 if comment.startswith("fileformat=VCFv4."):
                     comments.pop(i)
                     break
+
+        filtered_comments = [comment for comment in comments if comment != ""]
+
         # Last line of the comments ("Oncotator v1.0.0.0rc20|") is NOT included in the header
-        headers += [string.join(["##", comment], "") for comment in comments[0:len(comments)-1]]
+        headers += [string.join(["##", comment], "") for comment in filtered_comments[0:len(filtered_comments)-1]]
 
         annotations = self.annotationTable.values()
         for annotation in annotations:
