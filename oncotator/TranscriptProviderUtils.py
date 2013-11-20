@@ -198,6 +198,13 @@ class TranscriptProviderUtils(object):
         codon_change = ''
         if variant_classification.startswith('Frame_Shift'):
             codon_change = 'c.(%d-%d)%sfs' % (codon_position_start, codon_position_end, updated_ref_seq)
+        # elif variant_classification == VariantClassification.SPLICE_SITE:
+        #     if t['dist_from_exon'] < 0:
+        #         dist_from_exon = str(t['dist_from_exon'])
+        #     else:
+        #         dist_from_exon = ''.join(['+' ,str(t['dist_from_exon'])])
+        #     codon_change = 'c.e%d%s' % (t['exon_affected'], dist_from_exon)
+
         elif variant_type.endswith('NP'):
             codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, updated_ref_seq, updated_alt_seq)
         elif variant_type == 'DEL':
