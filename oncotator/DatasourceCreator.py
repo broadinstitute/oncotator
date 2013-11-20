@@ -142,7 +142,7 @@ class DatasourceCreator(object):
         elif dsType == "dbnsfp":
             result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
-            if configParser.has_option('general', 'version'):
+            if configParser.has_option('general', 'windowSizeRef'):
                 window_size = configParser.get('general', 'windowSizeRef')
             else:
                 window_size = 10
