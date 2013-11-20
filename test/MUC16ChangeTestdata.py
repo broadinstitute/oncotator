@@ -1,4 +1,5 @@
 muc16_change_testdata = lambda: (
+("MUC16", "19", "9050244", "9050244", "Splice_Site", "SNP", "C", "A", "g.chr19:9050244C>A", "-", "c.31388_splice", "c.e5-1", "p.G10463_splice"),
 ("MUC16", "19", "9057555", "9057555", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9057555C>A", "-", "c.29891G>T", "c.(29890-29892)gGg>gTg", "p.G9964V"),
 ("MUC16", "19", "9064688", "9064688", "Silent", "SNP", "G", "T", "g.chr19:9064688G>T", "-", "c.22758C>A", "c.(22756-22758)tcC>tcA", "p.S7586S"),
 ("MUC16", "19", "9067291", "9067291", "Missense_Mutation", "SNP", "G", "T", "g.chr19:9067291G>T", "-", "c.20155C>A", "c.(20155-20157)Ccc>Acc", "p.P6719T"),
@@ -1313,7 +1314,6 @@ muc16_change_testdata = lambda: (
 ("MUC16", "19", "9090172", "9090172", "Missense_Mutation", "SNP", "G", "A", "g.chr19:9090172G>A", "-", "c.1643C>T", "c.(1642-1644)cCc>cTc", "p.P548L"),
 ("MUC16", "19", "9049259", "9049259", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9049259C>A", "-", "c.32372G>T", "c.(32371-32373)cGg>cTg", "p.R10791L"),
 ("MUC16", "19", "9050122", "9050122", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9050122C>A", "-", "c.31509G>T", "c.(31507-31509)ttG>ttT", "p.L10503F"),
-("MUC16", "19", "9050244", "9050244", "Splice_Site", "SNP", "C", "A", "g.chr19:9050244C>A", "-", "c.31388_splice", "c.e5-1", "p.G10463_splice"),
 ("MUC16", "19", "9086891", "9086891", "Nonsense_Mutation", "SNP", "C", "A", "g.chr19:9086891C>A", "-", "c.4924G>T", "c.(4924-4926)Gga>Tga", "p.G1642*"),
 ("MUC16", "19", "9088957", "9088957", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9088957C>A", "-", "c.2858G>T", "c.(2857-2859)aGa>aTa", "p.R953I"),
 ("MUC16", "19", "9045691", "9045691", "Silent", "SNP", "G", "T", "g.chr19:9045691G>T", "-", "c.35940C>A", "c.(35938-35940)acC>acA", "p.T11980T"),

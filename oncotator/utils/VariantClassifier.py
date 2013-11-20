@@ -334,8 +334,9 @@ class VariantClassifier(object):
 
         if not is_exon_overlap and not is_beyond_exons:
             if is_splice_site:
+                exon_i = self._determine_closest_exon(tx, int(start), int(end))
                 # Intron Splice Site
-                return VariantClassification(VariantClassification.SPLICE_SITE, variant_type, tx.get_transcript_id(), vc_secondary=VariantClassification.INTRON)
+                return VariantClassification(VariantClassification.SPLICE_SITE, variant_type, tx.get_transcript_id(), vc_secondary=VariantClassification.INTRON, exon_i=exon_i)
             else:
                 return VariantClassification(VariantClassification.INTRON, variant_type, tx.get_transcript_id())
 
@@ -511,16 +512,20 @@ class VariantClassifier(object):
         :return:
         """
         #TODO: Add xform into cds space
+        dist_from_exon = self._get_splice_site_coordinates(t, start, end, vc.get_exon_i())
+        exon_i = vc.get_exon_i()
+        if vc.get_vc() == VariantClassification.SPLICE_SITE:
+            return TranscriptProviderUtils.render_splice_site_codon_change(dist_from_exon, exon_i)
 
         if vc.get_ref_codon_start_in_exon() == "" or vc.get_ref_codon_end_in_exon() == "":
             return ""
 
         codon_position_start_cds_space = int(vc.get_ref_codon_start_in_exon()) - int(vc.get_cds_start_in_exon_space())+1
         codon_position_end_cds_space = int(vc.get_ref_codon_end_in_exon()) - int(vc.get_cds_start_in_exon_space())+1
-        dist_from_exon = self._get_splice_site_coordinates(t, start, end, vc.get_exon_i())
+
         ref_codon_seq = vc.get_ref_codon()
         alt_codon_seq = vc.get_alt_codon()
-        exon_i = vc.get_exon_i()
+
         result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i)
         return result
 
@@ -568,3 +573,21 @@ class VariantClassifier(object):
         if t.get_strand() == "-":
             dist_from_exon *= -1
         return dist_from_exon
+
+    def _determine_closest_exon(self, t, start, end):
+        tmp_distances = []
+        for i,exon in enumerate(t.get_exons()):
+            left_diff, right_diff = self._determine_closest_distance_from_exon(start, end, i,  t)
+            tmp_distances.append((abs(left_diff), abs(right_diff)))
+
+        min_dist = float("Inf")
+        min_index = -1
+        for i,ds in enumerate(tmp_distances):
+            if ds[0] < min_dist:
+                min_dist = ds[0]
+                min_index = i
+            if ds[1] < min_dist:
+                min_dist = ds[1]
+                min_index = i
+        return min_index
+
