@@ -164,7 +164,7 @@ class RecordFactory:
 
         qual = self._qual
         if qual is None:
-            self._logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score."
+            self._logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score (typically: annotation 'qual'."
                               % (chrom, pos))
 
         filt = self._filt
