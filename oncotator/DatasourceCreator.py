@@ -142,7 +142,11 @@ class DatasourceCreator(object):
         elif dsType == "dbnsfp":
             result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
-            result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'), windowSizeRef=configParser.get('general', 'windowSizeRef'))
+            if configParser.has_option('general', 'version'):
+                window_size = configParser.get('general', 'windowSizeRef')
+            else:
+                window_size = 10
+            result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'), windowSizeRef=window_size)
         elif dsType == 'gene_tsv':
             result = Generic_Gene_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'gene_col'))
         elif dsType == 'transcript_tsv':
