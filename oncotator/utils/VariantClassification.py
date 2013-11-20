@@ -31,7 +31,7 @@ class VariantClassification(object):
     VT_DEL = "DEL"
     VT_SNP = "SNP"
 
-    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="", alt_codon_end_in_exon="", ref_codon="", ref_codon_start_in_exon="", ref_codon_end_in_exon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end="", cds_start_in_exon_space="", ref_allele_stranded="", alt_allele_stranded=""):
+    def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="", alt_codon_end_in_exon="", ref_codon="", ref_codon_start_in_exon="", ref_codon_end_in_exon="", ref_aa="", ref_protein_start="", ref_protein_end="", alt_aa="", alt_protein_start="", alt_protein_end="", cds_start_in_exon_space="", ref_allele_stranded="", alt_allele_stranded="", exon_i=-1):
         self._vc_primary = vc_primary
         self._vc_secondary = vc_secondary
         self._transcript_id = transcript_id
@@ -51,6 +51,7 @@ class VariantClassification(object):
         self._cds_start_in_exon_space = cds_start_in_exon_space
         self._ref_allele_stranded = ref_allele_stranded
         self._alt_allele_stranded = alt_allele_stranded
+        self._exon_i = exon_i
 
     def get_vc(self):
         """Returns primary variant classification """
@@ -109,3 +110,6 @@ class VariantClassification(object):
 
     def get_alt_allele_stranded(self):
         return self._alt_allele_stranded
+
+    def get_exon_i(self):
+        return self._exon_i

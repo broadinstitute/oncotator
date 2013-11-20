@@ -260,16 +260,18 @@ class VariantClassifier(object):
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
 
         cds_start_exon_space, cds_end_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
-
-        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space, ref_allele_stranded=reference_allele_stranded, alt_allele_stranded=observed_allele_stranded)
+        exon_i = self._determine_exon_index(int(start), int(end), tx, variant_type)
+        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space, ref_allele_stranded=reference_allele_stranded, alt_allele_stranded=observed_allele_stranded, exon_i=exon_i)
         return final_vc
 
     def _determine_if_exon_overlap(self, e, s, tx, variant_type):
+        return self._determine_exon_index(s, e, tx, variant_type) != -1
+
+    def _determine_exon_index(self, s, e, tx, variant_type):
         if variant_type != VariantClassification.VT_INS:
-            is_exon_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
+            return TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
         else:
-            is_exon_overlap = TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_exons())
-        return is_exon_overlap
+            return TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_exons())
 
     def _determine_beyond_exon_info_vt(self, start, end, tx, variant_type):
         if variant_type != VariantClassification.VT_INS:
@@ -280,9 +282,9 @@ class VariantClassifier(object):
 
     def _determine_if_cds_overlap(self, s, e, tx, variant_type):
         if variant_type == VariantClassification.VT_INS:
-            is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_cds())
+            is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_cds()) != -1
         else:
-            is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_cds())
+            is_cds_overlap = TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_cds()) != -1
         return is_cds_overlap
 
     def _determine_codon_overlap(self, s, e, codon_tuple, variant_type):
@@ -498,10 +500,14 @@ class VariantClassifier(object):
         result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), int(prot_position_start), int(prot_position_end), ref_prot_allele, alt_prot_allele)
         return result
 
-    def generate_codon_change_from_vc(self, vc):
+    def generate_codon_change_from_vc(self, t, start, end, vc):
         """
-        :param vc:
-        :param tx:
+
+        :param t: (Transcript)
+        :param start: (int)
+        :param end:  (int)
+        :param vc:  (VariantClassification)
+
         :return:
         """
         #TODO: Add xform into cds space
@@ -511,10 +517,11 @@ class VariantClassifier(object):
 
         codon_position_start_cds_space = int(vc.get_ref_codon_start_in_exon()) - int(vc.get_cds_start_in_exon_space())+1
         codon_position_end_cds_space = int(vc.get_ref_codon_end_in_exon()) - int(vc.get_cds_start_in_exon_space())+1
-
+        dist_from_exon = self._get_splice_site_coordinates(t, start, end, vc.get_exon_i())
         ref_codon_seq = vc.get_ref_codon()
         alt_codon_seq = vc.get_alt_codon()
-        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq)
+        exon_i = vc.get_exon_i()
+        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i)
         return result
 
     def generate_transcript_change_from_tx(self, tx, variant_type, vc, start_genomic_space, end_genomic_space, ref_allele, alt_allele):
@@ -534,3 +541,27 @@ class VariantClassifier(object):
         observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
         result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded)
         return result
+
+    def _determine_closest_distance_from_exon(self, start_genomic, end_genomic, exon_i,  t):
+        left_start_diff = t.get_exons()[exon_i][0] - start_genomic
+        left_end_diff = t.get_exons()[exon_i][0] - end_genomic
+        right_start_diff = t.get_exons()[exon_i][1] - start_genomic
+        right_end_diff = t.get_exons()[exon_i][1] - end_genomic
+        left_diff = min(left_start_diff, left_end_diff)
+        right_diff = max(right_start_diff, right_end_diff)
+        return left_diff, right_diff
+
+    def _get_splice_site_coordinates(self, t, start, end, exon_i):
+        """Returns distance from exon."""
+
+        left_diff, right_diff = self._determine_closest_distance_from_exon(start, end, exon_i,  t)
+
+        if abs(left_diff) < abs(right_diff):
+            dist_from_exon = left_diff * -1
+            if dist_from_exon > -1: dist_from_exon = -1
+        elif abs(right_diff) < abs(left_diff):
+            dist_from_exon = right_diff * -1
+            if dist_from_exon < 1: dist_from_exon = 1
+        else:
+            dist_from_exon = 0
+        return dist_from_exon

@@ -83,13 +83,14 @@ class TranscriptProviderUtils(object):
 
     @staticmethod
     def test_feature_overlap(a_st, a_en, tuple_list):
-        for f in tuple_list:
+        result = -1
+        for i,f in enumerate(tuple_list):
             b_st = f[0]
             b_en = f[1]
             is_overlap = TranscriptProviderUtils.test_overlap(a_st, a_en, b_st, b_en)
             if is_overlap:
-                return True
-        return False
+                return i
+        return result
 
     @staticmethod
     def test_overlap_with_strand(a_st, a_en, b_st, b_en, strand):
@@ -181,9 +182,9 @@ class TranscriptProviderUtils(object):
         return protein_change
 
     @staticmethod
-    def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq):
+    def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i):
         """
-
+        :param tx:
         :param variant_type:
         :param variant_classification: (str)
         :param codon_position_start:
@@ -194,16 +195,17 @@ class TranscriptProviderUtils(object):
         """
         updated_ref_seq = ref_codon_seq
         updated_alt_seq = alt_codon_seq
-
+        exon_affected = exon_i + 1
         codon_change = ''
         if variant_classification.startswith('Frame_Shift'):
             codon_change = 'c.(%d-%d)%sfs' % (codon_position_start, codon_position_end, updated_ref_seq)
-        # elif variant_classification == VariantClassification.SPLICE_SITE:
-        #     if t['dist_from_exon'] < 0:
-        #         dist_from_exon = str(t['dist_from_exon'])
-        #     else:
-        #         dist_from_exon = ''.join(['+' ,str(t['dist_from_exon'])])
-        #     codon_change = 'c.e%d%s' % (t['exon_affected'], dist_from_exon)
+
+        elif variant_classification == VariantClassification.SPLICE_SITE:
+            if dist_from_exon < 0:
+                dist_from_exon = str(dist_from_exon)
+            else:
+                dist_from_exon = ''.join(['+' ,str(dist_from_exon)])
+            codon_change = 'c.e%d%s' % (exon_affected, dist_from_exon)
 
         elif variant_type.endswith('NP'):
             codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, updated_ref_seq, updated_alt_seq)
