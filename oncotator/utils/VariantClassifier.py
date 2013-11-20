@@ -535,7 +535,7 @@ class VariantClassifier(object):
         :param vc:
         :return:
         """
-
+        #TODO: Handle intronic splice sites
         exon_position_start,exon_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(int(start_genomic_space), int(end_genomic_space), tx)
         cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())+1
         cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())+1

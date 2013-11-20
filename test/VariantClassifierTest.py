@@ -271,7 +271,7 @@ class VariantClassifierTest(unittest.TestCase):
         if strand == "-":
             observed_allele_stranded = Bio.Seq.reverse_complement(alt_allele)
         mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(seq_stranded, seq_index, exon_position_start, exon_position_end, observed_allele_stranded, variant_type)
-        self.assertTrue(gt == mutated_codon_seq, "GT: " + gt +  " Guess: " + mutated_codon_seq + "  " + str([seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt]))
+        self.assertTrue(gt == mutated_codon_seq, "GT: " + gt + " Guess: " + mutated_codon_seq + "  " + str([seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt]))
 
     #TODO: Test secondary VC
         #TODO: Test Flank (if not already done in MUC16 test)
