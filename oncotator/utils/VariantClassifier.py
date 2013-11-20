@@ -250,6 +250,12 @@ class VariantClassifier(object):
             reference_aa = Bio.Seq.translate(reference_codon_seq)
         else:
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
+
+        if variant_type != VariantClassification.VT_SNP:
+            reference_aa, observed_aa, protein_position_start, protein_position_end = \
+                self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
+                    protein_position_end, reference_aa, observed_aa)
+
         vc_tmp = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
 
