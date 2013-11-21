@@ -46,6 +46,7 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+from functools import wraps
 from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
@@ -54,6 +55,25 @@ from oncotator.datasources import Gaf
 from oncotator.datasources import dbSNP
 from oncotator.utils import ConfigUtils
 import logging
+
+def test_data_provider(fn_data_provider):
+    """Data provider decorator, allows another callable to provide the data for the test.
+    Modified from https://pypi.python.org/pypi/unittest-data-provider/1.0.0
+    to work with nose and to accumulate assertion errors."""
+
+    def test_decorator(fn):
+        @wraps(fn)
+        def repl(self, *args):
+            assertion_errors = []
+            for i in fn_data_provider():
+                try:
+                    fn(self, *i)
+                except AssertionError as ae:
+                    assertion_errors.append("Assertion error caught with data set %s -- %s" % (str(i), ae.message))
+            if len(assertion_errors) > 0:
+                raise AssertionError("\n".join(assertion_errors))
+        return repl
+    return test_decorator
 
 
 class TestUtils(object):
