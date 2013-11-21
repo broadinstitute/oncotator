@@ -265,13 +265,15 @@ class DatasourceCreator(object):
 
             # Split the datasources into tmpQueue, which holds the datasources that can be initialized in parallel.
             tmpQueue = []
+            tmpResult = []
             for dsTuple in datasourceTuples:
                 configParser = ConfigUtils.createConfigParser(dsTuple[0]) 
                 if configParser.get("general", "type") in ["gene_tsv", "gp_tsv", "gpp_tsv", "transcript_tsv"]:
                     tmpQueue.append(dsTuple)
                 else:
                     result.append(DatasourceCreator.createDatasourceGivenTuple(dsTuple))
-            tmpResult = p.map(createDatasource, tmpQueue)
+            if len(tmpQueue) > 0:
+                tmpResult = p.map(createDatasource, tmpQueue)
             result.extend(tmpResult)
             logging.getLogger(__name__).info("Mapping complete: " + str(len(tmpResult)) + " datasources created in multiprocess")
             p.close()
