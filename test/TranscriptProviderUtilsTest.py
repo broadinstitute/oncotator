@@ -5,8 +5,7 @@ from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources import EnsemblTranscriptDatasource
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
-from unittest_data_provider import data_provider
-from test.TestUtils import TestUtils
+from test.TestUtils import TestUtils, data_provider_decorator
 
 TestUtils.setupLogging(__file__, __name__)
 class TranscriptProviderUtilsTest(unittest.TestCase):
@@ -35,7 +34,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         (("22108790", "22108790"), 11020), (("22108800", "22108890"), 10920)
     )
 
-    @data_provider(locs)
+    @data_provider_decorator(locs)
     def test_convert_genomic_space_to_exon_space(self, loc, gt_d):
         """Test genomic --> exon transform on real data. """
         gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
@@ -66,7 +65,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
             22108890, 11022-102, "-"),
     )
 
-    @data_provider(simple_locs)
+    @data_provider_decorator(simple_locs)
     def test_transform_to_feature_space(self, exons, s, gt, strand):
         """Run some basic tests transforming genomic coordinates to exon coordinates, taking strand into account. """
 
@@ -105,7 +104,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         ("22143044", "22143046", "ATG"),
         ("22108789", "22108795", "CTATAAA")
     )
-    @data_provider(seq_testdata)
+    @data_provider_decorator(seq_testdata)
     def test_seq(self, start, end, gt):
         """Test that we can successfully determine the codon at an arbitrary location on test transcript"""
         tx = self.retrieve_test_transcript_MAPK1()
@@ -122,7 +121,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         ("22127165", "22127165", "C", "GAC")
     )
 
-    @data_provider(codon_tests_single_base)
+    @data_provider_decorator(codon_tests_single_base)
     def test_codon_single_base(self, start, end, ref_base_stranded, gt_codon):
         """Test that we can grab the proper three bases of a codon for an arbitrary single base """
         tx = self.retrieve_test_transcript_MAPK1()
@@ -147,7 +146,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "-", "TTCTTAAG", "c.3990_3997insTTCTTAAG"),
         ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "", "TTCTTAAG", "c.3990_3997insTTCTTAAG")
     )
-    @data_provider(transcript_change_testdata)
+    @data_provider_decorator(transcript_change_testdata)
     def test_render_transcript_change(self, variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, gt):
         """Simple test of transcript change, once parameters have been rendered. """
         guess = TranscriptProviderUtils.render_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
@@ -163,7 +162,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         ("INS", "In_Frame_Ins", 29, 30, "-", "GGCTGTGGCTCCGGCTGTGGG", "+", "p.29_30insGCGSGCG"),
         ("INS", "Frame_Shift_Ins", 179, 179, "-", "C", "+", "p.C179fs")
     )
-    @data_provider(protein_change_testdata)
+    @data_provider_decorator(protein_change_testdata)
     def test_render_protein_change(self, variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand, gt):
         """Simple test of protein change, once parameters have been rendered. """
         guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele)
