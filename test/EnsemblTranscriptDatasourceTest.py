@@ -129,7 +129,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_simple_annotate_with_nonhuman(self):
         """Test a very simple annotation with a nonhuman genome (saccer)"""
-        ensembl_ds =self._create_ensembl_ds_from_saccer()
+        ensembl_ds = self._create_ensembl_ds_from_saccer()
 
         m = MutationData()
         m.chr = "I"
