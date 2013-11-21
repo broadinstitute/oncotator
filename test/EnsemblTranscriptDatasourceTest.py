@@ -48,6 +48,7 @@
 #"""
 import ConfigParser
 import logging
+import shutil
 
 import unittest
 from oncotator.DatasourceCreator import DatasourceCreator
@@ -55,6 +56,7 @@ from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources import EnsemblTranscriptDatasource, TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
@@ -113,12 +115,21 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         self.assertTrue(len(ids - set(['YAL067W-A', 'YAL067C'])) == 0)
 
+    def _create_ensembl_ds_from_saccer(self):
+        gencode_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
+        gencode_input_fasta = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.cdna.all.fa"
+        base_output_filename = "out/test_saccer_ds"
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="ensembl", version="71")
+        return ensembl_ds
+
     def test_simple_annotate_with_nonhuman(self):
         """Test a very simple annotation with a nonhuman genome (saccer)"""
-        #TODO: Build the saccer datasource dynamically for each test.
-        base_config_location = "testdata/ensembl/saccer/"
-
-        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        ensembl_ds =self._create_ensembl_ds_from_saccer()
 
         m = MutationData()
         m.chr = "I"
