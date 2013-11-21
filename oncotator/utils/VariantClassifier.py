@@ -115,12 +115,10 @@ class VariantClassifier(object):
         :param observed_allele:
         :param is_frameshift_indel:
         :param is_splice_site:
-        :return:
+        :return: primary classification, secondary classification
         """
         #TODO: Replace the rest with constants in the VariantClassification class
         #TODO: Cleanup since the flag to start codon is a bit of a hack.
-        if is_splice_site:
-            return "Splice_Site"
         if variant_type == 'INS' or (variant_type == 'ONP' and len(reference_allele) < len(observed_allele)):
             if not is_frameshift_indel:
                 vc = 'In_Frame_Ins'
@@ -143,7 +141,9 @@ class VariantClassifier(object):
                     vc = VariantClassification.START_CODON_SNP
                 else:
                     vc = VariantClassification.MISSENSE
-        return vc
+        if is_splice_site:
+            return VariantClassification.SPLICE_SITE, vc
+        return vc, ""
 
 
     def is_frameshift_indel(self, variant_type, start, end,  observed_allele):
@@ -256,12 +256,12 @@ class VariantClassifier(object):
                 self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
                     protein_position_end, reference_aa, observed_aa)
 
-        vc_tmp = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
+        vc_tmp, vc_tmp_secondary = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
 
         cds_start_exon_space, cds_end_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
         exon_i = self._determine_exon_index(int(start), int(end), tx, variant_type)
-        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space, ref_allele_stranded=reference_allele_stranded, alt_allele_stranded=observed_allele_stranded, exon_i=exon_i)
+        final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space, ref_allele_stranded=reference_allele_stranded, alt_allele_stranded=observed_allele_stranded, exon_i=exon_i, vc_secondary=vc_tmp_secondary)
         return final_vc
 
     def _determine_if_exon_overlap(self, e, s, tx, variant_type):
@@ -333,12 +333,12 @@ class VariantClassifier(object):
         is_beyond_exons, side, is_flank = self._determine_beyond_exon_info_vt(start, end, tx, variant_type)
 
         if not is_exon_overlap and not is_beyond_exons:
+            exon_i = self._determine_closest_exon(tx, int(start), int(end))
             if is_splice_site:
-                exon_i = self._determine_closest_exon(tx, int(start), int(end))
                 # Intron Splice Site
                 return VariantClassification(VariantClassification.SPLICE_SITE, variant_type, tx.get_transcript_id(), vc_secondary=VariantClassification.INTRON, exon_i=exon_i)
             else:
-                return VariantClassification(VariantClassification.INTRON, variant_type, tx.get_transcript_id())
+                return VariantClassification(VariantClassification.INTRON, variant_type, tx.get_transcript_id(), exon_i=exon_i)
 
         if not is_exon_overlap and is_beyond_exons:
             if is_flank:
@@ -370,7 +370,7 @@ class VariantClassifier(object):
                 vc_tmp = VariantClassification.FIVE_PRIME_UTR
             transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
             vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, variant_type)
-            return VariantClassification(vc, variant_type, transcript_id=tx.get_transcript_id())
+            return VariantClassification(vc, variant_type, transcript_id=tx.get_transcript_id(), )
 
         # We have a clean overlap in the CDS.  Includes start codon or stop codon.
         if is_cds_overlap or is_stop_codon_overlap or is_start_codon_overlap:

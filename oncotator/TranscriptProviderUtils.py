@@ -85,7 +85,8 @@ class TranscriptProviderUtils(object):
     def test_feature_overlap(a_st, a_en, tuple_list):
         result = -1
         for i,f in enumerate(tuple_list):
-            b_st = f[0]
+            # Must add one to keep convention in line with genome browser
+            b_st = f[0]+1
             b_en = f[1]
             is_overlap = TranscriptProviderUtils.test_overlap(a_st, a_en, b_st, b_en)
             if is_overlap:

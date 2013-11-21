@@ -119,7 +119,7 @@ class VariantClassifierTest(unittest.TestCase):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_change_protein", gene="MUC16")
         vcer = VariantClassifier()
         protein_change = vcer.generate_protein_change_from_vc(vc)
-        self.assertTrue(protein_change == protein_change_gt, "Protein change did not match gt (%s): (%s)" % (protein_change_gt, protein_change))
+        self.assertTrue(protein_change == protein_change_gt, "Protein change did not match gt (%s): (%s) for %s" % (protein_change_gt, protein_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
     @data_provider(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):

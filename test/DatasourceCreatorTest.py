@@ -175,9 +175,9 @@ class DatasourceCreatorTest(unittest.TestCase):
     def test_hashcode_generation(self):
         """Test that we can read a hashcode for a datasource, if available."""
         geneDS = DatasourceCreator.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
-        self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
+        self.assertTrue(geneDS is not None, "gene indexed datasource was None.")
 
-        self.assertTrue(geneDS.get_hashcode()=="7120edfdc7b29e45191c81c99894afd5")
+        self.assertTrue(geneDS.get_hashcode() == "7120edfdc7b29e45191c81c99894afd5")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicInit']
