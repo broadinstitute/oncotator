@@ -538,12 +538,13 @@ class VariantClassifier(object):
             dist_from_exon = self._get_splice_site_coordinates(tx, start_genomic_space, end_genomic_space, vc.get_exon_i())
             exon_i = vc.get_exon_i()
             return TranscriptProviderUtils.render_splice_site_transcript_change(tx, dist_from_exon, exon_i, vc.get_secondary_vc() == VariantClassification.INTRON)
+
+        if vc.get_cds_start_in_exon_space() == "" or vc.get_cds_start_in_exon_space() < 0:
+            return ""
         exon_position_start,exon_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(int(start_genomic_space), int(end_genomic_space), tx)
+
         cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())+1
         cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())+1
-
-        if cds_position_start_cds_space < 0 or cds_position_end_cds_space < 0:
-            return ""
 
         observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
         result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded)
