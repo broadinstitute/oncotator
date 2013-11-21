@@ -1245,8 +1245,7 @@ class ReferenceDatasource(Datasource):
         """ Constructor
         src_dir is the parent directory of the chrXXX.txt files.
         """
-        
-        # TODO: Low priority: Read window sizes from a config file.
+
         self.directoryName = src_dir
         self.windowSizeRef = windowSizeRef
         self.windowSizeGC = windowSizeGCContent
@@ -1603,6 +1602,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
             variant_classfication = vcer.variant_classify(tx=chosen_tx, variant_type=final_annotation_dict['variant_type'].value,
                                              ref_allele=mutation.ref_allele, alt_allele=mutation.alt_allele, start=mutation.start, end=mutation.end)
+            final_annotation_dict['transcript_exon'] = self._create_basic_annotation(str(variant_classfication.get_exon_i()+1))
             final_annotation_dict['variant_classification'] = self._create_basic_annotation(variant_classfication.get_vc())
             final_annotation_dict['secondary_variant_classification'] = self._create_basic_annotation(variant_classfication.get_secondary_vc())
             final_annotation_dict['protein_change'] = self._create_basic_annotation(vcer.generate_protein_change_from_vc(variant_classfication))
@@ -1787,7 +1787,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         txs -- a list of transcripts to render.
         transcriptIndicesToSkip -- a list of transcripts that are being used (i.e. not an "other transcript").  This will usually be the canonical or any transcript chosen by tx_mode.
         """
-        # TODO: Still need to implement protein change here.
         vcer = VariantClassifier()
         other_transcripts = list()
         for i, ot in enumerate(txs):
