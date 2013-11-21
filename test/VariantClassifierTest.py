@@ -1,7 +1,5 @@
 import shutil
 import Bio
-from oncotator.DatasourceCreator import DatasourceCreator
-from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
@@ -106,7 +104,7 @@ class VariantClassifierTest(unittest.TestCase):
     def test_muc16_change_transcript(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_change_transcript",gene="MUC16")
         vcer = VariantClassifier()
-        transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, start, end, ref, alt)
+        transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, int(start), int(end), ref, alt)
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s" % (transcript_change_gt, transcript_change))
 
     @data_provider(muc16_change_testdata)
@@ -130,7 +128,7 @@ class VariantClassifierTest(unittest.TestCase):
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take the test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand) and test the entire 5'UTR"""
-        tx = self.retrieve_test_transcript_MAPK1()
+        tx = self.retrieve_test_transcript_MAPK1(fixed_id="snp_vc_on_one_transcript_5UTR")
         vcer = VariantClassifier()
 
         chr = 22

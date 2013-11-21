@@ -166,7 +166,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
     @data_provider(protein_change_testdata)
     def test_render_protein_change(self, variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand, gt):
         """Simple test of protein change, once parameters have been rendered. """
-        guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand)
+        guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele)
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
 if __name__ == '__main__':

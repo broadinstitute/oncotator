@@ -485,7 +485,6 @@ class VariantClassifier(object):
                 result = 'De_novo_Start_' + frameness
         return result
 
-    # TODO: Need unit tests for below generate*from_vc methods
     def generate_protein_change_from_vc(self, vc):
         """
 
@@ -511,7 +510,6 @@ class VariantClassifier(object):
 
         :return:
         """
-        #TODO: Add xform into cds space
         dist_from_exon = self._get_splice_site_coordinates(t, start, end, vc.get_exon_i())
         exon_i = vc.get_exon_i()
         if vc.get_vc() == VariantClassification.SPLICE_SITE:
@@ -535,7 +533,11 @@ class VariantClassifier(object):
         :param vc:
         :return:
         """
-        #TODO: Handle intronic splice sites
+
+        if vc.get_vc() == VariantClassification.SPLICE_SITE:
+            dist_from_exon = self._get_splice_site_coordinates(tx, start_genomic_space, end_genomic_space, vc.get_exon_i())
+            exon_i = vc.get_exon_i()
+            return TranscriptProviderUtils.render_splice_site_transcript_change(tx, dist_from_exon, exon_i, vc.get_secondary_vc() == VariantClassification.INTRON)
         exon_position_start,exon_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(int(start_genomic_space), int(end_genomic_space), tx)
         cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())+1
         cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())+1

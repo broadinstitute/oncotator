@@ -353,3 +353,17 @@ class TranscriptProviderUtils(object):
         cds_start, cds_stop = TranscriptProviderUtils.convert_genomic_space_to_exon_space(cds_start_genomic_space, cds_stop_genomic_space, tx)
         return cds_start, cds_stop
 
+    @staticmethod
+    def render_splice_site_transcript_change(tx, dist_from_exon, exon_i, is_intron):
+        if tx.get_strand() == "-":
+            dist_from_exon *= -1
+        if dist_from_exon < 1:
+            cDNA_position = tx.get_exons()[exon_i][0]
+        else:
+            cDNA_position = tx.get_exons()[exon_i][1]
+
+        cDNA_position_in_exon, dummy = TranscriptProviderUtils.convert_genomic_space_to_cds_space(cDNA_position, cDNA_position, tx)
+        if is_intron:
+            cDNA_position_in_exon += 1
+
+        return "c.%d_splice" % (cDNA_position_in_exon)
