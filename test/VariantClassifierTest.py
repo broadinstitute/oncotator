@@ -8,7 +8,7 @@ from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.MUC16ChangeTestdata import muc16_change_testdata
-from test.TestUtils import TestUtils,test_data_provider
+from test.TestUtils import TestUtils,data_provider_decorator
 from test.MUC16Testdata import muc16testdata
 import unittest
 from unittest_data_provider import data_provider
@@ -49,7 +49,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22221645", "22221645", "Frame_Shift_Del", "DEL", "G", "-"),
         ("22",	"22221645", "22221645", "Frame_Shift_Ins", "INS", "-", "A")
     )
-    @test_data_provider(variants_indels_MAPK1)
+    @data_provider_decorator(variants_indels_MAPK1)
     def test_variant_classification_indels_simple(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test a small set of indels, from MAPK1.  These are all in frame or frame shifts cleanly within exons."""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="variant_classification_indels_simple")
@@ -62,7 +62,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("19", "9006225", "9006226", "Intron", "INS", "-", "CT"),
         ("19", "9073231", "9073232", "Frame_Shift_Ins", "INS", "-", "A")
     )
-    @test_data_provider(variants_indels_MUC16)
+    @data_provider_decorator(variants_indels_MUC16)
     def test_variant_classification_indels_muc16(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test small set of indels, from MUC16.  These are all introns or frame shifts cleanly within exon /intron."""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="variant_classification_indels_muc16", gene="MUC16")
@@ -72,7 +72,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22143049", "22143049", "Nonsense_Mutation", "SNP", "C", "A"),
         ("22", "22162014", "22162014", "Missense_Mutation", "SNP", "C", "T")
     )
-    @test_data_provider(variants_snps_missense)
+    @data_provider_decorator(variants_snps_missense)
     def test_variant_classification_missense(self, chr, start, end, gt_vc, vt, ref, alt):
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="variant_classification_missense")
 
@@ -88,13 +88,13 @@ class VariantClassifierTest(unittest.TestCase):
         ("DEL", 10, 12,  "-", False)
     )
 
-    @test_data_provider(frameshift_indels)
+    @data_provider_decorator(frameshift_indels)
     def test_is_framshift_indel(self, vt, s, e, alt, gt):
         vcer = VariantClassifier()
         self.assertTrue(vcer.is_frameshift_indel(vt, s, e, alt) == gt)
 
     # ("MUC16", "19", "9057555", "9057555", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9057555C>A", "-", "c.29891G>T", "c.(29890-29892)gGg>gTg", "p.G9964V"),
-    @test_data_provider(muc16_change_testdata)
+    @data_provider_decorator(muc16_change_testdata)
     def test_muc16_change_genome(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         """ Test all of the MUC16 changes (protein, genome, codon, and transcript)."""
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_change_genome", gene="MUC16")
@@ -102,28 +102,28 @@ class VariantClassifierTest(unittest.TestCase):
         genome_change = TranscriptProviderUtils.determine_genome_change(chr, start, end, ref, alt, vc.get_vt())
         self.assertTrue(genome_change == genome_change_gt, "Genome change did not match gt (%s): %s" %(genome_change_gt, genome_change))
 
-    @test_data_provider(muc16_change_testdata)
+    @data_provider_decorator(muc16_change_testdata)
     def test_muc16_change_transcript(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_change_transcript",gene="MUC16")
         vcer = VariantClassifier()
         transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, int(start), int(end), ref, alt)
-        self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s" % (transcript_change_gt, transcript_change))
+        self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
-    @test_data_provider(muc16_change_testdata)
+    @data_provider_decorator(muc16_change_testdata)
     def test_muc16_change_codon(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_change_codon",gene="MUC16")
         vcer = VariantClassifier()
         codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
         self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): (%s)" % (codon_change_gt, codon_change))
 
-    @test_data_provider(muc16_change_testdata)
+    @data_provider_decorator(muc16_change_testdata)
     def test_muc16_change_protein(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_change_protein", gene="MUC16")
         vcer = VariantClassifier()
         protein_change = vcer.generate_protein_change_from_vc(vc)
         self.assertTrue(protein_change == protein_change_gt, "Protein change did not match gt (%s): (%s) for %s" % (protein_change_gt, protein_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
-    @test_data_provider(muc16testdata)
+    @data_provider_decorator(muc16testdata)
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
         """ Test all of the MUC16 SNPs."""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="muc16_snps", gene="MUC16")
@@ -165,7 +165,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22127160", "22127160", "Splice_Site", "SNP", "A", "T"),
         ("22", "22127159", "22127159", "Intron", "SNP", "T", "A")
     )
-    @test_data_provider(variants_snps_splice_sites)
+    @data_provider_decorator(variants_snps_splice_sites)
     def test_snp_vc_on_one_transcript_splice_site(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test several positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
@@ -183,7 +183,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22123495", "22123495", VariantClassification.NONSTOP, "SNP", "A", "G"),
         ("22", "22123563", "22123563", VariantClassification.NONSENSE, "SNP", "A", "T")
     )
-    @test_data_provider(variants_nonsense_nonstop)
+    @data_provider_decorator(variants_nonsense_nonstop)
     def test_vc_on_one_transcript_nonsense_nonstop(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test several positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
@@ -216,7 +216,7 @@ class VariantClassifierTest(unittest.TestCase):
         #TODO: Test "+" strand transcript
         #TODO: Fix in frame calculation when only partially overlapping an exon.  (No need until secondary vc is implemented)
     )
-    @test_data_provider(variants_indels_splice_sites)
+    @data_provider_decorator(variants_indels_splice_sites)
     def test_indels_vc_on_one_transcript_splice_site(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test several positions on one MAPK1 transcript for indels: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
@@ -244,7 +244,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22221754", "22221754", VariantClassification.DE_NOVO_START_OUT_FRAME, "SNP", "C", "A"),
         ("22", "22221737", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "A")
     )
-    @test_data_provider(denovo_and_start_codon_test_data)
+    @data_provider_decorator(denovo_and_start_codon_test_data)
     def test_denovo_and_start_codon_on_one_transcript(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test several positions on one MAPK1 transcript for de novo and start codon: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
@@ -264,7 +264,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("TTAGGC", 0, 1, 3, "AAA", "INS", "-", "TTTTTAGGC")
 
     )
-    @test_data_provider(test_mutating_sequences)
+    @data_provider_decorator(test_mutating_sequences)
     def test_mutating_sequences(self, seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt):
         """Test that we can take a sequence, apply various mutations, and retrieve a correct sequence back."""
         observed_allele_stranded = alt_allele

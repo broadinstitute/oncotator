@@ -1011,7 +1011,7 @@ class dbSNP(Datasource):
         chr, start, end = mutation.chr, int(mutation.start), int(mutation.end)
         
         #TODO: Do not annotate with a set.  Create set variables and then convert to string and annotate.  This should give a speedup.
-        
+        #TODO: This block of code is causing issue 53
         for header in self.output_headers:
             mutation.createAnnotation(header, set(), self.title)
         
