@@ -143,7 +143,9 @@ class TcgaMafOutputRenderer(OutputRenderer):
         return result
 
     def _writeMutationRow(self, dw, fieldMap, fieldMapKeys, m):
-        """ If this row should be rendered, then write it to the given DictWriter
+        """ If this row should be rendered, then write it to the given DictWriter.
+
+        This method also contains some checks for the rendering.
         :param dw: DictWriter
         :param fieldMap:
         :param fieldMapKeys:
@@ -156,6 +158,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         m.alt_allele = new_vals[1]
         m.start = new_vals[2]
         row = self._createMutationRow(m, fieldMapKeys, fieldMap)
+        if row['Entrez_Gene_Id'] == "":
+            row['Entrez_Gene_Id'] = "0"
         dw.writerow(row)
 
     def renderMutations(self, mutations, metadata, comments=[]):

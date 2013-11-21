@@ -11,7 +11,6 @@ from test.MUC16ChangeTestdata import muc16_change_testdata
 from test.TestUtils import TestUtils,data_provider_decorator
 from test.MUC16Testdata import muc16testdata
 import unittest
-from unittest_data_provider import data_provider
 from oncotator.utils.VariantClassifier import VariantClassifier
 
 TestUtils.setupLogging(__file__, __name__)

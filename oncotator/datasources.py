@@ -1607,7 +1607,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             final_annotation_dict['secondary_variant_classification'] = self._create_basic_annotation(variant_classfication.get_secondary_vc())
             final_annotation_dict['protein_change'] = self._create_basic_annotation(vcer.generate_protein_change_from_vc(variant_classfication))
             final_annotation_dict['codon_change'] = self._create_basic_annotation(vcer.generate_codon_change_from_vc(chosen_tx, start, end, variant_classfication))
-            final_annotation_dict['transcript_change'] = self._create_basic_annotation(vcer.generate_transcript_change_from_tx(chosen_tx, final_annotation_dict['variant_type'].value, variant_classfication, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele))
+            final_annotation_dict['transcript_change'] = self._create_basic_annotation(vcer.generate_transcript_change_from_tx(chosen_tx, final_annotation_dict['variant_type'].value, variant_classfication, start, end, mutation.ref_allele, mutation.alt_allele))
 
             final_annotation_dict['transcript_strand'] = self._create_basic_annotation(chosen_tx.get_strand())
             final_annotation_dict['gene'] = self._create_basic_annotation(chosen_tx.get_gene())

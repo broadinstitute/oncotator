@@ -316,7 +316,10 @@ class VariantClassifier(object):
         """
         gene_type = tx.get_gene_type()
         if gene_type != "protein_coding":
-            return VariantClassification(VariantClassification.RNA, variant_type, tx.get_transcript_id())
+            if gene_type == VariantClassification.LINCRNA:
+                return VariantClassification(VariantClassification.LINCRNA, variant_type, tx.get_transcript_id())
+            else:
+                return VariantClassification(VariantClassification.RNA, variant_type, tx.get_transcript_id())
 
         if ref_allele == "-":
             ref_allele = ""

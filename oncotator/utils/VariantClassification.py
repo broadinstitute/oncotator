@@ -26,6 +26,7 @@ class VariantClassification(object):
     DE_NOVO_START_IN_FRAME = "De_novo_Start_InFrame"
     DE_NOVO_START_OUT_FRAME = "De_novo_Start_OutOfFrame"
     RNA = "RNA"
+    LINCRNA = "lincRNA"
 
     VT_INS = "INS"
     VT_DEL = "DEL"
