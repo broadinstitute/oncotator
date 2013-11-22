@@ -1,4 +1,6 @@
 muc16_change_testdata = lambda: (
+# Had to change gt transcript change
+("MUC16", "19", "9002672", "9002672", "Splice_Site", "SNP", "G", "A", "g.chr19:9002672G>A", "-", "c.40142_splice", "c.e51-1", "p.R13381_splice"),
 # Had to change GT for the protein change, since this is an intron splice site.
 ("MUC16", "19", "8994416", "8994416", "Splice_Site", "SNP", "C", "T", "g.chr19:8994416C>T", "-", "", "c.e64+1", ""),
 # Had to change GT for the transcript change
@@ -1734,8 +1736,6 @@ muc16_change_testdata = lambda: (
 ("MUC16", "19", "8993436", "8993436", "Silent", "SNP", "G", "A", "g.chr19:8993436G>A", "-", "c.41653C>T", "c.(41653-41655)Ctg>Ttg", "p.L13885L"),
 ("MUC16", "19", "8997177", "8997177", "Silent", "SNP", "G", "A", "g.chr19:8997177G>A", "-", "c.41019C>T", "c.(41017-41019)tcC>tcT", "p.S13673S"),
 ("MUC16", "19", "9000453", "9000453", "Missense_Mutation", "SNP", "G", "A", "g.chr19:9000453G>A", "-", "c.40531C>T", "c.(40531-40533)Ctt>Ttt", "p.L13511F"),
-# Had to change gt transcript change
-("MUC16", "19", "9002672", "9002672", "Splice_Site", "SNP", "G", "A", "g.chr19:9002672G>A", "-", "c.40142_splice", "c.e51-1", "p.R13381_splice"),
 ("MUC16", "19", "9009273", "9009273", "Missense_Mutation", "SNP", "G", "A", "g.chr19:9009273G>A", "-", "c.39200C>T", "c.(39199-39201)tCt>tTt", "p.S13067F"),
 ("MUC16", "19", "9009648", "9009648", "Silent", "SNP", "C", "T", "g.chr19:9009648C>T", "-", "c.39078G>A", "c.(39076-39078)gaG>gaA", "p.E13026E"),
 ("MUC16", "19", "9009703", "9009703", "Missense_Mutation", "SNP", "G", "A", "g.chr19:9009703G>A", "-", "c.39023C>T", "c.(39022-39024)cCt>cTt", "p.P13008L"),

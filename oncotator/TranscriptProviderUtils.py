@@ -168,7 +168,7 @@ class TranscriptProviderUtils(object):
         protein_change = ""
         if variant_classification.startswith('Splice_Site'):
             if prot_position_start > 0:
-                protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
+                protein_change = 'p.%s%d_splice' % (alt_prot_allele, prot_position_start)
         elif variant_classification.startswith('Frame_Shift'):
             protein_change = 'p.%s%dfs' % (ref_prot_allele, prot_position_start)
         elif alt_prot_allele == '-' or alt_prot_allele == '':
