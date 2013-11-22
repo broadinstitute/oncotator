@@ -15,23 +15,34 @@ from oncotator.utils.VariantClassifier import VariantClassifier
 
 TestUtils.setupLogging(__file__, __name__)
 class VariantClassifierTest(unittest.TestCase):
-    _multiprocess_can_split_ = True
-    # TODO: Get recently downloaded test data and use that.
 
-    def _create_ensembl_ds_from_testdata(self, gene, fixed_id):
-        gencode_input_gtf = "testdata/gencode/" + gene + ".gencode.v18.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa"
-        base_output_filename = "out/test_variant_classification_" + fixed_id
+    # Do not uncomment this, unless you know what you are doing
+    # _multiprocess_can_split_ = True
+
+    GLOBAL_DS_BASENAME = "out/test_variant_classification_"
+
+    def setUp(self):
+        genes = ["MAPK1", "MUC16"]
+        gtf_list = []
+        fasta_list = []
+        for gene in genes:
+            gtf_list.append("testdata/gencode/" + gene + ".gencode.v18.annotation.gtf")
+            fasta_list.append("testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa")
+
+        base_output_filename = VariantClassifierTest.GLOBAL_DS_BASENAME
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices([gencode_input_gtf], [gencode_input_fasta], base_output_filename)
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18")
-        return ensembl_ds
+        self.ds = ensembl_ds
+
+    def _create_ensembl_ds_from_testdata(self):
+        return self.ds
 
     def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt, fixed_id, gene="MAPK1"):
-        ensembl_ds = self._create_ensembl_ds_from_testdata(gene, fixed_id)
+        ensembl_ds = self._create_ensembl_ds_from_testdata()
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
         txs = ensembl_ds._filter_transcripts(recs)
         tx = ensembl_ds._choose_transcript(txs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
@@ -144,7 +155,7 @@ class VariantClassifierTest(unittest.TestCase):
                 self.assertTrue(vc != "5'UTR", "Should not be 5'UTR, but saw " + vc + ".  For " + str([ref, alt, start, end]))
 
     def _retrieve_test_transcript_MAPK1(self, fixed_id):
-        ensembl_ds = self._create_ensembl_ds_from_testdata("MAPK1", fixed_id=fixed_id)
+        ensembl_ds = self._create_ensembl_ds_from_testdata()
         tx = ensembl_ds.transcript_db['ENST00000215832.6']
         self.assertTrue(tx is not None, "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
         return tx
