@@ -143,7 +143,11 @@ class DatasourceCreator(object):
         elif dsType == "dbnsfp":
             result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
-            result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
+            if configParser.has_option('general', 'windowSizeRef'):
+                window_size = configParser.get('general', 'windowSizeRef')
+            else:
+                window_size = 10
+            result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'), windowSizeRef=window_size)
         elif dsType == 'gene_tsv':
             result = GenericGeneDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'gene_col'))
         elif dsType == 'transcript_tsv':
@@ -154,6 +158,8 @@ class DatasourceCreator(object):
             result = GenericGenomicPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
         elif dsType == 'gm_tsv':
             result = GenericGenomicMutationDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
+        elif dsType == 'gm_tsv_reverse_complement':
+            result = GenericGenomicMutationDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'), use_complementary_strand_alleles_for_negative_strand_transcripts=True)
         elif dsType == 'gpp_tsv':
             result = GenericGeneProteinPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'gene_protein_position_cols'))
         elif dsType == "transcript_to_uniprot_aa":
