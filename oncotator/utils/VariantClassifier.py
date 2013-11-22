@@ -358,7 +358,6 @@ class VariantClassifier(object):
         is_start_codon_overlap = self._determine_codon_overlap(s, e, tx.get_start_codon(), variant_type)
         is_stop_codon_overlap = self._determine_codon_overlap(s, e, tx.get_stop_codon(), variant_type)
 
-        # TODO:  Need to populate more of the variant classification.
         if is_start_codon_overlap and not variant_type.endswith("NP"):
             return VariantClassification('Start_Codon_' + variant_type.capitalize(), variant_type, transcript_id=tx.get_transcript_id())
         if is_stop_codon_overlap and not variant_type.endswith("NP"):
