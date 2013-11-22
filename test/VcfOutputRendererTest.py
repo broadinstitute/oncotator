@@ -53,6 +53,8 @@ from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.Annotator import Annotator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 from TestUtils import TestUtils
+from oncotator.utils.version import VERSION
+import string
 import logging
 import vcf
 TestUtils.setupLogging(__file__, __name__)
@@ -72,10 +74,14 @@ class VcfOutputRendererTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testHeaderWithExampleVcf(self):
+        ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
         with open('testdata/vcf/example.header.txt', 'r') as fp:
             for line in iter(fp):
-                expected.add(line.rstrip('\n'))
+                if line.startswith("##oncotator_version"):
+                    expected.add(ver_str)
+                else:
+                    expected.add(line.rstrip('\n'))
         
         creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
         creator.createMutations()
@@ -89,15 +95,22 @@ class VcfOutputRendererTest(unittest.TestCase):
         with open('out/example.header.vcf', 'r') as fp:
             for line in iter(fp):
                 if line.startswith('##'):
-                    current.add(line.rstrip('\n'))
+                    if line.startswith("##oncotator_version"):
+                        current.add(ver_str)
+                    else:
+                        current.add(line.rstrip('\n'))
 
         self.assertTrue(len(current) == len(expected), "Number of lines are not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamples(self):
+        ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
         with open('testdata/vcf/example.sampleName.removed.header.txt', 'r') as fp:
             for line in iter(fp):
+                if line.startswith("##oncotator_version"):
+                    expected.add(ver_str)
+                elif line.startswith("##"):
                     expected.add(line.rstrip('\n'))
 
         creator = VcfInputMutationCreator('testdata/vcf/example.sampleName.removed.vcf')
@@ -111,7 +124,9 @@ class VcfOutputRendererTest(unittest.TestCase):
         current = set()
         with open('out/example.sampleName.removed.header.vcf', 'r') as fp:
             for line in iter(fp):
-                if line.startswith('#'):
+                if line.startswith("##oncotator_version"):
+                    current.add(ver_str)
+                elif line.startswith("##"):
                     current.add(line.rstrip('\n'))
 
         self.assertTrue(len(current) == len(expected), "Number of lines are not the same.")
