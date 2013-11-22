@@ -73,7 +73,7 @@ def data_provider_decorator(fn_data_provider):
                     ctr += 1
                     fn(self, *i)
                 except AssertionError as ae:
-                    assertion_errors.append("Assertion error data set %s -- %s" % (str(i), ae.message))
+                    assertion_errors.append("Assertion error on data %s: %s -- %s" % (str(ctr), str(i), ae.message))
             if len(assertion_errors) > 0:
                 raise AssertionError("\n"+"\n".join(assertion_errors) + "\n" + str(len(assertion_errors)) + " of " + str(ctr) + " tests failed.")
         return repl
