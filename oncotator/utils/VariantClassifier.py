@@ -538,6 +538,8 @@ class VariantClassifier(object):
         """
 
         if vc.get_vc() == VariantClassification.SPLICE_SITE:
+            if vc.get_secondary_vc() == VariantClassification.INTRON:
+                return ""
             dist_from_exon = self._get_splice_site_coordinates(tx, start_genomic_space, end_genomic_space, vc.get_exon_i())
             exon_i = vc.get_exon_i()
             return TranscriptProviderUtils.render_splice_site_transcript_change(tx, dist_from_exon, exon_i, vc.get_secondary_vc() == VariantClassification.INTRON)

@@ -6,7 +6,7 @@ muc16_change_testdata = lambda: (
 # Had to change GT for the transcript change
 ("MUC16", "19", "9008345", "9008345", "Splice_Site", "SNP", "C", "T", "g.chr19:9008345C>T", "-", "c.39206_splice", "c.e41-1", "p.R13069_splice"),
 # Had to change GT for the protein change, since this is an intron splice site.
-("MUC16", "19", "9050244", "9050244", "Splice_Site", "SNP", "C", "A", "g.chr19:9050244C>A", "-", "c.31388_splice", "c.e5-1", ""),
+("MUC16", "19", "9050244", "9050244", "Splice_Site", "SNP", "C", "A", "g.chr19:9050244C>A", "-", "", "c.e5-1", ""),
 ("MUC16", "19", "9057555", "9057555", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9057555C>A", "-", "c.29891G>T", "c.(29890-29892)gGg>gTg", "p.G9964V"),
 ("MUC16", "19", "9064688", "9064688", "Silent", "SNP", "G", "T", "g.chr19:9064688G>T", "-", "c.22758C>A", "c.(22756-22758)tcC>tcA", "p.S7586S"),
 ("MUC16", "19", "9067291", "9067291", "Missense_Mutation", "SNP", "G", "T", "g.chr19:9067291G>T", "-", "c.20155C>A", "c.(20155-20157)Ccc>Acc", "p.P6719T"),
