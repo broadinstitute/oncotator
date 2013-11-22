@@ -157,10 +157,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         ("SNP", "Nonsense_Mutation", 2013, 2013, "Q", "*", "-", "p.Q2013*"),
         ("SNP", "Splice_Site", 106, 106, "V", "A", "-", "p.V106_splice"),
         ("DEL", "In_Frame_Del", 454, 454, "K", "-",	"+", "p.K454del"),
-        ("SNP", "Nonstop_Mutation", 246, 246, "*", "S", "+", "p.*246S"),
-        ("INS", "In_Frame_Ins", 108, 108, "-", "AAGCCGCTGCCACCTCCA", "-", "p.108_108F>FGGGSGF"),
-        ("INS", "In_Frame_Ins", 29, 30, "-", "GGCTGTGGCTCCGGCTGTGGG", "+", "p.29_30insGCGSGCG"),
-        ("INS", "Frame_Shift_Ins", 179, 179, "-", "C", "+", "p.C179fs")
+        ("SNP", "Nonstop_Mutation", 246, 246, "*", "S", "+", "p.*246S")
     )
     @data_provider_decorator(protein_change_testdata)
     def test_render_protein_change(self, variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand, gt):
