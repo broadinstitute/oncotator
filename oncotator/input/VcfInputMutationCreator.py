@@ -302,6 +302,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         self._createConfigTable()
 
         self.reset()
+        is_tn_vcf_warning_delivered = False
         for record in self.vcf_reader:
             for flt in record.FILTER:
                 if flt not in self.vcf_reader.filters:
@@ -318,8 +319,9 @@ class VcfInputMutationCreator(InputMutationCreator):
                     sampleRecList = record.samples
                     sample_names = [s.sample for s in sampleRecList]
                     is_tumor_normal_vcf = "NORMAL" in sample_names and len(sample_names) == 2
-                    if is_tumor_normal_vcf:
-                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
+                    if not is_tn_vcf_warning_delivered and is_tumor_normal_vcf:
+                        is_tn_vcf_warning_delivered = True
+                        logging.getLogger(__name__).warn("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
 
                     for sample in sampleRecList:
                         sampleMut = copy.deepcopy(mut)
