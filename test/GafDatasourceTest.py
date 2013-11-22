@@ -83,8 +83,8 @@ def annotate_mutations_global(t):
     return result
 
 TestUtils.setupLogging(__file__, __name__)
-globalConfig = TestUtils.createUnitTestConfig()
-@unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test.  GAF 3.0 will not be supported for much longer.")
+# globalConfig = TestUtils.createUnitTestConfig()
+# @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test.  GAF 3.0 will not be supported for much longer.")
 class GafDatasourceTest(unittest.TestCase):
 
     # HACK: Allow config to be viewed by unittest decorators.
