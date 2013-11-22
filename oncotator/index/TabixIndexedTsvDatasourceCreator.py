@@ -1,10 +1,10 @@
-from DatasourceBuilder import DatasourceBuilder
-from oncotator.index.TabixIndexer import TabixIndexer
-import ConfigParser
+from DatasourceCreator import DatasourceCreator
+from TabixIndexer import TabixIndexer
+from ConfigParser import ConfigParser
 import os
 
 
-class TabixIndexedTsvDatasourceBuilder(DatasourceBuilder):
+class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
 
     def __init__(self):
         pass
@@ -36,7 +36,7 @@ class TabixIndexedTsvDatasourceBuilder(DatasourceBuilder):
         :param annotation_column_names: column names whose values are used for annotation
         :param indexCols: named tuple consisting of index column type and corresponding column names
         """
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser()
         filePtr = open(configFilename, 'w')
         config.add_section("general")
         config.set("general", "version", ds_version)

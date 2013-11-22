@@ -46,29 +46,24 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
-from oncotator.utils.MutUtils import MutUtils
-
-
-'''
-Created on Oct 24, 2012
-
-@author: lichtens
-'''
 import unittest
+import logging
+import os
+
+import pandas
+import vcf
+
+from oncotator.utils.MutUtils import MutUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.Annotator import Annotator
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from TestUtils import TestUtils
-import logging
-import pandas
-from oncotator.input.SyntaxException import SyntaxException
-import os
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceCreator import DatasourceCreator
-import vcf
 from oncotator.utils.TagConstants import TagConstants
+
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -208,7 +203,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
             ctr = ctr + 1
 
     def testSwitchedFieldsWithExampleVcf(self):
-        '''Test whether the switched tags are detected or not.'''
+        '''Test whether the switched tags are ignored.'''
         inputFilename = 'testdata/vcf/example.bad.switched.fields.vcf'
         outputFilename = 'out/example.out.tsv'
         
@@ -218,10 +213,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
-        try: 
-            annotator.annotate()
-        except SyntaxException:
-            pass
+
 
     def testAnnotationWithExampleVcf(self):
         ''' Test whether parsed annotations match the actual annotations. '''

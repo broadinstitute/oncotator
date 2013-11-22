@@ -1,5 +1,5 @@
 import os
-from oncotator.index.GenericTsvDatasourceBuilder import GenericTsvDatasourceBuilder
+from oncotator.index.GenericTsvDatasourceCreator import GenericTsvDatasourceCreator
 from test.TestUtils import TestUtils
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 from oncotator.utils.ConfigUtils import ConfigUtils
@@ -18,7 +18,7 @@ class GenericTsvDatasourceBuilderTest(unittest.TestCase):
     def testCreateGPTsvDatasource(self):
         dsFile = "testdata/small_genome_position_tsv_ds/oreganno_trim.hg19.txt"
         destDir = "out"
-        datasourceBuilder = GenericTsvDatasourceBuilder()
+        datasourceBuilder = GenericTsvDatasourceCreator()
         datasourceFilename = datasourceBuilder.createDatasource(destDir=destDir, ds_file=dsFile)
         datasourceFilename = string.join([destDir, os.sep, datasourceFilename], "")
 
@@ -32,7 +32,7 @@ class GenericTsvDatasourceBuilderTest(unittest.TestCase):
         dataSourceVersion = "09292010"
         genomicPositionColumnNames = "chr,start,end"
 
-        datasourceBuilder = GenericTsvDatasourceBuilder()
+        datasourceBuilder = GenericTsvDatasourceCreator()
         datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_name=dataSourceName, ds_type=dataSourceType, ds_version=dataSourceVersion,
                                            indexCols=DatasourceInstallUtils.getIndexCols("gp_tsv",
@@ -72,7 +72,7 @@ class GenericTsvDatasourceBuilderTest(unittest.TestCase):
         dataSourceVersion = "2011_09"
         geneColumnName = "gene"
 
-        datasourceBuilder = GenericTsvDatasourceBuilder()
+        datasourceBuilder = GenericTsvDatasourceCreator()
         datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_name=dataSourceName, ds_type=dataSourceType, ds_version=dataSourceVersion,
                                            indexCols=DatasourceInstallUtils.getIndexCols("gene_tsv", geneColumnName))

@@ -47,23 +47,23 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 
-from OutputRenderer import OutputRenderer
-from oncotator.utils.ConfigUtils import ConfigUtils
 import csv
 import collections
 import logging
 import os
 import tempfile
-import string
 import itertools
+
 import vcf
-from oncotator.input.ConfigInputIncompleteException import ConfigInputIncompleteException
+
+from OutputRenderer import OutputRenderer
+import oncotator.utils.ConfigUtils
 from oncotator.utils.TsvFileSorter import TsvFileSorter
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordFactory import RecordFactory
 from oncotator.output.OutputDataManager import OutputDataManager
 from oncotator.utils.MutUtils import MutUtils
-from oncotator.output.VcfOutputConfigTable import VcfOutputConfigTable
+from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
 
 
 class VcfOutputRenderer(OutputRenderer):
@@ -86,11 +86,12 @@ class VcfOutputRenderer(OutputRenderer):
         :param configFile: output config file
         """
         self._filename = filename
+        self.configFilename = configFile
         self.logger = logging.getLogger(__name__)
         self._datasources = datasources
-        self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
+        self.config = oncotator.utils.ConfigUtils.ConfigUtils.createConfigParser(configFile, ignoreCase=False)
         self.chromHashCodeTable = None  # maps every chromosome in the mutations to a sortable integer
-        self.configTable = VcfOutputConfigTable()
+        self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("output_vcf")
         self.delimiter = "\t"
         self.lineterminator = "\n"
         self.sampleNames = []  # all sample names in the mutations
@@ -157,77 +158,6 @@ class VcfOutputRenderer(OutputRenderer):
                 fieldnames = fieldnames.union(["sampleName"])
         return list(fieldnames)
 
-    def _validateOutputConfigFile(self):
-        """
-
-
-        :raise:
-        """
-        sections = ["INFO", "FORMAT", "OTHER", "SPLIT_TAGS", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
-                    "FORMAT_DESCRIPTION"]
-        for section in sections:
-            if not ConfigUtils.hasSectionKey(self.config, section):
-                raise ConfigInputIncompleteException("Missing %s section in the output config file." % section)
-
-            if section in ("OTHER",):
-                self._doFieldsExist(section, ["ID", "QUAL", "FILTER"])
-            elif section in ("NOT_SPLIT_TAGS", "SPLIT_TAGS",):
-                self._doFieldsExist(section, ["INFO", "FORMAT"])
-
-    def _doFieldsExist(self, section, fields):
-        """
-
-        :param section:
-        :param fields:
-        :raise:
-        """
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, section)
-        for field in fields:
-            if field not in table:
-                raise ConfigInputIncompleteException("Missing %s field in the %s section of the output config file."
-                                                     % (field, section))
-
-    def _parseConfig(self):
-        """
-
-
-        :return:
-        """
-        configTable = VcfOutputConfigTable()
-
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
-        for name, ID in table.items():
-            configTable.addInfoFieldName(name, ID)
-
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
-        for name, ID in table.items():
-            configTable.addFormatFieldName(name, ID)
-
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "OTHER")
-        for name, ID in table.items():
-            configTable.addOtherFieldName(name, ID)
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "INFO_DESCRIPTION")
-        for name, description in table.items():
-            configTable.addInfoFieldNameDescription(name, string.join(description, ","))
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FORMAT_DESCRIPTION")
-        for name, description in table.items():
-            configTable.addFormatFieldNameDescription(name, string.join(description, ","))
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FILTER_DESCRIPTION")
-        for name, description in table.items():
-            configTable.addFilterFieldNameDescription(name, string.join(description, ","))
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
-        for fieldType, names in table.items():
-            configTable.addFieldNamesToSplitSet(fieldType, names)
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "NOT_SPLIT_TAGS")
-        for fieldType, names in table.items():
-            configTable.addFieldNamesToNotSplitSet(fieldType, names)
-
-        return configTable
 
     def renderMutations(self, mutations, metadata=[], comments=[]):
         """ Generate a simple tsv file based on the incoming mutations.
@@ -240,8 +170,7 @@ class VcfOutputRenderer(OutputRenderer):
         self.logger.info("Rendering VCF output file: " + self._filename)
 
         # Initialize config table
-        self._validateOutputConfigFile()
-        self.configTable = self._parseConfig()
+        self.configTable = self.configTableBuilder.getConfigTable(configFilename=self.configFilename)
 
         # Initialize the data manager
         mut = None
@@ -359,15 +288,20 @@ class VcfOutputRenderer(OutputRenderer):
         formats = dataManager.getAnnotationNames("FORMAT")
 
         altAllele = m["alt_allele"]
+
         sampleName = m.get("sampleName", None)
+
         recordFactory.addAlt(altAllele)
 
         for name in IDs:
             val = m.get(name, "")
             recordFactory.addID(val)
 
-        qual = quals[0]
-        recordFactory.addQual(m[qual])
+        if len(quals) == 0:
+            qual = "qual"
+        else:
+            qual = quals[0]
+        recordFactory.addQual(m.get(qual, "."))
 
         for name in filts:
             ID = dataManager.getFieldID(name)

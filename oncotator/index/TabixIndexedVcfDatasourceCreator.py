@@ -1,10 +1,10 @@
-from DatasourceBuilder import DatasourceBuilder
-from oncotator.index.TabixIndexer import TabixIndexer
+from DatasourceCreator import DatasourceCreator
+from TabixIndexer import TabixIndexer
 import ConfigParser
 import os
 
 
-class TabixIndexedVcfDatasourceBuilder(DatasourceBuilder):
+class TabixIndexedVcfDatasourceCreator(DatasourceCreator):
 
     def __init__(self):
         pass

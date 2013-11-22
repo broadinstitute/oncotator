@@ -2,7 +2,7 @@
 from abc import abstractmethod
 
 
-class DatasourceBuilder(object):
+class DatasourceCreator(object):
     """
     This is the base class for creating databases and congif files.
     """

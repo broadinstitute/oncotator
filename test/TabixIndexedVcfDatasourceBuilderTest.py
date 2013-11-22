@@ -1,4 +1,4 @@
-from oncotator.index.TabixIndexedVcfDatasourceBuilder import TabixIndexedVcfDatasourceBuilder
+from oncotator.index.TabixIndexedVcfDatasourceCreator import TabixIndexedVcfDatasourceCreator
 from test.TestUtils import TestUtils
 from oncotator.utils.ConfigUtils import ConfigUtils
 import os
@@ -17,7 +17,7 @@ class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
     def testCreateDatasource(self):
         dsFile = "testdata/vcf/example.vcf"
         destDir = "out"
-        datasourceBuilder = TabixIndexedVcfDatasourceBuilder()
+        datasourceBuilder = TabixIndexedVcfDatasourceCreator()
         datasourceFilename = datasourceBuilder.createDatasource(destDir=destDir, ds_file=dsFile)
         tabixIndexedFilename = string.join([destDir, os.sep, datasourceFilename], "")
 
@@ -36,7 +36,7 @@ class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
         dataSourceName = "ESP"
         dataSourceVersion = "6500SI-V2"
 
-        datasourceBuilder = TabixIndexedVcfDatasourceBuilder()
+        datasourceBuilder = TabixIndexedVcfDatasourceCreator()
         datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_type=dataSourceType, ds_name=dataSourceName, ds_version=dataSourceVersion)
         configParser = ConfigUtils.createConfigParser(configFilename)

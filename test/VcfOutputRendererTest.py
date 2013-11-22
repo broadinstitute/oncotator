@@ -48,11 +48,6 @@
 #"""
 
 
-'''
-Created on Oct 24, 2012
-
-@author: lichtens
-'''
 import unittest
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.Annotator import Annotator
@@ -345,6 +340,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         h = renderer._createChrom2HashCodeTable(chroms)
         self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
         self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
+
 
 
 if __name__ == "__main__":

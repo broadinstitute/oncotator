@@ -1,10 +1,10 @@
-from DatasourceBuilder import DatasourceBuilder
-import ConfigParser
+from DatasourceCreator import DatasourceCreator
+from ConfigParser import ConfigParser
 import os
 import shutil
 
 
-class GenericTsvDatasourceBuilder(DatasourceBuilder):
+class GenericTsvDatasourceCreator(DatasourceCreator):
 
     def __init__(self):
         pass
@@ -29,7 +29,7 @@ class GenericTsvDatasourceBuilder(DatasourceBuilder):
         :param annotation_column_names: column names whose values are used for annotation
         :param indexCols: named tuple consisting of index column type and corresponding column names
         """
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser()
         filePtr = open(configFilename, 'w')
         config.add_section("general")
         config.set("general", "version", ds_version)

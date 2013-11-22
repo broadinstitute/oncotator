@@ -1,5 +1,5 @@
 import os
-from oncotator.index.TabixIndexedTsvDatasourceBuilder import TabixIndexedTsvDatasourceBuilder
+from oncotator.index.TabixIndexedTsvDatasourceCreator import TabixIndexedTsvDatasourceCreator
 from test.TestUtils import TestUtils
 from oncotator.utils.ConfigUtils import ConfigUtils
 import pysam
@@ -20,7 +20,7 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         indexColumnNames = "CHROM,POS,POS"
         columnNames = "CHROM,POS,REF,ALT,DBSNP,EA_AC,AA_AC,TAC,MAF,GTS,EA_GTC,AA_GTC,GTC,DP,FG,GM,AA,AAC,PP,CDP,PH,CP,CG,GL,GS,CA,EXOME_CHIP,GWAS_PUBMED"
 
-        datasourceBuilder = TabixIndexedTsvDatasourceBuilder()
+        datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         datasourceFilename = datasourceBuilder.createDatasource(destDir=destDir, ds_file=dsFile,
                                                                 index_column_names=indexColumnNames,
                                                                 column_names=columnNames)
@@ -57,7 +57,7 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         columnNames = "Chromosome,Position,TotalSamplesCovered,AvgSampleReadDepth,TotalEAsamplesCovered,AvgEAsampleReadDepth,TotalAAsamplesCovered,AvgAAsampleReadDepth"
         annotationColumnNames = "TotalSamplesCovered,AvgSampleReadDepth,AvgEAsampleReadDepth,TotalAAsamplesCovered,AvgAAsampleReadDepth"
 
-        datasourceBuilder = TabixIndexedTsvDatasourceBuilder()
+        datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_type=dataSourceType, ds_name=dataSourceName, ds_version=dataSourceVersion,
                                            column_names=columnNames, annotation_column_names=annotationColumnNames)

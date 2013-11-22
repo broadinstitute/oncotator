@@ -178,7 +178,7 @@ class OutputDataManager:
                     elif comment.startswith("Oncotator"):
                         comment = string.join(["##oncotator_version=", comment], "")
                         headers.append(comment)
-                    else:
+                    elif comment != "":
                         comment = string.join(["##", comment], "")
                         headers.append(comment)
 

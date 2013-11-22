@@ -49,7 +49,7 @@
 import os
 from oncotator.utils.Hasher import Hasher
 import collections
-from oncotator.index.DatasourceBuilderFactory import DatasourceBuilderFactory
+from oncotator.index.DatasourceCreatorFactory import DatasourceBuilderFactory
 
 
 class DatasourceInstallUtils(object):
@@ -99,7 +99,7 @@ class DatasourceInstallUtils(object):
         :param ds_annotation_columns: if data source is of type indexed tsv,
         """
 
-        datasourceBuilder = DatasourceBuilderFactory.getDatasourceBuilderInstance(ds_type)
+        datasourceBuilder = DatasourceBuilderFactory.getDatasourceCreatorInstance(ds_type)
         baseDSFile = datasourceBuilder.createDatasource(destDir=destDir, ds_file=ds_file,
                                                         index_column_names=index_columns, column_names=ds_columns)
 
