@@ -205,6 +205,7 @@ class VariantClassifierTest(unittest.TestCase):
 
 
     variants_indels_splice_sites = lambda: (
+        ("22", "22221735", "22221735", "5'UTR", "INS", "-", "A"),
         ("22", "22127155", "22127158", "Intron", "DEL", "CTCT", "-"),
         ("22", "22127155", "22127160", "Splice_Site", "DEL", "CTCTTA", "-"),
         ("22", "22127155", "22127163", "Splice_Site", "DEL", "CTCTTACCT", "-"),
@@ -214,7 +215,6 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22127162", "22127166", "Splice_Site", "INS", "-", "AAAAA"),
         ("22", "22127167", "22127171", "Frame_Shift_Ins", "INS", "-", "AAAAA"),
         ("22", "22127155", "22127166", "Intron", "INS", "-", "AAAAAAAAAAAA"),
-        ("22", "22221735", "22221735", "5'UTR", "INS", "-", "A"),
         ("22", "22123486", "22123486", "3'UTR", "INS", "-", "A"),
         ("22", "22123494", "22123494", "Stop_Codon_Del", "DEL", "A", "-"),
         ("22", "22221729", "22221729", "Start_Codon_Del", "DEL", "A", "-"),
@@ -247,9 +247,9 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(cds_stop == 1269, "incorrect cds_stop: %d, gt: %d" % (cds_stop, 1269))
 
     denovo_and_start_codon_test_data = lambda: (
+        ("22", "22221735", "22221740", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "ACATAA"),
         ("22", "22221729", "22221729", VariantClassification.START_CODON_SNP, "SNP", "A", "T"),
         ("22", "22221735", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "CAT"),
-        ("22", "22221735", "22221740", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "ACATAA"),
         ("22", "22221735", "22221741", VariantClassification.DE_NOVO_START_IN_FRAME, "INS", "-", "AACATAA"),
         ("22", "22221754", "22221754", VariantClassification.DE_NOVO_START_OUT_FRAME, "SNP", "C", "A"),
         ("22", "22221737", "22221737", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "A")
