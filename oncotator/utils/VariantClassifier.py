@@ -480,7 +480,7 @@ class VariantClassifier(object):
                 cds_start_in_exon_space, cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
 
                 ATG_position = utr_region_start + ATG_position
-                if (cds_start_in_exon_space - ATG_position) % 3 == 0:
+                if ((cds_start_in_exon_space +1)- ATG_position) % 3 == 0:
                     frameness = 'InFrame'
                 else:
                     frameness = 'OutOfFrame'

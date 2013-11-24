@@ -56,7 +56,7 @@ from oncotator.datasources import Gaf
 from oncotator.datasources import dbSNP
 from oncotator.utils import ConfigUtils
 import logging
-
+import traceback
 
 def data_provider_decorator(fn_data_provider):
     """Data provider decorator, allows another callable to provide the data for the test.
@@ -73,8 +73,8 @@ def data_provider_decorator(fn_data_provider):
                     ctr += 1
                     fn(self, *i)
                 except AssertionError as ae:
-                    assertion_errors.append("Assertion error on data %s: %s -- %s" % (str(ctr), str(i), ae.message))
-                    raise
+                    stack_trace = traceback.format_exc()
+                    assertion_errors.append("\n\n ==== Assertion error on data %s: %s -- %s\n\n%s" % (str(ctr), str(i), ae.message, stack_trace))
             if len(assertion_errors) > 0:
                 raise AssertionError("\n"+"\n".join(assertion_errors) + "\n" + str(len(assertion_errors)) + " of " + str(ctr) + " tests failed.")
         return repl
