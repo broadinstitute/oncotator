@@ -137,12 +137,11 @@ class VariantClassifier(object):
             elif reference_aa.find('*') == -1 and observed_aa.find('*') > -1:
                 vc = 'Nonsense_Mutation'
             elif reference_aa != observed_aa:
-                if is_start_codon:
-                    vc = VariantClassification.START_CODON_SNP
-                else:
-                    vc = VariantClassification.MISSENSE
+                vc = VariantClassification.MISSENSE
         if is_splice_site:
             return VariantClassification.SPLICE_SITE, vc
+        if is_start_codon:
+            return VariantClassification.START_CODON_SNP, vc
         return vc, ""
 
 
@@ -479,8 +478,8 @@ class VariantClassifier(object):
             if ATG_position > -1:
                 cds_start_in_exon_space, cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
 
-                ATG_position = utr_region_start + ATG_position
-                if ((cds_start_in_exon_space +1)- ATG_position) % 3 == 0:
+                ATG_position = utr_region_start + ATG_position + 1
+                if (cds_start_in_exon_space - ATG_position) % 3 == 0:
                     frameness = 'InFrame'
                 else:
                     frameness = 'OutOfFrame'
