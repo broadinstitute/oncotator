@@ -1,4 +1,5 @@
 import shutil
+import Bio
 from oncotator.DatasourceCreator import DatasourceCreator
 import unittest
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
@@ -164,6 +165,23 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         """Simple test of protein change, once parameters have been rendered. """
         guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele)
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
+
+    mutate_ref_sequence_testdata = lambda: (
+        ("DEL", 22221919, 22221919, "T", "-", 0, 2, "CG"),
+        ("INS", 22221919, 22221919, "-", "G", 0, 2, "ACGG"),
+        ("INS", 22221919, 22221920, "-", "T", 0, 1, "AAG"),
+        ("SNP", 22221919, 22221919, "T", "G", 0, 0, "C"),
+        ("DEL", 22221919, 22221919, "T", "-", 0, 0, ""),
+    )
+    @data_provider_decorator(mutate_ref_sequence_testdata)
+    def test_mutate_reference_seqeunce(self, vt, start, end, ref, alt, start_exon_space, end_exon_space, mutated_seq_gt):
+        """ Test that we can render a mutated sequence with SNP, INS, and DEL
+        """
+        # mutated_seq_gt is stranded and this is a "-" transcript
+        tx = self.retrieve_test_transcript_MAPK1()
+        observed_allele = Bio.Seq.reverse_complement(alt)
+        mutated_allele = TranscriptProviderUtils.mutate_reference_sequence(tx.get_seq()[start_exon_space : end_exon_space+1], start_exon_space, start_exon_space, end_exon_space, observed_allele, vt)
+        self.assertTrue(mutated_seq_gt == mutated_allele, "No match (gt/guess)  %s/%s for %s." % (mutated_seq_gt, mutated_allele, str([vt, start, end, ref, alt, start_exon_space, end_exon_space, mutated_seq_gt])))
 
 if __name__ == '__main__':
     unittest.main()

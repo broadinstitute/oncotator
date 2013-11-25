@@ -465,10 +465,13 @@ class VariantClassifier(object):
             tx_seq = tx.get_seq()
 
             if variant_type == VariantClassification.VT_INS:
-                transcript_position_end = transcript_position_start
+                if tx.get_strand() == "-":
+                    transcript_position_start = transcript_position_end
+                else:
+                    transcript_position_end = transcript_position_start
             utr_region_start, utr_region_end = transcript_position_start-2, transcript_position_end+2
             # TODO: This may not work for "+" strand.  Need unit test.
-            utr_region_seq = tx_seq[utr_region_start-1:utr_region_end]
+            utr_region_seq = tx_seq[utr_region_start:utr_region_end+1]
 
             mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
                 transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)

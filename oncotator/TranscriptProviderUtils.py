@@ -341,7 +341,7 @@ class TranscriptProviderUtils(object):
             del(mutated_seq[mutation_start_pos - seq_start_pos: \
                 mutation_end_pos - seq_start_pos + 1])
         elif variant_type == 'INS':
-            mutated_seq.insert(mutation_end_pos - seq_start_pos -1, observed_allele)
+            mutated_seq.insert(mutation_end_pos - seq_start_pos - 1, observed_allele)
         else: #SNP or ONP
             mutated_seq[mutation_start_pos - seq_start_pos: \
                 mutation_end_pos - seq_start_pos + 1] = str(observed_allele)
