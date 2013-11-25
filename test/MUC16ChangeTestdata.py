@@ -1,6 +1,6 @@
 muc16_change_testdata = lambda: (
-# Had to change gt transcript change
-("MUC16", "19", "9002672", "9002672", "Splice_Site", "SNP", "G", "A", "g.chr19:9002672G>A", "-", "c.40142_splice", "c.e51-1", "p.R13381_splice"),
+# Had to change gt transcript change.  Had to change protein change for proper codon
+("MUC16", "19", "9002672", "9002672", "Splice_Site", "SNP", "G", "A", "g.chr19:9002672G>A", "-", "c.40142_splice", "c.e51-1", "p.P13382_splice"),
 # Had to change GT for the protein change, since this is an intron splice site.
 ("MUC16", "19", "8994416", "8994416", "Splice_Site", "SNP", "C", "T", "g.chr19:8994416C>T", "-", "", "c.e64+1", ""),
 # Had to change GT for the transcript change
