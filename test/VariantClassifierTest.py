@@ -62,7 +62,7 @@ class VariantClassifierTest(unittest.TestCase):
     @data_provider_decorator(variants_indels_MAPK1)
     def test_variant_classification_indels_simple(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test a small set of indels, from MAPK1.  These are all in frame or frame shifts cleanly within exons."""
-        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="variant_classification_indels_simple")
+        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
 
     variants_indels_MUC16 = lambda: (
         ("19", "8979051", "8979051", "Intron", "DEL", "A", "-"),
@@ -75,7 +75,7 @@ class VariantClassifierTest(unittest.TestCase):
     @data_provider_decorator(variants_indels_MUC16)
     def test_variant_classification_indels_muc16(self, chr, start, end, gt_vc, vt, ref, alt):
         """Test small set of indels, from MUC16.  These are all introns or frame shifts cleanly within exon /intron."""
-        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="variant_classification_indels_muc16", gene="MUC16")
+        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
 
     variants_snps_missense = lambda: (
         ("22", "22127164", "22127164", "Missense_Mutation", "SNP", "C", "G"),
@@ -84,7 +84,7 @@ class VariantClassifierTest(unittest.TestCase):
     )
     @data_provider_decorator(variants_snps_missense)
     def test_variant_classification_missense(self, chr, start, end, gt_vc, vt, ref, alt):
-        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt, fixed_id="variant_classification_missense")
+        self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
 
     def test_region_queries(self):
         b = region2bin(22221612, 22221919)
@@ -140,7 +140,7 @@ class VariantClassifierTest(unittest.TestCase):
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) "-" strand) and test the entire 5'UTR"""
-        tx = self._retrieve_test_transcript_MAPK1(fixed_id="snp_vc_on_one_transcript_5UTR")
+        tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
 
         chr = 22
@@ -180,7 +180,7 @@ class VariantClassifierTest(unittest.TestCase):
         """Test several positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
         """
-        tx = self._retrieve_test_transcript_MAPK1(fixed_id="snp_vc_on_one_transcript_splice_site")
+        tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
@@ -198,7 +198,7 @@ class VariantClassifierTest(unittest.TestCase):
         """Test several positions on one MAPK1 transcript: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
         """
-        tx = self._retrieve_test_transcript_MAPK1(fixed_id="vc_on_one_transcript_nonsense_nonstop")
+        tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
@@ -231,13 +231,13 @@ class VariantClassifierTest(unittest.TestCase):
         """Test several positions on one MAPK1 transcript for indels: ENST00000215832.6 (chr 22: 22108789:22221919) Negative strand
         >ENST00000215832.6|ENSG00000100030.10|OTTHUMG00000030508.2|OTTHUMT00000075396.2|MAPK1-001|MAPK1|11022|UTR5:1-189|CDS:190-1272|UTR3:1273-11022|
         """
-        tx = self._retrieve_test_transcript_MAPK1(fixed_id="indels_vc_on_one_transcript_splice_site")
+        tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
     def test_determine_cds_in_exon_space(self):
-        tx = self._retrieve_test_transcript_MAPK1(fixed_id="determine_cds_in_exon_space")
+        tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
         s,e = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx.get_start(), tx.get_end(), tx)
