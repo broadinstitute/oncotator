@@ -47,16 +47,19 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from functools import wraps
+import shutil
 from nose.tools.nontrivial import nottest
 from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
 from oncotator.DatasourceCreator import DatasourceCreator
-from oncotator.datasources import Gaf
+from oncotator.datasources import Gaf, EnsemblTranscriptDatasource
 from oncotator.datasources import dbSNP
 from oncotator.utils import ConfigUtils
 import logging
 import traceback
+from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
+
 
 def data_provider_decorator(fn_data_provider):
     """Data provider decorator, allows another callable to provide the data for the test.
@@ -151,3 +154,19 @@ class TestUtils(object):
         curdir = os.path.dirname(filename) + '/'
         logging.basicConfig(filemode='w', filename=(curdir + 'out/oncotator_unitTest_' + package_name + '.log'),
                             level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
+
+    @staticmethod
+    def _create_test_gencode_ds(base_output_filename):
+        genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1"]
+        gtf_list = []
+        fasta_list = []
+        for gene in genes:
+            gtf_list.append("testdata/gencode/" + gene + ".gencode.v18.annotation.gtf")
+            fasta_list.append("testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa")
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename)
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18")
+        return ensembl_ds

@@ -1716,8 +1716,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         return self._get_overlapping_transcript_records(records, start, end)
 
     def get_overlapping_genes(self, chr, start, end):
-        records = self._get_binned_genes(chr, start, end)
-        return self._get_overlapping_transcript_records(records, start, end)
+        txs = self.get_overlapping_transcripts(chr, start, end)
+        txs = self._filter_transcripts(txs)
+        return set([tx.get_gene() for tx in txs])
 
     def _get_binned_transcripts_given_index(self, chr, start, end, index_dict):
         bins = region2bins(int(start), int(end))

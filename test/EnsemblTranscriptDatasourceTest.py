@@ -163,11 +163,17 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         m2 = ensembl_ds.annotate_mutation(m)
 
-    def test_gencode_simple_annotate(self):
-        """Test a simple mutation. """
+    def test_overlapping_multiple_genes(self):
+        """Test that we can collect multiple overlapping genes """
+        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_")
+        genes = ds.get_overlapping_genes("22", 22080000, 22120000)
+        self.assertTrue(len(set(["MAPK1", "YPEL1"]) - genes) ==0 )
 
-
-
+    def test_overlapping_gene(self):
+        """Test that we can collect an overlapping gene """
+        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_")
+        genes = ds.get_overlapping_genes("22", 22115000, 22120000)
+        self.assertTrue(len(set(["MAPK1"]) - genes) == 0)
 
 if __name__ == '__main__':
     unittest.main()

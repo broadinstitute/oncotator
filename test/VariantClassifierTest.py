@@ -22,27 +22,14 @@ class VariantClassifierTest(unittest.TestCase):
     GLOBAL_DS_BASENAME = "out/test_variant_classification_"
 
     def setUp(self):
-        genes = ["MAPK1", "MUC16", "PIK3CA"]
-        gtf_list = []
-        fasta_list = []
-        for gene in genes:
-            gtf_list.append("testdata/gencode/" + gene + ".gencode.v18.annotation.gtf")
-            fasta_list.append("testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa")
-
-        base_output_filename = VariantClassifierTest.GLOBAL_DS_BASENAME
-        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
-        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
-        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
-        genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename)
-        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18")
+        ensembl_ds = TestUtils._create_test_gencode_ds(VariantClassifierTest.GLOBAL_DS_BASENAME)
         self.ds = ensembl_ds
 
-    def _create_ensembl_ds_from_testdata(self):
+    def _create_ensembl_ds_trimmed(self):
         return self.ds
 
     def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
-        ensembl_ds = self._create_ensembl_ds_from_testdata()
+        ensembl_ds = self._create_ensembl_ds_trimmed()
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
         txs = ensembl_ds._filter_transcripts(recs)
         tx = ensembl_ds._choose_transcript(txs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
@@ -155,7 +142,7 @@ class VariantClassifierTest(unittest.TestCase):
                 self.assertTrue(vc != "5'UTR", "Should not be 5'UTR, but saw " + vc + ".  For " + str([ref, alt, start, end]))
 
     def _retrieve_test_transcript(self, tx_id):
-        ensembl_ds = self._create_ensembl_ds_from_testdata()
+        ensembl_ds = self._create_ensembl_ds_trimmed()
         tx = ensembl_ds.transcript_db[tx_id]
         self.assertTrue(tx is not None,
                         "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
@@ -348,7 +335,7 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(gt == mutated_codon_seq, "GT: " + gt + " Guess: " + mutated_codon_seq + "  " + str([seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt]))
 
     #TODO: Test secondary VC
-        #TODO: Test Flank (if not already done in MUC16 test)
+    #TODO: Test Flank (if not already done in MUC16 test)
 
     test_mutating_exon = lambda : (
         ("SNP", "G", "T", 22221734, 22221734,"GCAAA"),
