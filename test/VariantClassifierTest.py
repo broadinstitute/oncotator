@@ -154,11 +154,16 @@ class VariantClassifierTest(unittest.TestCase):
             if i < 200 and i >= 189:
                 self.assertTrue(vc != "5'UTR", "Should not be 5'UTR, but saw " + vc + ".  For " + str([ref, alt, start, end]))
 
-    def _retrieve_test_transcript_MAPK1(self):
+    def _retrieve_test_transcript(self, tx_id):
         ensembl_ds = self._create_ensembl_ds_from_testdata()
-        tx = ensembl_ds.transcript_db['ENST00000215832.6']
-        self.assertTrue(tx is not None, "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
+        tx = ensembl_ds.transcript_db[tx_id]
+        self.assertTrue(tx is not None,
+                        "Unit test appears to be misconfigured or a bug exists in the ensembl datasource code.")
         return tx
+
+    def _retrieve_test_transcript_MAPK1(self):
+        tx_id = 'ENST00000215832.6'
+        return self._retrieve_test_transcript(tx_id)
 
     variants_snps_splice_sites = lambda: (
         ("22", "22162138", "22162138", "Intron", "SNP", "T", "G"),
@@ -266,19 +271,38 @@ class VariantClassifierTest(unittest.TestCase):
         vc = vcer.variant_classify(tx, ref, alt, start, end, vt).get_vc()
         self.assertTrue(gt_vc == vc, "Should have been " + gt_vc + ", but saw " + vc + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref, alt]))
 
-    def test_basic_protein_position(self):
+
+    transcript_ids = lambda: (
+        # PIK3CA "+"
+        ('ENST00000263967.3', ""),
+        # MAPK1 "-"
+        ('ENST00000215832.6', "")
+    )
+    @data_provider_decorator(transcript_ids)
+    def test_basic_protein_position(self, tx_id, dummy):
         """ Test a 1-indexed protein position and splice sites are rendered properly for the entire test tx. """
-        tx = self._retrieve_test_transcript_MAPK1()
+        tx = self._retrieve_test_transcript(tx_id)
+        strand = tx.get_strand()
+
         vcer = VariantClassifier()
         ctr = 0
         for j, cd in enumerate(tx.get_cds()):
-            # First index since this is a negative strand.
-            start_0 = tx.get_cds()[j][1]
+
+            idx = 0
+            if strand == "-":
+                # First index since this is a negative strand.
+                idx = 1
+
+            start_0 = tx.get_cds()[j][idx]
             exon_0_range = tx.get_cds()[j][1] - tx.get_cds()[j][0]
+
             # Test against the codons in the cds
             for i in range(0, exon_0_range):
-                # minus i, since this is a negative strand.
-                start = start_0 - i
+                if strand == "-":
+                    # minus i, since this is a negative strand.
+                    start = start_0 - i
+                else:
+                    start = start_0 + i + 1
                 end = start
 
                 protein_position_gt = 1 + ctr/3
@@ -286,17 +310,24 @@ class VariantClassifierTest(unittest.TestCase):
                 vt = VariantClassification.VT_SNP
                 ref = "C"
                 alt = "A"
-                vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
+                vc = vcer.variant_classify(tx, ref, alt, start-1, end, vt)
                 prot_position_start = vc.get_ref_protein_start()
-                prot_position_end = vc.get_ref_protein_end()
-                self.assertTrue(prot_position_start == protein_position_gt, "Failed on the %d position on the %d exon... %d .... %s" % (i, j, start, vc.get_vc()))
+                self.assertTrue(vc.get_vc() != VariantClassification.INTRON and vc.get_secondary_vc() != VariantClassification.INTRON, "Intron should not have been seen here.  Failed on the %d position on the %d exon... %d .... %s" % (i, j, start, vc.get_vc()))
+                self.assertTrue(prot_position_start == protein_position_gt, "Protein position failed on the %d position on the %d exon... (gt/guess) %d/%d  --- %d .... %s" % (i, j, protein_position_gt, prot_position_start, start, vc.get_vc()))
 
                 # These need to be adjusted for a positive strand test
-                if start == (tx.get_cds()[j][0] + 1) or start == (tx.get_cds()[j][0] + 2):
-                    self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or (j == (len(tx.get_cds())-1)), "Not a splice site on the %d position on the %d far end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
-                if start == (tx.get_cds()[j][1] - 1) or start == (tx.get_cds()[j][1]):
-                    self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or (j == 0), "Not a splice site on the %d position on the %d close end of the  exon... %d .... %s" % (i, j, start, vc.get_vc()))
-
+                is_at_last_exon = (j == (len(tx.get_cds())-1))
+                is_at_first_exon = (j == 0)
+                if strand == "-":
+                    if start == (tx.get_cds()[j][0] + 1) or start == (tx.get_cds()[j][0] + 2):
+                        self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_last_exon, "Not a splice site on the %d position on the %d far end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
+                    if start == (tx.get_cds()[j][1] - 1) or start == (tx.get_cds()[j][1]):
+                        self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_first_exon, "Not a splice site on the %d position on the %d close end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
+                else:
+                    if start == (tx.get_cds()[j][0] + 1) or start == (tx.get_cds()[j][0] + 2):
+                        self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_first_exon, "Not a splice site on the %d position on the %d close end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
+                    if start == (tx.get_cds()[j][1] - 1) or start == (tx.get_cds()[j][1]):
+                        self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_last_exon, "Not a splice site on the %d position on the %d far end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
     test_mutating_sequences = lambda: (
         ("AGGC", 0, 1, 1, "T", "SNP", "-", "AAGC"),
         ("AGGC", 0, 1, 1, "-", "DEL", "-", "AGC"),
