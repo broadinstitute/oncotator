@@ -112,6 +112,7 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
+    parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  Default: oncotator.log")
     # Process arguments
     args = parser.parse_args()
     
@@ -150,7 +151,7 @@ USAGE
         if verbose > 0:
             print("Verbose mode on")
         
-        logFilename = 'oncotator.log'
+        logFilename = args.log_name # 'oncotator.log'
         
         
         # Create a basic logger to a file
