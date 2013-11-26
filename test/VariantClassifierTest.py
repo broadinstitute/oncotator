@@ -22,7 +22,7 @@ class VariantClassifierTest(unittest.TestCase):
     GLOBAL_DS_BASENAME = "out/test_variant_classification_"
 
     def setUp(self):
-        genes = ["MAPK1", "MUC16"]
+        genes = ["MAPK1", "MUC16", "PIK3CA"]
         gtf_list = []
         fasta_list = []
         for gene in genes:
@@ -247,6 +247,8 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(cds_stop == 1269, "incorrect cds_stop: %d, gt: %d" % (cds_stop, 1269))
 
     denovo_and_start_codon_test_data = lambda: (
+        ("22", "22221904", "22221904", VariantClassification.DE_NOVO_START_OUT_FRAME, "DEL", "C", "-"),
+        ("22", "22221794", "22221794", VariantClassification.DE_NOVO_START_OUT_FRAME, "DEL", "GC", "-"),
         ("22", "22221735", "22221740", VariantClassification.DE_NOVO_START_OUT_FRAME, "INS", "-", "ACATAA"),
         ("22", "22221735", "22221741", VariantClassification.DE_NOVO_START_IN_FRAME, "INS", "-", "AACATAA"),
         ("22", "22221729", "22221729", VariantClassification.START_CODON_SNP, "SNP", "A", "T"),
@@ -315,6 +317,27 @@ class VariantClassifierTest(unittest.TestCase):
 
     #TODO: Test secondary VC
         #TODO: Test Flank (if not already done in MUC16 test)
+
+    test_mutating_exon = lambda : (
+        ("SNP", "G", "T", 22221734, 22221734,"GCAAA"),
+        ("SNP", "G", "C", 22221734, 22221734,"GCGAA"),
+        ("DEL", "G", "-", 22221734, 22221734,"GCAA"),
+        ("DEL", "GG", "-", 22221734, 22221734,"AGAA"),
+        ("DEL", "GGCT", "-", 22221734, 22221734,"GCAA"),
+        ("DEL", "GTTGGCT", "-", 22221731, 22221731,"GCAT"),
+        ("INS", "-", "A", 22221734, 22221734,"CCTAA"),
+        ("INS", "-", "GAG", 22221734, 22221734,"CCCTCAA"),
+        ("INS", "-", "GAGA", 22221734, 22221734,"CCTCTCAA"),
+        ("INS", "-", "GAGAAA", 22221734, 22221734,"CCTTTCTCAA")
+    )
+    @data_provider_decorator(test_mutating_exon)
+    def test_mutate_exon(self, vt, ref, alt, start, end, mutated_exon_gt):
+        """Test that we can get the proper obs allele when mutating. """
+        tx = self._retrieve_test_transcript_MAPK1()
+        vcer = VariantClassifier()
+        exon_start, exon_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
+        mutated_exon = vcer._mutate_exon(tx, ref, alt, vt, exon_start, buffer=2)
+        self.assertTrue(mutated_exon == mutated_exon_gt, "GT/Guess: %s/%s" % (mutated_exon_gt, mutated_exon))
 
 if __name__ == '__main__':
     unittest.main()

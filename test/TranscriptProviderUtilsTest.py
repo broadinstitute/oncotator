@@ -167,7 +167,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
     mutate_ref_sequence_testdata = lambda: (
-        ("DEL", 22221919, 22221919, "T", "-", 0, 2, "CG"),
+        ("DEL", 22221919, 22221919, "T", "-", 0, 0, ""),
         ("INS", 22221919, 22221919, "-", "G", 0, 2, "ACGG"),
         ("INS", 22221919, 22221920, "-", "T", 0, 1, "AAG"),
         ("SNP", 22221919, 22221919, "T", "G", 0, 0, "C"),

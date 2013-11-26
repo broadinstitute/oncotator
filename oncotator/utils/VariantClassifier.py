@@ -370,7 +370,7 @@ class VariantClassifier(object):
             else:
                 vc_tmp = VariantClassification.FIVE_PRIME_UTR
             transcript_position_exon_space_start, transcript_position_exon_space_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
-            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, transcript_position_exon_space_end, ref_allele, alt_allele, tx, variant_type)
+            vc = self._determine_de_novo(vc_tmp, transcript_position_exon_space_start, ref_allele, alt_allele, tx, variant_type)
             return VariantClassification(vc, variant_type, transcript_id=tx.get_transcript_id(), )
 
         # We have a clean overlap in the CDS.  Includes start codon or stop codon.
@@ -379,7 +379,6 @@ class VariantClassifier(object):
             return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type, is_start_codon_overlap)
 
         raise ValueError("Could not determine variant classification:  " + tx.trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
-
 
     def _determine_beyond_exon_info(self, start, end, tx, flank_padding_5prime=3000, flank_padding_3prime=0):
         """
@@ -445,7 +444,69 @@ class VariantClassifier(object):
             else:
                 return "5'"
 
-    def _determine_de_novo(self, vc, transcript_position_start, transcript_position_end, ref, alt, tx, variant_type):
+    def _mutate_exon(self, tx, ref, alt, vt, exon_start, buffer):
+        """
+        :param tx:
+        :param vc: an instance of VariantClassification
+        :param ref: (str) not stranded
+        :param alt:  (str) not stranded
+        :param vt: variant type
+        :param exon_start:  an exon start position in exon space
+        :return:
+        """
+        if alt == "-":
+            alt = ""
+
+        observed_alt = self._determine_stranded_allele(alt, tx.get_strand())
+
+        # Inject the alternate allele
+        if vt == VariantClassification.VT_INS:
+            exon_end = exon_start
+            relevant_seq_with_buffer = tx.get_seq()[exon_start-buffer+1:exon_end+buffer+1]
+            mutated_seq = relevant_seq_with_buffer[:buffer] + observed_alt + relevant_seq_with_buffer[buffer:]
+        elif vt == VariantClassification.VT_DEL:
+            buffered_seq = tx.get_seq()[exon_start - len(ref) - buffer + 1: exon_start + 1 + buffer]
+            mutated_seq = buffered_seq[0:buffer] + buffered_seq[-buffer:]
+        else:
+            exon_end = exon_start + len(alt) - 1
+            relevant_seq_with_buffer = tx.get_seq()[exon_start-buffer:exon_end+buffer+1]
+            mutated_seq = relevant_seq_with_buffer[0:buffer] + observed_alt + relevant_seq_with_buffer[buffer + len(observed_alt):len(relevant_seq_with_buffer)]
+
+        return mutated_seq
+
+    def _determine_de_novo(self, vc_str, exon_start, ref, alt, tx, variant_type, buffer=2 ):
+        """Returns input vc if not de Novo.  Otherwise, returns updated variant classification.
+
+        :param exon_start:
+        :param buffer:
+        :param vc_str: Current variant classification.  Note that if this is not 5'UTR, this method will just return this input.
+        :param ref: (str) Does not take into account strandedness (e.g. m.ref_allele)
+        :param alt: (str) Does not take into account strandedness (e.g. m.alt_allele)
+        :param tx: transcript
+        :param variant_type:
+         Will always return original vc if the vc is not None."""
+        result = vc_str
+        if vc_str == VariantClassification.FIVE_PRIME_UTR and ref != alt:
+            mutated_utr_region = self._mutate_exon(tx, ref, alt, variant_type, exon_start, buffer)
+            atg_position = mutated_utr_region.find('ATG')
+            if atg_position > -1:
+                atg_exon_position = exon_start + atg_position - buffer
+                cds_start_in_exon_space, cds_end_in_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+                if (cds_start_in_exon_space - atg_exon_position) % 3 == 0:
+                    frameness = 'InFrame'
+                else:
+                    frameness = 'OutOfFrame'
+                result = 'De_novo_Start_' + frameness
+
+        return result
+
+    def _determine_stranded_allele(self, unstranded_allele, strand):
+        observed_allele_stranded = unstranded_allele
+        if strand == '-':
+            observed_allele_stranded = Bio.Seq.reverse_complement(unstranded_allele)
+        return observed_allele_stranded
+
+    def _determine_de_novo_old(self, vc, transcript_position_start, transcript_position_end, ref, alt, tx, variant_type):
         """Returns input vc if not de Novo.  Otherwise, returns updated variant classification.
 
         :param vc: Current variant classification.  Note that if this is not 5'UTR, this method will just return this input.
@@ -459,9 +520,8 @@ class VariantClassifier(object):
         result = vc
 
         if vc == VariantClassification.FIVE_PRIME_UTR and ref != alt:
-            reference_allele_stranded, observed_allele_stranded = ref, alt
-            if tx.get_strand() == '-':
-                reference_allele_stranded, observed_allele_stranded = Bio.Seq.reverse_complement(ref), Bio.Seq.reverse_complement(alt)
+            observed_allele_stranded = self._determine_stranded_allele(alt, tx.get_strand())
+            reference_allele_stranded = self._determine_stranded_allele(ref, tx.get_strand())
             tx_seq = tx.get_seq()
 
             if variant_type == VariantClassification.VT_INS:
@@ -475,7 +535,6 @@ class VariantClassifier(object):
 
             mutated_utr_region_seq = TranscriptProviderUtils.mutate_reference_sequence(utr_region_seq, utr_region_start,
                 transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
-
             # Check for Denovo
             ATG_position = mutated_utr_region_seq.find('ATG')
             if ATG_position > -1:
