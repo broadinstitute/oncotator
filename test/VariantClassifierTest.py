@@ -328,6 +328,7 @@ class VariantClassifierTest(unittest.TestCase):
                         self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_first_exon, "Not a splice site on the %d position on the %d close end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
                     if start == (tx.get_cds()[j][1] - 1) or start == (tx.get_cds()[j][1]):
                         self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_last_exon, "Not a splice site on the %d position on the %d far end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
+
     test_mutating_sequences = lambda: (
         ("AGGC", 0, 1, 1, "T", "SNP", "-", "AAGC"),
         ("AGGC", 0, 1, 1, "-", "DEL", "-", "AGC"),

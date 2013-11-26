@@ -1550,7 +1550,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         return Annotation(value=value, datasourceName=self.title)
 
     def _create_blank_set_of_annotations(self):
-        #TODO: Make a list of the annotations that will be populated then default all to ""
         final_annotation_dict = dict()
         for k in EnsemblTranscriptDatasource.POPULATED_ANNOTATION_NAMES:
             final_annotation_dict[k] = self._create_basic_annotation('')
@@ -1798,3 +1797,25 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
                 other_transcripts.append(o)
 
         return '|'.join(other_transcripts)
+
+    def retrieveExons(self, gene, padding=10, isCodingOnly=False):
+        """Return a list of (chr, start, end) tuples for each exon"""
+        result = set()
+        txs = self.gene_db.get(gene, None)
+        txs = self._filter_transcripts(txs)
+        if txs is None:
+            return result
+        ctr = 0
+
+        for tx in txs:
+            # If tx is coding
+            if isCodingOnly and tx.get_gene_type() != "protein_coding":
+                continue
+            exons = tx.get_exons()
+            for exon in exons:
+                start = min(exon[0], exon[1])
+                end = max(exon[0], exon[1])
+                result.add((gene, tx.get_contig(), str(start - padding), str(end + padding)))
+
+        return result
+
