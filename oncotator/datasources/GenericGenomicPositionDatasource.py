@@ -49,6 +49,7 @@
 
 from oncotator.utils.db import get_db_data, get_binned_data, get_overlapping_records, get_summary_output_string
 from oncotator.datasources.Datasource import Datasource
+from oncotator.utils.MutUtils import MutUtils
 
 
 class GenericGenomicPositionDatasource(Datasource):
@@ -72,13 +73,11 @@ class GenericGenomicPositionDatasource(Datasource):
             if c in mutation:
                 raise Exception('Error: Non-unique header value in annotation table (%s)' % (c))
 
-        if all(field in mutation for field in ['chr','start','end']):
-            chr, start, end = mutation.chr, mutation.start, mutation.end
-
-            records = get_binned_data(self.db_obj, chr,int(start), int(end))
+        if all([mutation.chr, mutation.start, mutation.end]):
+            chrom, start, end = mutation.chr, mutation.start, mutation.end
+            records = get_binned_data(self.db_obj, chrom, int(start), int(end))
             records = get_overlapping_records(records, int(start), int(end))
             if records:
-#                for r in records:
                 for c in self.output_headers:
                     summarized_results = get_summary_output_string([r[c].strip() for r in records])
                     mutation.createAnnotation(c, summarized_results, annotationSource=self.title)

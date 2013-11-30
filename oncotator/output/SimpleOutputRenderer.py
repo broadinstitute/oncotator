@@ -51,6 +51,9 @@
 from OutputRenderer import OutputRenderer
 import csv
 import logging
+from oncotator.utils.MutUtils import MutUtils
+
+
 class SimpleOutputRenderer(OutputRenderer):
     """
     The SimpleOutputRenderer renders a basic tsv file from the given mutations.  All annotations are included with real names as column headers.
@@ -63,9 +66,8 @@ class SimpleOutputRenderer(OutputRenderer):
 
     There is no config file needed for initialization of this class.  If specified, it is ignored.
     """
-    
 
-    def __init__(self,filename, configFile=""):
+    def __init__(self, filename, configFile=""):
         """
         Constructor
 
@@ -73,8 +75,8 @@ class SimpleOutputRenderer(OutputRenderer):
         """
         self._filename = filename
         self.logger = logging.getLogger(__name__)
-        
-    def renderMutations(self, mutations, metadata, comments=[]):
+
+    def renderMutations(self, mutations, metadata=None, comments=None):
         """ Generate a simple tsv file based on the incoming mutations.
         
         Assumes that all mutations have the same annotations, even if some are not populated.
@@ -85,24 +87,26 @@ class SimpleOutputRenderer(OutputRenderer):
         
         self.logger.info("Simple rendering output file: " + self._filename)
         self.logger.info("Render starting...")
-        
+
+        comments = [] if comments is None else comments
+
         ctr = 0
-        fp = file(self._filename, 'w')
-        if len(comments) <> 0:
-            fp.write('#' + "\n# ".join(comments) + "\n")
+        f = file(self._filename, 'w')
+        if len(comments) != 0:
+            f.write('#' + "\n# ".join(comments) + "\n")
             
         writer = None
         headers = None
         for m in mutations:
             if headers is None:
-                headers = m.keys()
-                
+                headers = MutUtils.getAllAttributeNames(m)
+
                 # Remove headers that start with "_"
-                for h in headers:
-                    if h.startswith("_"):
-                        headers.remove(h)
+                for header in headers:
+                    if header.startswith("_"):
+                        headers.remove(header)
                 
-                writer = csv.DictWriter(fp, headers, delimiter='\t', lineterminator='\n')
+                writer = csv.DictWriter(f, headers, delimiter='\t', lineterminator='\n')
                 writer.writeheader()
             writer.writerow(m)
 
@@ -112,11 +116,11 @@ class SimpleOutputRenderer(OutputRenderer):
                 self.logger.info("Rendered " + str(ctr) + " mutations.")
 
         # Check that any mutations were processed and if not, just return a blank file with the metadata.
+        # TODO: add a unit test to test this scenario
         if headers is None:
             headers = metadata.keys()
 
-        fp.close()
+        f.close()
         
         self.logger.info("Rendered " + str(ctr) + " mutations into " + self._filename + ".")
         return self._filename
-        

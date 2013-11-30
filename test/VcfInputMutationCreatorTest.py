@@ -69,7 +69,6 @@ TestUtils.setupLogging(__file__, __name__)
 
 
 class VcfInputMutationCreatorTest(unittest.TestCase):
-
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
@@ -77,24 +76,24 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def tearDown(self):
         pass
-    
-    def _createGafDataSource(self):   
+
+    def _createGafDataSource(self):
         self.logger.info("Initializing gaf 3.0")
         return TestUtils.createGafDatasource(self.config)
 
     def testBasicCreationWithExampleVcf(self):
         inputFilename = 'testdata/vcf/example.vcf'
-        
+
         creator = VcfInputMutationCreator(inputFilename)
         muts = creator.createMutations()
-        
+
         # You cannot use len(muts), since muts is a generator.
         ctr = 0
         for m in muts:
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
         self.assertTrue((m.chr == "21") and (m.start == 1234567), "Last mutation was not correct: " + str(m))
-        
+
         # Reminder:  muts is a generator, so it has to be reset
         creator.reset()
         muts = creator.createMutations()
@@ -107,7 +106,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         ''' Tests the ability to do a simple Gaf 3.0 annotation. '''
         inputFilename = 'testdata/vcf/example.vcf'
         outputFilename = 'out/simpleVCF.Gaf.annotated.out.tsv'
-        
+
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
         renderer = SimpleOutputRenderer(outputFilename, [])
@@ -121,7 +120,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         ''' Tests the ability to parse Germline vcf. '''
         inputFilename = 'testdata/vcf/random.vcf'
         outputFilename = 'out/random.tsv'
-        
+
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
         renderer = SimpleOutputRenderer(outputFilename, [])
@@ -131,20 +130,21 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.annotate()
 
     def _createTCGAMAFOverridesForVCF(self):
-        ''' These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
+        """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
         These were taken from version 0.5.25.0 of Oncotator.
-        '''
+        """
         #TODO: Remove the 'Match_Norm_Seq_Allele1' and 'Match_Norm_Seq_Allele2' from this list and populate properly, if possible.
-        result = {'source':'Capture', 'status':'Somatic', 'phase':'Phase_I', 'sequencer':'Illumina GAIIx',
-                'Tumor_Validation_Allele1': '', 'Tumor_Validation_Allele2': '', 'Match_Norm_Validation_Allele1': '', 'Match_Norm_Validation_Allele2': '',
-                'Verification_Status': '','Validation_Status': '', 'Validation_Method': '', 'Score': '', 'BAM_file': '',
-                'Match_Norm_Seq_Allele1':'', 'Match_Norm_Seq_Allele2':'','Tumor_Sample_UUID':'','Tumor_Sample_Barcode':'',
-                'Strand':"+", 'Center':"broad.mit.edu", "NCBI_Build":"37"}
+        result = dict(source='Capture', status='Somatic', phase='Phase_I', sequencer='Illumina GAIIx',
+                      Tumor_Validation_Allele1='', Tumor_Validation_Allele2='', Match_Norm_Validation_Allele1='',
+                      Match_Norm_Validation_Allele2='', Verification_Status='', Validation_Status='',
+                      Validation_Method='', Score='', BAM_file='', Match_Norm_Seq_Allele1='', Match_Norm_Seq_Allele2='',
+                      Tumor_Sample_UUID='', Tumor_Sample_Barcode='', Strand="+", Center="broad.mit.edu",
+                      NCBI_Build="37")
         return result
 
     def _createDatasourceCorpus(self):
-        dbDir = self.config.get('DEFAULT',"dbDir")
-        return DatasourceCreator.createDatasources(dbDir, "hg19",isMulticore=False)
+        dbDir = self.config.get('DEFAULT', "dbDir")
+        return DatasourceCreator.createDatasources(dbDir, "hg19", isMulticore=False)
 
     def testTCGAMAFRendering(self):
         ''' Test the ability to render a germline vcf as a TCGA MAF '''
@@ -159,7 +159,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for ds in datasources:
             annotator.addDatasource(ds)
         filename = annotator.annotate()
-        
+
         self._validateTcgaMafContents(filename)
 
     def _validateTcgaMafContents(self, filename):
@@ -171,49 +171,51 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         (to preserve self.assertTrue, etc).
         
         '''
-        
+
         statinfo = os.stat(filename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + filename + ") is empty.")
-        
+
         tsvReader = GenericTsvReader(filename)
-        
-        self.assertTrue(tsvReader.getComments().find('#version') <> -1, "First line did not specify a version number") 
-        
+
+        self.assertTrue(tsvReader.getComments().find('#version') <> -1, "First line did not specify a version number")
+
         ctr = 1
         for lineDict in tsvReader:
             if lineDict['Entrez_Gene_Id'] == "0":
-                self.assertTrue(lineDict['Hugo_Symbol'] == "Unknown", "Entrez_Gene_Id was zero, but Hugo Symbol was not 'Unknown'.  Line: " + str(ctr))
-            
+                self.assertTrue(lineDict['Hugo_Symbol'] == "Unknown",
+                                "Entrez_Gene_Id was zero, but Hugo Symbol was not 'Unknown'.  Line: " + str(ctr))
+
             unknownKeys = []
             for k in lineDict.keys():
                 if lineDict[k] == "__UNKNOWN__":
                     unknownKeys.append(k)
-                
+
                 self.assertTrue('\r' not in lineDict[k], "Carriage return character found in an annotation value.")
-                
+
                 configFile = ConfigUtils.createConfigParser('configs/tcgaMAF2.3_output.config')
                 requiredColumns = configFile.get("general", "requiredColumns")
                 optionalColumns = configFile.get("general", "optionalColumns")
                 if (k not in requiredColumns) and (k not in optionalColumns):
                     self.assertTrue(k.startswith("i_"), "Internal column was not prepended with 'i_'")
-                
+
             unknownKeys.sort()
-            self.assertTrue(len(unknownKeys) == 0, "__UNKNOWN__ values (" + str(len(unknownKeys)) + ") seen on line " + str(ctr) + ", in fields: " + ", ".join(unknownKeys))
-            
+            self.assertTrue(len(unknownKeys) == 0,
+                            "__UNKNOWN__ values (" + str(len(unknownKeys)) + ") seen on line " + str(
+                                ctr) + ", in fields: " + ", ".join(unknownKeys))
+
             ctr = ctr + 1
 
     def testSwitchedFieldsWithExampleVcf(self):
         '''Test whether the switched tags are ignored.'''
         inputFilename = 'testdata/vcf/example.bad.switched.fields.vcf'
         outputFilename = 'out/example.out.tsv'
-        
+
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
         renderer = SimpleOutputRenderer(outputFilename, [])
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
-
 
     def testAnnotationWithExampleVcf(self):
         ''' Test whether parsed annotations match the actual annotations. '''
@@ -230,7 +232,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.annotate()
 
         tsvReader = GenericTsvReader(outputFilename)
-        
+
         current = pandas.read_csv(outputFilename, sep='\t', header=len(tsvReader.getCommentsAsList()))
         expected = pandas.read_csv(expectedOutputFilename, sep='\t')
 
@@ -241,8 +243,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         expectedColNames = set()
         for i in range(len(expected.columns)):
             expectedColNames.add(expected.columns[i])
-        
-        self.assertTrue(len(currentColNames.symmetric_difference(expectedColNames)) is 0, "Should have the same columns")
+
+        self.assertTrue(len(currentColNames.symmetric_difference(expectedColNames)) is 0,
+                        "Should have the same columns")
         self.assertTrue(len(current.index) == len(expected.index), "Should have the same number of rows")
 
         for colName in currentColNames:
@@ -267,9 +270,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         inputFilename = 'testdata/vcf/example.sampleName.removed.vcf'
 
         creator = VcfInputMutationCreator(inputFilename)
-        gtKeys = set(['genotype', 'read_depth', 'genotype_quality', 'haplotype_quality', 'q10', 's50', 'samples_number',
-                      'depth_across_samples', 'allele_frequency', 'ancestral_allele', 'dbSNP_membership', 'id', 'qual',
-                      'hapmap2_membership'])
+        gtKeys = {'genotype', 'read_depth', 'genotype_quality', 'haplotype_quality', 'q10', 's50', 'samples_number',
+                  'depth_across_samples', 'allele_frequency', 'ancestral_allele', 'dbSNP_membership', 'id', 'qual',
+                  'hapmap2_membership'}
         md = creator.getMetadata()
         ks = set(md.keys())
         diff = gtKeys.symmetric_difference(ks)
@@ -341,10 +344,11 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         ctr = 0
         for mut in muts:
 
-            if MutUtils.str2bool(mut["altAlleleSeen"]):
-                self.assertTrue(mut['sampleName'] != "NA 00001")
+            if MutUtils.str2bool(mut["alt_allele_seen"]):
+                self.assertTrue(mut['sample_name'] != "NA 00001")
                 ctr += 1
-        self.assertTrue(ctr == 7, str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
+        self.assertTrue(ctr == 7,
+                        str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
 
 
 if __name__ == "__main__":

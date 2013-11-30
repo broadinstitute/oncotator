@@ -48,11 +48,6 @@
 #"""
 
 
-"""
-Created on Nov 7, 2012
-
-@author: lichtens
-"""
 from abc import abstractmethod
 
 
@@ -69,7 +64,7 @@ class OutputRenderer(object):
         raise NotImplementedError
     
     @abstractmethod
-    def renderMutations(self, mutations, metadata=None, comments=[]):
+    def renderMutations(self, mutations, metadata=None, comments=None):
 
         """
         Render the given mutations.  Subclasses should also handle a list of comments.  However, the rendering of

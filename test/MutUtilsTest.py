@@ -107,5 +107,21 @@ class MutUtilsTest(unittest.TestCase):
         self.assertEqual(MutUtils.convertChromosomeStringToMutationDataFormat("2", build="hg19"), "2", "chrom of 2 yielded different value: " + MutUtils.convertChromosomeStringToMutationDataFormat("2", build="hg19"))
         self.assertEqual(MutUtils.convertChromosomeStringToMutationDataFormat("4", build="hg19"), "4", "chrom of 4 yielded different value: " + MutUtils.convertChromosomeStringToMutationDataFormat("4", build="hg19"))
 
+    def testChrom2HashCodeTable(self):
+        chroms = ["1", "X", "3", "contig1", "Y", "25", "mt"]
+        h = MutUtils.createChrom2HashCodeTable(chroms)
+        self.assertTrue(h["1"] == 1, "For chrom 1, hash code should be 1 but it was %s." % h["1"])
+        self.assertTrue(h["3"] == 3, "For chrom 3, hash code should be 3 but it was %s." % h["3"])
+        self.assertTrue(h["25"] == 25, "For chrom 25, hash code should be 25 but it was %s." % h["25"])
+        self.assertTrue(h["X"] == 26, "For chrom X, hash code should be 26 but it was %s." % h["X"])
+        self.assertTrue(h["Y"] == 27, "For chrom Y, hash code should be 27 but it was %s." % h["Y"])
+        self.assertTrue(h["mt"] == 28, "For chrom mt, hash code should be 28 but it was %s." % h["mt"])
+        self.assertTrue(h["contig1"] == 29, "For chrom contig1, hash code should be 29 but it was %s." % h["contig1"])
+
+        chroms = ["contig1", "mt"]
+        h = MutUtils.createChrom2HashCodeTable(chroms)
+        self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
+        self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
+
 if __name__ == '__main__':
     unittest.main()

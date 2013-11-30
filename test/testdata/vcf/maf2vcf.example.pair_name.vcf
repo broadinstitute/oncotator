@@ -1,0 +1,9 @@
+##fileformat=VCFv4.1
+##oncotator_version=Oncotator_v1.0.0.0rc33_|
+##INFO=<ID=dbSNP_RS,Number=.,Type=String,Description="Unknown">
+##FORMAT=<ID=DP,Number=.,Type=Integer,Description="Unknown">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA0001-TP-NB	NA0001-TP-NT	NA0004-TP-NT	NA0005-TP-NT
+20	14370	.	G	A,T	.	PASS	dbSNP_RS=rs6054257,rs6054257	GT:DP	./.:10	./.:8	./.:.	./.:.
+21	123090	.	T	C	.	PASS	.	GT:DP	./.:.	./.:2	./.:9	./.:7
+22	3239880	.	G	C	.	PASS	.	GT:DP	./.:8	./.:.	./.:.	./.:.

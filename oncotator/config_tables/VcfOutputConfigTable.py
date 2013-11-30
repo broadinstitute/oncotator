@@ -4,7 +4,6 @@ class VcfOutputConfigTable():
     _formatFieldNames = dict()  # format (name, ID) pairs
     _filterFieldNames = dict()
     _otherFieldNames = dict()  # ID and QUAL (name, ID) pairs
-    _sampleNameFieldNames = dict()
 
     _infoFieldNamesDescriptions = dict()  # info (name, description) pairs
     _formatFieldNamesDescriptions = dict()  # format (name, description) pairs
@@ -12,6 +11,9 @@ class VcfOutputConfigTable():
 
     _splitSet = dict()
     _notSplitSet = dict()
+
+    def __init__(self):
+        pass
 
     def addInfoFieldName(self, name, ID):
         self._infoFieldNames[name] = ID
@@ -22,8 +24,6 @@ class VcfOutputConfigTable():
     def addOtherFieldName(self, name, ID):
         if ID == "FILTER":
             self._filterFieldNames[name] = name
-        elif ID == "SAMPLE_NAME":
-            pass
         else:
             self._otherFieldNames[name] = ID
 

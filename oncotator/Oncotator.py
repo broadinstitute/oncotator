@@ -86,7 +86,7 @@ def parseOptions(program_license, program_version_message):
     # memcache
     -u memcache://localhost:11211
 
-    Please note that only VCF input will populate the altAlleleSeen annotation.  All other inputs assume that the alternate is present if it appears at all.
+    Please note that only VCF input will populate the alt_allele_seen annotation.  All other inputs assume that the alternate is present if it appears at all.
         This feature is to allow users to exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
         IMPORTANT:  Do not use with VCF output.
     '''
@@ -112,7 +112,7 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
-    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation altAlleleSeen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
+    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
     # Process arguments
     args = parser.parse_args()
     

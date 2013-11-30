@@ -88,7 +88,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         genotypeData = None
 
         if len(IDs) != 0:
-            sampleName = mutation.getAnnotation("sampleName").getValue()
+            sampleName = mutation.getAnnotation("sample_name").getValue()
             genotypeData = record.genotype(sampleName)
 
         if record.FORMAT is not None:
@@ -241,26 +241,27 @@ class VcfInputMutationCreator(InputMutationCreator):
                     sample_names = [s.sample for s in sampleRecList]
                     is_tumor_normal_vcf = "NORMAL" in sample_names and len(sample_names) == 2
                     if is_tumor_normal_vcf:
-                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
+                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, "
+                                                         "unless GT field specified otherwise.")
 
                     for sample in sampleRecList:
                         sampleMut = copy.deepcopy(mut)
                         sample_name = sample.sample
                         if is_tumor_normal_vcf and sample_name != "NORMAL":
                             sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
-                        sampleMut.createAnnotation("sampleName", sample_name, "INPUT")
+                        sampleMut.createAnnotation("sample_name", sample_name, "INPUT")
 
-                        #TODO: Confirm that altAlleleSeen will be False in all cases of GT = ./.
+                        #TODO: Confirm that alt_allele_seen will be False in all cases of GT = ./.
                         genotype = "GT"
                         is_alt_seen = "True"
                         if genotype in sample.data._fields:
                             is_alt_seen = self._determineAltSeen(sample.data.GT, index + 1)
 
                         # HACK: If the sample name is NORMAL, there is more than one sample, and
-                        # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
+                        # there is no GT field (or GT is ./.) then assume that this is alt_allele_seen of False
                         if is_tumor_normal_vcf and sample_name == "NORMAL" and (genotype not in sample.data._fields):
                             is_alt_seen = "False"
-                        sampleMut["altAlleleSeen"] = is_alt_seen
+                        sampleMut["alt_allele_seen"] = is_alt_seen
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
 
                         yield sampleMut
@@ -307,7 +308,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 mut.createAnnotation(flt, "PASS", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
-        mut.createAnnotation("altAlleleSeen", str(True), "INPUT")
+        mut.createAnnotation("alt_allele_seen", str(True), "INPUT")
         mut = self._addInfoDataToMutation(mut, record, index)
         return mut
 

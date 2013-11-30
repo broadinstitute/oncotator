@@ -54,13 +54,13 @@ from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtil
 import os
 import string
 import vcf
-import shutil
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.utils.TagConstants import TagConstants
 
 from TestUtils import TestUtils
+from oncotator.utils.MutUtils import MutUtils
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -125,7 +125,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
             self.assertEqual(vcfRecord.INFO["NS"], 3, "Expected %s but got %s." % (3, vcfRecord.INFO["NS"]))
             self.assertEqual(vcfRecord.INFO["DP"], 13, "Expected %s but got %s." % (13, vcfRecord.INFO["DP"]))
 
-        shutil.rmtree(tmpDir)
+        MutUtils.removeDir(tmpDir)
 
     def testCreateIndexedTsvDatasource(self):
         datasourceFilename = "testdata/ESP6500SI-V2.chr1.snps_indels.head.25.txt"
@@ -208,7 +208,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
             self.assertTrue(annotationName in m1_annotated, "m1_annotated was not annotated with %s value."
                                                             % annotationName)
 
-        shutil.rmtree(tmpDir)
+        MutUtils.removeDir(tmpDir)
 
     def testCreateGPTsvDatasource(self):
         """
@@ -261,7 +261,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         self.assertTrue(os.path.exists(string.join([tmpDir, datasourceFoldername, genomeBuild + ".md5"], os.sep)),
                         "No md5 file was generated.")
 
-        shutil.rmtree(tmpDir)
+        MutUtils.removeDir(tmpDir)
 
 if __name__ == '__main__':
     unittest.main()

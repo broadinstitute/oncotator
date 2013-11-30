@@ -63,7 +63,7 @@ from argparse import RawTextHelpFormatter
 import tempfile
 import shutil
 import os
-
+from oncotator.utils.MutUtils import MutUtils
 
 supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv']
 
@@ -215,18 +215,18 @@ def createDatasource(tmpDir):
             ds_annotation_columns = ds_columns
 
     # Create appropriate subdirectory in tmp dir.
-    destDir = tmpDir + os.sep + ds_foldername + os.sep + genome_build
+    destDir = os.path.join(*[tmpDir, ds_foldername, genome_build])
     os.makedirs(destDir)
 
     # Copy the tsv file into genome build dir
     DatasourceInstallUtils.create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version,
                                              index_columns, ds_columns, ds_annotation_columns)
 
-    print("Config file created: " + destDir + os.sep + ds_foldername + ".config")
+    print("Config file created: " + os.path.join(destDir, ds_foldername) + ".config")
 
     # Last step:  Copy the directory to the destination dbDir.
-    shutil.copytree(symlinks=True, src=tmpDir + os.sep + ds_foldername, dst=dbDir + os.sep + ds_foldername)
-    print("Datasource copied from temp location to " + dbDir + os.sep + ds_foldername)
+    shutil.copytree(symlinks=True, src=os.path.join(tmpDir, ds_foldername), dst=os.path.join(dbDir, ds_foldername))
+    print("Datasource copied from temp location to " + os.path.join(dbDir, ds_foldername))
 
 
 def main():
@@ -244,7 +244,7 @@ def main():
         try:
             print("Done...")
             print("Removing ..." + tmpDir + '/')
-            shutil.rmtree(tmpDir)  # delete directory
+            MutUtils.removeDir(tmpDir)
         except OSError as exc:
             if exc.errno != 2:  # code 2 - no such file or directory
                 raise  # re-raise exception

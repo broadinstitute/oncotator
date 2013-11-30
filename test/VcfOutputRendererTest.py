@@ -57,6 +57,8 @@ from oncotator.utils.version import VERSION
 import string
 import logging
 import vcf
+from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
+
 TestUtils.setupLogging(__file__, __name__)
 
 
@@ -277,12 +279,18 @@ class VcfOutputRendererTest(unittest.TestCase):
 
             expectedAlts = [alt.sequence if alt is not None else None for alt in expectedRecord.ALT]
             currentAlts = [alt.sequence if alt is not None else None for alt in currentRecord.ALT]
+            self.assertTrue(len(expectedAlts) == len(currentAlts), "Should have the same number of alternate alleles")
             self.assertTrue(len(set(expectedAlts).symmetric_difference(currentAlts)) == 0,
                             "Should have the same alternate alleles")
 
             self.assertTrue(expectedRecord.QUAL == currentRecord.QUAL, "Should have the same qual")
+
+            self.assertTrue(len(expectedRecord.FILTER) == len(currentRecord.FILTER),
+                            "Should have the same number of FILTER tags")
             self.assertTrue(len(set(expectedRecord.FILTER).symmetric_difference(currentRecord.FILTER)) == 0,
                             "Should have the same FILTER tags")
+            self.assertTrue(len(expectedRecord.INFO.keys()) == len(currentRecord.INFO.keys()),
+                            "Should have the same number of INFO keys")
             self.assertTrue(len(set(expectedRecord.INFO.keys()).symmetric_difference(currentRecord.INFO.keys())) == 0,
                             "Should have the same INFO keys")
             keys = currentRecord.INFO.keys()
@@ -293,13 +301,17 @@ class VcfOutputRendererTest(unittest.TestCase):
                     expectedVal = [expectedVal]
                 if not isinstance(currentVal, list):
                     currentVal = [currentVal]
+                self.assertTrue(len(expectedVal) == len(currentVal),
+                                "Should have the same number of value for INFO key, %s." % key)
                 self.assertTrue(len(set(expectedVal).symmetric_difference(currentVal)) == 0,
                                 "Should have the same value for INFO key, %s." % key)
 
             expectedSampleNames = [sample.sample for sample in expectedRecord.samples]
             currentSampleNames = [sample.sample for sample in currentRecord.samples]
-            self.assertTrue(len(set(expectedSampleNames).symmetric_difference(currentSampleNames)) == 0,
+            self.assertTrue(len(expectedSampleNames) == len(currentSampleNames),
                             "Should have the same number of sample names")
+            self.assertTrue(len(set(expectedSampleNames).symmetric_difference(currentSampleNames)) == 0,
+                            "Should have the sample names")
             self.assertTrue(len(expectedSampleNames) ==
                             sum([1 for i, j in zip(expectedSampleNames, currentSampleNames) if i == j]),
                             "Should have the sample names in the same order")
@@ -339,24 +351,87 @@ class VcfOutputRendererTest(unittest.TestCase):
             if currentSampleFields is None and expectedSampleFields is not None:
                 self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
 
-    def testChrom2HashCodeTable(self):
-        chroms = ["1", "X", "3", "contig1", "Y", "25", "mt"]
-        renderer = VcfOutputRenderer("")
-        h = renderer._createChrom2HashCodeTable(chroms)
-        self.assertTrue(h["1"] == 1, "For chrom 1, hash code should be 1 but it was %s." % h["1"])
-        self.assertTrue(h["3"] == 3, "For chrom 3, hash code should be 3 but it was %s." % h["3"])
-        self.assertTrue(h["25"] == 25, "For chrom 25, hash code should be 25 but it was %s." % h["25"])
-        self.assertTrue(h["X"] == 26, "For chrom X, hash code should be 26 but it was %s." % h["X"])
-        self.assertTrue(h["Y"] == 27, "For chrom Y, hash code should be 27 but it was %s." % h["Y"])
-        self.assertTrue(h["mt"] == 28, "For chrom mt, hash code should be 28 but it was %s." % h["mt"])
-        self.assertTrue(h["contig1"] == 29, "For chrom contig1, hash code should be 29 but it was %s." % h["contig1"])
+    def testMissingGenotypeTag(self):
+        creator = MafliteInputMutationCreator('testdata/maflite/example.pair_name.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.pair_name.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
 
-        chroms = ["contig1", "mt"]
-        h = renderer._createChrom2HashCodeTable(chroms)
-        self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
-        self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
+        vcfReader = vcf.Reader(filename='out/maf2vcf.example.pair_name.vcf', strict_whitespace=True)
+        self.assertTrue("GT" in vcfReader.formats, "Vcf is missing FORMAT the following field: GT")
 
+    def testMaf2Vcf_PairNameAnnnotationExist(self):
+        """
+        Test conversion when "PairName" annotation exists in the input Maf file.
+        """
+        creator = MafliteInputMutationCreator('testdata/maflite/example.pair_name.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.pair_name.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
 
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.pair_name.vcf', strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.pair_name.vcf', strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testMaf2Vcf_OnlyNormalAndTumorSampleBarcodeExist(self):
+        """
+        Test conversion when "PairName" annotation is missing but only normal and tumor sample names exist.
+        """
+        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_tumor_sample_name.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_tumor_sample_name.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_tumor_sample_name.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testMaf2Vcf_OnlyNormalSampleBarcodeExist(self):
+        """
+        Test conversion when "PairName" annotation is missing but only normal sample names exist.
+        """
+        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_sample_name.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_sample_name.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_sample_name.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_sample_name.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testMaf2Vcf_OnlyTumorSampleBarcodeExist(self):
+        """
+        Test conversion when "PairName" annotation is missing but only tumor sample names exist.
+        """
+        creator = MafliteInputMutationCreator('testdata/maflite/example.tumor_sample_name.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.tumor_sample_name.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.tumor_sample_name.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.tumor_sample_name.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
 
 if __name__ == "__main__":
     unittest.main()

@@ -117,7 +117,7 @@ class ConfigUtils(object):
         return False
     
     @staticmethod
-    def createConfigParser(sourceConfigFile,ignoreCase=True):
+    def createConfigParser(sourceConfigFile, ignoreCase=True):
         """ Creates a config parser instance using the Oncotator conventions for config files.  
         
         Note:  ALL config files must end with .config

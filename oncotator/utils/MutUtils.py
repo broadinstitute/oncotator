@@ -58,19 +58,78 @@ Created on Nov 13, 2012
 from oncotator.MutationData import MutationData
 from oncotator.utils.MutationValidationFailureException import MutationValidationFailureException
 import re
+import collections
+import string
+import os
+
 
 class MutUtils(object):
     """
     Static class containing utility functions for Mutations. 
     """
     proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)[_]*[A-Z]{0,1}([0-9]*)")
+    SAMPLE_NAME_ANNOTATION_NAME = "sample_name"
 
-    def __init__(self,params):
+    def __init__(self, params):
         """
         Constructor -- should never be called.
         """
         pass
-    
+
+    @staticmethod
+    def removeDir(currentDir):
+        for root, dirs, files in os.walk(currentDir, topdown=False):
+            for filename in files:
+                filename = os.path.join(root, filename)
+                os.remove(filename)
+            for dirname in dirs:
+                dirname = os.path.join(root, dirname)
+                os.rmdir(dirname)
+        os.rmdir(currentDir)
+
+
+    @staticmethod
+    def createChrom2HashCodeTable(chroms):
+        table = dict()
+        highestHashCode = 0
+        sorted(chroms)
+        for chrom in chroms:
+            table[chrom] = None
+            if chrom.isdigit():
+                table[chrom] = int(chrom)
+                if highestHashCode < table[chrom]:
+                    highestHashCode = table[chrom]
+        index = 0
+        for chrom in chroms:
+            if table[chrom] is None:
+                if chrom.upper() == 'X':  # X chromosome
+                    table[chrom] = highestHashCode + 1
+                elif chrom.upper() == 'Y':  # Y chromosome
+                    table[chrom] = highestHashCode + 2
+                elif (chrom.upper() == 'M') or (chrom.upper() == 'MT'):  # mitochondrial chromosome
+                    table[chrom] = highestHashCode + 3
+                else:
+                    index += 1
+                    table[chrom] = highestHashCode + index + 3
+        return table
+
+    @staticmethod
+    def replaceChrs(text, frm, to):
+        tbl = string.maketrans(frm, to)
+        return text.translate(tbl)
+
+    @staticmethod
+    def getAllAttributeNames(mut):
+        """
+        :param mut: mutation object
+        :return: set of attribute names that are encapsulated in the mutation
+        """
+        attrs = []
+        if mut is not None:
+            attrs = mut.keys() + mut.getAttributeNames()
+            return collections.OrderedDict.fromkeys(attrs).keys()
+        return attrs
+
     @staticmethod
     def str2bool(v):
         """ Given an input string, v, returns whether the input string is a boolean 
@@ -115,7 +174,7 @@ class MutUtils(object):
         if chrom == "MT":
             result = "M"
 
-        if build.startswith("hg") and (chrom == "23" or chrom =="24"):
+        if build.startswith("hg") and (chrom == "23" or chrom == "24"):
             if chrom == "23":
                 result = "X"
             if chrom == "24":
@@ -149,8 +208,7 @@ class MutUtils(object):
     def prettyPrint(mutation):
         for annotation in mutation: 
             print mutation[annotation]
-        return prettyStr
-    
+
     @staticmethod
     def validateMutation(mutation):
         """ Does some basic sanity checks that the given mutationData is coherent.
@@ -163,33 +221,36 @@ class MutUtils(object):
             TODO: Validate chromosome value given the genome build
             
         Throws MutationValidationFailureException.  Otherwise, returns True
-        """ 
-        
+        """
+
+        attribute = "chr"
+        noneAttributes = []
         for attribute in MutationData.attributes:
-            noneAttributes = []
             if mutation[attribute] is None:
                 noneAttributes.append(attribute)
         if len(noneAttributes) > 0:
             raise MutationValidationFailureException("None values found for attributes: " + str(noneAttributes))
 
+        blankAttributes = []
         for attribute in MutationData.attributes:
-            blankAttributes= []
             if mutation[attribute] is '':
                 blankAttributes.append(attribute)
         if len(blankAttributes) > 0:
             raise MutationValidationFailureException("Blank values found for attributes: " + str(blankAttributes))
-        
+
+        noMatchAttributes = []
         for attribute in MutationData.attributes:
-            noMatchAttributes= []
-            if mutation[attribute] <> mutation.__dict__[attribute]:
+            if mutation[attribute] != mutation.__dict__[attribute]:
                 noMatchAttributes.append(attribute)
         if len(noMatchAttributes) > 0:
-            raise MutationValidationFailureException("Attribute did not match dictionary value for " + str(noMatchAttributes) + " (dict, attribute): " + mutation[attribute] + ", " + mutation.__dict__[attribute])
+            raise MutationValidationFailureException("Attribute did not match dictionary value for " +
+                                                     str(noMatchAttributes) + " (dict, attribute): " +
+                                                     mutation[attribute] + ", " + mutation.__dict__[attribute])
         
         if mutation.chr.startswith("chr"):
             raise MutationValidationFailureException("Chromosome value started with chr: " + str(mutation.chr))
         
-        if (mutation.chr == "MT"):
+        if mutation.chr == "MT":
             raise MutationValidationFailureException("Mitochondria must be M, not MT.")
         # TODO: Check for valid chromosome values given the genome build
         
@@ -235,7 +296,8 @@ class MutUtils(object):
         return ("%s_%s_%s_%s_%s_%s" % (chr, start, end, ref_allele, alt_allele, other_info))
 
     @staticmethod
-    def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True, exposedFields=set()):
+    def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
+                            exposedFields=set()):
         """ Creates a dictionary of the output maf file headers to the annotations.
         Input:
             headers -- optional and required fields

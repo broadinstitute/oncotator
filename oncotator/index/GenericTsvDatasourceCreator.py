@@ -11,7 +11,7 @@ class GenericTsvDatasourceCreator(DatasourceCreator):
 
     def createDatasource(self, destDir, ds_file, index_column_names=None, column_names=None):
         baseDSFile = os.path.basename(ds_file)
-        shutil.copy(ds_file, destDir + os.sep + baseDSFile)
+        shutil.copy(ds_file, os.path.join(destDir, baseDSFile))
 
         return baseDSFile
 

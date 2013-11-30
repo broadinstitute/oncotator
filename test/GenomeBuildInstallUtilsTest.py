@@ -47,23 +47,23 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 import os
-import shutil
-
 import unittest
-from shove.core import Shove
-from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
 from TestUtils import TestUtils
+from oncotator.utils.MutUtils import MutUtils
 
 TestUtils.setupLogging(__file__, __name__)
+
+
 class GenomeBuildInstallUtilsTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def test_current_download(self):
         """Download a current ensembl transcript package.  This test needs an internet connection and can be slow."""
 
         #ftp://ftp.ensembl.org/pub/release-71/fasta/saccharomyces_cerevisiae/cdna/
         download_dir = "out/test_ensembl_download/"
-        shutil.rmtree(download_dir, ignore_errors=True)
+        MutUtils.removeDir(download_dir)
         os.mkdir(download_dir)
         GenomeBuildInstallUtils.download_reference_data_from_ensembl(download_dir, "saccharomyces_cerevisiae")
 
@@ -80,13 +80,12 @@ class GenomeBuildInstallUtilsTest(unittest.TestCase):
         statinfo = os.stat(download_dir + transcript_file)
         self.assertTrue(statinfo.st_size > 0, "downloaded transcript file (" + transcript_file + ") is empty.")
 
-
     def test_previous_release_download(self):
         """Download an older ensembl transcript package.  This test needs an internet connection and will fail w/o one.
         """
         download_dir = "out/test_ensembl_download_previous/"
         release_num = "68"
-        shutil.rmtree(download_dir, ignore_errors=True)
+        MutUtils.removeDir(download_dir)
         os.mkdir(download_dir)
         GenomeBuildInstallUtils.download_reference_data_from_ensembl(download_dir, "saccharomyces_cerevisiae", release=release_num)
 

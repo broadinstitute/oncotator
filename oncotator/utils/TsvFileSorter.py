@@ -142,8 +142,14 @@ class TsvFileSorter(object):
         reader = GenericTsvReader(filename=self.readfilename, commentPrepend=self.commentPrepend,
                                   delimiter=self.delimiter)
         comments = reader.getComments()
+
         fieldnames = reader.getFieldNames()
-        fieldnameIndexes = collections.OrderedDict([(x, i) for (i, x) in enumerate(fieldnames)])
+        if fieldnames is None:
+            fieldnames = []
+
+        fieldnameIndexes = collections.OrderedDict()
+        if fieldnames is not None:
+            fieldnameIndexes = collections.OrderedDict([(x, i) for (i, x) in enumerate(fieldnames)])
 
         iterable = iter(reader.getInputContentFP())
         partitions = self._yieldPartitions(iterable, func, fieldnameIndexes, length)

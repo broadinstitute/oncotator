@@ -211,7 +211,7 @@ class AnnotatorTest(unittest.TestCase):
         self.assertTrue(m2.get("gene", None) is not None)
 
     def testSkippingAltsForSingleMut(self):
-        """Test a simple case where a single mutation with altAlleleSeen of False is not produced."""
+        """Test a simple case where a single mutation with alt_allele_seen of False is not produced."""
 
         runSpec = RunSpecification()
         runSpec.initialize(None, None, datasources=[], is_skip_no_alts=True)
@@ -226,7 +226,7 @@ class AnnotatorTest(unittest.TestCase):
         m.end = "12941796"
         m.alt_allele = "G"
         m.ref_allele = "T"
-        m.createAnnotation("altAlleleSeen", "False")
+        m.createAnnotation("alt_allele_seen", "False")
 
         muts = [m]
 
@@ -245,7 +245,7 @@ class AnnotatorTest(unittest.TestCase):
         m.end = "12941796"
         m.alt_allele = "G"
         m.ref_allele = "T"
-        m.createAnnotation("altAlleleSeen", "False")
+        m.createAnnotation("alt_allele_seen", "False")
         m2 = MutationData()
         m2.chr = "1"
         m2.start = "12941796"
@@ -260,7 +260,7 @@ class AnnotatorTest(unittest.TestCase):
         return ctr
 
     def testSkippingAlts(self):
-        """Test a simple case where mutations with altAlleleSeen of False are not produced."""
+        """Test a simple case where mutations with alt_allele_seen of False are not produced."""
 
         ctr = self._simple_annotate(True)
         self.assertTrue(ctr == 1)

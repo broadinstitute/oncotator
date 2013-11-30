@@ -59,6 +59,8 @@ import logging
 from Annotation import Annotation
 from collections import OrderedDict
 #from multiprocessing import Lock
+
+
 class MutationData(collections.MutableMapping):
     """
     Intermediate class for storing a mutation.
@@ -90,16 +92,15 @@ class MutationData(collections.MutableMapping):
     """
     
     """ internal annotations that will show as both annotations and attributes.   If this changes, updates should probably be made to the maflite config."""
-    attributes = set(["chr", "start", "end", "ref_allele", "alt_allele", "build"])
+    attributes = {"chr", "start", "end", "ref_allele", "alt_allele", "build"}
 
-    def __init__(self, chr="", start="", end="",ref_allele="", alt_allele="", build=""):
+    def __init__(self, chr="", start="", end="", ref_allele="", alt_allele="", build=""):
         """
         Constructor
         """
         self.__dict__.update(locals())
-        
         self.annotations = dict()
-        
+
         for k in MutationData.attributes:
             self.annotations[k] = locals()[k]
 
@@ -147,7 +148,10 @@ class MutationData(collections.MutableMapping):
         """ Attach tag to a given annotation """
         if not (annotationName in MutationData.attributes):
             self.annotations[annotationName].addTag(tag)
-    
+
+    def getAttributeNames(self):
+        return list(self.attributes)
+
     def __setitem__(self, key, value):
         
         if key in MutationData.attributes:
@@ -183,6 +187,3 @@ class MutationData(collections.MutableMapping):
     
     def __str__(self):
         return str(self.annotations)
-
-    
-    
