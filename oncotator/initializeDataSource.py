@@ -145,26 +145,68 @@ def parseOptions():
         
     IMPORTANT NOTE:  If this script detects another directory in dbDir with the same name as being created, this script will fail, not overwrite.
     """
+
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
-    parser.add_argument("ds_type", type=str, help="datasource type.  Type of datasource to create.",
+    parser.add_argument("--ds_type",
+                        action="store",
+                        dest="ds_type",
+                        required=True,
+                        type=str,
+                        help="datasource type.  Type of datasource to create.",
                         choices=supportedDSTypes)
-    parser.add_argument("ds_file", type=str,
+    parser.add_argument("--ds_file",
+                        action="store",
+                        dest="ds_file",
+                        required=True,
+                        type=str,
                         help="datasource filename.  Headers must be on the first line.  This is the source file that contains annotation data.")
-    parser.add_argument("name", type=str,
+    parser.add_argument("--name",
+                        action="store",
+                        dest="name",
+                        required=True,
+                        type=str,
                         help="datasource name. Plain name for the datasource.  E.g. 'MutSig_Published_Results'")
-    parser.add_argument("version", type=str,
+    parser.add_argument("--version",
+                        action="store",
+                        dest="version",
+                        required=True,
+                        type=str,
                         help="version of the datasource.  This should be the version of the data itself, such as '3.0' for Gaf 3.0")
-    parser.add_argument("dbDir", type=str,
+    parser.add_argument("--dbDir",
+                        action="store",
+                        dest="dbDir",
+                        required=True,
+                        type=str,
                         help="Main datasource directory that contains other datasources.  I.e. the destination directory for the newly created datasource.")
-    parser.add_argument("ds_foldername", type=str, help="Name of the folder that should appear in dbDir")
-    parser.add_argument("genome_build", type=str, help="Genome build.  For example, hg19.", choices=['hg19'])
-    parser.add_argument("index_columns", type=str,
+    parser.add_argument("--ds_foldername",
+                        action="store",
+                        dest="ds_foldername",
+                        required=True,
+                        type=str,
+                        help="Name of the folder that should appear in dbDir")
+    parser.add_argument("--genome_build",
+                        action="store",
+                        dest="genome_build",
+                        required=True,
+                        type=str,
+                        help="Genome build.  For example, hg19.",
+                        choices=['hg19'])
+    parser.add_argument("--index_columns",
+                        action="store",
+                        dest="index_columns",
+                        type=str,
                         help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.  For gp_tsv, this parameter MUST be three entries corresponding to chr, start, and end.  gene_tsv and transcipt_tsv have only one entry.")
 
     # parameters specified for indexed tsv only
-    parser.add_argument("--columns", type=str,
+    parser.add_argument("--columns",
+                        action="store",
+                        dest="columns",
+                        type=str,
                         help="Comma separated list of columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv only.")
-    parser.add_argument("--annotation_columns", type=str,
+    parser.add_argument("--annotation_columns",
+                        action="store",
+                        dest="annotation_columns",
+                        type=str,
                         help="Comma separated list of annotation columns. MUST be the name of the columns.  This (optional) parameter is specified for indexed_tsv only.")
 
     # Process arguments
@@ -180,9 +222,9 @@ def validateArgs(args):
     if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and len(
             args.index_columns.split(',')) != 3:
         raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3")
-    if os.path.exists(args.dbDir + os.sep + args.ds_foldername):
+    if os.path.exists(os.path.join(args.dbDir, args.ds_foldername)):
         raise ValueError("Destination path already exists.  Please remove or choose a different location: " +
-                         args.dbDir + os.sep + args.ds_foldername)
+                         os.path.join(args.dbDir, args.ds_foldername))
     if args.ds_type in ("indexed_tsv",):
         if not args.columns:
             raise ValueError("columns field was not specified.  Must be a comma separated list.")

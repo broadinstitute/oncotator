@@ -88,7 +88,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         genotypeData = None
 
         if len(IDs) != 0:
-            sampleName = mutation.getAnnotation("sample_name").getValue()
+            sampleName = mutation.getAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME).getValue()
             genotypeData = record.genotype(sampleName)
 
         if record.FORMAT is not None:
@@ -249,7 +249,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                         sample_name = sample.sample
                         if is_tumor_normal_vcf and sample_name != "NORMAL":
                             sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
-                        sampleMut.createAnnotation("sample_name", sample_name, "INPUT")
+                        sampleMut.createAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME, sample_name, "INPUT")
 
                         #TODO: Confirm that alt_allele_seen will be False in all cases of GT = ./.
                         genotype = "GT"

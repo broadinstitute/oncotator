@@ -48,7 +48,7 @@ class OutputDataManager:
         mut = None
         for mutation in muts:
             mut = copy.deepcopy(mutation)
-            lst = [(mut for mut in [mut]), muts]
+            lst = [muts, (mut for mut in [mut])]
             muts = itertools.chain(*lst)
             break
 
@@ -303,7 +303,6 @@ class OutputDataManager:
                     comment = string.join(["##", comment], "")
                     headers.append(comment)
 
-        headers += contigs
         annotations = self.annotationTable.values()
         gt = False
         for annotation in annotations:
@@ -322,14 +321,18 @@ class OutputDataManager:
         if not gt:
             headers += [self._annotation2str(fieldType="FORMAT", ID="GT", desc="Genotype", dataType="String", num=1)]
 
-        # adds header line
+        # Add contigs information
+        headers += contigs
+
+        # Add header line
         if len(self.sampleNames) != 0:  # 'FORMAT' tags exist
             headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'], delimiter)]
             headers[len(headers)-1] += string.join(["", 'FORMAT'] + self.sampleNames, delimiter)
         else:
             headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'], delimiter)]
 
-        headers = collections.OrderedDict.fromkeys(headers).keys()  # remove any duplicates
+        headers = collections.OrderedDict.fromkeys(headers).keys()  # remove any duplicates and keep the original order
+        headers = [header for header in headers if header not in ("", None,)]
         header = string.join(headers, lineterminator)
         return header
 

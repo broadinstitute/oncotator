@@ -52,6 +52,8 @@ from OutputRenderer import OutputRenderer
 import csv
 import logging
 from oncotator.utils.MutUtils import MutUtils
+import itertools
+import copy
 
 
 class SimpleOutputRenderer(OutputRenderer):
@@ -72,9 +74,25 @@ class SimpleOutputRenderer(OutputRenderer):
         Constructor
 
         Config file parameter is ignored.
+        :param filename:
+        :param configFile:
         """
         self._filename = filename
-        self.logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__)
+        self._lineterminator = "\n"
+        self._delimiter = "\t"
+
+    def _determineHeaders(self, mut, metadata):
+        headers = MutUtils.getAllAttributeNames(mut) if not None else []
+        if len(headers) == 0:
+            headers = metadata.keys()
+
+        # Remove headers that start with "_"
+        for header in headers:
+            if header.startswith("_"):
+                headers.remove(header)
+
+        return headers
 
     def renderMutations(self, mutations, metadata=None, comments=None):
         """ Generate a simple tsv file based on the incoming mutations.
@@ -85,42 +103,35 @@ class SimpleOutputRenderer(OutputRenderer):
         
         Returns a file name. """
         
-        self.logger.info("Simple rendering output file: " + self._filename)
-        self.logger.info("Render starting...")
+        self._logger.info("Simple rendering output file: " + self._filename)
+        self._logger.info("Render starting...")
 
         comments = [] if comments is None else comments
 
         ctr = 0
-        f = file(self._filename, 'w')
+        fptr = file(self._filename, 'w')
         if len(comments) != 0:
-            f.write('#' + "\n# ".join(comments) + "\n")
+            fptr.write('#' + "\n# ".join(comments) + "\n")
             
-        writer = None
-        headers = None
+        mut = None
+        for mutation in mutations:
+            mut = copy.deepcopy(mutation)
+            lst = [mutations, (mut for mut in [mut])]
+            mutations = itertools.chain(*lst)
+
+        headers = self._determineHeaders(mut, metadata)
+
+        writer = csv.DictWriter(fptr, headers, delimiter=self._delimiter, lineterminator=self._lineterminator)
+        writer.writeheader()
+
         for m in mutations:
-            if headers is None:
-                headers = MutUtils.getAllAttributeNames(m)
-
-                # Remove headers that start with "_"
-                for header in headers:
-                    if header.startswith("_"):
-                        headers.remove(header)
-                
-                writer = csv.DictWriter(f, headers, delimiter='\t', lineterminator='\n')
-                writer.writeheader()
             writer.writerow(m)
-
             # Update mutation count and log every 1000 mutations
             ctr += 1
             if (ctr % 1000) == 0:
-                self.logger.info("Rendered " + str(ctr) + " mutations.")
+                self._logger.info("Rendered " + str(ctr) + " mutations.")
 
-        # Check that any mutations were processed and if not, just return a blank file with the metadata.
-        # TODO: add a unit test to test this scenario
-        if headers is None:
-            headers = metadata.keys()
-
-        f.close()
+        fptr.close()
         
-        self.logger.info("Rendered " + str(ctr) + " mutations into " + self._filename + ".")
+        self._logger.info("Rendered " + str(ctr) + " mutations into " + self._filename + ".")
         return self._filename
