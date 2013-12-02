@@ -63,6 +63,7 @@ setup(
       'initializeDatasource = oncotator.initializeDataSource:main',
       'initializeTranscriptDatasource = oncotator.initializeTranscriptDatasource:main',
       'addDatasourceMd5 = oncotator.addDatasourceMd5:main',
+      'get_exons = oncotator.get_exons:main',
       # TODO: Make this work: 'oncotator-profile = oncotator.Oncotator:main_profile',
       # TODO: Uncomment the next line and debug
       #'oncotator-index = oncotator.oncotator-index'

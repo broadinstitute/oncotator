@@ -1581,7 +1581,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         # We have hit IGR if no transcripts come back.  Most annotations can just use the blank set.
         if len(txs) == 0:
             final_annotation_dict['variant_classification'] = self._create_basic_annotation('IGR')
-            nearest_genes = self._get_nearest_genes(chr, start, end)
+            nearest_genes = self._get_nearest_genes(chr, int(start), int(end))
             final_annotation_dict['other_transcripts'] = self._create_basic_annotation(value='%s (%s upstream) : %s (%s downstream)' % (nearest_genes[0][0], nearest_genes[0][1], nearest_genes[1][0], nearest_genes[1][1]))
             final_annotation_dict['gene'] = self._create_basic_annotation('Unknown')
             final_annotation_dict['gene_id'] = self._create_basic_annotation('0')
@@ -1749,12 +1749,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         for s in size_extensions:
             new_start = start - s
             if new_start < 0: new_start = 1
-            records = self.get_overlapping_genes(chr, new_start, end)
+            records = self.get_overlapping_transcripts(chr, new_start, end)
             nearest_gene_border = 0
-            for r in records:
-                if r['end'] > nearest_gene_border:
-                    nearest_gene_border = r['end']
-                    nearest_gene = r['gene']
+            for tx in records:
+                if tx.get_strand() == "-":
+                    highest_genome_position = tx.determine_transcript_start()
+                else:
+                    highest_genome_position = tx.determine_transcript_stop()
+                if highest_genome_position > nearest_gene_border:
+                    nearest_gene_border = highest_genome_position
+                    nearest_gene = tx.get_gene()
             if nearest_gene_border:
                 left_dist = start - nearest_gene_border
                 left_gene = nearest_gene
@@ -1763,12 +1767,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         right_gene, right_dist = None, None
         for s in size_extensions:
             new_end = end + s
-            records = self.get_overlapping_genes(chr, start, new_end)
+            records = self.get_overlapping_transcripts(chr, start, new_end)
             nearest_gene_border = int(1e9)
-            for r in records:
-                if r['start'] < nearest_gene_border:
-                    nearest_gene_border = r['start']
-                    nearest_gene = r['gene']
+            for tx in records:
+                if tx.get_strand() == "-":
+                    lowest_genome_position = tx.determine_transcript_stop()
+                else:
+                    lowest_genome_position = tx.determine_transcript_start()
+                if lowest_genome_position < nearest_gene_border:
+                    nearest_gene_border = lowest_genome_position
+                    nearest_gene = tx.get_gene()
             if nearest_gene_border < int(1e9):
                 right_dist = nearest_gene_border - end
                 right_gene = nearest_gene
@@ -1803,9 +1811,10 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         """Return a list of (chr, start, end) tuples for each exon"""
         result = set()
         txs = self.gene_db.get(gene, None)
-        txs = self._filter_transcripts(txs)
         if txs is None:
             return result
+        txs = self._filter_transcripts(txs)
+
         ctr = 0
 
         for tx in txs:
