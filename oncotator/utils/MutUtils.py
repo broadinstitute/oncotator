@@ -60,8 +60,7 @@ from oncotator.utils.MutationValidationFailureException import MutationValidatio
 import re
 import collections
 import string
-import os
-
+import shutil
 
 class MutUtils(object):
     """
@@ -78,15 +77,7 @@ class MutUtils(object):
 
     @staticmethod
     def removeDir(currentDir):
-        for root, dirs, files in os.walk(currentDir, topdown=False):
-            for filename in files:
-                filename = os.path.join(root, filename)
-                os.remove(filename)
-            for dirname in dirs:
-                dirname = os.path.join(root, dirname)
-                os.rmdir(dirname)
-        os.rmdir(currentDir)
-
+        shutil.rmtree(path=currentDir, ignore_errors=True)
 
     @staticmethod
     def createChrom2HashCodeTable(chroms):

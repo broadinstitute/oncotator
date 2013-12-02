@@ -97,8 +97,8 @@ class TabixIndexerTest(unittest.TestCase):
         inFile = "testdata/small_cosmic_gpp/small_cosmic_gpp.tsv"
         outFile = "out/small_cosmic_gpp.out.tsv"
         TabixIndexer.indexGeneProteinPosition("Gene name", "Mutation AA", inFile, outFile)
-        self.assertTrue(os.path.exists(outFile + ".sorted.tsv.gz.tbi"), "Index file was not created.")
-        tabixFile = pysam.Tabixfile(outFile + ".sorted.tsv.gz")
+        self.assertTrue(os.path.exists("out/small_cosmic_gpp.out.tabix_indexed.tsv.gz.tbi"), "Index file was not created.")
+        tabixFile = pysam.Tabixfile("out/small_cosmic_gpp.out.tabix_indexed.tsv.gz")
 
         gene = "BRAF"
         startAA = 599
