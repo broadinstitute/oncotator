@@ -52,7 +52,6 @@ import logging
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 import os
-import string
 import vcf
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.Annotation import Annotation
@@ -90,7 +89,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
                                                  datasourceType, datasourceVersion)
 
         datasourceFilename = "example.tabix_indexed.vcf.gz"
-        configFilename = string.join([destDir, "1000Genomes.config"], os.sep)
+        configFilename = os.path.join(*[destDir, "1000Genomes.config"])
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
         self.assertTrue(configParser.has_option("general", "type"), "type option is missing in general section.")
@@ -112,11 +111,11 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
                          "Expected data source version is %s but was %s."
                          % (datasourceVersion, configParser.get("general", "version")))
 
-        self.assertTrue(os.path.exists(string.join([tmpDir, datasourceFoldername, genomeBuild + ".md5"], os.sep)),
+        self.assertTrue(os.path.exists(os.path.join(*[tmpDir, datasourceFoldername, genomeBuild + ".md5"])),
                         "No md5 file was generated.")
 
         # Data source was created correctly
-        tabixIndexedFilename = string.join([destDir, "example.tabix_indexed.vcf.gz"], os.sep)
+        tabixIndexedFilename = os.path.join(*[destDir, "example.tabix_indexed.vcf.gz"])
         self.assertTrue(os.path.exists(tabixIndexedFilename), "No index file was generated.")
 
         vcfReader = vcf.Reader(filename=tabixIndexedFilename, compressed=True, strict_whitespace=True)
@@ -139,7 +138,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         annotationColumnNames = "DBSNP,EA_AC,AA_AC,TAC"
 
         tmpDir = tempfile.mkdtemp()
-        destDir = string.join([tmpDir, datasourceFoldername, genomeBuild], os.sep)
+        destDir = os.path.join(*[tmpDir, datasourceFoldername, genomeBuild])
         os.makedirs(destDir)
 
         DatasourceInstallUtils.create_datasource(destDir, datasourceFilename, datasourceFoldername, datasourceName,
@@ -147,7 +146,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
                                                  annotationColumnNames)
 
         datasourceFilename = "ESP6500SI-V2.chr1.snps_indels.head.25.tabix_indexed.txt.gz"
-        configFilename = string.join([destDir, "1000Genomes.config"], os.sep)
+        configFilename = os.path.join(*[destDir, "1000Genomes.config"])
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
         self.assertTrue(configParser.has_option("general", "type"), "type option is missing in general section.")
@@ -179,7 +178,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
                          "Expected data source annotation column names is %s but was %s."
                          % (annotationColumnNames, configParser.get("general", "annotation_column_names")))
 
-        self.assertTrue(os.path.exists(string.join([tmpDir, datasourceFoldername, genomeBuild + ".md5"], os.sep)),
+        self.assertTrue(os.path.exists(os.path.join(*[tmpDir, datasourceFoldername, genomeBuild + ".md5"])),
                         "No md5 file was generated.")
 
         datasource = DatasourceCreator.createDatasource(configFilename, destDir)
@@ -224,14 +223,14 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         genomicPositionColumnNames = "hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd"
 
         tmpDir = tempfile.mkdtemp()
-        destDir = string.join([tmpDir, datasourceFoldername, genomeBuild], os.sep)
+        destDir = os.path.join(*[tmpDir, datasourceFoldername, genomeBuild])
         os.makedirs(destDir)
 
         DatasourceInstallUtils.create_datasource(destDir, datasourceFilename, datasourceFoldername, datasourceName,
                                                  datasourceType, datasourceVersion, genomicPositionColumnNames)
 
         datasourceFilename = "oreganno_trim.hg19.txt"
-        configFilename = string.join([destDir, "ORegAnno.config"], os.sep)
+        configFilename = os.path.join(*[destDir, "ORegAnno.config"])
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
         self.assertTrue(configParser.has_option("general", "type"), "type option is missing in general section.")
@@ -258,7 +257,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
                          "Expected data source genomic_position_cols is %s but was %s."
                          % (genomicPositionColumnNames, configParser.get("general", "genomic_position_cols")))
 
-        self.assertTrue(os.path.exists(string.join([tmpDir, datasourceFoldername, genomeBuild + ".md5"], os.sep)),
+        self.assertTrue(os.path.exists(os.path.join(*[tmpDir, datasourceFoldername, genomeBuild + ".md5"])),
                         "No md5 file was generated.")
 
         MutUtils.removeDir(tmpDir)
