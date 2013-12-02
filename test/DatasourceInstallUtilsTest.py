@@ -82,8 +82,8 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         datasourceType = "indexed_vcf"
         datasourceVersion = "V4.1"
         genomeBuild = "hg19"
-        tmpDir = tempfile.mkdtemp(dir="out")
-        destDir = string.join([tmpDir, datasourceFoldername, genomeBuild], os.sep)
+        tmpDir = tempfile.mkdtemp()
+        destDir = os.path.join(*[tmpDir, datasourceFoldername, genomeBuild])
         os.makedirs(destDir)
 
         DatasourceInstallUtils.create_datasource(destDir, datasourceFilename, datasourceFoldername, datasourceName,
@@ -138,7 +138,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         columnNames = "CHROM,POS,REF,ALT,DBSNP,EA_AC,AA_AC,TAC,MAF,GTS,EA_GTC,AA_GTC,GTC,DP,FG,GM,AA,AAC,PP,CDP,PH,CP,CG,GL,GS,CA,EXOME_CHIP,GWAS_PUBMED"
         annotationColumnNames = "DBSNP,EA_AC,AA_AC,TAC"
 
-        tmpDir = tempfile.mkdtemp(dir="out")
+        tmpDir = tempfile.mkdtemp()
         destDir = string.join([tmpDir, datasourceFoldername, genomeBuild], os.sep)
         os.makedirs(destDir)
 
@@ -223,7 +223,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         genomeBuild = "hg19"
         genomicPositionColumnNames = "hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd"
 
-        tmpDir = tempfile.mkdtemp(dir="out")
+        tmpDir = tempfile.mkdtemp()
         destDir = string.join([tmpDir, datasourceFoldername, genomeBuild], os.sep)
         os.makedirs(destDir)
 
