@@ -1815,13 +1815,15 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             return result
         txs = self._filter_transcripts(txs)
 
-        ctr = 0
-
         for tx in txs:
             # If tx is coding
             if isCodingOnly and tx.get_gene_type() != "protein_coding":
                 continue
-            exons = tx.get_exons()
+            if isCodingOnly:
+                exons = tx.get_cds()
+            else:
+                exons = tx.get_exons()
+
             for exon in exons:
                 start = min(exon[0], exon[1])
                 end = max(exon[0], exon[1])

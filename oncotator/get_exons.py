@@ -28,7 +28,7 @@ def parseOptions():
     parser.add_argument('transcript_ds_config', type=str, help="Path to transcript datasource config file.")
     parser.add_argument('outputFilename', type=str, help="output path.  Must be writable.  Will overwrite existing files.")
     parser.add_argument('--includeNonCoding', action="store_true", help="Whether non-coding regions should be included.")
-    parser.add_argument('--padding', type=str, default="0", help="Pad each exon by a number of bases.  Default: 0")
+    parser.add_argument('--padding', type=str, default="0", help="Pad each exon by a number of bases on both sides.  Default: 0")
     # Process arguments
     args = parser.parse_args()
 
