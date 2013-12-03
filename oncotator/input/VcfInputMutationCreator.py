@@ -351,11 +351,6 @@ class VcfInputMutationCreator(InputMutationCreator):
         return comments
 
     def _parseContigsMetadata(self):
-        """
-
-
-        :return:
-        """
         comments = []
         keys = self.vcf_reader.contigs.keys()
         for key in keys:
@@ -367,12 +362,21 @@ class VcfInputMutationCreator(InputMutationCreator):
         return comments
 
     def _parseAltsMetadata(self):
-        pass
+        comments = []
+        keys = self.vcf_reader.alts.keys()
+        for key in keys:
+            val = self.vcf_reader.alts[key]
+            ID = val.id
+            desc = val.desc
+            val = string.join(["ALT=<ID=", ID, ",Description=\"", desc, "\">"], "")
+            comments.append(val)
+        return comments
 
     def getComments(self):
         """ Comments often need to be passed into the output.  Get the comments from the input file."""
         comments = self._parseMiscellaneousMetadata()
         comments += self._parseContigsMetadata()
+        comments += self._parseAltsMetadata()
         return comments
 
     def _addFormatFields2Metadata(self, metadata):

@@ -102,7 +102,7 @@ class VcfOutputRendererTest(unittest.TestCase):
                     else:
                         current.add(line.rstrip('\n'))
 
-        self.assertTrue(len(current) == len(expected), "Number of lines are not the same.")
+        self.assertTrue(len(current) == len(expected), "Number of lines is not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamples(self):
@@ -131,14 +131,14 @@ class VcfOutputRendererTest(unittest.TestCase):
                 elif line.startswith("##"):
                     current.add(line.rstrip('\n'))
 
-        self.assertTrue(len(current) == len(expected), "Number of lines are not the same.")
+        self.assertTrue(len(current) == len(expected), "Number of lines is not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamplesOrVariants(self):
         expected = set()
         with open('testdata/vcf/example.sampleName.variants.removed.header.txt', 'r') as fp:
             for line in iter(fp):
-                    expected.add(line.rstrip('\n'))
+                expected.add(line.rstrip('\n'))
 
         creator = VcfInputMutationCreator('testdata/vcf/example.sampleName.variants.removed.vcf')
         creator.createMutations()
@@ -432,6 +432,55 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.tumor_sample_name.vcf',
                                       strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testContigsInVcf2Vcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.contigs.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.contigs.variants.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expected = set()
+        with open('testdata/vcf/example.contigs.vcf', 'r') as fp:
+            for line in iter(fp):
+                if line.startswith("##contig=<ID="):
+                    expected.add(line.rstrip('\n'))
+
+        current = set()
+        with open('out/example.contigs.variants.vcf', 'r') as fp:
+            for line in iter(fp):
+                if line.startswith("##contig=<ID="):
+                    current.add(line.rstrip('\n'))
+
+        self.assertTrue(len(current) == len(expected), "Number of lines of contig information is not the same.")
+        self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of contig information do not match.")
+
+    def testAltsInVcf2Vcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.contigs.alts.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.contigs.alts.variants.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expected = set()
+        with open('testdata/vcf/example.contigs.alts.vcf', 'r') as fp:
+            for line in iter(fp):
+                if line.startswith("##ALT=<"):
+                    expected.add(line.rstrip('\n'))
+
+        current = set()
+        with open('out/example.contigs.alts.variants.vcf', 'r') as fp:
+            for line in iter(fp):
+                if line.startswith("##ALT=<"):
+                    current.add(line.rstrip('\n'))
+
+        self.assertTrue(len(current) == len(expected), "Number of lines of alts information is not the same.")
+        self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of alts information do not match.")
+
 
 if __name__ == "__main__":
     unittest.main()

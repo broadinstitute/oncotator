@@ -290,18 +290,23 @@ class OutputDataManager:
 
         headers = ["##fileformat=VCFv4.1"]  # 'fileformat' is a required field; fixed since output vcf will be v4.1
         contigs = []
+        alts = []
         for comment in comments:
-            comment = string.replace(comment, " ", "_")
-            if not comment.startswith("fileformat"):
+            if comment and not comment.startswith("fileformat"):
                 if comment.startswith("contig=<"):
                     comment = string.join(["##", comment], "")
-                    contigs.append(comment)
+                    contigs += [comment]
                 elif comment.startswith("Oncotator"):
+                    comment = string.replace(comment, " ", "_")
                     comment = string.join(["##oncotator_version=", comment], "")
-                    headers.append(comment)
-                elif comment != "":
+                    headers += [comment]
+                elif comment.startswith("ALT=<"):
                     comment = string.join(["##", comment], "")
-                    headers.append(comment)
+                    alts += [comment]
+                else:
+                    comment = string.replace(comment, " ", "_")
+                    comment = string.join(["##", comment], "")
+                    headers += [comment]
 
         annotations = self.annotationTable.values()
         gt = False
@@ -321,7 +326,8 @@ class OutputDataManager:
         if not gt:
             headers += [self._annotation2str(fieldType="FORMAT", ID="GT", desc="Genotype", dataType="String", num=1)]
 
-        # Add contigs information
+        # Add alts and contigs information
+        headers += alts
         headers += contigs
 
         # Add header line
