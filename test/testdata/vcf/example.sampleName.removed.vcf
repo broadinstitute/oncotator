@@ -16,7 +16,6 @@
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
-##contig=<ID=20,length=62435964,assembly=B36,md5=f126cdf8a6e0c7f379d618ff66beb2da,species="Homo sapiens",taxonomy=x>
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT
 20	14370	rs6054257	G	A	29	PASS	DB	GT:GQ:DP:HQ
 20	17330	.	T	A	3	q10	DP=11;AF=0.017	GT:GQ:DP:HQ
