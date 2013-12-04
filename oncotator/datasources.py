@@ -1534,7 +1534,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         max_entries = 25000
         cache_protocol = "memory"
         if not is_thread_safe:
-            logging.getLogger(__name__).warn("%s %s is being set up in faster, NOT thread-safe mode" % (title, version))
+            logging.getLogger(__name__).info("%s %s is being set up in faster, NOT thread-safe mode" % (title, version))
             cache_protocol = "simple"
 
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
