@@ -22,7 +22,6 @@ from oncotator.datasources import TranscriptProvider
 if not (sys.version_info[0] == 2  and sys.version_info[1] in [ 7]):
     raise "Oncotator requires Python 2.7.x : " + str(sys.version_info)
 
-import sys
 import os
 
 from argparse import ArgumentParser
