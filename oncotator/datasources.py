@@ -1522,21 +1522,30 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """
     """This is the list of annotations that get populated by this datasource"""
     POPULATED_ANNOTATION_NAMES = set(['variant_type', 'variant_classification', 'other_transcripts', 'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand', 'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change', 'transcript_change', 'transcript_strand', 'gene', 'gene_type', 'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript', 'ccds_id', 'gencode_transcript_type', 'gencode_transcript_name'])
-    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file"):
+    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
         ensembl_index_fname = src_file + ".transcript.idx"
         ensembl_gene_to_transcript_index_fname = src_file + ".transcript_by_gene.idx"
         ensembl_genomic_position_bins_to_transcript_index_fname = src_file + ".transcript_by_gp_bin.idx"
 
+        # Seconds before a cache entry should be cleared out
+        timeout = 1000
+        max_entries = 25000
+        cache_protocol = "memory"
+        if not is_thread_safe:
+            logging.getLogger(__name__).warn("%s %s is being set up in faster, NOT thread-safe mode" % (title, version))
+            cache_protocol = "simple"
+
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
-        self.transcript_db = shove.Shove(protocol + '://%s' % ensembl_index_fname, "memory://")
+        # By specifying "memory" for the cache, this is thread safe.  Otherwise, use "simple"
+        self.transcript_db = shove.Shove(protocol + '://%s' % ensembl_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
         self.transcript_dbkeys = self.transcript_db.keys()
 
-        self.gene_db = shove.Shove(protocol + '://%s' % ensembl_gene_to_transcript_index_fname, "memory://")
+        self.gene_db = shove.Shove(protocol + '://%s' % ensembl_gene_to_transcript_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
         self.gene_dbkeys = self.gene_db.keys()
 
-        self.gp_bin_db = shove.Shove(protocol + '://%s' % ensembl_genomic_position_bins_to_transcript_index_fname, "memory://")
+        self.gp_bin_db = shove.Shove(protocol + '://%s' % ensembl_genomic_position_bins_to_transcript_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
         self.gp_bin_db_dbkeys = self.gp_bin_db.keys()
 
         self.set_tx_mode(tx_mode)
