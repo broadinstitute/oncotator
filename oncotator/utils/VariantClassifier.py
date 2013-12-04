@@ -390,16 +390,19 @@ class VariantClassifier(object):
         :param tx: Transcript
         :return: triplet of is_beyond_exons, side (always a str of 3' or 5' or "" if not is_beyond_exons), is_flank
         """
-        is_beyond_exons_left = (start < tx.get_start() and end < tx.get_start())
-        is_beyond_exons_right = (start > tx.get_end() and end > tx.get_end())
+        tx_start = tx.get_start()
+        tx_end = tx.get_end()
+
+        is_beyond_exons_left = (start < tx_start and end < tx_start)
+        is_beyond_exons_right = (start > tx_end and end > tx_end)
         is_beyond_exons = is_beyond_exons_left or is_beyond_exons_right
         side = self._determine_strand_side(start, end, tx)
         if not is_beyond_exons:
             return False, side, False
         if is_beyond_exons_left:
-            d = min(abs(start - tx.get_start()), abs(end - tx.get_start()))
+            d = min(abs(start - tx_start), abs(end - tx_start))
         else:
-            d = min(abs(start - tx.get_end()), abs(end - tx.get_end()))
+            d = min(abs(start - tx_end), abs(end - tx_end))
 
         if side == "5'":
             is_flank = (d < flank_padding_5prime)
