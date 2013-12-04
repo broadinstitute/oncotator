@@ -28,9 +28,7 @@ import os
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
-from oncotator.utils.version import VERSION 
-from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
-from oncotator.Annotator import Annotator
+from oncotator.utils.version import VERSION
 
 __version__ = VERSION
 __all__ = []
@@ -58,6 +56,7 @@ class CLIError(Exception):
         return self.msg
 
 def parseOptions(program_license, program_version_message):
+    from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
     # Setup argument parser
     epilog= '''
     
@@ -120,7 +119,9 @@ def parseOptions(program_license, program_version_message):
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
-    
+    from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
+    from oncotator.Annotator import Annotator
+
     if argv is None:
         argv = sys.argv
     else:
