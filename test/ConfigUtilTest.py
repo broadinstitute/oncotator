@@ -69,6 +69,13 @@ class ConfigUtilTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testLocateWithAdditionalDir(self):
+        ''' Call the locate command on a config file and make sure the location is proper. '''
+        fp = ConfigUtils._locateConfigFile("dummy.config", isRelaxedLogging=True, additional_config_dir="testdata/dummy_configs/")
+        config = SafeConfigParser()
+        config.readfp(fp)
+        self.assertTrue(config.get("general", "dummy2") == "world")
+        self.assertTrue(config.get("general", "dummy1") == "Hello")
 
     def testLocate(self):
         ''' Call the locate command on a config file and make sure the location is proper. '''

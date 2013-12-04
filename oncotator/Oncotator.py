@@ -95,9 +95,9 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR, 
         help='Main annotation database directory. [default: %s]' % DEFAULT_DB_DIR)
     parser.add_argument('-o' ,'--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(),help='Output format. [default: %s]' % "TCGAMAF")
-    parser.add_argument('--override_config', type=str, 
+    parser.add_argument('--override_config', type=str, default="",
                         help="File path to manual annotations in a config file format (section is 'manual_annotations' and annotation:value pairs).")
-    parser.add_argument('--default_config', type=str,
+    parser.add_argument('--default_config', type=str, default="",
                         help="File path to default annotation values in a config file format (section is 'manual_annotations' and annotation:value pairs).")
     parser.add_argument('--no-multicore', dest="noMulticore", action='store_true', default=False, help="Disables all multicore functionality.")
     parser.add_argument('input_file', type=str,
@@ -111,6 +111,7 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
     parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  Default: oncotator.log")
+
     # Process arguments
     args = parser.parse_args()
     
@@ -182,23 +183,24 @@ USAGE
             logger.setLevel(logging.DEBUG)
         
         # Initiate an Oncotator session.
-        inputFilename = args.input_file
-        outputFilename = args.output_file
+        inputFilename = os.path.expanduser(args.input_file)
+        outputFilename = os.path.expanduser(args.output_file)
         inputFormat = args.input_format.upper()
         outputFormat = args.output_format.upper()
-        datasourceDir = args.dbDir
+
+        datasourceDir = os.path.expanduser(args.dbDir)
         cache_url = args.cache_url
         read_only_cache = args.read_only_cache
         tx_mode = args.tx_mode
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
-        overrideConfigFile = args.override_config
+        overrideConfigFile = os.path.expanduser(args.override_config)
         manualOverrides = OncotatorCLIUtils.determineAllAnnotationValues(commandLineManualOverrides, overrideConfigFile)
 
         # Parse default overrides
         commandLineDefaultValues = args.default_cli
-        defaultConfigFile = args.default_config
+        defaultConfigFile = os.path.expanduser(args.default_config)
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
