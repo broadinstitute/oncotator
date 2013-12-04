@@ -378,7 +378,7 @@ class VariantClassifier(object):
             is_frameshift_indel = self.is_frameshift_indel(variant_type, int(start), int(end), alt_allele)
             return self._determine_vc_for_cds_overlap(start, end, ref_allele, alt_allele, is_frameshift_indel, is_splice_site, tx, variant_type, is_start_codon_overlap)
 
-        raise ValueError("Could not determine variant classification:  " + tx.trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
+        raise ValueError("Could not determine variant classification:  " + tx.get_trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
 
     def _determine_beyond_exon_info(self, start, end, tx, flank_padding_5prime=3000, flank_padding_3prime=0):
         """
@@ -422,8 +422,11 @@ class VariantClassifier(object):
         :return: str ("3'" or "5'")
         """
         strand = tx.get_strand()
-        is_beyond_exons_left = (start < tx.get_start() and end < tx.get_start())
-        is_beyond_exons_right = (start > tx.get_end() and end > tx.get_end())
+        tx_start = tx.get_start()
+        tx_end = tx.get_end()
+
+        is_beyond_exons_left = (start < tx_start and end < tx_start)
+        is_beyond_exons_right = (start > tx_end and end > tx_end)
         if is_beyond_exons_left and strand == "+":
             return "5'"
         if is_beyond_exons_left and strand == "-":
@@ -433,8 +436,8 @@ class VariantClassifier(object):
         if is_beyond_exons_right and strand == "-":
             return "5'"
 
-        d_left = min(abs(start - tx.get_start()), abs(end - tx.get_start()))
-        d_right = min(abs(start - tx.get_end()), abs(end - tx.get_end()))
+        d_left = min(abs(start - tx_start), abs(end - tx_start))
+        d_right = min(abs(start - tx_end), abs(end - tx_end))
 
         if d_left <= d_right:
             if strand == "+":
