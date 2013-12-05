@@ -316,7 +316,7 @@ class VariantClassifierTest(unittest.TestCase):
                     if start == (tx.get_cds()[j][1] - 1) or start == (tx.get_cds()[j][1]):
                         self.assertTrue((vc.get_vc() == VariantClassification.SPLICE_SITE) or is_at_last_exon, "Not a splice site on the %d position on the %d far end of the exon... %d .... %s" % (i, j, start, vc.get_vc()))
 
-    test_mutating_sequences = lambda: (
+    mutating_sequences = lambda: (
         ("AGGC", 0, 1, 1, "T", "SNP", "-", "AAGC"),
         ("AGGC", 0, 1, 1, "-", "DEL", "-", "AGC"),
         ("AGGC", 0, 1, 1, "-", "DEL", "+", "AGC"),
@@ -325,7 +325,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("TTAGGC", 0, 1, 3, "AAA", "INS", "-", "TTTTTAGGC")
 
     )
-    @data_provider_decorator(test_mutating_sequences)
+    @data_provider_decorator(mutating_sequences)
     def test_mutating_sequences(self, seq_stranded, seq_index, exon_position_start, exon_position_end, alt_allele, variant_type, strand, gt):
         """Test that we can take a sequence, apply various mutations, and retrieve a correct sequence back."""
         observed_allele_stranded = alt_allele
@@ -337,19 +337,20 @@ class VariantClassifierTest(unittest.TestCase):
     #TODO: Test secondary VC
     #TODO: Test Flank (if not already done in MUC16 test)
 
-    test_mutating_exon = lambda : (
-        ("SNP", "G", "T", 22221734, 22221734,"GCAAA"),
-        ("SNP", "G", "C", 22221734, 22221734,"GCGAA"),
-        ("DEL", "G", "-", 22221734, 22221734,"GCAA"),
-        ("DEL", "GG", "-", 22221734, 22221734,"AGAA"),
-        ("DEL", "GGCT", "-", 22221734, 22221734,"GCAA"),
-        ("DEL", "GTTGGCT", "-", 22221731, 22221731,"GCAT"),
-        ("INS", "-", "A", 22221734, 22221734,"CCTAA"),
-        ("INS", "-", "GAG", 22221734, 22221734,"CCCTCAA"),
-        ("INS", "-", "GAGA", 22221734, 22221734,"CCTCTCAA"),
-        ("INS", "-", "GAGAAA", 22221734, 22221734,"CCTTTCTCAA")
+    mutating_exons = lambda: (
+        ("SNP", "G", "T", 22221734, 22221734, "GCAAA"),
+        ("SNP", "G", "C", 22221734, 22221734, "GCGAA"),
+        ("DEL", "G", "-", 22221734, 22221734, "GCAA"),
+        ("DEL", "GG", "-", 22221734, 22221734, "AGAA"),
+        ("DEL", "GGCT", "-", 22221734, 22221734, "GCAA"),
+        ("DEL", "GTTGGCT", "-", 22221731, 22221731, "GCAT"),
+        ("INS", "-", "A", 22221734, 22221734, "CCTAA"),
+        ("INS", "-", "GAG", 22221734, 22221734, "CCCTCAA"),
+        ("INS", "-", "GAGA", 22221734, 22221734, "CCTCTCAA"),
+        ("INS", "-", "GAGAAA", 22221734, 22221734, "CCTTTCTCAA")
     )
-    @data_provider_decorator(test_mutating_exon)
+
+    @data_provider_decorator(mutating_exons)
     def test_mutate_exon(self, vt, ref, alt, start, end, mutated_exon_gt):
         """Test that we can get the proper obs allele when mutating. """
         tx = self._retrieve_test_transcript_MAPK1()
