@@ -30,3 +30,7 @@ gene_protein_position_cols: $gene_protein_position_cols
 
 # Required for most datasources (except possibly for certain custom ones):
 src_file: $src_file
+
+# Used for some transcript provider datasources.  Ignored otherwise
+#   Define a filter type:  basic or dummy
+transcript_filter: $transcript_filter

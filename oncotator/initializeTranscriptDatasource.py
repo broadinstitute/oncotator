@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
+from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
 from oncotator.utils.version import VERSION
 
 
@@ -20,6 +21,17 @@ def parseOptions():
 
     epilog = """    This utility can require a lot of RAM (~4GB for gencode.v18).
     Creation of a gencode datasource can require as much as two hours.
+
+    NOTE about Filter:
+    Please see the filter option.  Since this defaults to a GENCODE specific filter, which can be problematic for
+        ENSEMBL-only.
+
+    Use "dummy" for ENSEMBL-only datasources
+    Use "basic" for GENCODE datasources, unless you want to annotate using every available transcript.
+
+    Note that all transcripts are present in a datasource, so if a filter change is needed to a datasource that has
+        already been generated, you can edit the config file, instead of re-creating the entire datasource.
+
     """
     desc = "Create a gencode/ensembl based datasource."
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
@@ -29,7 +41,7 @@ def parseOptions():
     parser.add_argument("genome_build", type=str, help="Genome build -- this must be specified correctly by the user.  For example, hg19.")
     parser.add_argument("--name", type=str, help="name of the datasource.  For example, ensembl.  Or GENCODE", default="ensembl")
     parser.add_argument("version", type=str, help="version.  For example, v18")
-
+    parser.add_argument("--filter", type=str, help="Filter to use from " + str(TranscriptFilterFactory.TRANSCRIPT_FILTER_DICT.keys()) + ".  For non-GENCODE ENSEMBL, this should be set to dummy. default: basic", default="basic")
     # Process arguments
     args = parser.parse_args()
 
@@ -47,6 +59,7 @@ def main():
     genome_build = args.genome_build
     name = args.name
     ver = args.version
+    tx_filter = args.filter
 
     # create temp dir
     tmpDir = tempfile.mkdtemp(prefix="onco_ensembl_ds_")
@@ -55,9 +68,12 @@ def main():
         ds_build_dir = tmpDir + "/" + genome_build + "/"
         os.mkdir(ds_build_dir)
 
+        if not (args.gtf_files.lower().find("gencode") !=-1) and tx_filter == "basic":
+            logging.getLogger(__name__).warn("basic filter requested for (apparently) a non-gencode set of GTFs.  If this is an ENSEMBL run (not GENCODE), please specify dummy, using --filter.")
+
         logging.getLogger(__name__).info("Creating config file...")
         #TODO: This needs to be altered to incorporate new features.
-        config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile=os.path.basename(gtf_files[0]), ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="")
+        config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile=os.path.basename(gtf_files[0]), ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="", transcript_filter=tx_filter)
         config_filename = ds_build_dir + "/" + name + ".config"
         logging.getLogger(__name__).info("config file being written to: " + os.path.abspath(config_filename))
         fp = file(config_filename, 'w')

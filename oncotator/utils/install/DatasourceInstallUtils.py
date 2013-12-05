@@ -82,9 +82,8 @@ class DatasourceInstallUtils(object):
         return result
 
     @staticmethod
-    def create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type, ds_version, index_columns):
+    def create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type, ds_version, index_columns, templateName='ds_config.template', transcript_filter=""):
         # Grab appropriate template for the ds type
-        templateName = 'ds_config.template'
         sourceConfigFP = ConfigUtils.createTemplateFP(templateName)
         sTemplate = Template(sourceConfigFP.read())
         indexColumnDict = DatasourceInstallUtils.determineIndexColumns(ds_type, index_columns.split(','))
@@ -95,7 +94,9 @@ class DatasourceInstallUtils(object):
                                               gene_col=",".join(indexColumnDict['gene_col']),
                                               transcript_col=",".join(indexColumnDict['transcript_col']),
                                               gene_protein_position_cols=",".join(
-                                                  indexColumnDict['gene_protein_pos_cols']))
+                                                  indexColumnDict['gene_protein_pos_cols']),
+                                              transcript_filter=transcript_filter
+        )
         return finalText
 
     @staticmethod

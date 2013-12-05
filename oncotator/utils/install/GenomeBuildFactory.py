@@ -167,8 +167,11 @@ class GenomeBuildFactory(object):
         logging.getLogger(__name__).info("Populating final db with internal transcript index.")
         transcript_index_keys = self._transcript_index.keys()
         for i,k in enumerate(transcript_index_keys):
+
+            # Populate the protein sequence
             protein_sequence = self._determine_protein_seq(self._transcript_index[k])
             self._transcript_index[k].set_protein_seq(protein_sequence)
+
             shove[k] = self._transcript_index[k]
             if i % 10000 == 0:
                 logging.getLogger(__name__).info("Saved %0.1f%% of transcript index to disk with protein sequence." % (float(i*100)/float(len(transcript_index_keys))))

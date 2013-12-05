@@ -104,7 +104,7 @@ class DatasourceCreator(object):
         hashcode = ""
         md5_filename = os.path.dirname(leafDir) + ".md5"
         if os.path.exists(md5_filename):
-            logging.getLogger(__name__).info("md5 found for " + leafDir)
+            logging.getLogger(__name__).debug("md5 found for " + leafDir)
             md5_fp = file(md5_filename, 'r')
             hashcode = md5_fp.read()
             md5_fp.close()
@@ -138,7 +138,7 @@ class DatasourceCreator(object):
         elif dsType == "dbsnp":
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "ensembl":
-            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
+            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'), tx_filter=configParser.get('general', 'transcript_filter'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
         elif dsType == "dbnsfp":

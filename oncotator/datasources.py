@@ -70,6 +70,7 @@ from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.gaf_annotation import GAFNonCodingTranscript
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.dbNSFP import dbnsfp_fieldnames
+from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
 
 try:
     import pysam
@@ -1522,7 +1523,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """
     """This is the list of annotations that get populated by this datasource"""
     POPULATED_ANNOTATION_NAMES = set(['variant_type', 'variant_classification', 'other_transcripts', 'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand', 'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change', 'transcript_change', 'transcript_strand', 'gene', 'gene_type', 'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript', 'ccds_id', 'gencode_transcript_type', 'gencode_transcript_name'])
-    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False):
+    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
         ensembl_index_fname = src_file + ".transcript.idx"
@@ -1540,15 +1541,13 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         # Contains a key of transcript id and value of a Transcript class, with sequence data where possible.
         # By specifying "memory" for the cache, this is thread safe.  Otherwise, use "simple"
         self.transcript_db = shove.Shove(protocol + '://%s' % ensembl_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
-        self.transcript_dbkeys = self.transcript_db.keys()
-
         self.gene_db = shove.Shove(protocol + '://%s' % ensembl_gene_to_transcript_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
-        self.gene_dbkeys = self.gene_db.keys()
-
         self.gp_bin_db = shove.Shove(protocol + '://%s' % ensembl_genomic_position_bins_to_transcript_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
-        self.gp_bin_db_dbkeys = self.gp_bin_db.keys()
 
         self.set_tx_mode(tx_mode)
+
+        logging.getLogger(__name__).info("%s %s is being set up with %s filtering.  " % (title, version, tx_filter))
+        self._tx_filter = TranscriptFilterFactory.create_instance(tx_filter)
 
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
@@ -1635,15 +1634,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         return mutation
 
     def _filter_transcripts(self, txs):
-        """ GENCODE transcripts contain tags that are useful for QC.  If tags are present, this method will remove
-        transcripts with poor QC.
-
-        For now, just accept "basic"
-
-        :param txs: transcripts to possibly prune
-        :return: a list of same or shorter
-        """
-        return [tx for tx in txs if (not 'tag' in tx.get_other_attributes().keys()) or ('basic' in tx.get_other_attributes()['tag'])]
+        return self._tx_filter.filter(txs)
 
     def _choose_transcript(self, txs, tx_mode, variant_type, ref_allele, alt_allele, start, end):
         """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
@@ -1839,4 +1830,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
                 result.add((gene, tx.get_contig(), str(start - padding), str(end + padding)))
 
         return result
+
+    def getTranscriptDict(self):
+        return self.transcript_db
 
