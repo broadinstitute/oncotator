@@ -138,7 +138,7 @@ class MutationData(collections.MutableMapping):
 
     def addAnnotations(self, annot_dict):
         """
-        :param annot_dict: name:Annotation dictionary
+        :param annot_dict: name (str): annotation (Annotation) dictionary
         :return:
         """
         self.annotations.update(annot_dict)
