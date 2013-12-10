@@ -106,13 +106,15 @@ class MutationData(collections.MutableMapping):
 
 #        self.lock = Lock()
         
-    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=[], number=None):
-        """ 
+    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=None, number=None):
+        """
         newRequired implies that this cannot update an existing value.  If a value exists, throw an exception.
         
         This method must be called to add an annotation to a mutation.  Do not use: mut['new_annotation_name'] = 'annotation_value'
         
         """
+        tags = [] if tags is None else tags
+
 #        self.lock.acquire()
         if newRequired and (annotationName in self.annotations.keys()) and (annotationName not in MutationData.attributes):
 #            self.lock.release()

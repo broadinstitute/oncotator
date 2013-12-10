@@ -74,7 +74,7 @@ class dbSNP(Datasource):
         self.logger = logging.getLogger(__name__)
 
     def annotate_mutation(self, mutation):
-        chr, start, end = mutation.chr, int(mutation.start), int(mutation.end)
+        chrom, start, end = mutation.chr, int(mutation.start), int(mutation.end)
 
         #TODO: Do not annotate with a set.  Create set variables and then convert to string and annotate. This should give a speedup.
 
@@ -83,7 +83,7 @@ class dbSNP(Datasource):
 
         overlapping_vcf_records = []
         try:
-            overlapping_vcf_records = self.vcf_reader.fetch(chr, start, end)
+            overlapping_vcf_records = self.vcf_reader.fetch(chrom, start, end)
         except ValueError as ve:
             self.logger.warn("Exception when looking for vcf records.  Empty set of records being returned: " + repr(ve))
 

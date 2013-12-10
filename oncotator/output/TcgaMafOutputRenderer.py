@@ -116,35 +116,6 @@ class TcgaMafOutputRenderer(OutputRenderer):
             row[h] = value
         return row
 
-    def _alterMutationForIndel(self, m):
-        """ In the case where we have an indel, we should check that the mutation is using the proper ref and alt
-               For example, an insertion should have a ref of '-' or '.' and the alt should be one or more bases.
-               If this is being violated, this algorithm will assume that the first base in the insertion or deletion can
-               be removed from both fields (at that point one of ref or alt should become empty and replaced with '-'
-             TODO: Implement this
-
-        :return: a list of updated ref, alt, and start position (all as str)... always length 3
-        """
-        result = [m.ref_allele, m.alt_allele, m.start]
-
-        # DEL
-        if (len(m.ref_allele) > len(m.alt_allele)) and m.alt_allele not in [".", "-", ""]:
-            if m.ref_allele[0] != m.alt_allele[0]:
-                logging.getLogger(__name__).warn("ref and alt did not start with the same base for a deletion.  Removing alt anyway.")
-            result[0] = result[0][1:]
-            result[1] = "-"
-            result[2] = str(int(m.start) + 1)
-
-        # INS
-        if (len(m.alt_allele) > len(m.ref_allele)) and m.ref_allele not in [".", "-", ""]:
-            if m.ref_allele[0] != m.alt_allele[0]:
-                logging.getLogger(__name__).warn("ref and alt did not start with the same base for a deletion.  Removing alt anyway.")
-            result[0] = "-"
-            result[1] = result[1][1:]
-            result[2] = str(int(m.start) + 1)
-
-        return result
-
     def _writeMutationRow(self, dw, fieldMap, fieldMapKeys, m):
         """ If this row should be rendered, then write it to the given DictWriter
         :param dw: DictWriter
@@ -153,11 +124,6 @@ class TcgaMafOutputRenderer(OutputRenderer):
         :param m:
         :return:
         """
-
-        new_vals = self._alterMutationForIndel(m)
-        m.ref_allele = new_vals[0]
-        m.alt_allele = new_vals[1]
-        m.start = new_vals[2]
         row = self._createMutationRow(m, fieldMapKeys, fieldMap)
         dw.writerow(row)
 

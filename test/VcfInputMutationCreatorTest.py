@@ -92,7 +92,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for m in muts:
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
-        self.assertTrue((m.chr == "21") and (m.start == 1234567), "Last mutation was not correct: " + str(m))
+        self.assertTrue((m.chr == "21") and (m.start == 1234570), "Last mutation was not correct: " + str(m))
 
         # Reminder:  muts is a generator, so it has to be reset
         creator.reset()
@@ -116,8 +116,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.addDatasource(TestUtils.createGafDatasource(self.config))
         annotator.annotate()
 
-    def testSimpleAnnotationWithGermlineVcf(self):
-        ''' Tests the ability to parse Germline vcf. '''
+    def testSimpleAnnotationWithAComplexVcf(self):
+        ''' Tests the ability to parse vcf. '''
         inputFilename = 'testdata/vcf/random.vcf'
         outputFilename = 'out/random.tsv'
 
@@ -333,7 +333,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                 if mapVcfFields2Tsv[annotationName] in variant.INFO:
                     a = m.getAnnotation(annotationName)
                     self.assertTrue((TagConstants.SPLIT in a.getTags()) == isSplit[annotationName],
-                                    annotationName + " is split? " + str(isSplit[annotationName]) + ", but saw: " +
+                                    "Is " + annotationName + " split for chrom " + chrom + ", pos " + str(pos) +
+                                    "? " + str(isSplit[annotationName]) + ", but saw: " +
                                     str(TagConstants.SPLIT in a.getTags()))
 
     def testGenotypeFieldIsHonored(self):
@@ -349,7 +350,6 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                 ctr += 1
         self.assertTrue(ctr == 7,
                         str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
-
 
 if __name__ == "__main__":
     unittest.main()

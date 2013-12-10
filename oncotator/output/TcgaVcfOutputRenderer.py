@@ -342,7 +342,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
         gtN, gtT = self.genotype(n_lod, t_lod)
 
-        ref,alt,new_start = MutUtils.retrievePrecedingBase(m)
+        ref,alt,new_start = MutUtils.retrievePrecedingBaseFromReference(m)
 
         ss,ssCode = self.determineSomaticStatus(gtN, gtT, qual)
         if ss is None or ssCode is None:

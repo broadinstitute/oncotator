@@ -74,6 +74,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.configFilename = configFile
         self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
         self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("input_vcf")
+        self.isTagSplit = dict()
         self.logger = logging.getLogger(__name__)
 
     def _addGenotypeDataToMutation(self, mutation, record, index):
@@ -96,20 +97,27 @@ class VcfInputMutationCreator(InputMutationCreator):
                 val = ""
                 dataType = self.vcf_reader.formats[ID].type
 
+                name = self.configTable.getFormatFieldName(ID)
                 num = self.vcf_reader.formats[ID].num
-                tags = [TagConstants.FORMAT]
+
+                tags = []
 
                 if (genotypeData is not None) and (hasattr(genotypeData.data, ID)):
-                    isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
-                    if isSplitTag:
+                    if name not in self.isTagSplit:
+                        isTagSplit = self._determineIsSplit(ID, num, "FORMAT")
+                        self.isTagSplit[name] = isTagSplit
+                    else:
+                        isTagSplit = self.isTagSplit[name]
+
+                    if isTagSplit:
                         val = genotypeData[ID][index]
                     else:
                         val = genotypeData[ID]
 
-                    if isSplitTag:
-                        tags += [TagConstants.SPLIT]
+                    if isTagSplit:
+                        tags = [TagConstants.FORMAT, TagConstants.SPLIT]
                     else:
-                        tags += [TagConstants.NOT_SPLIT]
+                        tags = [TagConstants.FORMAT, TagConstants.NOT_SPLIT]
 
                 if (val is None) or (val == ""):
                     if dataType == "Flag":
@@ -121,7 +129,6 @@ class VcfInputMutationCreator(InputMutationCreator):
                 else:
                     val = str(val)
 
-                name = self.configTable.getFormatFieldName(ID)
                 mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.formats[ID].desc, tags=tags,
                                           number=num)
 
@@ -143,19 +150,25 @@ class VcfInputMutationCreator(InputMutationCreator):
             dataType = self.vcf_reader.infos[ID].type
 
             num = self.vcf_reader.infos[ID].num
-            tags = [TagConstants.INFO]
+            name = self.configTable.getInfoFieldName(ID)
+            tags = []
 
             if ID in record.INFO:
-                isSplitTag = self._determineIsSplit(ID, num, "INFO")
-                if isSplitTag:
+                if name not in self.isTagSplit:
+                    isTagSplit = self._determineIsSplit(ID, num, "INFO")
+                    self.isTagSplit[name] = isTagSplit
+                else:
+                    isTagSplit = self.isTagSplit[name]
+
+                if isTagSplit:
                     val = record.INFO[ID][index]
                 else:
                     val = record.INFO[ID]
 
-                if isSplitTag:
-                    tags += [TagConstants.SPLIT]
+                if isTagSplit:
+                    tags = [TagConstants.INFO, TagConstants.SPLIT]
                 else:
-                    tags += [TagConstants.NOT_SPLIT]
+                    tags = [TagConstants.INFO, TagConstants.NOT_SPLIT]
 
             if (val is None) or (val == ""):
                 if dataType == "Flag":
@@ -167,7 +180,6 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 val = str(val)
 
-            name = self.configTable.getInfoFieldName(ID)
             mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.infos[ID].desc, tags=tags,
                                       number=num)
 
@@ -218,7 +230,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def createMutations(self):
         """ Creates a mutation for each mutation by each sample, regardless of allelic depth, etc.
-            
+
             Annotations that this will generate (as source = "INPUT"):
                 sampleName
                 isCalled
@@ -281,17 +293,20 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         alt = record.ALT[index]
         if alt is None:
-            alt = ""
+            alt = ref
         else:
             alt = str(alt)
 
-        # Write end position as it would be in MAF format
+        startPos = record.POS
         endPos = int(record.POS)
+        mut = MutationData(chrom, startPos, endPos, ref, alt, "hg19")
+
+        if len(alt) == len(ref):  # Snps
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
         if len(alt) < len(ref):  # deletion
-            endPos += len(ref) - len(alt) - 1
+            mut = MutUtils.alterMutationForDeletions(mut)
         elif len(alt) > len(ref):  # insertion
-            endPos += 1
-        mut = MutationData(chrom, record.POS, endPos, ref, alt, "hg19")
+            mut = MutUtils.alterMutationForInsertions(mut)
 
         ID = record.ID
         if ID is None:

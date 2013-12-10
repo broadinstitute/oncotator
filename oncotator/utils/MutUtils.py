@@ -62,18 +62,50 @@ import collections
 import string
 import shutil
 
+
 class MutUtils(object):
     """
     Static class containing utility functions for Mutations. 
     """
     proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)[_]*[A-Z]{0,1}([0-9]*)")
     SAMPLE_NAME_ANNOTATION_NAME = "sample_name"
+    PRECEDING_BASES_ANNOTATION_NAME = "_preceding_bases"
 
     def __init__(self, params):
         """
         Constructor -- should never be called.
         """
         pass
+
+    @staticmethod
+    def alterMutationForInsertions(m):
+        ref_allele = m.ref_allele
+        alt_allele = m.alt_allele
+        start = int(m.start)
+
+        preceding_bases = ref_allele
+        m.ref_allele = "-"
+        m.alt_allele = alt_allele[len(preceding_bases):]
+        m.start = start + len(preceding_bases)
+        m.end = m.start + len(m.alt_allele) - 1
+
+        m.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
+        return m
+
+    @staticmethod
+    def alterMutationForDeletions(m):
+        ref_allele = m.ref_allele
+        alt_allele = m.alt_allele
+        start = int(m.start)
+
+        preceding_bases = alt_allele
+        m.alt_allele = "-"
+        m.ref_allele = ref_allele[len(preceding_bases):]
+        m.start = start + len(preceding_bases)
+        m.end = m.start + len(m.ref_allele) - 1
+
+        m.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
+        return m
 
     @staticmethod
     def removeDir(currentDir):
@@ -326,7 +358,24 @@ class MutUtils(object):
         return result
 
     @staticmethod
-    def retrievePrecedingBase(m):
+    def retrievePrecedingBaseFromAnnotationForDeletions(mut):
+        preceding_bases = mut[MutUtils.PRECEDING_BASES_ANNOTATION_NAME]
+        alt_allele = preceding_bases
+        ref_allele = preceding_bases + mut.ref_allele
+        updated_start = mut.start - len(preceding_bases)
+        return ref_allele, alt_allele, updated_start
+
+    @staticmethod
+    def retrievePrecedingBaseFromAnnotationForInsertions(mut):
+        preceding_bases = mut[MutUtils.PRECEDING_BASES_ANNOTATION_NAME]
+        alt_allele = preceding_bases + mut.alt_allele
+        ref_allele = preceding_bases
+        updated_start = mut.start - len(preceding_bases)
+
+        return ref_allele, alt_allele, updated_start
+
+    @staticmethod
+    def retrievePrecedingBaseFromReference(m):
         updated_start = m.start
         ref_allele = m.ref_allele
         if ref_allele == "-":

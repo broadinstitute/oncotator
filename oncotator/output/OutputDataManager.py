@@ -133,16 +133,16 @@ class OutputDataManager:
                 # Parse chromosome
                 chroms.add(mut.chr)
 
-                if mut.ref_allele == "_" or mut.alt_allele == "-":
-                    ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBase(mut)
-                    mut.start = updated_start
-                    mut.ref_allele = ref_allele
-                    mut.alt_allele = alt_allele
+                mut = self._updateMutationForRendering(mut)
 
                 if ctr == 0:
                     fieldnames2Render = MutUtils.getAllAttributeNames(mut)
-                    if len(sampleNameAnnotationNames) == 0:
+                    if sampleNameAnnotationName is not None:
                         fieldnames2Render += [sampleNameAnnotationName]
+                    for fieldname in fieldnames2Render:
+                        if fieldname.startswith("_"):
+                            fieldnames2Render.remove(fieldname)
+
                     writer = csv.DictWriter(fptr, fieldnames2Render, extrasaction='ignore', delimiter=self.delimiter,
                                             lineterminator=self.lineterminator)
                     writer.writeheader()
@@ -158,6 +158,28 @@ class OutputDataManager:
         chroms = list(chroms)
 
         return chroms, sampleNames, tempTsvFile.name
+
+    def _updateMutationForRendering(self, mut):
+        if mut.ref_allele == "-":  # detects insertions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
+            else:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromReference(mut)
+            mut.start = updated_start
+            mut.ref_allele = ref_allele
+            mut.alt_allele = alt_allele
+        elif mut.alt_allele == "-":  # detects deletions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+            else:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromReference(mut)
+            mut.start = updated_start
+            mut.ref_allele = ref_allele
+            mut.alt_allele = alt_allele
+        elif mut.ref_allele == mut.alt_allele:  # detects monomorphic SNPs
+            mut.alt_allele = ""
+
+        return mut
 
     def getHeader(self):
         """
@@ -370,6 +392,9 @@ class OutputDataManager:
         table = dict()
         revTable = dict()
         for fieldName in fieldnames:
+            if fieldName.startswith("_"):
+                continue
+
             if fieldName in md:
                 annotation = md[fieldName]
             elif fieldName in mut:

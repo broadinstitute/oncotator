@@ -75,6 +75,25 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.logger.info("Initializing gaf 3.0")
         return TestUtils.createGafDatasource(self.config)
 
+    def testRemoveAnnotationsThatBeginWithUnderscore(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.out.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename="out/example.out.vcf", strict_whitespace=True)
+        for key in vcfReader.infos.keys():
+            self.assertTrue(not key.startswith("_"), "INFO tag %s begins with _." % key)
+
+        for key in vcfReader.formats.keys():
+            self.assertTrue(not key.startswith("_"), "FORMAT tag %s begins with _." % key)
+
+        for key in vcfReader.filters.keys():
+            self.assertTrue(not key.startswith("_"), "FILTER tag %s begins with _." % key)
+
     def testHeaderWithExampleVcf(self):
         ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
@@ -273,7 +292,9 @@ class VcfOutputRendererTest(unittest.TestCase):
         for expectedRecord in expectedVcfReader:
             currentRecord = currentVcfReader.next()
             self.assertTrue(expectedRecord.CHROM == currentRecord.CHROM, "Should have the same chromosome")
-            self.assertTrue(expectedRecord.POS == currentRecord.POS, "Should have the same position")
+            self.assertTrue(expectedRecord.POS == currentRecord.POS,
+                            "Should have the same position; expected: %s, saw: %s"
+                            % (expectedRecord.POS, currentRecord.POS))
             self.assertTrue(expectedRecord.ID == currentRecord.ID, "Should have the same ID")
             self.assertTrue(expectedRecord.REF == currentRecord.REF, "Should have the same reference allele")
 
@@ -365,7 +386,7 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_PairNameAnnnotationExist(self):
         """
-        Test conversion when "PairName" annotation exists in the input Maf file.
+        Test maf to vcf conversion when "PairName" annotation exists in the input Maf file.
         """
         creator = MafliteInputMutationCreator('testdata/maflite/example.pair_name.maf')
         creator.createMutations()
@@ -381,7 +402,7 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_OnlyNormalAndTumorSampleBarcodeExist(self):
         """
-        Test conversion when "PairName" annotation is missing but only normal and tumor sample names exist.
+        Test maf to vcf conversion when "PairName" annotation is missing but only normal and tumor sample names exist.
         """
         creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.maf')
         creator.createMutations()
@@ -399,7 +420,7 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_OnlyNormalSampleBarcodeExist(self):
         """
-        Test conversion when "PairName" annotation is missing but only normal sample names exist.
+        Test maf to vcf conversion when "PairName" annotation is missing but only normal sample names exist.
         """
         creator = MafliteInputMutationCreator('testdata/maflite/example.normal_sample_name.maf')
         creator.createMutations()
@@ -417,7 +438,7 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_OnlyTumorSampleBarcodeExist(self):
         """
-        Test conversion when "PairName" annotation is missing but only tumor sample names exist.
+        Test maf to vcf conversion when "PairName" annotation is missing but only tumor sample names exist.
         """
         creator = MafliteInputMutationCreator('testdata/maflite/example.tumor_sample_name.maf')
         creator.createMutations()
@@ -481,6 +502,69 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current) == len(expected), "Number of lines of alts information is not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of alts information do not match.")
 
+    def testINSMaf2Vcf(self):
+        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.ins.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_tumor_sample_name.ins.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_tumor_sample_name.ins.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_tumor_sample_name.ins.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testDELMaf2Vcf(self):
+        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.del.maf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_tumor_sample_name.del.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_tumor_sample_name.del.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_tumor_sample_name.del.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testINSVcf2Vcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.normal_tumor_sample_name.ins.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/vcf2vcf.example.normal_tumor_sample_name.ins.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.ins.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/vcf2vcf.example.normal_tumor_sample_name.ins.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testDELVcf2Vcf(self):
+        creator = VcfInputMutationCreator('testdata/vcf/example.normal_tumor_sample_name.del.vcf')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/vcf2vcf.example.normal_tumor_sample_name.del.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename='testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.del.vcf',
+                                       strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename='out/vcf2vcf.example.normal_tumor_sample_name.del.vcf',
+                                      strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
 
 if __name__ == "__main__":
     unittest.main()

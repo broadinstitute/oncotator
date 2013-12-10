@@ -68,6 +68,8 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.DatasourceCreator import DatasourceCreator
 
 TestUtils.setupLogging(__file__, __name__)
+
+
 class TcgaMafOutputRendererTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -255,8 +257,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             if len(ref) > len(alt):
                 self.assertTrue(alt == "-", "Invalid deletion with " + ref + "  " + alt)
 
-            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170", "64948167"])
-            self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A", "TTT"])
+            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170", "64948167",
+                                                            "64948168"])
+            self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A", "TT", "TTT"])
             self.assertTrue(line_dict['Tumor_Seq_Allele2'] in ["-", "TC", "G", "T"])
             self.assertTrue(line_dict['Matched_Norm_Sample_Barcode'] == "Patient0-Normal")
             self.assertTrue(line_dict['Matched_Norm_Sample_UUID'] == "Patient0-Normal")
@@ -264,7 +267,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertTrue(line_dict['Tumor_Sample_UUID'] == "Patient0-Tumor")
             ctr += 1
 
-        self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8." )
+        self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8.")
 
     def testProperConversionVcfToMafWithThirdSample(self):
         """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF, but that the NORMAL is treated as any other sample, since this VCF has three samples in it. """

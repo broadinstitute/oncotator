@@ -121,7 +121,8 @@ class SimpleOutputRenderer(OutputRenderer):
 
         headers = self._determineHeaders(mut, metadata)
 
-        writer = csv.DictWriter(fptr, headers, delimiter=self._delimiter, lineterminator=self._lineterminator)
+        writer = csv.DictWriter(fptr, headers, delimiter=self._delimiter, lineterminator=self._lineterminator,
+                                extrasaction="ignore")
         writer.writeheader()
 
         for m in mutations:

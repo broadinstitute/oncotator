@@ -1,0 +1,10 @@
+##fileformat=VCFv4.1
+##oncotator_version=Oncotator_v1.0.0.0rc33_|_Flat_File_Reference_hg19_
+##INFO=<ID=dbSNP_RS,Number=.,Type=String,Description="Unknown">
+##INFO=<ID=ref_context,Number=.,Type=String,Description="Unknown">
+##INFO=<ID=gc_content,Number=.,Type=String,Description="Unknown">
+##FORMAT=<ID=DP,Number=.,Type=Integer,Description="Unknown">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA0001-NB-NA0001-TP
+1	25167272	.	C	CA	.	PASS	dbSNP_RS=rs6054257;ref_context=AGGTGGTGGCCAAAAAATATCG;gc_content=0.376	GT:DP	./.:10
+1	32221932	.	G	GCCT	.	PASS	dbSNP_RS=rs6054257;ref_context=CAGGCGCGGGGCCTCGGAGGGC;gc_content=0.624	GT:DP	./.:10

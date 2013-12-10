@@ -1,0 +1,3 @@
+Chromosome	Start_position	End_position	Reference_Allele	Tumor_Seq_Allele1	Tumor_Seq_Allele2	dbSNP_RS	Tumor_Sample_Barcode	Matched_Norm_Sample_Barcode	ReadDepth
+7	100684131	100684133	CTC	-	-	rs6054257	NA0001-TP	NA0001-NB	10
+10	69692427	69692429	AGA	-	-	rs6054257	NA0001-TP	NA0001-NB	10
