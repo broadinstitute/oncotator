@@ -57,7 +57,7 @@ Created on Jan 7, 2013
 from math import fabs
 import unittest
 import logging
-from oncotator.datasources import ReferenceDatasource
+from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
 from oncotator.MutationData import MutationData
 
 TestUtils.setupLogging(__file__, __name__)

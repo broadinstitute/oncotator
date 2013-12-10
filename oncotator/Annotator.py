@@ -124,14 +124,11 @@ class Annotator(object):
     def getIsMulticore(self):
         return self.__isMulticore
 
-
     def getNumCores(self):
         return self.__numCores
 
-
     def setIsMulticore(self, value):
         self.__isMulticore = value
-
 
     def setNumCores(self, value):
         self.__numCores = value
@@ -290,8 +287,8 @@ class Annotator(object):
             self.logger.warn("THERE ARE NO DATASOURCES REGISTERED")
         for m in mutations:
 
-            # If the altAlleleSeen annotation is present and False, skip this mutation
-            if self._is_skip_no_alts and m.get("altAlleleSeen", "True") == "False":
+            # If the alt_allele_seen annotation is present and False, skip this mutation
+            if self._is_skip_no_alts and m.get("alt_allele_seen", "True") == "False":
                 continue
 
             annot_dict = self._cacheManager.retrieve_cached_annotations(m)
@@ -305,6 +302,3 @@ class Annotator(object):
                 self._cache_stats['hit'] += 1
                 m.addAnnotations(annot_dict)
             yield m
-
-
-    

@@ -60,10 +60,12 @@ import os
 import logging
 from oncotator.index.TabixIndexer import TabixIndexer
 import pysam
+import vcf
 
 TestUtils.setupLogging(__file__, __name__)
-class TabixIndexerTest(unittest.TestCase):
 
+
+class TabixIndexerTest(unittest.TestCase):
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)
@@ -72,52 +74,31 @@ class TabixIndexerTest(unittest.TestCase):
     def tearDown(self):
         pass
     
-    @unittest.skip("The underlying functionality is not yet implemented fully for this test case, and the functionality will not be included until a later release.")
-    def testBasicGenomicPositionIndexCreation(self):
-        ''' Creates a tabix index based on a small tsv file.'''
-        inputFilename = 'testdata/small_genome_position_tsv_ds/oreganno_trim.hg19.txt'
-        outputFilename = 'out/' + os.path.basename(inputFilename) + ".tbi"
-        TabixIndexer.indexGenomicPositionTSV(['hg19.oreganno.chrom', 'hg19.oreganno.chromStart', 'hg19.oreganno.chromEnd'], inputFilename, outputFilename)
-        
-        # Check that the file exists and has reasonable content.
-        self.assertTrue(os.path.exists(outputFilename), "Index file was not created.")
-        chr = '1'
-        start = '873498'
-        end = '873500'
-        tabixFile = pysam.Tabixfile(inputFilename)
-        results = tabixFile.fetch(region='%s:%s-%s' % ('chr'+chr, str(start), str(end))) 
-        
-        # Should have one result
-        self.assertTrue(len(results) <> 1, "Returned wrong number of results.")
-        self.assertTrue(results[0]['hg19.oreganno.id'] <> 'OREG0012989', "Returned wrong result.")
-
     def testBasicGeneProteinPositionIndexCreationMixedCaps(self):
-        """ Test that the mixed caps (or underscore) in gene name does not throw off the indexing.
         """
-
+        Test that the mixed caps (or underscore) in gene name does not throw off the indexing.
+        """
         inputFilename = "testdata/sort_mixed_caps_tsv/sort_mixed_caps.tsv"
-        # sortedFilename = "out/sort_mixed_caps.tsv.sorted_forIndexing.out.tsv"
-        # tsvFileSorter = TsvFileSorter(fieldNames = ["Gene name","startAA","endAA"])
-        # tsvFileSorter.sortFile(inputFilename,sortedFilename)
-        # self.assertTrue(os.path.exists(sortedFilename), "No file was generated.")
-
         # Copy the inputFilename into output dir, since the indexing rewrites the input file
         copyFilename = "out/sort_mixed_caps.tsv"
         shutil.copy(inputFilename, copyFilename)
 
-        outFile = copyFilename + ".indexed.tsv"
-        resultIndexedFile = TabixIndexer.indexGeneProteinPosition("Gene name", "Mutation AA", copyFilename, outFile)
+        fileName, fileExtension = os.path.splitext(copyFilename)
+        outputFilename = fileName + ".sorted" + fileExtension
+        resultIndexedFile = TabixIndexer.indexGeneProteinPosition("Gene name", "Mutation AA",
+                                                                  copyFilename, outputFilename)
 
         self.assertTrue(os.path.exists(resultIndexedFile), "No index file was generated.")
 
     def testBasicGeneProteinPositionIndexCreation(self):
-        ''' Creates a tabix index based on a small tsv file.
-        '''
+        """
+        Creates a tabix index based on a small tsv file.
+        """
         inFile = "testdata/small_cosmic_gpp/small_cosmic_gpp.tsv"
         outFile = "out/small_cosmic_gpp.out.tsv"
         TabixIndexer.indexGeneProteinPosition("Gene name", "Mutation AA", inFile, outFile)
-        self.assertTrue(os.path.exists(outFile + ".sorted.tsv.gz.tbi"), "Index file was not created.")
-        tabixFile = pysam.Tabixfile(outFile + ".sorted.tsv.gz")
+        self.assertTrue(os.path.exists("out/small_cosmic_gpp.out.tabix_indexed.tsv.gz.tbi"), "Index file was not created.")
+        tabixFile = pysam.Tabixfile("out/small_cosmic_gpp.out.tabix_indexed.tsv.gz")
 
         gene = "BRAF"
         startAA = 599
@@ -146,6 +127,46 @@ class TabixIndexerTest(unittest.TestCase):
 
         # Should have one result
         self.assertTrue(ctr == 1, "Returned wrong number of results (gt: 1): " + str(ctr))
+
+    def testTabixIndexedVcfCreation(self):
+        """
+        Test the creation of VCF based tabix index file.
+        """
+        inFile = "testdata/vcf/example.vcf"
+        destDir = "out"
+
+        resultIndexedFile = TabixIndexer.index(destDir=destDir, inputFilename=inFile, preset="vcf")
+        self.assertTrue(os.path.exists(resultIndexedFile), "No index file was generated.")
+
+        vcfReader = vcf.Reader(filename=resultIndexedFile, compressed=True, strict_whitespace=True)
+        vcfRecords = vcfReader.fetch(chrom=20, start=1230237, end=1230237)
+        for vcfRecord in vcfRecords:
+            self.assertEqual(vcfRecord.INFO["NS"], 3, "Expected %s but got %s." % (3, vcfRecord.INFO["NS"]))
+            self.assertEqual(vcfRecord.INFO["DP"], 13, "Expected %s but got %s." % (13, vcfRecord.INFO["DP"]))
+
+    def testTabixIndexedTsvCreation(self):
+        inFile = "testdata/ESP6500SI-V2.chr1.snps_indels.head.25.txt"
+        destDir = "out"
+
+        # chr, startPos, endPos
+        resultIndexedFile = TabixIndexer.index(destDir=destDir, inputFilename=inFile, fileColumnNumList=[0, 1, 1])
+        self.assertTrue(os.path.exists(resultIndexedFile), "No index file was generated.")
+
+        chrom = "1"
+        start = "69594"
+        end = "69594"
+        tsvRecords = None
+        tsvReader = pysam.Tabixfile(filename=resultIndexedFile)  # initialize the tsv reader
+        try:
+            tsvRecords = tsvReader.fetch(chrom, int(start)-1, int(end), parser=pysam.asTuple())
+        except ValueError:
+            pass
+
+        tsvRecord = None
+        for tsvRecord in tsvRecords:
+            self.assertEqual(tsvRecord[5], "2,6190", "Value in column sixth does not match the expected value.")
+
+        self.assertIsNotNone(tsvRecord, "No record for %s:%s-%s was found." % (chrom, start, end))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicGeneIndexCreation']

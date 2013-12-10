@@ -73,7 +73,7 @@ setup(
         '': ['*.config', '*.template']
   },
   test_suite='test',
-  packages=['oncotator','oncotator.cache', 'oncotator.utils','oncotator.utils.install','oncotator.input','oncotator.output','oncotator.index','oncotator.configs'],
+  packages=['oncotator','oncotator.cache', 'oncotator.utils','oncotator.utils.install','oncotator.input','oncotator.output','oncotator.index','oncotator.configs', "oncotator.datasources", "oncotator.config_tables"],
   license='''
 # By downloading the PROGRAM you agree to the following terms of use:
 #

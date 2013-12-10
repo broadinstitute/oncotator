@@ -59,7 +59,7 @@ import unittest
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MutationData import MutationData
 import logging
-from oncotator.datasources import Datasource
+from oncotator.datasources.Datasource import Datasource
 
 TestUtils.setupLogging(__file__, __name__)
 class DatasourceCreatorTest(unittest.TestCase):

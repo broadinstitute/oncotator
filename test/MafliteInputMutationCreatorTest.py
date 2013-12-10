@@ -161,11 +161,11 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
     def testGetMetadata(self):
         """Make sure that we can retrieve metadata, even before createMutations has been called"""
         ic = MafliteInputMutationCreator("testdata/maflite/tiny_maflite.maf.txt")
-        gtKeys = set(['build', 'chr', 'start', 'end', 'ref_allele', 'tum_allele1', 'tum_allele2', 'tumor_barcode',
-                  'normal_barcode', 'tumor_f', 'init_t_lod', 't_lod_fstar', 't_alt_count', 't_ref_count', 'judgement'])
+        gtKeys = {'build', 'chr', 'start', 'end', 'ref_allele', 'alt_allele', 'tumor_barcode', 'normal_barcode',
+                  'tumor_f', 'init_t_lod', 't_lod_fstar', 't_alt_count', 't_ref_count', 'judgement'}
         md = ic.getMetadata()
         ks = set(md.keys())
-        diff = gtKeys.difference(ks)
+        diff = gtKeys.symmetric_difference(ks)
         self.assertTrue(len(diff) == 0, "Missing keys that should have been seen in the metadata: " + str(diff))
 
     def test_alt1_vs_alt2(self):

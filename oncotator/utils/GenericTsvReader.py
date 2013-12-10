@@ -78,7 +78,7 @@ class GenericTsvReader(object):
         Constructor
         '''
         self.__dict__.update(locals())
-        self.inputContentFP = file(filename,'r')
+        self.inputContentFP = file(filename, 'r')
         self.commentLines = ''
         self.commentPrepend = commentPrepend
         

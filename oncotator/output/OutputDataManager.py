@@ -1,32 +1,185 @@
+import csv
 import string
 import vcf
+import logging
+import collections
+import itertools
+import copy
+import tempfile
+import os
+
+from oncotator.utils.TsvFileSorter import TsvFileSorter
 from oncotator.output.VcfOutputAnnotation import VcfOutputAnnotation
 from oncotator.utils.TagConstants import TagConstants
+from oncotator.utils.MutUtils import MutUtils
 
 
 class OutputDataManager:
-    def __init__(self, configTable, comments=[], md=[], mut=None, sampleNames=[]):
+    def __init__(self, configTable, muts, comments=None, md=None, path=os.getcwd()):
         """
         Initialize an instance of OutputDataManager.
 
         This class is used by the VcfOutputRenderer, but could be used elsewhere.
 
+        :param muts: generator of MutationData objects
+        :param path: location where to write temporary files
         :param configTable: tabular representation of the config
         :param comments: lines as key=value pairs (used in the header)
         :param md: meta-data
-        :param mut: first mutation
-        :param sampleNames: sample names
         """
+        comments = [] if comments is None else comments
+        md = [] if md is None else md
+
+        self.logger = logging.getLogger(__name__)
         self.delimiter = "\t"
         self.lineterminator = "\n"
         self.comments = comments
         self.configTable = configTable
         self.metadata = md
-        self.mutation = mut
-        self.sampleNames = sampleNames
-        self.sampleNames.sort()
-        self.defaultVcfOutputAnnotation = VcfOutputAnnotation("", "FORMAT", False, "INPUT", "String", "Unknown", None)
+        self.sampleNames = []
+        self.mutation, self.mutations = self._getFirstMutation(muts)
         self.annotationTable, self.reverseAnnotationTable = self._createTables(self.metadata, self.mutation)
+        self.chroms, self.sampleNames, self.filename = self._writeMuts2Tsv(self.mutations, path)
+
+    def getSampleNames(self):
+        return self.sampleNames
+
+    def _getFirstMutation(self, muts):
+        mut = None
+        for mutation in muts:
+            mut = copy.deepcopy(mutation)
+            lst = [muts, (mut for mut in [mut])]
+            muts = itertools.chain(*lst)
+            break
+
+        return mut, muts
+
+    def getSortedTsvFilename(self, path):
+
+        chrom2HashCode = MutUtils.createChrom2HashCodeTable(self.chroms)
+        tsvFileSorter = TsvFileSorter(self.filename)
+        sortedTempTsvFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
+        func = lambda val: (chrom2HashCode[val["chr"]], int(val["start"]), val["alt_allele"])
+        tsvFileSorter.sortFile(sortedTempTsvFile.name, func)
+        os.remove(self.filename)
+
+        return sortedTempTsvFile.name
+
+    def _writeMuts2Tsv(self, muts, path):
+        """
+        Given a mutation generator, this methods writes a tab separated file for all mutations in the mutation
+        generator. In addition, this method computes the appropriate sample name in scenarios where the mutation is
+        missing sample name annotation. It also computes a list of all chromosomes and sample names contained within
+        the generator.
+
+        :param filename: temporary filename
+        :param muts: generator object with mutations
+        """
+
+        sampleNames = set()
+        chroms = set()
+
+        writer = None
+
+        # create a temporary file to write tab-separated file
+        tempTsvFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
+        self.logger.info("Creating intermediate tsv file...")
+
+        sampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_NAME")
+        tumorSampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_TUMOR_NAME")
+        normalSampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_NORMAL_NAME")
+
+        with open(tempTsvFile.name, 'w') as fptr:
+            ctr = 0
+            for mut in muts:
+                sampleName = None
+                sampleNameAnnotationName = None
+
+                # Sample name annotation is present
+                if len(sampleNameAnnotationNames) != 0:
+                    sampleNameAnnotationName = sampleNameAnnotationNames[0]
+                    sampleName = mut[sampleNameAnnotationName]
+                # Both, tumor and normal sample name annotations are present
+                elif len(tumorSampleNameAnnotationNames) != 0 and len(normalSampleNameAnnotationNames) != 0:
+                    tumorSampleNameAnnotationName = tumorSampleNameAnnotationNames[0]
+                    normalSampleNameAnnotationName = normalSampleNameAnnotationNames[0]
+                    sampleName = string.join([mut[normalSampleNameAnnotationName],
+                                              mut[tumorSampleNameAnnotationName]], sep="-")
+                    sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
+                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "INPUT")
+                    if ctr == 0:
+                        self.logger.info("Sample name is the concatenation of %s and %s columns."
+                                         % (normalSampleNameAnnotationName, tumorSampleNameAnnotationName))
+                # Only tumor sample name is present
+                elif len(tumorSampleNameAnnotationNames) != 0:
+                    tumorSampleNameAnnotationName = tumorSampleNameAnnotationNames[0]
+                    sampleName = mut[tumorSampleNameAnnotationName]
+                    sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
+                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "INPUT")
+                    if ctr == 0:
+                        self.logger.info("Sample name is %s column." % tumorSampleNameAnnotationName)
+                # Only normal sample name is present
+                elif len(normalSampleNameAnnotationNames) != 0:
+                    normalSampleNameAnnotationName = normalSampleNameAnnotationNames[0]
+                    sampleName = mut[normalSampleNameAnnotationName]
+                    sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
+                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "INPUT")
+                    if ctr == 0:
+                        self.logger.info("Sample name is %s column." % normalSampleNameAnnotationName)
+
+                if sampleName is not None:
+                    sampleNames.add(sampleName)
+
+                # Parse chromosome
+                chroms.add(mut.chr)
+
+                mut = self._updateMutationForRendering(mut)
+
+                if ctr == 0:
+                    fieldnames2Render = MutUtils.getAllAttributeNames(mut)
+                    if sampleNameAnnotationName is not None:
+                        fieldnames2Render += [sampleNameAnnotationName]
+                    for fieldname in fieldnames2Render:
+                        if fieldname.startswith("_"):
+                            fieldnames2Render.remove(fieldname)
+
+                    writer = csv.DictWriter(fptr, fieldnames2Render, extrasaction='ignore', delimiter=self.delimiter,
+                                            lineterminator=self.lineterminator)
+                    writer.writeheader()
+
+                writer.writerow(mut)
+
+                ctr += 1
+                if (ctr % 1000) == 0:
+                    self.logger.info("Wrote " + str(ctr) + " mutations to tsv.")
+
+        sampleNames = list(sampleNames)
+        sampleNames.sort()
+        chroms = list(chroms)
+
+        return chroms, sampleNames, tempTsvFile.name
+
+    def _updateMutationForRendering(self, mut):
+        if mut.ref_allele == "-":  # detects insertions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
+            else:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromReference(mut)
+            mut.start = updated_start
+            mut.ref_allele = ref_allele
+            mut.alt_allele = alt_allele
+        elif mut.alt_allele == "-":  # detects deletions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+            else:
+                ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBaseFromReference(mut)
+            mut.start = updated_start
+            mut.ref_allele = ref_allele
+            mut.alt_allele = alt_allele
+        elif mut.ref_allele == mut.alt_allele:  # detects monomorphic SNPs
+            mut.alt_allele = ""
+
+        return mut
 
     def getHeader(self):
         """
@@ -34,16 +187,7 @@ class OutputDataManager:
 
         :return: header (meta-information and header lines)
         """
-        hasFmtFlds = False
-        names = self.getAnnotationNames("FORMAT")
-        for name in names:
-            if self.mutation is None:
-                break
-            if name in self.mutation:
-                hasFmtFlds = True
-                break
-
-        return self._createHeader(self.comments, self.delimiter, self.lineterminator, hasFmtFlds)
+        return self._createHeader(self.comments, self.delimiter, self.lineterminator)
 
     def getOutputAnnotation(self, name):
         """
@@ -54,8 +198,7 @@ class OutputDataManager:
         """
         annotation = self.annotationTable.get(name, None)
         if annotation is None:
-            self.defaultVcfOutputAnnotation.setID(name)
-            return self.defaultVcfOutputAnnotation
+            return VcfOutputAnnotation(name, "FORMAT", False, "INPUT", "String", "Unknown", None)
         return annotation
 
     def getFieldType(self, name):
@@ -153,7 +296,7 @@ class OutputDataManager:
             return self.reverseAnnotationTable[fieldType]
         return []
 
-    def _createHeader(self, comments=[], delimiter="\t", lineterminator="\n", hasFmtFlds=False):
+    def _createHeader(self, comments=None, delimiter="\t", lineterminator="\n"):
         """
         Constructs correctly Vcf header (meta-information and header lines).
         First, this method adds all meta-information lines as key=value pairs.
@@ -163,34 +306,74 @@ class OutputDataManager:
         :param comments: lines as key=value pairs
         :param delimiter: special character (for example, tab) that separators words
         :param lineterminator: special character (for example, newline) signifying the end of line
-        :param hasFmtFlds: has a FORMAT tag?; in the case where there is none, 'FORMAT' is dropped from the header line
         :return: correctly formatted Vcf header
         """
+        comments = [] if comments is None else comments
+
         headers = ["##fileformat=VCFv4.1"]  # 'fileformat' is a required field; fixed since output vcf will be v4.1
-        if (comments is not None) and (len(comments) > 0):  # detect any
-            for i in xrange(len(comments)):
-                comment = comments[i]
-                if comment.startswith("fileformat=VCFv4."):
-                    comments.pop(i)
-                    break
-
-        filtered_comments = [comment for comment in comments if comment != ""]
-
-        # Last line of the comments ("Oncotator v1.0.0.0rc20|") is NOT included in the header
-        headers += [string.join(["##", comment], "") for comment in filtered_comments[0:len(filtered_comments)-1]]
+        contigs = []
+        alts = []
+        for comment in comments:
+            if comment and not comment.startswith("fileformat"):
+                if comment.startswith("contig=<"):
+                    comment = string.join(["##", comment], "")
+                    contigs += [comment]
+                elif comment.startswith("Oncotator"):
+                    comment = string.replace(comment, " ", "_")
+                    comment = string.join(["##oncotator_version=", comment], "")
+                    headers += [comment]
+                elif comment.startswith("ALT=<"):
+                    comment = string.join(["##", comment], "")
+                    alts += [comment]
+                else:
+                    comment = string.replace(comment, " ", "_")
+                    comment = string.join(["##", comment], "")
+                    headers += [comment]
 
         annotations = self.annotationTable.values()
+        gt = False
         for annotation in annotations:
-            headers += [self._annotation2str(annotation.getFieldType(), annotation.getID(), annotation.getDescription(),
-                                             annotation.getDataType(), annotation.getNumber())]
+            fieldType = annotation.getFieldType()
 
-        # adds header line
-        headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'], delimiter)]
-        if hasFmtFlds:  # 'FORMAT' tags exist
+            ID = annotation.getID()
+            if ID == "GT":
+                gt = True
+
+            description = annotation.getDescription()
+            dataType = annotation.getDataType()
+            num = annotation.getNumber()
+
+            headers += [self._annotation2str(fieldType=fieldType, ID=ID, desc=description, dataType=dataType, num=num)]
+
+        if not gt:
+            headers += [self._annotation2str(fieldType="FORMAT", ID="GT", desc="Genotype", dataType="String", num=1)]
+
+        # Add alts and contigs information
+        headers += alts
+        headers += contigs
+
+        # Add header line
+        if len(self.sampleNames) != 0:  # 'FORMAT' tags exist
+            headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'], delimiter)]
             headers[len(headers)-1] += string.join(["", 'FORMAT'] + self.sampleNames, delimiter)
+        else:
+            headers += [string.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'], delimiter)]
 
-        header = string.join(filter(None, headers), lineterminator)
+        headers = collections.OrderedDict.fromkeys(headers).keys()  # remove any duplicates and keep the original order
+        headers = [header for header in headers if header not in ("", None,)]
+        header = string.join(headers, lineterminator)
         return header
+
+    def _getFieldnames(self, md, mut):
+        if mut is not None:
+            fieldnames = set(md.keys())
+            fieldnames = fieldnames.union(mut.keys())
+            fieldnames = fieldnames.difference(['chr', 'start', 'end', 'ref_allele', 'alt_allele', 'alt_allele_seen',
+                                                'build'])
+        else:
+            fieldnames = md.keys()
+
+        return fieldnames
 
     def _createTables(self, md, mut):
         """
@@ -204,21 +387,18 @@ class OutputDataManager:
         :return: two tables, one that maps each field name to an VcfOutputAnnotation object and the other that lists all
         field names corresponding to a field type
         """
-        if mut is not None:
-            names = set(md.keys())
-            names = names.union(mut.keys())
-            names = names.difference(['chr', 'start', 'end', 'ref_allele', 'alt_allele', 'altAlleleSeen', 'sampleName',
-                                      'build'])
-        else:
-            names = md.keys()
+        fieldnames = self._getFieldnames(md, mut)
 
         table = dict()
         revTable = dict()
-        for name in names:
-            if name in md:
-                annotation = md[name]
-            elif name in mut:
-                annotation = mut.getAnnotation(name)
+        for fieldName in fieldnames:
+            if fieldName.startswith("_"):
+                continue
+
+            if fieldName in md:
+                annotation = md[fieldName]
+            elif fieldName in mut:
+                annotation = mut.getAnnotation(fieldName)
 
             num = annotation.getNumber()
             tags = annotation.getTags()
@@ -226,23 +406,23 @@ class OutputDataManager:
             desc = annotation.getDescription()
             src = annotation.getDatasource()
 
-            fieldType = self._resolveFieldType(name, tags)
-            ID = self._resolveFieldID(fieldType, name)
+            fieldType = self._resolveFieldType(fieldName, tags)
+            ID = self._resolveFieldID(fieldType, fieldName)
             dataType = self._resolveFieldDataType(fieldType, ID, dataType)
-            desc = self._resolveFieldDescription(fieldType, name, desc)
+            desc = self._resolveFieldDescription(fieldType, fieldName, desc)
 
             isSplit = False
-            if fieldType in ("INFO", "FORMAT",):
-                isSplit = self._determineIsSplit(name, num, fieldType, tags)
-            table[name] = VcfOutputAnnotation(ID, fieldType, isSplit, src, dataType, desc, num)
+            if fieldType in ("INFO", "FORMAT",):  # determine whether to split or not for only INFO and FORMAT fields
+                isSplit = self._determineIsSplit(fieldName, num, fieldType, tags)
+            table[fieldName] = VcfOutputAnnotation(ID, fieldType, isSplit, src, dataType, desc, num)
             if fieldType not in revTable:
-                revTable[fieldType] = [name]
+                revTable[fieldType] = [fieldName]
             else:
-                revTable[fieldType] += [name]
+                revTable[fieldType] += [fieldName]
 
         return table, revTable
 
-    def _determineIsSplit(self, name, num, fieldType, tags=[]):
+    def _determineIsSplit(self, name, num, fieldType, tags=None):
         """
         Determines whether a given name's value was split by the alternate allele or not.
         This method implements the following decision tree for the number and field type corresponding to the ID:
@@ -261,32 +441,34 @@ class OutputDataManager:
         :param fieldType: type of Vcf field (for example, INFO)
         :return: whether the field ID's value was split by the alternate or not
         """
+        tags = [] if tags is None else tags
+
         if num == -2:  # by the number of samples
             if fieldType == "FORMAT":
                 if TagConstants.SPLIT in tags:  # override the default using the tags section
                     return True
-                elif self.configTable.isFieldNameInSplitSet(name, fieldType):  # override the default using the config file
+                elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
                     return True
                 else:
                     return False
         elif num == -1:  # by the number of alternates
             if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
                 return False
-            elif self.configTable.isFieldNameInNotSplitSet(name, fieldType):
+            elif self.configTable.isFieldNameInNotSplitSet(fieldType, name):
                 return False
             else:
                 return True
         elif num is None:  # number is unknown
             if TagConstants.SPLIT in tags:  # override the default using the tags section
                 return True
-            elif self.configTable.isFieldNameInSplitSet(name, fieldType):  # override the default using the config file
+            elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
                 return True
             else:
                 return False
         else:
             if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
                 return True
-            elif self.configTable.isFieldNameInSplitSet(name, fieldType):  # override the default using the config file
+            elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
                 return True
             else:
                 return False
@@ -309,6 +491,7 @@ class OutputDataManager:
         """
         m = {TagConstants.INFO: "INFO", TagConstants.FORMAT: "FORMAT", TagConstants.FILTER: "FILTER",
              TagConstants.ID: "ID", TagConstants.QUAL: "QUAL"}
+
         for tag in tags:
             if tag in m.keys():
                 return m[tag]
@@ -318,7 +501,7 @@ class OutputDataManager:
         elif name in self.configTable.getFormatFieldNames():
             return "FORMAT"
         elif name in self.configTable.getOtherFieldNames():
-            return self.configTable.getOtherFieldName(name)
+            return self.configTable.getOtherFieldID(name)
 
         if name.upper() in vcf.parser.RESERVED_INFO:
             return "INFO"
@@ -343,6 +526,7 @@ class OutputDataManager:
             return self.configTable.getInfoFieldID(name)
         elif fieldType == "FILTER":
             return self.configTable.getFormatFieldID(name)
+
         return name
 
     def _resolveFieldDataType(self, fieldType, ID, dataType):
@@ -360,6 +544,7 @@ class OutputDataManager:
                 return vcf.parser.RESERVED_INFO.get(ID, dataType)
             elif fieldType == "FORMAT":
                 return vcf.parser.RESERVED_FORMAT.get(ID, dataType)
+
         return dataType
 
     def _resolveFieldDescription(self, fieldType, name, description):
@@ -380,8 +565,10 @@ class OutputDataManager:
                 return self.configTable.getFormatFieldNameDescription(name)
             elif fieldType == "INFO" and name in self.configTable.getInfoFieldNames():
                 return self.configTable.getInfoFieldNameDescription(name)
+
         if description is None or description == "":
             return "Unknown"
+
         return description
 
     def _annotation2str(self, fieldType, ID, desc="Unknown", dataType="String", num=None):
@@ -397,8 +584,10 @@ class OutputDataManager:
         :return: correct meta-information description
         """
         num = "." if num is None else num
+
         if fieldType in ("FORMAT", "INFO",):
             return "##%s=<ID=%s,Number=%s,Type=%s,Description=\"%s\">" % (fieldType, ID, num, dataType, desc)
         elif fieldType in ("FILTER",):
             return "##%s=<ID=%s,Description=\"%s\">" % (fieldType, ID, desc)
+
         return ""

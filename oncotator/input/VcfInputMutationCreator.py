@@ -46,68 +46,50 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+import re
+import logging
+import string
+import copy
+
+import vcf
+
 from oncotator.Metadata import Metadata
 from oncotator.utils.TagConstants import TagConstants
-
-"""
-Created on Oct 23, 2012
-
-@author: gavlee
-"""
-import re
-from ConfigInputIncompleteException import ConfigInputIncompleteException
-from oncotator.utils.ConfigUtils import ConfigUtils
 from InputMutationCreator import InputMutationCreator
-import logging
 from oncotator.MutationData import MutationData
 from oncotator.utils.MutUtils import MutUtils
-import string
-from SyntaxException import SyntaxException
-import vcf
-import copy
 from oncotator.Annotation import Annotation
-from oncotator.input.VcfInputConfigTable import VcfInputConfigTable
+from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
 
 
 class VcfInputMutationCreator(InputMutationCreator):
-    """
-    TODO: Finish documentation
-    
-    Convert a VCF 4.1 into a MutationData generator.
-            Adds the following annotations (as INPUT annotation source):
-                sampleName -- the name of the sample in the VCF
-                altAlleleSeen -- whether the alternate allele was seen in the mutation.  This is whether a "1" appears in the GT field.
-                
-    
-    """
 
     def __init__(self, filename, configFile='vcf.in.config'):
-        self.filename = filename
-        self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
-        self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
-        self.configTable = VcfInputConfigTable()
-        self.logger = logging.getLogger(__name__)
+        """
 
-    def _validateParsedFieldIDs(self, inputIDs, metaInfoIDs, fieldType="INFO"):
-        diff = set(inputIDs).difference(set(metaInfoIDs))
-        if len(diff) > 0:
-            raise SyntaxException("Missing %s ID(s) (%s) in the meta-information specification of the VCF file, %s."
-                                  % (fieldType, string.join(diff, ","), self.filename))
+        :param filename:
+        :param configFile:
+        """
+        self.filename = filename
+        self.configFilename = configFile
+        self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
+        self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("input_vcf")
+        self.isTagSplit = dict()
+        self.logger = logging.getLogger(__name__)
 
     def _addGenotypeDataToMutation(self, mutation, record, index):
         """
 
 
-        :param mutation:
+        :param mutation: input mutation object
         :param record:
         :param index:
         """
-
         IDs = self.configTable.getFormatFieldIDs()
         genotypeData = None
 
         if len(IDs) != 0:
-            sampleName = mutation.getAnnotation("sampleName").getValue()
+            sampleName = mutation.getAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME).getValue()
             genotypeData = record.genotype(sampleName)
 
         if record.FORMAT is not None:
@@ -115,20 +97,27 @@ class VcfInputMutationCreator(InputMutationCreator):
                 val = ""
                 dataType = self.vcf_reader.formats[ID].type
 
+                name = self.configTable.getFormatFieldName(ID)
                 num = self.vcf_reader.formats[ID].num
-                tags = [TagConstants.FORMAT]
+
+                tags = []
 
                 if (genotypeData is not None) and (hasattr(genotypeData.data, ID)):
-                    isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
-                    if isSplitTag:
+                    if name not in self.isTagSplit:
+                        isTagSplit = self._determineIsSplit(ID, num, "FORMAT")
+                        self.isTagSplit[name] = isTagSplit
+                    else:
+                        isTagSplit = self.isTagSplit[name]
+
+                    if isTagSplit:
                         val = genotypeData[ID][index]
                     else:
                         val = genotypeData[ID]
 
-                    if isSplitTag:
-                        tags += [TagConstants.SPLIT]
+                    if isTagSplit:
+                        tags = [TagConstants.FORMAT, TagConstants.SPLIT]
                     else:
-                        tags += [TagConstants.NOT_SPLIT]
+                        tags = [TagConstants.FORMAT, TagConstants.NOT_SPLIT]
 
                 if (val is None) or (val == ""):
                     if dataType == "Flag":
@@ -140,7 +129,6 @@ class VcfInputMutationCreator(InputMutationCreator):
                 else:
                     val = str(val)
 
-                name = self.configTable.getFormatFieldName(ID)
                 mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.formats[ID].desc, tags=tags,
                                           number=num)
 
@@ -162,19 +150,25 @@ class VcfInputMutationCreator(InputMutationCreator):
             dataType = self.vcf_reader.infos[ID].type
 
             num = self.vcf_reader.infos[ID].num
-            tags = [TagConstants.INFO]
+            name = self.configTable.getInfoFieldName(ID)
+            tags = []
 
             if ID in record.INFO:
-                isSplitTag = self._determineIsSplit(ID, num, "INFO")
-                if isSplitTag:
+                if name not in self.isTagSplit:
+                    isTagSplit = self._determineIsSplit(ID, num, "INFO")
+                    self.isTagSplit[name] = isTagSplit
+                else:
+                    isTagSplit = self.isTagSplit[name]
+
+                if isTagSplit:
                     val = record.INFO[ID][index]
                 else:
                     val = record.INFO[ID]
 
-                if isSplitTag:
-                    tags += [TagConstants.SPLIT]
+                if isTagSplit:
+                    tags = [TagConstants.INFO, TagConstants.SPLIT]
                 else:
-                    tags += [TagConstants.NOT_SPLIT]
+                    tags = [TagConstants.INFO, TagConstants.NOT_SPLIT]
 
             if (val is None) or (val == ""):
                 if dataType == "Flag":
@@ -186,13 +180,19 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 val = str(val)
 
-            name = self.configTable.getInfoFieldName(ID)
             mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.infos[ID].desc, tags=tags,
                                       number=num)
 
         return mutation
 
     def _determineIsSplit(self, ID, num, fieldType):
+        """
+
+        :param ID:
+        :param num:
+        :param fieldType:
+        :return:
+        """
         if num == -2:  # by the number of samples
             if fieldType == "FORMAT":
                 if self.configTable.isFieldIDInSplitSet(fieldType, ID):
@@ -214,67 +214,11 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         return False
 
-    def _validateInputConfigFile(self):
-        sections = ["INFO", "FORMAT", "SPLIT_TAGS", "NOT_SPLIT_TAGS"]
-        for section in sections:
-            if not ConfigUtils.hasSectionKey(self.config, section):
-                raise ConfigInputIncompleteException("Missing %s section in the input config file." % section)
-
-    def _createConfigTableKeys(self):
-        # Parse fields from INFO section of the config file
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
-        for ID, name in table.items():
-            self.configTable.addInfoFieldID(ID, name)
-
-        # Parse fields from FORMAT section of the config file
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
-        for ID, name in table.items():
-            self.configTable.addFormatFieldID(ID, name)
-
-        # Parse fields from NOT_SPLIT_TAGS section of the config file
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "NOT_SPLIT_TAGS")
-        for fieldType, IDs in table.items():
-            self.configTable.addFieldIDsToNotSplitSet(fieldType, IDs)
-
-        # Parse fields from SPLIT_TAGS section of the config file
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
-        for fieldType, IDs in table.items():
-            self.configTable.addFieldIDsToSplitSet(fieldType, IDs)
-
-    def _createConfigTable(self):
-        # Iterate over the input VCF file and parse all possible fields in INFO and FORMAT section (excluding the
-        # fields listed in the meta-information section)
-        infos = set()
-        formats = set()
-        for variant in self.vcf_reader:  # parse INFO and FORMAT fields per record
-            infos = infos.union(set(variant.INFO.keys()))
-            for sample in variant.samples:
-                formats = formats.union(set(sample.data._fields))
-
-        for ID in self.configTable.getInfoFieldIDs():
-            if ID not in self.vcf_reader.infos.keys():
-                self.configTable.removeInfoFieldID(ID)
-        self._validateParsedFieldIDs(infos, self.vcf_reader.infos.keys(), "INFO")
-        for ID in infos:
-            if ID not in self.configTable.getInfoFieldIDs():
-                name = ID
-                self.configTable.addInfoFieldID(ID, name)
-
-        for ID in self.configTable.getFormatFieldIDs():
-            if ID not in self.vcf_reader.formats.keys():
-                self.configTable.removeFormatFieldID(ID)
-        self._validateParsedFieldIDs(formats, self.vcf_reader.formats.keys(), "FORMAT")
-        for ID in formats:
-            if ID not in self.configTable.getFormatFieldIDs():
-                name = ID
-                self.configTable.addFormatFieldID(ID, name)
-
-    def _determine_alt_seen(self, sample_gt_str, index):
+    def _determineAltSeen(self, sample_gt_str, index):
         """Look at the genotype string to see if the alternate is present.  GT of ./. is considered a 'yes'"""
         # TODO: Confirm that it is necessary to take into account the index.  Take into account the index.
         is_alt_seen = "True"
         if sample_gt_str is not None:
-
             # Split genotype field into number of entries as ploidy.  Using chars '/' or '|'
             gt_haploid_list = re.split('/|\|', sample_gt_str)
             if all([haploid != str(index) for haploid in gt_haploid_list]):
@@ -286,7 +230,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def createMutations(self):
         """ Creates a mutation for each mutation by each sample, regardless of allelic depth, etc.
-            
+
             Annotations that this will generate (as source = "INPUT"):
                 sampleName
                 isCalled
@@ -295,20 +239,10 @@ class VcfInputMutationCreator(InputMutationCreator):
 
             TODO: Complete documentation
         """
-        self.reset()
-        self.configTable = VcfInputConfigTable()
-        self._validateInputConfigFile()
-        self._createConfigTableKeys()
-        self._createConfigTable()
+        self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
+                                                                  configFilename=self.configFilename)
 
-        self.reset()
         for record in self.vcf_reader:
-            for flt in record.FILTER:
-                if flt not in self.vcf_reader.filters:
-                    raise SyntaxException(
-                        "Missing FILTER ID, %s, in the meta-information specification of the VCF file, %s."
-                        % (flt, self.filename))
-
             for index in range(len(record.ALT)):
                 mut = self._createMutation(record, index)
 
@@ -319,59 +253,60 @@ class VcfInputMutationCreator(InputMutationCreator):
                     sample_names = [s.sample for s in sampleRecList]
                     is_tumor_normal_vcf = "NORMAL" in sample_names and len(sample_names) == 2
                     if is_tumor_normal_vcf:
-                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
+                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, "
+                                                         "unless GT field specified otherwise.")
 
                     for sample in sampleRecList:
                         sampleMut = copy.deepcopy(mut)
                         sample_name = sample.sample
                         if is_tumor_normal_vcf and sample_name != "NORMAL":
                             sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
-                        sampleMut.createAnnotation("sampleName", sample_name, "INPUT")
+                        sampleMut.createAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME, sample_name, "INPUT")
 
-                        #TODO: Confirm that altAlleleSeen will be False in all cases of GT = ./.
+                        #TODO: Confirm that alt_allele_seen will be False in all cases of GT = ./.
                         genotype = "GT"
                         is_alt_seen = "True"
                         if genotype in sample.data._fields:
-                            is_alt_seen = self._determine_alt_seen(sample.data.GT, index + 1)
+                            is_alt_seen = self._determineAltSeen(sample.data.GT, index + 1)
 
                         # HACK: If the sample name is NORMAL, there is more than one sample, and
-                        # there is no GT field (or GT is ./.) then assume that this is altAlleleSeen of False
+                        # there is no GT field (or GT is ./.) then assume that this is alt_allele_seen of False
                         if is_tumor_normal_vcf and sample_name == "NORMAL" and (genotype not in sample.data._fields):
                             is_alt_seen = "False"
-                        sampleMut["altAlleleSeen"] = is_alt_seen
+                        sampleMut["alt_allele_seen"] = is_alt_seen
                         sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
 
                         yield sampleMut
 
     def _createMutation(self, record, index):
         """
+
+        :param record:
+        :param index:
+        :return:
         """
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
 
-        alt = record.ALT[index]
-        if alt is None:
-            alt = ""
-        else:
-            alt = str(alt)
-
-        endPos = int(record.POS) + len(alt) - 1
         ref = record.REF
         if ref == ".":
             ref = ""
 
         alt = record.ALT[index]
         if alt is None:
-            alt = ""
+            alt = ref
         else:
             alt = str(alt)
 
-        # Write end position as it would be in MAF format
+        startPos = record.POS
         endPos = int(record.POS)
+        mut = MutationData(chrom, startPos, endPos, ref, alt, "hg19")
+
+        if len(alt) == len(ref):  # Snps
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
         if len(alt) < len(ref):  # deletion
-            endPos += len(ref) - len(alt) - 1
+            mut = MutUtils.alterMutationForDeletions(mut)
         elif len(alt) > len(ref):  # insertion
-            endPos += 1
-        mut = MutationData(chrom, record.POS, endPos, ref, alt, "hg19")
+            mut = MutUtils.alterMutationForInsertions(mut)
 
         ID = record.ID
         if ID is None:
@@ -379,16 +314,16 @@ class VcfInputMutationCreator(InputMutationCreator):
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
 
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])
-        for filt in self.vcf_reader.filters:  # for each filter in the header
-            description = self.vcf_reader.filters[filt].desc  # parse the description
+        for flt in self.vcf_reader.filters:  # for each filter in the header
+            description = self.vcf_reader.filters[flt].desc  # parse the description
             if (len(record.FILTER) != 0) and \
-                    (filt in record.FILTER):  # if the filter is mentioned for this variant, then it failed
-                mut.createAnnotation(filt, "FAIL", "INPUT", annotationDescription=description,
+                    (flt in record.FILTER):  # if the filter is mentioned for this variant, then it failed
+                mut.createAnnotation(flt, "FAIL", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
             else:
-                mut.createAnnotation(filt, "PASS", "INPUT", annotationDescription=description,
+                mut.createAnnotation(flt, "PASS", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
-        mut.createAnnotation("altAlleleSeen", str(True), "INPUT")
+        mut.createAnnotation("alt_allele_seen", str(True), "INPUT")
         mut = self._addInfoDataToMutation(mut, record, index)
         return mut
 
@@ -396,21 +331,75 @@ class VcfInputMutationCreator(InputMutationCreator):
         """ Resets the internal state, so that mutations can be generated. """
         self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
 
-    def getComments(self):
-        """ Comments often need to be passed into the output.  Get the comments from the input file."""
-        comments = list()
+    def _parseMiscellaneousMetadata(self):
+        """
+
+
+        :return:
+        """
+        comments = []
         keys = self.vcf_reader.metadata.keys()
         for key in keys:
-            val = self.vcf_reader.metadata[key]
-            if isinstance(val, list):
-                val = string.join(map(str, val), ";")
-            if isinstance(val, dict):
-                val = string.join(map(str, val), ";")
-            comment = string.join([key, val], "=")
-            comments.append(comment)
+            vals = self.vcf_reader.metadata[key]
+            if isinstance(vals, list):
+                for itm in vals:
+                    if isinstance(itm, dict):
+                        val = [string.join([str(k), str(v)], "=") for k, v in itm.iteritems()]
+                        val = string.join(val, ",")
+                        val = string.join(["<", ">"], val)
+                    else:
+                        val = str(itm)
+
+                    comment = string.join([key, val], "=")
+                    comments.append(comment)
+            elif isinstance(vals, dict):
+                val = [string.join([str(k), str(v)], "=") for k, v in vals.iteritems()]
+                val = string.join(val, ",")
+                val = string.join(["<", ">"], val)
+
+                comment = string.join([key, val], "=")
+                comments.append(comment)
+            else:
+                val = str(vals)
+                comment = string.join([key, val], "=")
+                comments.append(comment)
+        return comments
+
+    def _parseContigsMetadata(self):
+        comments = []
+        keys = self.vcf_reader.contigs.keys()
+        for key in keys:
+            val = self.vcf_reader.contigs[key]
+            ID = val.id
+            length = str(val.length)
+            val = string.join(["contig=<ID=", ID, ",length=", length, ">"], "")
+            comments.append(val)
+        return comments
+
+    def _parseAltsMetadata(self):
+        comments = []
+        keys = self.vcf_reader.alts.keys()
+        for key in keys:
+            val = self.vcf_reader.alts[key]
+            ID = val.id
+            desc = val.desc
+            val = string.join(["ALT=<ID=", ID, ",Description=\"", desc, "\">"], "")
+            comments.append(val)
+        return comments
+
+    def getComments(self):
+        """ Comments often need to be passed into the output.  Get the comments from the input file."""
+        comments = self._parseMiscellaneousMetadata()
+        comments += self._parseContigsMetadata()
+        comments += self._parseAltsMetadata()
         return comments
 
     def _addFormatFields2Metadata(self, metadata):
+        """
+
+        :param metadata:
+        :return:
+        """
         for ID in self.configTable.getFormatFieldIDs():
             name = self.configTable.getFormatFieldName(ID)
             num = self.vcf_reader.formats[ID].num
@@ -423,6 +412,11 @@ class VcfInputMutationCreator(InputMutationCreator):
         return metadata
 
     def _addInfoFields2Metadata(self, metadata):
+        """
+
+        :param metadata:
+        :return:
+        """
         for ID in self.configTable.getInfoFieldIDs():
             name = self.configTable.getInfoFieldName(ID)
             num = self.vcf_reader.infos[ID].num
@@ -435,16 +429,24 @@ class VcfInputMutationCreator(InputMutationCreator):
         return metadata
 
     def _addFilterFields2Metadata(self, metadata):
+        """
+
+        :param metadata:
+        :return:
+        """
         for filt in self.vcf_reader.filters:  # for each filter in the header
             metadata[filt] = Annotation("", "INPUT", "String", self.vcf_reader.filters[filt].desc,
                                         tags=[TagConstants.FILTER])
         return metadata
 
     def _createMetadata(self):
-        self.configTable = VcfInputConfigTable()
-        self._validateInputConfigFile()
-        self._createConfigTableKeys()
-        self._createConfigTable()
+        """
+
+
+        :return:
+        """
+        self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
+                                                                  configFilename=self.configFilename)
 
         metadata = Metadata()
         metadata = self._addFilterFields2Metadata(metadata)

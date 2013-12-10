@@ -1,7 +1,7 @@
 import unittest
 import logging
 from oncotator.DatasourceCreator import DatasourceCreator
-
+from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.utils.TagConstants import TagConstants
 from TestUtils import TestUtils
@@ -19,23 +19,6 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _validateAnnotation(self, annotation, dataType, ds, desc, num, tags, val):
-        self.assertEqual(annotation.getDataType(), dataType, "Expected data type is %s but was %s." %
-                                                             (dataType, annotation.getDataType()))
-        self.assertEqual(annotation.getDescription(), desc, "Expected description is %s but was %s." %
-                                                            (desc, annotation.getDescription()))
-        self.assertEqual(annotation.getDatasource(), ds, "Expected data type is %s but was %s." %
-                                                         (ds, annotation.getDatasource()))
-        self.assertEqual(annotation.getNumber(), num, "Expected num is %s but was %s." % (num, annotation.getNumber()))
-        self.assertEqual(annotation.getValue(), val, "Expected val is %s but was %s." % (val, annotation.getValue()))
-        self.assertEqual(annotation.getTags(), tags, "Expected tags is %s but was %s" % (tags, annotation.getTags()))
-
-    def testCreateESPCoverageDataSource(self):
-        self.logger.info("Initializing ESP6500SI-V2 Coverage")
-        tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceCreator.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
-                                                                       tabixIndexedTsvDirName)
-
     def testESPAnnotationWithMissingMutation(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
@@ -48,24 +31,24 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1.ref_allele = "T"
         m1.alt_allele = "C"
 
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalEAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
-
-        annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPAnnotationWithExistingMutation(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
@@ -80,29 +63,30 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1.alt_allele = "C"
 
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "1.0")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="1.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "5")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
+        cur_annotation = Annotation(value="5", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "1.0")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
+        cur_annotation = Annotation(value="1.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalEAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "3")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
+        cur_annotation = Annotation(value="1.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "1.0")
-
-        annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "2")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="2", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPAnnotationWithMissingIndel(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
@@ -116,24 +100,24 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1.ref_allele = "T"
         m1.alt_allele = "C"
 
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalEAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
-
-        annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None, [TagConstants.INFO, TagConstants.NOT_SPLIT], "")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPAnnotationWithExistingIndel(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
@@ -148,27 +132,27 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1.alt_allele = "C"
 
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "139.0|142.0|144.0|147.0|150.0")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="139.0|142.0|144.0|147.0|150.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "5335|5350|5360|5379|5400")
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
+        cur_annotation = Annotation(value="5335|5350|5360|5379|5400", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "110.0|113.0|115.0|117.0|119.0")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
+        cur_annotation = Annotation(value="110.0|113.0|115.0|117.0|119.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_TotalEAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "3424|3436|3443|3459|3475")
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
+        cur_annotation = Annotation(value="94.0|96.0|98.0|100.0|101.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "94.0|96.0|98.0|100.0|101.0")
-
-        annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        self._validateAnnotation(annotation, "String", "ESP", "", None,
-                                 [TagConstants.INFO, TagConstants.NOT_SPLIT], "1911|1914|1917|1920|1925")
-
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="1911|1914|1917|1920|1925", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
