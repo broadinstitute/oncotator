@@ -3,7 +3,7 @@ import Bio
 from oncotator.DatasourceCreator import DatasourceCreator
 import unittest
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
-from oncotator.datasources import EnsemblTranscriptDatasource
+from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils, data_provider_decorator

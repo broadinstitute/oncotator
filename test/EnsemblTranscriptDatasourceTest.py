@@ -54,7 +54,7 @@ import unittest
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MutationData import MutationData
-from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils

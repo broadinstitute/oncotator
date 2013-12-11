@@ -51,6 +51,7 @@
 import logging
 import os
 from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatasource
+from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from utils.ConfigUtils import ConfigUtils
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource

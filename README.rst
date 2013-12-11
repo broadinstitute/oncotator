@@ -69,10 +69,11 @@ Execute the following line in the same directory as setup.py (provide the approp
 Running the Automated Unit Tests (without Virtual Env Creation)
 --------------------
 You can simply run the unit tests in the currently active python environment, which takes a lot less time (< 6 minutes), but requires
-all dependencies to be installed.  However, you must follow the instructions for Unit Tests above (Steps 1 and 2), if
-not already performed.  Then run::
+all dependencies to be installed.  However, you must follow the instructions for Unit Test Setup above (Steps 1 and 2), if
+not already performed.  Then run (in the same directory as setup.py)::
 
     $ nosetests --all-modules --exe -w test -v --processes=4 --process-timeout=480  --process-restartworker
+
 
 Please note that there is a known bug with ```--processes``` and output to XML.  If you alter the above nosetests command to include junit xml (```--with-xunit```), remove the last three options (```--processes=4 --process-timeout=480  --process-restartworker```).  This will cause tests to only run on one core.
 

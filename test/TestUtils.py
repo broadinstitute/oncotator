@@ -48,7 +48,7 @@
 #"""
 from functools import wraps
 import shutil
-from nose.tools.nontrivial import nottest
+from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os

@@ -3,10 +3,9 @@ import shutil
 import Bio
 
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
-from oncotator.datasources import EnsemblTranscriptDatasource
+from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.VariantClassification import VariantClassification
-from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.MUC16ChangeTestdata import muc16_change_testdata
 from test.TestUtils import TestUtils,data_provider_decorator
 from test.MUC16Testdata import muc16testdata

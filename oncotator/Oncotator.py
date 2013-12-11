@@ -17,7 +17,7 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 import sys
-from oncotator.datasources import TranscriptProvider
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 
 if not (sys.version_info[0] == 2  and sys.version_info[1] in [ 7]):
     raise "Oncotator requires Python 2.7.x : " + str(sys.version_info)
@@ -155,8 +155,7 @@ USAGE
             print("Verbose mode on")
         
         logFilename = args.log_name # 'oncotator.log'
-        
-        
+
         # Create a basic logger to a file
         loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
         logging.basicConfig(filename=logFilename, level=logging.INFO, format=loggingFormat)
