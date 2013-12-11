@@ -60,16 +60,14 @@ import unittest
 TestUtils.setupLogging(__file__, __name__)
 class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.TestCase):
 
-    def setUp(self):
-        self.config = TestUtils.createUnitTestConfig()
-
+    _multiprocess_can_split_ = True
 
     def tearDown(self):
         pass
 
     def testBasicAnnotationNoChange(self):
-        ''' Test whether we can translate from one coordinate system to another.  This tests no change.
-        '''
+        """ Test whether we can translate from one coordinate system to another.  This tests no change.
+        """
         tDS = TranscriptToUniProtProteinPositionTransformingDatasource(title="UniProt", version="test", src_file="file://testdata/small_uniprot_prot_seq_ds/db")
 
         # Must correspond to what the datasource is going to generate
@@ -81,8 +79,8 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         self.assertTrue(m[outputAnnotation] == "50", "Did not get proper value (50): " + m[outputAnnotation])
 
     def testBasicAnnotationWithChange(self):
-        ''' Test whether we can translate from one coordinate system to another.  This tests a known change.
-        '''
+        """ Test whether we can translate from one coordinate system to another.  This tests a known change.
+        """
         tDS = TranscriptToUniProtProteinPositionTransformingDatasource(title="UniProt", version="test", src_file="file://testdata/small_uniprot_prot_seq_ds/db")
 
         # Must correspond to what the datasource is going to generate.
