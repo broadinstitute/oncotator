@@ -54,19 +54,11 @@ from oncotator.DatasourceCreator import DatasourceCreator
 '''
 Preprocessing script to create UniProt protein sequence alignment to the GENCODE Txs.
 '''
-import collections
-from Bio import SwissProt
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import os
-import csv
-import cPickle
-import itertools
 import re
 from oncotator.MutationData import MutationData
-from oncotator.datasources import Generic_Gene_DataSource, Gaf
-from oncotator.index.gaf import create_gaf_dicts
-from createUniprotTSVs import parseWithPickle
 from createUniprotTSVs import parse_uniprot_data
 import tempfile
 import subprocess
@@ -109,6 +101,7 @@ class OutOfBoundsError(Exception):
         self.value = err
     def __str__(self):
         return repr(self.err)
+
 
 def parseOptions():
     
@@ -173,7 +166,7 @@ def map_uni_pos(qobj, sobj, aa_pos):
 
 def get_uni_pos(fh, AA):
     new_pos = 0
-    query_AA= ''
+    query_AA = ''
     uni_AA = ''
     pat1 = re.compile(r'Query:\s(\d+)\s+([\w\-\*]+)\s(\d+)')
     pat2= re.compile(r'Sbjct:\s(\d+)\s+([\w\-\*]+)\s(\d+)')
