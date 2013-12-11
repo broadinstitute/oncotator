@@ -56,13 +56,11 @@ Created on Nov 7, 2012
 
 from OutputRenderer import OutputRenderer
 import logging
-from ConfigParser import SafeConfigParser
 import csv
-import os
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.version import VERSION
 from oncotator.utils.ConfigUtils import ConfigUtils
-from numpy.ma.core import mod
+
 class TcgaMafOutputRenderer(OutputRenderer):
     """
     
@@ -185,7 +183,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
             annotations = set(headers).union(metadataAnnotations)
             m = None
 
-        # Create a mapping between column name and annotation name
+        # Create a mapping between column name and annotation name based on aliases
         fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary, self.config.getboolean("general", "displayAnnotations"), exposedFields=self.exposedColumns)
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
