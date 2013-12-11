@@ -37,8 +37,8 @@ This distribution is installable through the standard ``setup.py`` method.  Note
 Because the setup.py specifies an entry point as a console script, ``oncotator``  and ``initializeDatasource`` will be installed into your Python's ``bin/`` directory
 
 
-Unit Tests
-----------
+Unit Test Setup
+---------------
 
 NOTE: Unit tests require a minimum of 4GB to run.
 
@@ -55,12 +55,8 @@ Before running the unit tests for the first time, please perform the following s
     $ cp configs/personal-test.config.template configs/personal-test.config
     In configs/personal-test.config, replace ```dbDir=MY_DB_DIR/``` with ```dbDir=``` the appropriate path to you oncotator datasource directory.
 
-Unit tests are run from the ``test`` target in setup.py::
 
-    $ python setup.py test
-
-
-Automated Unit Tests
+Running the Automated Unit Tests (with Virtual Env Creation)
 --------------------
 The automated unit tests (```run_ci_tests.sh```) require 6 GB to run.
 This can take a fair amount of time (~20 minutes), since a full install into a new virtual environment is performed.
@@ -69,6 +65,9 @@ Execute the following line in the same directory as setup.py (provide the approp
 
     $ bash run_ci_tests.sh <DB_DIR>
 
+
+Running the Automated Unit Tests (without Virtual Env Creation)
+--------------------
 You can simply run the unit tests in the currently active python environment, which takes a lot less time (< 6 minutes), but requires
 all dependencies to be installed.  However, you must follow the instructions for Unit Tests above (Steps 1 and 2), if
 not already performed.  Then run::
