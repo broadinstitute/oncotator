@@ -52,21 +52,22 @@ import logging
 import os
 from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatasource
 from utils.ConfigUtils import ConfigUtils
-from datasources import Gaf, ReferenceDatasource
-from datasources import dbSNP
-from datasources import dbNSFP
-from datasources import Cosmic
-from datasources import Generic_Gene_DataSource
-from datasources import Generic_Transcript_Datasource
-from datasources import Generic_VariantClassification_Datasource
-from oncotator.datasources import Generic_GenomicPosition_DataSource, EnsemblTranscriptDatasource
-from oncotator.datasources import Generic_GeneProteinPositionDatasource
-from oncotator.datasources import PositionTransformingDatasource
-from oncotator.datasources import TranscriptToUniProtProteinPositionTransformingDatasource
-from oncotator.datasources import TranscriptProvider
-from oncotator.datasources import Generic_GenomicMutation_Datasource
-from oncotator.datasources import IndexedTSV_Datasource
-from oncotator.datasources import IndexedVCF_DataSource
+from oncotator.datasources.Gaf import Gaf
+from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
+from oncotator.datasources.dbSNP import dbSNP
+from oncotator.datasources.dbNSFP import dbNSFP
+from oncotator.datasources.Cosmic import Cosmic
+from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
+from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
+from oncotator.datasources.GenericVariantClassificationDatasource import GenericVariantClassificationDatasource
+from oncotator.datasources.GenericGenomicPositionDatasource import GenericGenomicPositionDatasource
+from oncotator.datasources.GenericGeneProteinPositionDatasource import GenericGeneProteinPositionDatasource
+from oncotator.datasources.PositionTransformingDatasource import PositionTransformingDatasource
+from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import TranscriptToUniProtProteinPositionTransformingDatasource
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
+from oncotator.datasources.GenericGenomicMutationDatasource import GenericGenomicMutationDatasource
+from oncotator.datasources.TabixIndexedTsvDatasource import IndexedTsvDatasource
+from oncotator.datasources.TabixIndexedVcfDatasource import IndexedVcfDatasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -144,19 +145,25 @@ class DatasourceCreator(object):
         elif dsType == "dbnsfp":
             result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
-            result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
+            if configParser.has_option('general', 'windowSizeRef'):
+                window_size = configParser.get('general', 'windowSizeRef')
+            else:
+                window_size = 10
+            result = ReferenceDatasource(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'), windowSizeRef=window_size)
         elif dsType == 'gene_tsv':
-            result = Generic_Gene_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'gene_col'))
+            result = GenericGeneDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'gene_col'))
         elif dsType == 'transcript_tsv':
-            result = Generic_Transcript_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'transcript_col'))
+            result = GenericTranscriptDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'transcript_col'))
         elif dsType == 'vc_tsv':
-            result = Generic_VariantClassification_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'vc_col'))
+            result = GenericVariantClassificationDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), geneColumnName=configParser.get('general', 'vc_col'))
         elif dsType == 'gp_tsv':
-            result = Generic_GenomicPosition_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
+            result = GenericGenomicPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
         elif dsType == 'gm_tsv':
-            result = Generic_GenomicMutation_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
+            result = GenericGenomicMutationDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'))
+        elif dsType == 'gm_tsv_reverse_complement':
+            result = GenericGenomicMutationDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'genomic_position_cols'), use_complementary_strand_alleles_for_negative_strand_transcripts=True)
         elif dsType == 'gpp_tsv':
-            result = Generic_GeneProteinPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'gene_protein_position_cols'))
+            result = GenericGeneProteinPositionDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),title=configParser.get("general", "title"), version=configParser.get('general', 'version'), gpColumnNames=configParser.get('general', 'gene_protein_position_cols'))
         elif dsType == "transcript_to_uniprot_aa":
             result = TranscriptToUniProtProteinPositionTransformingDatasource(title=configParser.get("general", "title"),
                                                                               version=configParser.get('general', 'version'),
@@ -166,19 +173,23 @@ class DatasourceCreator(object):
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == "indexed_vcf":
-            result = IndexedVCF_DataSource(src_file=filePrefix + configParser.get('general', 'src_file'),
+            result = IndexedVcfDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get('general', 'version'))
         elif dsType == "indexed_tsv":
-            colnames = configParser.get("general", "column_names")
-            indexColnames = configParser.get("general", "index_columns")
-            indexColnames = indexColnames.split(",")
-            DatasourceCreator._log_missing_column_name_msg(colnames, indexColnames)
-            result = IndexedTSV_Datasource(src_file=filePrefix + configParser.get('general', 'src_file'),
+            colNames = configParser.get("general", "column_names")
+            colNames = colNames.split(",")
+
+            annotationColnames = configParser.get("general", "annotation_column_names")
+            annotationColnames = annotationColnames.split(",")
+
+            DatasourceCreator._log_missing_column_name_msg(colNames, annotationColnames)
+
+            result = IndexedTsvDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get('general', 'version'),
-                                           colnames=colnames.split(","),
-                                           indexColnames=indexColnames)
+                                           colNames=colNames,
+                                           annotationColNames=annotationColnames)
 
         hashcode = DatasourceCreator._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)
@@ -287,7 +298,7 @@ class DatasourceCreator(object):
         """ 1) Make sure to put the gene-indexed datasources at the end of the list (in any order otherwise).  This is so that a gene annotation can be created ahead of annotating by gene. 
             2) Put position transforming datasources at the front (though see next step)
             3) Make sure that any Gaf datasources are put up front."""
-        newlist = sorted(datasources, key=lambda k: isinstance(k, Generic_Gene_DataSource))
+        newlist = sorted(datasources, key=lambda k: isinstance(k, GenericGeneDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, PositionTransformingDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, TranscriptProvider))
         return newlist

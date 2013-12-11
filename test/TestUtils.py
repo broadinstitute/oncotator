@@ -53,9 +53,9 @@ from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
 from oncotator.DatasourceCreator import DatasourceCreator
-from oncotator.datasources import Gaf, EnsemblTranscriptDatasource
-from oncotator.datasources import dbSNP
-from oncotator.utils import ConfigUtils
+from oncotator.datasources.Gaf import Gaf
+from oncotator.datasources.dbSNP import dbSNP
+from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
 import logging
 import traceback
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
@@ -90,7 +90,7 @@ class TestUtils(object):
     """
 
 
-    def __init__(self,params):
+    def __init__(self, params):
         """
         Nothing to do when initializing this class.  
         """
@@ -99,7 +99,7 @@ class TestUtils(object):
     @staticmethod
     def createUnitTestConfig():
         config = SafeConfigParser()
-        config.readfp(file('configs/default-test.config','r'))
+        config.readfp(file('configs/default-test.config', 'r'))
         config.read(['configs/personal-test.config'])
         return config
     
@@ -110,8 +110,13 @@ class TestUtils(object):
             """
         gaf_fname = config.get("gaf3.0", "gaf_fname")
         gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
-        gafDatasource = Gaf(gaf_fname, gaf_transcripts_fname,tx_mode=tx_mode, protocol=protocol)
+        gafDatasource = Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol=protocol)
         return gafDatasource
+
+    @staticmethod
+    def createReferenceDatasource(config):
+        refFilename = config.get("ref_hg", "refDir")
+        return ReferenceDatasource(refFilename)
 
     @staticmethod
     def createGafDatasourceProxy(config, tx_mode="CANONICAL", protocol="file"):
@@ -128,7 +133,7 @@ class TestUtils(object):
 
     @staticmethod
     def createDbSnpDatasource(config):
-        dbsnpFilename = config.get("dbSNP","dbSNPFilename")
+        dbsnpFilename = config.get("dbSNP", "dbSNPFilename")
         return dbSNP(dbsnpFilename)
 
     @staticmethod
@@ -152,7 +157,7 @@ class TestUtils(object):
         """
         #TODO: Low priority: Use decorator instead of TestUtils.setupLogging(...)
         curdir = os.path.dirname(filename) + '/'
-        logging.basicConfig(filemode='w', filename=(curdir + 'out/oncotator_unitTest_' + package_name + '.log'),
+        logging.basicConfig(filemode='w', filename=(os.path.join(curdir, 'out/oncotator_unitTest_' + package_name + '.log')),
                             level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
 
     @staticmethod

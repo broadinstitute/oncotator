@@ -53,8 +53,8 @@ import logging
 import pysam
 
 from oncotator.MutationData import MutationData
-from oncotator.datasources import Cosmic
-from TestUtils  import TestUtils
+from oncotator.datasources.Cosmic import Cosmic
+from TestUtils import TestUtils
 
 
 TestUtils.setupLogging(__file__, __name__)

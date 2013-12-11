@@ -55,6 +55,8 @@ from TestUtils import TestUtils
 
 
 TestUtils.setupLogging(__file__, __name__)
+
+
 class MutUtilsTest(unittest.TestCase):
     def testProteinChange(self):
         """ Test that protein change parsing of start and end works.
@@ -106,6 +108,177 @@ class MutUtilsTest(unittest.TestCase):
 
         self.assertEqual(MutUtils.convertChromosomeStringToMutationDataFormat("2", build="hg19"), "2", "chrom of 2 yielded different value: " + MutUtils.convertChromosomeStringToMutationDataFormat("2", build="hg19"))
         self.assertEqual(MutUtils.convertChromosomeStringToMutationDataFormat("4", build="hg19"), "4", "chrom of 4 yielded different value: " + MutUtils.convertChromosomeStringToMutationDataFormat("4", build="hg19"))
+
+    def testChrom2HashCodeTable(self):
+        chroms = ["1", "X", "3", "contig1", "Y", "25", "mt"]
+        h = MutUtils.createChrom2HashCodeTable(chroms)
+        self.assertTrue(h["1"] == 1, "For chrom 1, hash code should be 1 but it was %s." % h["1"])
+        self.assertTrue(h["3"] == 3, "For chrom 3, hash code should be 3 but it was %s." % h["3"])
+        self.assertTrue(h["25"] == 25, "For chrom 25, hash code should be 25 but it was %s." % h["25"])
+        self.assertTrue(h["X"] == 26, "For chrom X, hash code should be 26 but it was %s." % h["X"])
+        self.assertTrue(h["Y"] == 27, "For chrom Y, hash code should be 27 but it was %s." % h["Y"])
+        self.assertTrue(h["mt"] == 28, "For chrom mt, hash code should be 28 but it was %s." % h["mt"])
+        self.assertTrue(h["contig1"] == 29, "For chrom contig1, hash code should be 29 but it was %s." % h["contig1"])
+
+        chroms = ["contig1", "mt"]
+        h = MutUtils.createChrom2HashCodeTable(chroms)
+        self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
+        self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
+
+    def testAlterMutForDeletions(self):
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTC"
+        alt_allele = "G"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForDeletions(mut)
+        self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
+        self.assertTrue(mut.start == 1234568, "Mut start should be 1234568 but was %s." % mut.start)
+        self.assertTrue(mut.end == 1234569, "Mut end should be 1234569 but was %s." % mut.end)
+        self.assertTrue(mut.ref_allele == "TC", "Ref allele should be TC but was %s." % mut.ref_allele)
+        self.assertTrue(mut.alt_allele == "-", "Alt allele should be - but was %s." % mut.alt_allele)
+
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTCT"
+        alt_allele = "GTC"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForDeletions(mut)
+        self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
+        self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
+        self.assertTrue(mut.end == 1234570, "Mut end should be 1234570 but was %s." % mut.end)
+        self.assertTrue(mut.ref_allele == "T", "Ref allele should be T but was %s." % mut.ref_allele)
+        self.assertTrue(mut.alt_allele == "-", "Alt allele should be - but was %s." % mut.alt_allele)
+
+        chrom = "1"
+        start = 152497145
+        end = 152497145  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "CCCGAGCTGCTTACGATAGCCTTCTT"
+        alt_allele = "C"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForDeletions(mut)
+        self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
+        self.assertTrue(mut.start == 152497146, "Mut start should be 1234570 but was %s." % mut.start)
+        self.assertTrue(mut.end == 152497170, "Mut end should be 1234570 but was %s." % mut.end)
+        self.assertTrue(mut.ref_allele == "CCGAGCTGCTTACGATAGCCTTCTT", "Ref allele should be T but was %s."
+                                                                       % mut.ref_allele)
+        self.assertTrue(mut.alt_allele == "-", "Alt allele should be - but was %s." % mut.alt_allele)
+
+    def testAlterMutForInsertions(self):
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTC"
+        alt_allele = "GTCT"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForInsertions(mut)
+        self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
+        self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
+        self.assertTrue(mut.end == 1234570, "Mut end should be 1234571 but was %s." % mut.end)
+        self.assertTrue(mut.ref_allele == "-", "Ref allele should be - but was %s." % mut.ref_allele)
+        self.assertTrue(mut.alt_allele == "T", "Alt allele should be T but was %s." % mut.alt_allele)
+
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTC"
+        alt_allele = "GTCTT"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForInsertions(mut)
+        self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
+        self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
+        self.assertTrue(mut.end == 1234571, "Mut end should be 1234571 but was %s." % mut.end)
+        self.assertTrue(mut.ref_allele == "-", "Ref allele should be - but was %s." % mut.ref_allele)
+        self.assertTrue(mut.alt_allele == "TT", "Alt allele should be TT but was %s." % mut.alt_allele)
+
+    def testRetrievePrecedingBaseFromAnnotationForDeletions(self):
+        chrom = "1"
+        start = 1234568
+        end = 1234569  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTC"
+        alt_allele = "G"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForDeletions(mut)
+        updated_ref_allele, updated_alt_allele, updated_start = \
+            MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+        self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
+        self.assertTrue(updated_ref_allele == ref_allele, "Ref allele should be %s but was %s."
+                                                          % (ref_allele, updated_ref_allele))
+        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
+                                                          % (alt_allele, updated_alt_allele))
+
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTCT"
+        alt_allele = "GTC"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForDeletions(mut)
+        updated_ref_allele, updated_alt_allele, updated_start = \
+            MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+        self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
+        self.assertTrue(updated_ref_allele == ref_allele, "Ref allele should be %s but was %s."
+                                                          % (ref_allele, updated_ref_allele))
+        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
+                                                          % (alt_allele, updated_alt_allele))
+
+        chrom = "1"
+        start = 152497145
+        end = 152497145  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "CCCGAGCTGCTTACGATAGCCTTCTT"
+        alt_allele = "C"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForDeletions(mut)
+        updated_ref_allele, updated_alt_allele, updated_start = \
+            MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+        self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
+        self.assertTrue(updated_ref_allele == ref_allele, "Ref allele should be %s but was %s."
+                                                          % (ref_allele, updated_ref_allele))
+        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
+                                                          % (alt_allele, updated_alt_allele))
+
+    def testRetrievePrecedingBaseFromAnnotationForInsertions(self):
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTC"
+        alt_allele = "GTCT"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForInsertions(mut)
+        updated_ref_allele, updated_alt_allele, updated_start = \
+            MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
+        self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
+        self.assertTrue(updated_ref_allele == ref_allele, "Ref allele should be %s but was %s."
+                                                          % (ref_allele, updated_ref_allele))
+        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
+                                                          % (alt_allele, updated_alt_allele))
+
+        chrom = "1"
+        start = 1234567
+        end = 1234567  # incorrect, but doesn't matter for the purposed of testing
+        ref_allele = "GTC"
+        alt_allele = "GTCTT"
+        build = "19"
+        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutUtils.alterMutationForInsertions(mut)
+        updated_ref_allele, updated_alt_allele, updated_start = \
+            MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
+        self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
+        self.assertTrue(updated_ref_allele == ref_allele, "Ref allele should be %s but was %s."
+                                                          % (ref_allele, updated_ref_allele))
+        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
+                                                          % (alt_allele, updated_alt_allele))
 
 if __name__ == '__main__':
     unittest.main()

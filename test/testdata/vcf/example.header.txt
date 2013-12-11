@@ -3,6 +3,7 @@
 ##source=myImputationProgramV3.1
 ##reference=1000GenomesPilot-NCBI36
 ##phasing=partial
+##oncotator_version=Oncotator_v1.0.0.0rc30_|
 ##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral Allele">
 ##INFO=<ID=AF,Number=.,Type=Float,Description="Allele Frequency">
 ##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership, build 129">

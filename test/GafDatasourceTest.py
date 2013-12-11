@@ -57,7 +57,8 @@ from oncotator.Metadata import Metadata
 from oncotator.MutationData import MutationData
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
-from oncotator.datasources import Gaf, TranscriptProvider
+from oncotator.datasources.Gaf import Gaf
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.MultiprocessingUtils import LoggingPool
 from oncotator.utils.MutUtils import MutUtils

@@ -47,11 +47,11 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 import os
-import shutil
 import unittest
 from shove.core import Shove
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from oncotator.index.gaf import region2bin,region2bins
+from oncotator.utils.MutUtils import MutUtils
 
 class GenomeBuildFactoryTest(unittest.TestCase):
 
@@ -80,7 +80,7 @@ class GenomeBuildFactoryTest(unittest.TestCase):
         self.assertTrue(t.get_seq() is not "")
         self.assertTrue(len(t.get_cds()) > 0)
         self.assertTrue(len(t.get_exons()) > 0)
-        shutil.rmtree(output_filename)
+        MutUtils.removeDir(output_filename)
 
     def test_region2bin(self):
         """Simple test that the region2bin works for genomic position indexing """

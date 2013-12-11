@@ -60,6 +60,9 @@ import csv
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.version import VERSION
 from oncotator.utils.ConfigUtils import ConfigUtils
+from collections import OrderedDict
+
+
 
 class TcgaMafOutputRenderer(OutputRenderer):
     """
@@ -73,10 +76,13 @@ class TcgaMafOutputRenderer(OutputRenderer):
     def getTcgaMafVersion(self):
         return self.config.get("general", "version")
 
-    def __init__(self, filename, configFile='tcgaMAF2.4_output.config',datasources=[], options=dict()):
+    def __init__(self, filename, configFile='tcgaMAF2.4_output.config', datasources=None, options=None):
         """
         TODO: Need functionality for not prepending the i_ on internal fields.
         """
+        datasources = [] if datasources is None else datasources
+        options = dict() if options is None else options
+
         self._filename = filename
         self.logger = logging.getLogger(__name__)
         self.config = ConfigUtils.createConfigParser(configFile)
@@ -111,62 +117,32 @@ class TcgaMafOutputRenderer(OutputRenderer):
             row[h] = value
         return row
 
-    def _alterMutationForIndel(self, m):
-        """ In the case where we have an indel, we should check that the mutation is using the proper ref and alt
-               For example, an insertion should have a ref of '-' or '.' and the alt should be one or more bases.
-               If this is being violated, this algorithm will assume that the first base in the insertion or deletion can
-               be removed from both fields (at that point one of ref or alt should become empty and replaced with '-'
-             TODO: Implement this
-
-        :return: a list of updated ref, alt, and start position (all as str)... always length 3
-        """
-        result = [m.ref_allele, m.alt_allele, m.start]
-
-        # DEL
-        if (len(m.ref_allele) > len(m.alt_allele)) and m.alt_allele not in [".", "-", ""]:
-            if m.ref_allele[0] != m.alt_allele[0]:
-                logging.getLogger(__name__).warn("ref and alt did not start with the same base for a deletion.  Removing alt anyway.")
-            result[0] = result[0][1:]
-            result[1] = "-"
-            result[2] = str(int(m.start) + 1)
-
-        # INS
-        if (len(m.alt_allele) > len(m.ref_allele)) and m.ref_allele not in [".", "-", ""]:
-            if m.ref_allele[0] != m.alt_allele[0]:
-                logging.getLogger(__name__).warn("ref and alt did not start with the same base for a deletion.  Removing alt anyway.")
-            result[0] = "-"
-            result[1] = result[1][1:]
-            result[2] = str(int(m.start) + 1)
-
-        return result
-
     def _writeMutationRow(self, dw, fieldMap, fieldMapKeys, m):
-        """ If this row should be rendered, then write it to the given DictWriter.
-
-        This method also contains some checks for the rendering.
+        """ If this row should be rendered, then write it to the given DictWriter
         :param dw: DictWriter
         :param fieldMap:
         :param fieldMapKeys:
         :param m:
         :return:
         """
-
-        new_vals = self._alterMutationForIndel(m)
-        m.ref_allele = new_vals[0]
-        m.alt_allele = new_vals[1]
-        m.start = new_vals[2]
         row = self._createMutationRow(m, fieldMapKeys, fieldMap)
         if row['Entrez_Gene_Id'] == "":
             row['Entrez_Gene_Id'] = "0"
         dw.writerow(row)
 
-    def renderMutations(self, mutations, metadata, comments=[]):
+    def renderMutations(self, mutations, metadata=None, comments=None):
         """ Returns a file name pointing to the maf file that is generated. """
+        if metadata is None:
+            metadata = OrderedDict()
+
+        if comments is None:
+            comments = []
+
         self.logger.info("TCGA MAF output file: " + self._filename)
         self.logger.info("Render starting...")
-        
-        requiredColumns = self.config.get("general","requiredColumns").split(',')
-        optionalColumns = self.config.get("general","optionalColumns").split(',')
+
+        requiredColumns = self.config.get("general", "requiredColumns").split(',')
+        optionalColumns = self.config.get("general", "optionalColumns").split(',')
 
         # Create the header list, making sure to preserve order.
         headers = requiredColumns
@@ -175,7 +151,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
         # Create a list of annotation names
         try:
             m = mutations.next()
-            annotations = m.keys()
+            annotations = MutUtils.getAllAttributeNames(m)
         except StopIteration as si:
 
             # There are no mutations, so use the config file and metadata to determine what columns to output
@@ -183,8 +159,10 @@ class TcgaMafOutputRenderer(OutputRenderer):
             annotations = set(headers).union(metadataAnnotations)
             m = None
 
-        # Create a mapping between column name and annotation name based on aliases
-        fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary, self.config.getboolean("general", "displayAnnotations"), exposedFields=self.exposedColumns)
+        # Create a mapping between column name and annotation name
+        fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary,
+                                                self.config.getboolean("general", "displayAnnotations"),
+                                                exposedFields=self.exposedColumns)
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
         headers.extend(internalFields)
@@ -227,6 +205,3 @@ class TcgaMafOutputRenderer(OutputRenderer):
         fp.close()
         self.logger.info("Rendered all " + str(ctr) + " mutations.")
         return self._filename
-    
-    
-    

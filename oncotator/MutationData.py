@@ -59,6 +59,8 @@ import logging
 from Annotation import Annotation
 from collections import OrderedDict
 #from multiprocessing import Lock
+
+
 class MutationData(collections.MutableMapping):
     """
     Intermediate class for storing a mutation.
@@ -90,35 +92,36 @@ class MutationData(collections.MutableMapping):
     """
     
     """ internal annotations that will show as both annotations and attributes.   If this changes, updates should probably be made to the maflite config."""
-    attributes = set(["chr", "start", "end", "ref_allele", "alt_allele", "build"])
+    attributes = {"chr", "start", "end", "ref_allele", "alt_allele", "build"}
 
-    def __init__(self, chr="", start="", end="",ref_allele="", alt_allele="", build=""):
+    def __init__(self, chr="", start="", end="", ref_allele="", alt_allele="", build=""):
         """
         Constructor
         """
         self.__dict__.update(locals())
-        
         self.annotations = dict()
-        
+
         for k in MutationData.attributes:
             self.annotations[k] = locals()[k]
 
 #        self.lock = Lock()
         
-    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=[], number=None):
-        """ 
+    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=None, number=None):
+        """
         newRequired implies that this cannot update an existing value.  If a value exists, throw an exception.
         
         This method must be called to add an annotation to a mutation.  Do not use: mut['new_annotation_name'] = 'annotation_value'
         
         """
+        tags = [] if tags is None else tags
+
 #        self.lock.acquire()
         if newRequired and (annotationName in self.annotations.keys()) and (annotationName not in MutationData.attributes):
 #            self.lock.release()
             if annotationValue == self.annotations[annotationName].value:
-                logging.getLogger(__name__).warn("Attempting to create an annotation multiple times, but with the same value: " + annotationName +  "  :  " + str(annotationValue))
+                logging.getLogger(__name__).warn("Attempting to create an annotation multiple times, but with the same value: " + str(annotationName) +  "  :  " + str(annotationValue))
             else:
-                raise DuplicateAnnotationException('Attempting to create an annotation multiple times (' + annotationName + ') with old, new values of (' + self.annotations[annotationName].value + ", " + str(annotationValue) + ")")
+                raise DuplicateAnnotationException('Attempting to create an annotation multiple times (' + annotationName + ') with old, new values of (' + str(self.annotations[annotationName].value) + ", " + str(annotationValue) + ")")
         if annotationName in MutationData.attributes:
             # FYI ... logging.getLogger(__name__).debug("Attempting to create an attribute with createAnnotation.  Should be using instance attribute setting.  x." + str(annotationName) + " = " + str(annotationValue) + " ... Ignoring annotationSource, but setting attribute.")
             self[annotationName] = annotationValue
@@ -138,7 +141,7 @@ class MutationData(collections.MutableMapping):
 
     def addAnnotations(self, annot_dict):
         """
-        :param annot_dict: name (str): annotation (Annotation) dictionary
+        :param annot_dict: name:Annotation dictionary
         :return:
         """
         self.annotations.update(annot_dict)
@@ -147,7 +150,10 @@ class MutationData(collections.MutableMapping):
         """ Attach tag to a given annotation """
         if not (annotationName in MutationData.attributes):
             self.annotations[annotationName].addTag(tag)
-    
+
+    def getAttributeNames(self):
+        return list(self.attributes)
+
     def __setitem__(self, key, value):
         
         if key in MutationData.attributes:
@@ -183,6 +189,3 @@ class MutationData(collections.MutableMapping):
     
     def __str__(self):
         return str(self.annotations)
-
-    
-    

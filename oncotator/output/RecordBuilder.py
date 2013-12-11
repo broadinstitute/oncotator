@@ -5,7 +5,11 @@ import vcf
 from oncotator.utils.MutUtils import MutUtils
 
 
-class RecordFactory:
+class RecordBuilder:
+
+    fieldProperty = collections.namedtuple(typename="Property", field_names=["num", "dataType", "isSplit"])
+    logger = logging.getLogger(__name__)
+
     def __init__(self, chrom, pos, ref, sampleNames):
         """
 
@@ -14,7 +18,6 @@ class RecordFactory:
         :param ref:
         :param sampleNames:
         """
-        self._logger = logging.getLogger(__name__)
         self._chrom = chrom
         self._pos = pos
         self._ID = None  # semi-colon separated list of unique identifiers where available
@@ -29,7 +32,10 @@ class RecordFactory:
         self._fmtFieldProperty = collections.OrderedDict()
         self._sampleNames = sampleNames
         self._sampleNameIndexes = dict([(x, i) for (i, x) in enumerate(sampleNames)])
-        self._fieldProperty = collections.namedtuple(typename="Property", field_names=["num", "dataType", "isSplit"])
+
+        if sampleNames is not None and len(sampleNames) != 0:
+            self._fmtIDs = ["GT"]
+            self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
 
     def _map(self, func, iterable, bad=(".", "",)):
         """
@@ -40,17 +46,6 @@ class RecordFactory:
         :return:
         """
         return [func(v) if v not in bad else None for v in iterable]
-
-    def _replaceChrs(self, text, frm, to):
-        """
-
-        :param text:
-        :param frm:
-        :param to:
-        :return:
-        """
-        tbl = string.maketrans(frm, to)
-        return text.translate(tbl)
 
     def _resolveInfo(self):
         """
@@ -113,22 +108,23 @@ class RecordFactory:
                 nums[i] = prop.num if prop.num is not None else "."
                 val = [None]
 
-                if (data is not None) and (ID in data):
+                if data is not None and ID in data:
                     val = data[ID]
-                    if prop.num == -2:
-                        pass
-                    elif prop.num == -1:
+
+                if prop.num == -2:
+                    pass
+                elif prop.num == -1:
+                    if len(val) != nalts:
+                        val = nalts*[None]
+                elif prop.num == 0:
+                    pass
+                elif prop.num is None:
+                    if prop.isSplit:
                         if len(val) != nalts:
                             val = nalts*[None]
-                    elif prop.num == 0:
-                        pass
-                    elif prop.num is None:
-                        if prop.isSplit:
-                            if len(val) != nalts:
-                                val = nalts*[None]
-                    else:
-                        if len(val) != prop.num:
-                            val = abs(prop.num)*[None]
+                else:
+                    if len(val) != prop.num:
+                        val = abs(prop.num)*[None]
 
                 if ID == "GT":
                     sampleData[i] = val[0]
@@ -164,8 +160,8 @@ class RecordFactory:
 
         qual = self._qual
         if qual is None:
-            self._logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score."
-                              % (chrom, pos))
+            self.logger.warn("Variant at chromosome %s and position %s is missing phred-scaled quality score "
+                             "(typically: annotation 'qual')." % (chrom, pos))
 
         filt = self._filt
         info = self._resolveInfo()
@@ -191,9 +187,9 @@ class RecordFactory:
         :return:
         """
         if isSplit:
-            val = self._replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
+            val = MutUtils.replaceChrs(val, ",=;\n\t ", "|~|#__")  # exclude ":"
         else:
-            val = self._replaceChrs(val, "=;\n\t :", "~|#__>")  # exclude ":" and ","
+            val = MutUtils.replaceChrs(val, "=;\n\t :", "~|#__>")  # exclude ":" and ","
 
         if not isSplit:
             val = self._correct(val.split(","))
@@ -251,7 +247,7 @@ class RecordFactory:
             self._appendVal2FixedNumField(self._info, ID, num, isSplit, val)
 
         if ID not in self._infoFieldProperty:
-            self._infoFieldProperty[ID] = self._fieldProperty(num, dataType, isSplit)
+            self._infoFieldProperty[ID] = self.fieldProperty(num, dataType, isSplit)
 
     def addFormat(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
         """
@@ -268,7 +264,7 @@ class RecordFactory:
             if self._fmt[sampleNameIndex] is None:
                 self._fmt[sampleNameIndex] = collections.OrderedDict()
                 self._fmtIDs = ["GT"]
-                self._fmtFieldProperty["GT"] = self._fieldProperty(1, "String", False)
+                self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
 
             if num == -2:  # num is the number of samples
                 nalts = len(self._alts)
@@ -288,7 +284,7 @@ class RecordFactory:
                 self._fmtIDs += [ID]
 
             if ID not in self._fmtFieldProperty:
-                self._fmtFieldProperty[ID] = self._fieldProperty(num, dataType, isSplit)
+                self._fmtFieldProperty[ID] = self.fieldProperty(num, dataType, isSplit)
 
     def addQual(self, qual):
         try:

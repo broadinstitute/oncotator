@@ -229,3 +229,11 @@ class ConfigUtils(object):
         else:
             sourceConfigFP = file('ds_config.template', 'r')
         return sourceConfigFP
+
+    @staticmethod
+    def hasSectionKeys(configParser, sectionKeys=[]):
+        """ Checks whether the config file has a section with sectionKey name or not. """
+        for sectionKey in sectionKeys:
+            if sectionKey is not None and not configParser.has_section(sectionKey):
+                return False
+        return True
