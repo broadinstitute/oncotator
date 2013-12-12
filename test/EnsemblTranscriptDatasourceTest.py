@@ -165,7 +165,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_overlapping_multiple_genes(self):
         """Test that we can collect multiple overlapping genes """
-        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_")
+        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_multiple_")
         genes = ds.get_overlapping_genes("22", 22080000, 22120000)
         self.assertTrue(len(set(["MAPK1", "YPEL1"]) - genes) ==0 )
 
