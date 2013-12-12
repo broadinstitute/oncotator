@@ -49,7 +49,7 @@
 
 import unittest
 import logging
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from TestUtils import TestUtils
@@ -71,7 +71,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
     def testTags(self):
         self.logger.info("Initializing ESP6500SI-V2")
         tabixIndexedVcfDirName = "testdata/small_esp_ds"
-        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/esp.config",
+        tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(tabixIndexedVcfDirName + "/esp.config",
                                                                        tabixIndexedVcfDirName)
         tagsDict = tabixIndexedVcfDatasource._determine_tags()
         for ID in tagsDict:
@@ -83,7 +83,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithMissingSNP(self):
         self.logger.info("Initializing ESP6500SI-V2")
         tabixIndexedVcfDirName = "testdata/small_esp_ds"
-        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/esp.config",
+        tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(tabixIndexedVcfDirName + "/esp.config",
                                                                        tabixIndexedVcfDirName)
         m1 = MutationData()
         m1.chr = "1"
@@ -112,7 +112,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithExistingSNP(self):
         self.logger.info("Initializing ESP6500SI-V2")
         tabixIndexedVcfDirName = "testdata/small_esp_ds"
-        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/esp.config",
+        tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(tabixIndexedVcfDirName + "/esp.config",
                                                                        tabixIndexedVcfDirName)
         m1 = MutationData()
         m1.chr = "1"
@@ -142,7 +142,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithMissingIndel(self):
         self.logger.info("Initializing ESP6500SI-V2")
         tabixIndexedVcfDirName = "testdata/small_esp_ds"
-        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/esp.config",
+        tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(tabixIndexedVcfDirName + "/esp.config",
                                                                        tabixIndexedVcfDirName)
         m1 = MutationData()
         m1.chr = "1"
@@ -171,7 +171,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithExistingIndel(self):
         self.logger.info("Initializing Contrived")
         tabixIndexedVcfDirName = "testdata/contrived_vcf_ds"
-        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/contrived_vcf.config",
+        tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(tabixIndexedVcfDirName + "/contrived_vcf.config",
                                                                        tabixIndexedVcfDirName)
         m1 = MutationData()
         m1.chr = "20"

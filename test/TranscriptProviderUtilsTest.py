@@ -1,6 +1,6 @@
 import shutil
 import Bio
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 import unittest
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
@@ -15,7 +15,7 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
 
     def test_convert_genomic_space_to_transcript_space(self):
         base_config_location = "testdata/ensembl/saccer/"
-        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        ensembl_ds = DatasourceFactory.createDatasource(base_config_location + "ensembl.config", base_config_location)
 
         tx = ensembl_ds.get_overlapping_transcripts("I", "350", "350") # transcript starts at 335.
         start, end = TranscriptProviderUtils.convert_genomic_space_to_transcript_space("350", "350", tx[0])

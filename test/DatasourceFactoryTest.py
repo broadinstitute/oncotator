@@ -56,13 +56,13 @@ Created on Jan 4, 2013
 """
 import os
 import unittest
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 import logging
 from oncotator.datasources.Datasource import Datasource
 
 TestUtils.setupLogging(__file__, __name__)
-class DatasourceCreatorTest(unittest.TestCase):
+class DatasourceFactoryTest(unittest.TestCase):
 
     _multiprocess_can_split_ = True
 
@@ -81,7 +81,7 @@ class DatasourceCreatorTest(unittest.TestCase):
         """ Very simple test that will create a datasource from a sample datasource directory.  
         The directory conforms to the standard datasource structure, including placement of the config file.
         """
-        ds = DatasourceCreator.createDatasource('testdata/small_cosmic/small_cosmic.config', "testdata/small_cosmic")
+        ds = DatasourceFactory.createDatasource('testdata/small_cosmic/small_cosmic.config', "testdata/small_cosmic")
         
         m = MutationData()
         m.chr = 19
@@ -96,7 +96,7 @@ class DatasourceCreatorTest(unittest.TestCase):
         """ Very simple test that will create a reference datasource from a sample datasource directory.  
         The directory conforms to the standard datasource structure, including placement of the config file.
         """
-        ds = DatasourceCreator.createDatasource('testdata/reference_ds/reference_ds.config', "testdata/reference_ds")
+        ds = DatasourceFactory.createDatasource('testdata/reference_ds/reference_ds.config', "testdata/reference_ds")
         
         m = MutationData()
         m.chr = "22"
@@ -113,7 +113,7 @@ class DatasourceCreatorTest(unittest.TestCase):
     def testBasicGeneTSVInit(self):
         """ Make sure that we can initialize a simple tsv data source """
 
-        geneDS = DatasourceCreator.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
+        geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
         
         m = MutationData()
@@ -125,10 +125,10 @@ class DatasourceCreatorTest(unittest.TestCase):
         """Test that the GAF datasource is sorted before a gene-based datasource"""
 
         gafDatasource = TestUtils.createGafDatasource(self.config)
-        geneDS = DatasourceCreator.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
+        geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         
         incorrectSortList = [geneDS, gafDatasource]
-        guessSortList =  DatasourceCreator.sortDatasources(incorrectSortList)
+        guessSortList =  DatasourceFactory.sortDatasources(incorrectSortList)
         self.assertTrue(guessSortList[1] == geneDS, "Sorting is incorrect.")
         self.assertTrue(len(guessSortList) == 2, "Sorting altered number of datasources (gt: 2): " + str(len(guessSortList)))
 
@@ -136,7 +136,7 @@ class DatasourceCreatorTest(unittest.TestCase):
     def testInitializingDatasources(self):
         """ Test initializing a database dir, both single and multicore.  This test is RAM intensive and requires default data corpus."""
         
-        multiDS = DatasourceCreator.createDatasources(self.config.get("DEFAULT", "dbDir"), "hg19", isMulticore=True)
+        multiDS = DatasourceFactory.createDatasources(self.config.get("DEFAULT", "dbDir"), "hg19", isMulticore=True)
         self.assertTrue(multiDS is not None, "Datasource list was None")
         self.assertTrue(len(multiDS) != 0, "Datasource list was empty")
         for i in range(0,len(multiDS)):
@@ -147,7 +147,7 @@ class DatasourceCreatorTest(unittest.TestCase):
         numMultiDS = len(multiDS)
         del multiDS
 
-        singleCoreDS = DatasourceCreator.createDatasources(self.config.get("DEFAULT", "dbDir"), "hg19", isMulticore=False)
+        singleCoreDS = DatasourceFactory.createDatasources(self.config.get("DEFAULT", "dbDir"), "hg19", isMulticore=False)
         self.assertTrue(singleCoreDS is not None, "Datasource list was None")
         self.assertTrue(len(singleCoreDS) != 0, "Datasource list was empty")
         for i in range(0,len(singleCoreDS)):
@@ -165,16 +165,16 @@ class DatasourceCreatorTest(unittest.TestCase):
 
         #DatasourceCreator._createDatasourcesMulticore(4, datasourceTuples)
         self.assertRaisesRegexp(NotImplementedError,"This class throws exception",
-                                DatasourceCreator._createDatasourcesMulticore,4, datasourceTuples)
+                                DatasourceFactory._createDatasourcesMulticore,4, datasourceTuples)
 
     def testMulticoreNoDatasources(self):
         """ If using multicore, does not hang when no datasources are in the db dir"""
-        multiDS = DatasourceCreator.createDatasources('testdata/maflite/', "hg19", True)
+        multiDS = DatasourceFactory.createDatasources('testdata/maflite/', "hg19", True)
         self.assertTrue(len(multiDS) == 0, "Length of multiDS when there were no datasources was not zero.")
 
     def test_hashcode_generation(self):
         """Test that we can read a hashcode for a datasource, if available."""
-        geneDS = DatasourceCreator.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
+        geneDS = DatasourceFactory.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
         self.assertTrue(geneDS is not None, "gene indexed datasource was None.")
 
         self.assertTrue(geneDS.get_hashcode() == "7120edfdc7b29e45191c81c99894afd5")

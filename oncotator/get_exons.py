@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import os
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 
 
 def parseOptions():
@@ -42,7 +42,7 @@ def main():
     outputFilename = args.outputFilename
     isNonCoding = args.includeNonCoding
     padding = args.padding
-    ds = DatasourceCreator.createDatasource(transcript_ds, os.path.dirname(transcript_ds))
+    ds = DatasourceFactory.createDatasource(transcript_ds, os.path.dirname(transcript_ds))
     input_gene_list_file_fp = file(input_gene_list_file, 'r')
     outputFileFP = file(outputFilename, 'w')
     errorFileFP = file(outputFilename + ".err", 'w')

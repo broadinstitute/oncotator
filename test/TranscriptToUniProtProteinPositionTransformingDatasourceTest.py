@@ -48,7 +48,7 @@
 #"""
 
 
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import TranscriptToUniProtProteinPositionTransformingDatasource
 from TestUtils import TestUtils
@@ -95,7 +95,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         """ Test that the datasource creator process will work for  TranscriptToUniProtProteinPositionTransformingDatasource.  NOTE: This test needs to be updated to use sqlite instead of filesystem file.
         """
 
-        tDS = DatasourceCreator.createDatasource("testdata/small_uniprot_prot_seq_ds/small_uniprot_prot_seq_ds.config", "testdata/small_uniprot_prot_seq_ds/")
+        tDS = DatasourceFactory.createDatasource("testdata/small_uniprot_prot_seq_ds/small_uniprot_prot_seq_ds.config", "testdata/small_uniprot_prot_seq_ds/")
         outputAnnotation = "UniProt_aapos"
         m = MutationData()
         m.createAnnotation('transcript_id', 'uc009vvt.1')

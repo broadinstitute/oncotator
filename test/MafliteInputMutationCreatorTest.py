@@ -61,7 +61,7 @@ from oncotator.input.MafliteMissingRequiredHeaderException import MafliteMissing
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.Annotator import Annotator
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 import os
 from TestUtils import TestUtils
@@ -134,7 +134,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         
         annotator.setInputCreator(tmp)
         annotator.setOutputRenderer(outputRenderer)
-        ds = DatasourceCreator.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
+        ds = DatasourceFactory.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
         annotator.addDatasource(ds)
         annotator.annotate()
         

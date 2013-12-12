@@ -52,7 +52,7 @@ import os
 import unittest
 
 from oncotator.Annotator import Annotator
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.output.TcgaVcfOutputRenderer import TcgaVcfOutputRenderer
@@ -92,7 +92,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
 
     def _createDatasourcesForTesting(self):
         dbDir = self.config.get('DEFAULT',"dbDir")
-        return DatasourceCreator.createDatasources(dbDir, "hg19",isMulticore=False)
+        return DatasourceFactory.createDatasources(dbDir, "hg19",isMulticore=False)
 
     def _createManualAnnotations(self):
         # These should be passed in to the oncotator via "-a"

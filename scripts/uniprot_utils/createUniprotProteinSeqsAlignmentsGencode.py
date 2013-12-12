@@ -48,7 +48,7 @@
 #"""
 from os.path import expanduser
 from tempfile import mkdtemp
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 
 
 '''
@@ -233,8 +233,8 @@ if __name__ == '__main__':
     uniprot_ds_loc = expanduser(args.simple_uniprot_ds)
     blast_exe = args.blast_exe
 
-    gencode_ds = DatasourceCreator.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
-    uniprotDS = DatasourceCreator.createDatasource(configFilename=uniprot_ds_loc, leafDir=os.path.dirname(uniprot_ds_loc))
+    gencode_ds = DatasourceFactory.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
+    uniprotDS = DatasourceFactory.createDatasource(configFilename=uniprot_ds_loc, leafDir=os.path.dirname(uniprot_ds_loc))
 
     tmp_dir = args.temp_pickle_store
     if tmp_dir is None:

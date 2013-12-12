@@ -61,7 +61,7 @@ from TestUtils import TestUtils
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.utils.TagConstants import TagConstants
 
 
@@ -144,7 +144,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def _createDatasourceCorpus(self):
         dbDir = self.config.get('DEFAULT', "dbDir")
-        return DatasourceCreator.createDatasources(dbDir, "hg19", isMulticore=False)
+        return DatasourceFactory.createDatasources(dbDir, "hg19", isMulticore=False)
 
     def testTCGAMAFRendering(self):
         ''' Test the ability to render a germline vcf as a TCGA MAF '''

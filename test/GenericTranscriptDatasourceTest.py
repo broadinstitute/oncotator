@@ -54,7 +54,7 @@ Created on Jan 22, 2013
 
 @author: lichtens
 '''
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.Annotator import Annotator
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
@@ -83,7 +83,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
         # We need a gaf data source to annotate gene
 
         gafDatasource = TestUtils.createGafDatasource(config=self.config)
-        transcriptDS = DatasourceCreator.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
+        transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
         outputFilename = 'out/genericTranscriptTest.out.tsv'
         
         annotator = Annotator()
@@ -103,7 +103,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
         ''' Create a dummy mutation and make sure it gets annotated properly '''
         m = MutationData()
         m.createAnnotation('transcript_id', 'uc001hms.3')
-        transcriptDS = DatasourceCreator.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
+        transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
         m = transcriptDS.annotate_mutation(m)
         self.assertTrue(m['refseq_test_mRNA_Id'] == 'NM_022746', "Transcript-based annotation did not populate properly: " + m['refseq_test_mRNA_Id'])
         self.assertTrue(m['refseq_test_prot_Id'] == 'NP_073583', "Transcript-based annotation did not populate properly: " + m['refseq_test_prot_Id'])

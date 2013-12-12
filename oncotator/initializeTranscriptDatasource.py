@@ -72,7 +72,7 @@ def main():
             logging.getLogger(__name__).warn("basic filter requested for (apparently) a non-gencode set of GTFs.  If this is an ENSEMBL run (not GENCODE), please specify dummy, using --filter.")
 
         logging.getLogger(__name__).info("Creating config file...")
-        #TODO: This needs to be altered to incorporate new features.
+        #TODO: This is broken.  A TSV generator
         config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile=os.path.basename(gtf_files[0]), ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="", transcript_filter=tx_filter)
         config_filename = ds_build_dir + "/" + name + ".config"
         logging.getLogger(__name__).info("config file being written to: " + os.path.abspath(config_filename))

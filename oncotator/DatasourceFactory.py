@@ -75,9 +75,9 @@ from utils.MultiprocessingUtils import LoggingPool
 
 def createDatasource(t):
     """ Create a datasource given a tuple (configFilename, leafDir).  This method should not be used and is only for a workaround to enable multiprocessing. """
-    return DatasourceCreator.createDatasourceGivenTuple(t)
+    return DatasourceFactory.createDatasourceGivenTuple(t)
 
-class DatasourceCreator(object):
+class DatasourceFactory(object):
     """
     Static class that creates instances of datasources.
     #TODO: Rename as a factory, since DatasourceCreator is a Datasource Factory
@@ -93,13 +93,13 @@ class DatasourceCreator(object):
     @staticmethod
     def createDatasource(configFilename, leafDir):
         configParser = ConfigUtils.createConfigParser(configFilename)
-        return DatasourceCreator.createDatasourceFromConfigParser(configParser, leafDir)
+        return DatasourceFactory.createDatasourceFromConfigParser(configParser, leafDir)
     
     @staticmethod
     def createDatasourceGivenTuple(configTuple):
         """ Calls createDatasourceFromConfigParser with a two-entry tuple using 
             exact same arguments. """
-        return DatasourceCreator.createDatasource(configTuple[0], configTuple[1])
+        return DatasourceFactory.createDatasource(configTuple[0], configTuple[1])
 
     @staticmethod
     def _retrieve_hash_code(leafDir):
@@ -184,7 +184,7 @@ class DatasourceCreator(object):
             annotationColnames = configParser.get("general", "annotation_column_names")
             annotationColnames = annotationColnames.split(",")
 
-            DatasourceCreator._log_missing_column_name_msg(colNames, annotationColnames)
+            DatasourceFactory._log_missing_column_name_msg(colNames, annotationColnames)
 
             result = IndexedTsvDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
@@ -192,7 +192,7 @@ class DatasourceCreator(object):
                                            colNames=colNames,
                                            annotationColNames=annotationColnames)
 
-        hashcode = DatasourceCreator._retrieve_hash_code(leafDir)
+        hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)
         return result
     
@@ -258,11 +258,11 @@ class DatasourceCreator(object):
         result = []        
         if not isMulticore:
             for dsTuple in dsQueueList:
-                result.append(DatasourceCreator.createDatasourceGivenTuple(dsTuple))
+                result.append(DatasourceFactory.createDatasourceGivenTuple(dsTuple))
         else:
-            result = DatasourceCreator._createDatasourcesMulticore(numCores, dsQueueList)
+            result = DatasourceFactory._createDatasourcesMulticore(numCores, dsQueueList)
         
-        return DatasourceCreator.sortDatasources(result)
+        return DatasourceFactory.sortDatasources(result)
     
     @staticmethod
     def _createDatasourcesMulticore(numProcesses, datasourceTuples):
@@ -283,7 +283,7 @@ class DatasourceCreator(object):
                 if configParser.get("general", "type") in ["gene_tsv", "gp_tsv", "gpp_tsv", "transcript_tsv"]:
                     tmpQueue.append(dsTuple)
                 else:
-                    result.append(DatasourceCreator.createDatasourceGivenTuple(dsTuple))
+                    result.append(DatasourceFactory.createDatasourceGivenTuple(dsTuple))
             if len(tmpQueue) > 0:
                 tmpResult = p.map(createDatasource, tmpQueue)
             result.extend(tmpResult)

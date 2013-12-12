@@ -52,7 +52,7 @@ from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptD
 from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.dbSNP import dbSNP
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
@@ -141,7 +141,7 @@ class TestUtils(object):
         """ Creates a Cosmic datasource from a config file.
             """
         cosmic_dirname = config.get("COSMIC", "CosmicDir")
-        cosmicDatasource = DatasourceCreator.createDatasource(cosmic_dirname + "/cosmic.config", cosmic_dirname)
+        cosmicDatasource = DatasourceFactory.createDatasource(cosmic_dirname + "/cosmic.config", cosmic_dirname)
         return cosmicDatasource
 
     @staticmethod

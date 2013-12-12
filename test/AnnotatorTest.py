@@ -47,7 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 from TestUtils import TestUtils
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
 
@@ -191,7 +191,7 @@ class AnnotatorTest(unittest.TestCase):
 
         # Locate the datasource directory and create a runspec
         dbDir = self.config.get('DEFAULT', "dbDir")
-        ds = DatasourceCreator.createDatasources(dbDir)
+        ds = DatasourceFactory.createDatasources(dbDir)
         runSpec = RunSpecification()
         runSpec.initialize(None, None, datasources=ds)
 

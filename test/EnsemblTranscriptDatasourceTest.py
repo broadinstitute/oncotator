@@ -52,7 +52,7 @@ import shutil
 
 import unittest
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
@@ -86,7 +86,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_overlapping_single_transcripts(self):
         base_config_location = "testdata/ensembl/saccer/"
 
-        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        ensembl_ds = DatasourceFactory.createDatasource(base_config_location + "ensembl.config", base_config_location)
         recs = ensembl_ds.get_overlapping_transcripts("I", "500", "500")
         self.assertTrue(len(recs) == 1)
         self.assertTrue(recs[0].get_gene() == 'YAL069W')
@@ -94,7 +94,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_overlapping_multiple_transcripts_snp(self):
         base_config_location = "testdata/ensembl/saccer/"
 
-        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        ensembl_ds = DatasourceFactory.createDatasource(base_config_location + "ensembl.config", base_config_location)
         recs = ensembl_ds.get_overlapping_transcripts("I", "550", "550")
         self.assertTrue(len(recs) == 2)
         ids = set()
@@ -106,7 +106,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_overlapping_multiple_transcripts_indel(self):
         base_config_location = "testdata/ensembl/saccer/"
 
-        ensembl_ds = DatasourceCreator.createDatasource(base_config_location + "ensembl.config", base_config_location)
+        ensembl_ds = DatasourceFactory.createDatasource(base_config_location + "ensembl.config", base_config_location)
         recs = ensembl_ds.get_overlapping_transcripts("I", "2500", "8000")
         self.assertTrue(len(recs) == 2)
         ids = set()

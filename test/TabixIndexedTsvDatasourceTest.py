@@ -1,6 +1,6 @@
 import unittest
 import logging
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.utils.TagConstants import TagConstants
@@ -22,7 +22,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithMissingMutation(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceCreator.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
                                                                        tabixIndexedTsvDirName)
         m1 = MutationData()
         m1.chr = "1"
@@ -53,7 +53,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithExistingMutation(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceCreator.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
                                                                        tabixIndexedTsvDirName)
         m1 = MutationData()
         m1.chr = "1"
@@ -91,7 +91,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithMissingIndel(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceCreator.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
                                                                        tabixIndexedTsvDirName)
         m1 = MutationData()
         m1.chr = "1"
@@ -122,7 +122,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
     def testESPAnnotationWithExistingIndel(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceCreator.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
                                                                        tabixIndexedTsvDirName)
         m1 = MutationData()
         m1.chr = "1"
