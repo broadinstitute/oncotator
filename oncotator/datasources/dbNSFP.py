@@ -123,7 +123,11 @@ class dbNSFP(Datasource):
         return [dict(zip(dbnsfp_fieldnames, r.strip().split('\t'))) for r in dbnsfp_rows]
 
     def _query_dbnsfp(self, chromosome, start, end, tabix_objs):
-        tabix_file = tabix_objs[chromosome]
+        try:
+            tabix_file = tabix_objs[chromosome]
+        except KeyError:
+            logging.getLogger(__name__).info("There is no dbNSFP info available for chromosome " + str(chromosome))
+            return []
         query_str = '{}:{}-{}'.format(chromosome, start, end)
         res = tabix_file.fetch(region=query_str)
         return self._get_dbnsfp_data_from_rows(res)
