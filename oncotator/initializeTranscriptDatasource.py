@@ -1,8 +1,10 @@
+from ConfigParser import SafeConfigParser
 from argparse import RawTextHelpFormatter, ArgumentParser
 import logging
 import os
 import shutil
 import tempfile
+from oncotator.index.GenericTsvDatasourceCreator import GenericTsvDatasourceCreator
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
@@ -72,12 +74,21 @@ def main():
             logging.getLogger(__name__).warn("basic filter requested for (apparently) a non-gencode set of GTFs.  If this is an ENSEMBL run (not GENCODE), please specify dummy, using --filter.")
 
         logging.getLogger(__name__).info("Creating config file...")
-        #TODO: This is broken.  A TSV generator
-        config_text = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile=os.path.basename(gtf_files[0]), ds_name=name, ds_type="ensembl", ds_version=ver, index_columns="", transcript_filter=tx_filter)
         config_filename = ds_build_dir + "/" + name + ".config"
         logging.getLogger(__name__).info("config file being written to: " + os.path.abspath(config_filename))
+
+        config_file_creator = GenericTsvDatasourceCreator()
+        idx_cols = DatasourceInstallUtils.indexCols("dummy_option", "dummy_values")
+        config_file_creator.createConfigFile(configFilename=config_filename + ".tmp", baseDSFile=os.path.basename(gtf_files[0]),ds_type="ensembl", ds_version=ver, ds_name=name, indexCols=idx_cols)
+
+        # Append the tx_filter
+        config_parser = SafeConfigParser()
+        fp = file(config_filename + ".tmp", 'r')
+        config_parser.readfp(fp)
+        fp.close()
+        config_parser.set("general", "tx_filter", tx_filter)
         fp = file(config_filename, 'w')
-        fp.write(config_text)
+        config_parser.write(fp)
         fp.close()
 
         logging.getLogger(__name__).info("Starting index construction (temp location: " + ds_build_dir + ") ...")
