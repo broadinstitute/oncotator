@@ -76,16 +76,14 @@ class MafliteInputMutationCreator(InputMutationCreator):
     IMPORTANT NOTE: maflite will look at all aliases for alt_allele (see maflite_input.config) and choose the first that does not match the ref_allele
     """
 
-
-    def __init__(self,filename,configFile='maflite_input.config', build="hg19"):
+    def __init__(self, filename, configFile='maflite_input.config', genomeBuild="hg19"):
         """
         Constructor
         #TODO: Low priority. Too much logic in the constructor.  Need to move initialization check outside of the constructor.
         """
         self.logger = logging.getLogger(__name__)
-        
 
-        self.config=ConfigUtils.createConfigParser(configFile)
+        self.config = ConfigUtils.createConfigParser(configFile)
         self._tsvReader = GenericTsvReader(filename)
         
         # Key is the required columns and the values are a list of valid alternative headers.
@@ -96,7 +94,8 @@ class MafliteInputMutationCreator(InputMutationCreator):
         missingRequiredHeaders = []
         specifiedFields = self._tsvReader.getFieldNames()
         requiredColumns = sorted(list(MutationData.attributes))
-        
+        self._build = genomeBuild
+
         for col in requiredColumns:
             if col not in specifiedFields:
                 isAltFound = False
@@ -121,8 +120,11 @@ class MafliteInputMutationCreator(InputMutationCreator):
     def getMetadata(self):
         result = Metadata()
         fieldNames = self._tsvReader.getFieldNames()
-        for f in fieldNames:
-            result[f] = Annotation("", datasourceName="INPUT")
+        fieldNameAliases = self._reverseAlternativeDict.keys()
+        for fieldName in fieldNames:
+            if fieldName in fieldNameAliases:
+                fieldName = self._reverseAlternativeDict[fieldName]
+            result[fieldName] = Annotation("", datasourceName="INPUT")
         return result
 
     def _find_alt_allele_in_other_field(self, raw_line_dict, ref_allele):
@@ -132,7 +134,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
 
         for candidate_field in list_alternates:
             candidate_value = raw_line_dict.get(candidate_field, "")
-            if  candidate_value != "" and candidate_value != ref_allele:
+            if candidate_value != "" and candidate_value != ref_allele:
                 return candidate_value
         return ref_allele
 
@@ -146,20 +148,20 @@ class MafliteInputMutationCreator(InputMutationCreator):
         for line in self._tsvReader:
 
             # We only need to assign fields that are mutation attributes and have a different name in the maflite file.
-            mut = MutationData()
-            
+            mut = MutationData(build=self._build)
+
             for col in allColumns:
-                
-                # Three scenarios:  1)  col is name of mutation data field -- simple createAnnotation
-                #    2) col name is an alias for a mutation data field -- do lookup then createAnnotation
-                #    3) col name is not an alias for a mutation data field -- simple createAnnotation
+                # Three scenarios:
+                #   1) col is name of mutation data field -- simple createAnnotation
+                #   2) col name is an alias for a mutation data field -- do lookup then createAnnotation
+                #   3) col name is not an alias for a mutation data field -- simple createAnnotation
                 if col in aliasKeys:
                     realKey = self._reverseAlternativeDict[col]
                     self.logger.debug(realKey + " found from " + col)
                     val = line[col]
                     if realKey == "chr":
                         val = MutUtils.convertChromosomeStringToMutationDataFormat(line[col])
-                    mut.createAnnotation(realKey,val, 'INPUT')
+                    mut.createAnnotation(realKey, val, 'INPUT')
                 else:
                     # Scenario 1 and 3
                     # Make sure to convert chromosome values.
@@ -172,11 +174,10 @@ class MafliteInputMutationCreator(InputMutationCreator):
             if mut.alt_allele == mut.ref_allele:
                 mut.alt_allele = self._find_alt_allele_in_other_field(line, mut.ref_allele)
 
-                # FIXME: Support more than one alias in the reverse dictionary.  Then this line can be removed.
+            # FIXME: Support more than one alias in the reverse dictionary.  Then this line can be removed.
             if mut.start is not "" and mut.end is "":
                 mut.end = mut.start
             if mut.end is not "" and mut.start is "":
                 mut.start = mut.end
 
             yield mut
-            

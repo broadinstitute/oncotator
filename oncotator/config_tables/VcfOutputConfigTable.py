@@ -3,7 +3,7 @@ class VcfOutputConfigTable():
     _infoFieldNames = dict()  # info (name, ID) pairs
     _formatFieldNames = dict()  # format (name, ID) pairs
     _filterFieldNames = dict()
-    _otrFieldNames = dict()  # ID, QUAL and FILTER (name, ID) pairs
+    _otherFieldNames = dict()  # ID and QUAL (name, ID) pairs
 
     _infoFieldNamesDescriptions = dict()  # info (name, description) pairs
     _formatFieldNamesDescriptions = dict()  # format (name, description) pairs
@@ -12,6 +12,9 @@ class VcfOutputConfigTable():
     _splitSet = dict()
     _notSplitSet = dict()
 
+    def __init__(self):
+        pass
+
     def addInfoFieldName(self, name, ID):
         self._infoFieldNames[name] = ID
 
@@ -19,9 +22,10 @@ class VcfOutputConfigTable():
         self._formatFieldNames[name] = ID
 
     def addOtherFieldName(self, name, ID):
-        self._otrFieldNames[name] = ID
         if ID == "FILTER":
             self._filterFieldNames[name] = name
+        else:
+            self._otherFieldNames[name] = ID
 
     def removeInfoFieldName(self, name):
         if name in self._infoFieldNames:
@@ -32,8 +36,8 @@ class VcfOutputConfigTable():
             del self._formatFieldNames[name]
 
     def removeOtherFieldName(self, name):
-        if name in self._otrFieldNames:
-            del self._otrFieldNames[name]
+        if name in self._otherFieldNames:
+            del self._otherFieldNames[name]
 
     def addInfoFieldNameDescription(self, name, description):
         self._infoFieldNamesDescriptions[name] = description
@@ -54,7 +58,7 @@ class VcfOutputConfigTable():
         return self._filterFieldNames.keys()
 
     def getOtherFieldNames(self):
-        return self._otrFieldNames.keys()
+        return self._otherFieldNames.keys()
 
     def getInfoFieldID(self, name):
         if name in self._infoFieldNames:
@@ -67,8 +71,8 @@ class VcfOutputConfigTable():
         return name
 
     def getOtherFieldID(self, name):
-        if name in self._otrFieldNames:
-            return self._otrFieldNames[name]
+        if name in self._otherFieldNames:
+            return self._otherFieldNames[name]
         return name
 
     def getInfoFieldNameDescription(self, name):

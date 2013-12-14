@@ -53,7 +53,6 @@ Created on Nov 20, 2012
 #"""
 
 
-
 class Annotation(object):
     """
     Simple class for storing annotations (particularly value and datasource)
@@ -107,3 +106,18 @@ class Annotation(object):
         
     def getTags(self):
         return self.tags
+
+    def isEqual(self, annot):
+        if self.value != annot.getValue():
+            return False
+        if self.datasourceName != annot.getDatasource():
+            return False
+        if self.dataType != annot.getDataType():
+            return False
+        if self.description != annot.getDescription():
+            return False
+        if self.number != annot.getNumber():
+            return False
+        if len(set(self.tags).symmetric_difference(set(annot.getTags()))) != 0:
+            return False
+        return True

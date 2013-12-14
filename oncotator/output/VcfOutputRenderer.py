@@ -47,23 +47,19 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 
-from OutputRenderer import OutputRenderer
-from oncotator.utils.ConfigUtils import ConfigUtils
-import csv
 import collections
 import logging
 import os
 import tempfile
-import string
-import itertools
 import vcf
-from oncotator.input.ConfigInputIncompleteException import ConfigInputIncompleteException
-from oncotator.utils.TsvFileSorter import TsvFileSorter
-from oncotator.utils.GenericTsvReader import GenericTsvReader
-from oncotator.output.RecordFactory import RecordFactory
-from oncotator.output.OutputDataManager import OutputDataManager
+
 from oncotator.utils.MutUtils import MutUtils
-from oncotator.output.VcfOutputConfigTable import VcfOutputConfigTable
+from OutputRenderer import OutputRenderer
+import oncotator.utils.ConfigUtils
+from oncotator.utils.GenericTsvReader import GenericTsvReader
+from oncotator.output.RecordBuilder import RecordBuilder
+from oncotator.output.OutputDataManager import OutputDataManager
+from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
 
 
 class VcfOutputRenderer(OutputRenderer):
@@ -77,7 +73,7 @@ class VcfOutputRenderer(OutputRenderer):
     """
     _vcfAnnotation = collections.namedtuple(typename="Annotation", field_names=["field", "ID", "num", "type"])
 
-    def __init__(self, filename, datasources=[], configFile='vcf.out.config'):
+    def __init__(self, filename, datasources=None, configFile='vcf.out.config'):
         """
 
 
@@ -86,150 +82,18 @@ class VcfOutputRenderer(OutputRenderer):
         :param configFile: output config file
         """
         self._filename = filename
+        self.configFilename = configFile
         self.logger = logging.getLogger(__name__)
-        self._datasources = datasources
-        self.config = ConfigUtils.createConfigParser(configFile, ignoreCase=False)
+        self._datasources = [] if datasources is None else datasources
+        self.config = oncotator.utils.ConfigUtils.ConfigUtils.createConfigParser(configFile, ignoreCase=False)
         self.chromHashCodeTable = None  # maps every chromosome in the mutations to a sortable integer
-        self.configTable = VcfOutputConfigTable()
+        self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("output_vcf")
         self.delimiter = "\t"
         self.lineterminator = "\n"
         self.sampleNames = []  # all sample names in the mutations
         self.chroms = []  # all chromosomes in the mutations
-        self.reservedAnnotationNames = ['chr', 'start', 'ref_allele', 'alt_allele', 'end']
 
-    def _writeMuts2Tsv(self, filename, fieldnames, muts):
-        """
-        Given a mutation generator, this methods writes
-
-        :param filename: temporary filename
-        :param fieldnames: field names to render
-        :param muts: generator object with mutations
-        """
-        sampleNames = set()
-        chroms = set()
-
-        with open(filename, 'w') as fptr:
-            writer = csv.DictWriter(fptr, fieldnames, extrasaction='ignore', delimiter=self.delimiter,
-                                    lineterminator=self.lineterminator)
-            writer.writeheader()
-            ctr = 0
-            for mut in muts:
-                if "sampleName" in mut:
-                    sampleName = mut['sampleName']
-                    sampleNames.add(sampleName)
-
-                # Parse chromosome
-                chroms.add(mut.chr)
-
-                if mut.ref_allele == "_" or mut.alt_allele == "-":
-                    ref_allele, alt_allele, updated_start = MutUtils.retrievePrecedingBase(mut)
-                    mut.start = updated_start
-                    mut.ref_allele = ref_allele
-                    mut.alt_allele = alt_allele
-
-                writer.writerow(mut)
-
-                ctr += 1
-                if (ctr % 1000) == 0:
-                    self.logger.info("Wrote " + str(ctr) + " mutations to tsv.")
-
-        if len(sampleNames) > 0:
-            self.sampleNames = list(sampleNames)
-            self.sampleNames.sort()
-
-        if len(chroms) > 0:
-            self.chroms = list(chroms)
-
-    def _getFieldnames(self, mut, md):
-        """
-
-
-        :param mut: mutation object
-        :param md: mutation data
-        :return: list of fieldnames
-        """
-        fieldnames = self.reservedAnnotationNames
-        if mut is not None:
-            fieldnames = set(fieldnames).union(md.keys())
-            fieldnames = fieldnames.union(mut.keys())
-            fieldnames = fieldnames.difference(["end", "sampleName", "build"])
-            if "sampleName" in mut:
-                fieldnames = fieldnames.union(["sampleName"])
-        return list(fieldnames)
-
-    def _validateOutputConfigFile(self):
-        """
-
-
-        :raise:
-        """
-        sections = ["INFO", "FORMAT", "OTHER", "SPLIT_TAGS", "NOT_SPLIT_TAGS", "INFO_DESCRIPTION", "FILTER_DESCRIPTION",
-                    "FORMAT_DESCRIPTION"]
-        for section in sections:
-            if not ConfigUtils.hasSectionKey(self.config, section):
-                raise ConfigInputIncompleteException("Missing %s section in the output config file." % section)
-
-            if section in ("OTHER",):
-                self._doFieldsExist(section, ["ID", "QUAL", "FILTER"])
-            elif section in ("NOT_SPLIT_TAGS", "SPLIT_TAGS",):
-                self._doFieldsExist(section, ["INFO", "FORMAT"])
-
-    def _doFieldsExist(self, section, fields):
-        """
-
-        :param section:
-        :param fields:
-        :raise:
-        """
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, section)
-        for field in fields:
-            if field not in table:
-                raise ConfigInputIncompleteException("Missing %s field in the %s section of the output config file."
-                                                     % (field, section))
-
-    def _parseConfig(self):
-        """
-
-
-        :return:
-        """
-        configTable = VcfOutputConfigTable()
-
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "INFO")
-        for name, ID in table.items():
-            configTable.addInfoFieldName(name, ID)
-
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "FORMAT")
-        for name, ID in table.items():
-            configTable.addFormatFieldName(name, ID)
-
-        table = ConfigUtils.buildReverseAlternativeDictionaryFromConfig(self.config, "OTHER")
-        for name, ID in table.items():
-            configTable.addOtherFieldName(name, ID)
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "INFO_DESCRIPTION")
-        for name, description in table.items():
-            configTable.addInfoFieldNameDescription(name, string.join(description, ","))
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FORMAT_DESCRIPTION")
-        for name, description in table.items():
-            configTable.addFormatFieldNameDescription(name, string.join(description, ","))
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "FILTER_DESCRIPTION")
-        for name, description in table.items():
-            configTable.addFilterFieldNameDescription(name, string.join(description, ","))
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "SPLIT_TAGS")
-        for fieldType, names in table.items():
-            configTable.addFieldNamesToSplitSet(fieldType, names)
-
-        table = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config, "NOT_SPLIT_TAGS")
-        for fieldType, names in table.items():
-            configTable.addFieldNamesToNotSplitSet(fieldType, names)
-
-        return configTable
-
-    def renderMutations(self, mutations, metadata=[], comments=[]):
+    def renderMutations(self, mutations, metadata=None, comments=None):
         """ Generate a simple tsv file based on the incoming mutations.
         Assumes that all mutations have the same annotations, even if some are not populated.
         :param mutations:
@@ -237,47 +101,40 @@ class VcfOutputRenderer(OutputRenderer):
         :param comments:
         Returns a file name. """
 
+        metadata = [] if metadata is None else metadata
+        comments = [] if comments is None else comments
+
         self.logger.info("Rendering VCF output file: " + self._filename)
 
         # Initialize config table
-        self._validateOutputConfigFile()
-        self.configTable = self._parseConfig()
-
-        # Initialize the data manager
-        mut = None
-        for mutation in mutations:
-            mut = mutation
-            lst = [(mut for mut in [mut]), mutations]
-            mutations = itertools.chain(*lst)
-            break
-
-        fieldnames = self._getFieldnames(mut, metadata)
+        self.configTable = self.configTableBuilder.getConfigTable(configFilename=self.configFilename)
 
         path = os.getcwd()
-        tempTsvFile = tempfile.NamedTemporaryFile(dir=path)  # create a temporary file to write tab-separated file
-        self.logger.info("Creating intermediate tsv file...")
-        self._writeMuts2Tsv(tempTsvFile.name, fieldnames, mutations)
-        dm = OutputDataManager(self.configTable, comments, metadata, mut, self.sampleNames)
 
-        self.logger.info("Intermediate tsv file created.")
-
-        # Sort the tsv file
-        chrom2HashCode = self._createChrom2HashCodeTable(self.chroms)
-        tsvFileSorter = TsvFileSorter(tempTsvFile.name)
-        sortedTempTsvFile = tempfile.NamedTemporaryFile(dir=path)
-        func = lambda val: (chrom2HashCode[val["chr"]], int(val["start"]), val["alt_allele"])
-        tsvFileSorter.sortFile(sortedTempTsvFile.name, func)
-        self.logger.info("Intermediate tsv file sorted.")
+        dataManager = OutputDataManager(self.configTable, mutations, comments, metadata, path)
+        self.sampleNames = dataManager.getSampleNames()
 
         # Write the header
-        filePointer = file(self._filename, 'w')
-        header = dm.getHeader()
+        tempTemplateFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
+        filePointer = file(tempTemplateFile.name, 'w')
+        header = dataManager.getHeader()
         filePointer.write(header)
         filePointer.close()
 
+        sortedTempTsvFileName = dataManager.getSortedTsvFilename(path)
+
         self.logger.info("Render starting...")
-        self._renderSortedTsv(self._filename, sortedTempTsvFile.name, self.sampleNames, dm)
+        self._renderSortedTsv(tempTemplateFile.name, self._filename, sortedTempTsvFileName, self.sampleNames,
+                              dataManager)
+
+        # Remove template filename
+        os.remove(tempTemplateFile.name)
+
+        # Remove sorted tsv filename
+        os.remove(sortedTempTsvFileName)
+
         self.logger.info("Rendered all mutations.")
+
         return self._filename
 
     def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos):
@@ -296,7 +153,7 @@ class VcfOutputRenderer(OutputRenderer):
             isNew = True
         return isNew
 
-    def _renderSortedTsv(self, vcfFilename, tsvFilename, sampleNames, dataManager):
+    def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager):
         """
 
         :param vcfFilename:
@@ -304,7 +161,7 @@ class VcfOutputRenderer(OutputRenderer):
         :param sampleNames:
         :param dataManager:
         """
-        tempVcfReader = vcf.Reader(filename=vcfFilename, strict_whitespace=True)
+        tempVcfReader = vcf.Reader(filename=templateFilename, strict_whitespace=True)
         pointer = file(vcfFilename, "w")
         vcfWriter = vcf.Writer(pointer, tempVcfReader, self.lineterminator)
         tsvReader = GenericTsvReader(tsvFilename, delimiter=self.delimiter)
@@ -312,12 +169,12 @@ class VcfOutputRenderer(OutputRenderer):
         nrecords = 1000
         chrom = None
         pos = None
-        recordFactory = None
+        recordBuilder = None
         for m in tsvReader:
             isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"])
             if isNewRecord:
-                if recordFactory is not None:
-                    record = recordFactory.createRecord()
+                if recordBuilder is not None:
+                    record = recordBuilder.createRecord()
                     vcfWriter.write_record(record)
                     index += 1
                     if index % nrecords == 0:
@@ -325,64 +182,75 @@ class VcfOutputRenderer(OutputRenderer):
                         vcfWriter.flush()
 
                 chrom = m["chr"]
+                if chrom.startswith("GL"):
+                    chrom = "<" + chrom + ">"
                 pos = m["start"]
                 refAllele = m["ref_allele"]
 
-                recordFactory = RecordFactory(chrom, int(pos), refAllele, sampleNames)
+                recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
 
-            recordFactory = self._parseRecordFactory(m, recordFactory, dataManager)
+            recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager)
 
-        if recordFactory is not None:
-            record = recordFactory.createRecord()
+        if recordBuilder is not None:
+            record = recordBuilder.createRecord()
             vcfWriter.write_record(record)
 
         vcfWriter.close()
         self.logger.info("Rendered all " + str(index) + " vcf records.")
 
-    def _parseRecordFactory(self, m, recordFactory, dataManager):
+    def _parseRecordBuilder(self, m, recordBuilder, dataManager):
         """
         Parse the input mutation object.
         First, this method
 
         :param m: mutation object
-        :param recordFactory:
+        :param recordBuilder:
         :param dataManager:
         :return:
         """
-        IDs = dataManager.getAnnotationNames("ID")
-        quals = dataManager.getAnnotationNames("QUAL")
-        filts = dataManager.getAnnotationNames("FILTER")
-        infos = dataManager.getAnnotationNames("INFO")
-        formats = dataManager.getAnnotationNames("FORMAT")
+
+        idAnnotationNames = dataManager.getAnnotationNames("ID")
+        qualAnnotationNames = dataManager.getAnnotationNames("QUAL")
+        filterAnnotationNames = dataManager.getAnnotationNames("FILTER")
+        infoAnnotationNames = dataManager.getAnnotationNames("INFO")
+        formatAnnotationNames = dataManager.getAnnotationNames("FORMAT")
+        sampleNameAnnotationNames = dataManager.getAnnotationNames("SAMPLE_NAME")
+
+        if len(sampleNameAnnotationNames) != 0:
+            sampleNameAnnotationName = sampleNameAnnotationNames[0]
+        else:
+            sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
+        sampleName = m.get(sampleNameAnnotationName, None)
 
         altAllele = m["alt_allele"]
-        sampleName = m.get("sampleName", None)
-        recordFactory.addAlt(altAllele)
 
-        for name in IDs:
+        recordBuilder.addAlt(altAllele)
+
+        for name in idAnnotationNames:
             val = m.get(name, "")
-            recordFactory.addID(val)
-        if len(quals) == 0:
+            recordBuilder.addID(val)
+
+        if len(qualAnnotationNames) == 0:
             qual = "qual"
         else:
-            qual = quals[0]
-        recordFactory.addQual(m.get(qual,"."))
+            qual = qualAnnotationNames[0]
+        recordBuilder.addQual(m.get(qual, "."))
 
-        for name in filts:
+        for name in filterAnnotationNames:
             ID = dataManager.getFieldID(name)
             val = m.get(name, "")
-            recordFactory.addFilter(ID, val)
+            recordBuilder.addFilter(ID, val)
 
-        for name in infos:
+        for name in infoAnnotationNames:
             annotation = dataManager.getOutputAnnotation(name)
             ID = annotation.getID()
             num = annotation.getNumber()
             dataType = annotation.getDataType()
             isSplit = annotation.isSplit()
             val = m.get(name, "")
-            recordFactory.addInfo(sampleName, ID, num, dataType, val, isSplit)
+            recordBuilder.addInfo(sampleName, ID, num, dataType, val, isSplit)
 
-        for name in formats:
+        for name in formatAnnotationNames:
             annotation = dataManager.getOutputAnnotation(name)
             ID = annotation.getID()
             num = annotation.getNumber()
@@ -394,36 +262,6 @@ class VcfOutputRenderer(OutputRenderer):
                       " in the Format field." % name
                 logging.warn(msg)
             else:
-                recordFactory.addFormat(sampleName, ID, num, dataType, val, isSplit)
+                recordBuilder.addFormat(sampleName, ID, num, dataType, val, isSplit)
 
-        return recordFactory
-
-    def _createChrom2HashCodeTable(self, chroms):
-        """
-
-
-        :param chroms:
-        :return:
-        """
-        table = dict()
-        highestHashCode = 0
-        sorted(chroms)
-        for chrom in chroms:
-            table[chrom] = None
-            if chrom.isdigit():
-                table[chrom] = int(chrom)
-                if highestHashCode < table[chrom]:
-                    highestHashCode = table[chrom]
-        index = 0
-        for chrom in chroms:
-            if table[chrom] is None:
-                if chrom.upper() == 'X':  # X chromosome
-                    table[chrom] = highestHashCode + 1
-                elif chrom.upper() == 'Y':  # Y chromosome
-                    table[chrom] = highestHashCode + 2
-                elif (chrom.upper() == 'M') or (chrom.upper() == 'MT'):  # mitochondrial chromosome
-                    table[chrom] = highestHashCode + 3
-                else:
-                    index += 1
-                    table[chrom] = highestHashCode + index + 3
-        return table
+        return recordBuilder

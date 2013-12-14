@@ -53,7 +53,7 @@ Created on Mar 4, 2013
 
 @author: lichtens
 '''
-from oncotator.datasources import Datasource
+from oncotator.datasources.Datasource import Datasource
 
 
 class MockExceptionThrowingDatasource(Datasource):

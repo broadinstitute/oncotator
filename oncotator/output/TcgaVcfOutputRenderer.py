@@ -288,8 +288,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
         return '%sDP=%s;Gene=%s;MQ0=%s;%sSS=%s;VC=%s;VT=%s;TID=%s;VLSC=%s' % (db, dp, gene, mq0, somatic, ss, vc, vt, transcriptID, vlsc)
 
-
-    def _generateInfoField(self,m,filter, mq0, ss):
+    def _generateInfoField(self,m, filter, mq0, ss):
         dp = str( int(m['t_ref_count']) + int(m['t_alt_count']) + int(m.get('n_ref_count', '0')) + int(m.get('n_alt_count', '0')) )
         isSomatic = (ss == "LOH") or (ss == "Somatic")
         isDbSnp = (m['dbSNP_RS'] != '')
@@ -343,7 +342,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
         gtN, gtT = self.genotype(n_lod, t_lod)
 
-        ref,alt,new_start = MutUtils.retrievePrecedingBase(m)
+        ref,alt,new_start = MutUtils.retrievePrecedingBaseFromReference(m)
 
         ss,ssCode = self.determineSomaticStatus(gtN, gtT, qual)
         if ss is None or ssCode is None:
@@ -421,7 +420,9 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         fp.write(sHeader)
         return fp
 
-    def renderMutations(self, mutations, metadata, comments=[]):
+    def renderMutations(self, mutations, metadata=None, comments=None):
+        if comments is None:
+            comments = []
 
         outputHeaders = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'NORMAL', 'PRIMARY']
 

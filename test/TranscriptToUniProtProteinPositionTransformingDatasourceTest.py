@@ -50,7 +50,7 @@
 
 from oncotator.DatasourceCreator import DatasourceCreator
 from oncotator.MutationData import MutationData
-from oncotator.datasources import TranscriptToUniProtProteinPositionTransformingDatasource
+from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import TranscriptToUniProtProteinPositionTransformingDatasource
 from TestUtils import TestUtils
 
 __author__ = 'lichtens'

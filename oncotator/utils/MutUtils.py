@@ -58,19 +58,165 @@ Created on Nov 13, 2012
 from oncotator.MutationData import MutationData
 from oncotator.utils.MutationValidationFailureException import MutationValidationFailureException
 import re
+import collections
+import string
+import shutil
+
 
 class MutUtils(object):
     """
     Static class containing utility functions for Mutations. 
     """
     proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)[_]*[A-Z]{0,1}([0-9]*)")
+    SAMPLE_NAME_ANNOTATION_NAME = "sample_name"
+    PRECEDING_BASES_ANNOTATION_NAME = "_preceding_bases"
 
-    def __init__(self,params):
+    def __init__(self, params):
         """
         Constructor -- should never be called.
         """
         pass
-    
+
+    @staticmethod
+    def isSNP(m):
+        if len(m.ref_allele) > 1:
+            return False
+        if m.alt_allele not in ["A", "C", "T", "G"]:
+            return False
+        return True
+
+    @staticmethod
+    def isDeletion(m):
+        if len(m.ref_allele) > len(m.alt_allele):
+            return True
+        return False
+
+    @staticmethod
+    def isInsertion(m):
+        if len(m.ref_allele) < len(m.alt_allele):
+            return True
+        return False
+
+    @staticmethod
+    def determineVariantType(m):
+        if MutUtils.isSNP(m):
+            return "snp"
+        elif MutUtils.isDeletion(m):
+            return "del"
+        elif MutUtils.isInsertion(m):
+            return "ins"
+        return "unknown"
+
+    @staticmethod
+    def initializeMutAttributesFromRecord(build, record, alt_index):
+        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+        ref = record.REF
+        ref = "" if ref == "." else ref
+
+        alt = ref
+        if not record.is_monomorphic:
+            alt = str(record.ALT[alt_index])
+        startPos = record.POS
+        endPos = int(record.POS)
+        mut = MutationData(chrom, startPos, endPos, ref, alt, build)
+
+        varType = MutUtils.determineVariantType(mut)
+
+        if varType == "snp":  # Snps
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
+        if varType == "del":  # deletion
+            preceding_bases, updated_ref_allele, updated_start, updated_end =\
+                MutUtils.retrievePrecedingBasesForDeletions(mut)
+            mut.ref_allele = updated_ref_allele
+            mut.alt_allele = "-"
+            mut.start = updated_start
+            mut.end = updated_end
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
+                                 annotationValue=preceding_bases)
+        elif varType == "ins":  # insertion
+            preceding_bases, updated_alt_allele, updated_start, updated_end = \
+                MutUtils.retrievePrecedingBasesForInsertions(mut)
+            mut.ref_allele = "-"
+            mut.alt_allele = updated_alt_allele
+            mut.start = updated_start
+            mut.end = updated_end
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
+                                 annotationValue=preceding_bases)
+
+        return mut
+
+    @staticmethod
+    def retrievePrecedingBasesForInsertions(m):
+        ref_allele = m.ref_allele
+        alt_allele = m.alt_allele
+        start = int(m.start)
+
+        preceding_bases = ref_allele
+        updated_alt_allele = alt_allele[len(preceding_bases):]
+        updated_start = start + len(preceding_bases)
+        updated_end = updated_start + len(updated_alt_allele) - 1
+
+        return preceding_bases, updated_alt_allele, updated_start, updated_end
+
+    @staticmethod
+    def retrievePrecedingBasesForDeletions(m):
+        ref_allele = m.ref_allele
+        alt_allele = m.alt_allele
+        start = int(m.start)
+
+        preceding_bases = alt_allele
+        updated_ref_allele = ref_allele[len(preceding_bases):]
+        updated_start = start + len(preceding_bases)
+        updated_end = updated_start + len(updated_ref_allele) - 1
+
+        return preceding_bases, updated_ref_allele, updated_start, updated_end
+
+    @staticmethod
+    def removeDir(currentDir):
+        shutil.rmtree(path=currentDir, ignore_errors=True)
+
+    @staticmethod
+    def createChrom2HashCodeTable(chroms):
+        table = dict()
+        highestHashCode = 0
+        sorted(chroms)
+        for chrom in chroms:
+            table[chrom] = None
+            if chrom.isdigit():
+                table[chrom] = int(chrom)
+                if highestHashCode < table[chrom]:
+                    highestHashCode = table[chrom]
+        index = 0
+        for chrom in chroms:
+            if table[chrom] is None:
+                if chrom.upper() == 'X':  # X chromosome
+                    table[chrom] = highestHashCode + 1
+                elif chrom.upper() == 'Y':  # Y chromosome
+                    table[chrom] = highestHashCode + 2
+                elif (chrom.upper() == 'M') or (chrom.upper() == 'MT'):  # mitochondrial chromosome
+                    table[chrom] = highestHashCode + 3
+                else:
+                    index += 1
+                    table[chrom] = highestHashCode + index + 3
+        return table
+
+    @staticmethod
+    def replaceChrs(text, frm, to):
+        tbl = string.maketrans(frm, to)
+        return text.translate(tbl)
+
+    @staticmethod
+    def getAllAttributeNames(mut):
+        """
+        :param mut: mutation object
+        :return: set of attribute names that are encapsulated in the mutation
+        """
+        attrs = []
+        if mut is not None:
+            attrs = mut.keys() + mut.getAttributeNames()
+            return collections.OrderedDict.fromkeys(attrs).keys()
+        return attrs
+
     @staticmethod
     def str2bool(v):
         """ Given an input string, v, returns whether the input string is a boolean 
@@ -115,7 +261,7 @@ class MutUtils(object):
         if chrom == "MT":
             result = "M"
 
-        if build.startswith("hg") and (chrom == "23" or chrom =="24"):
+        if build.startswith("hg") and (chrom == "23" or chrom == "24"):
             if chrom == "23":
                 result = "X"
             if chrom == "24":
@@ -149,8 +295,7 @@ class MutUtils(object):
     def prettyPrint(mutation):
         for annotation in mutation: 
             print mutation[annotation]
-        return prettyStr
-    
+
     @staticmethod
     def validateMutation(mutation):
         """ Does some basic sanity checks that the given mutationData is coherent.
@@ -163,33 +308,36 @@ class MutUtils(object):
             TODO: Validate chromosome value given the genome build
             
         Throws MutationValidationFailureException.  Otherwise, returns True
-        """ 
-        
+        """
+
+        attribute = "chr"
+        noneAttributes = []
         for attribute in MutationData.attributes:
-            noneAttributes = []
             if mutation[attribute] is None:
                 noneAttributes.append(attribute)
         if len(noneAttributes) > 0:
             raise MutationValidationFailureException("None values found for attributes: " + str(noneAttributes))
 
+        blankAttributes = []
         for attribute in MutationData.attributes:
-            blankAttributes= []
             if mutation[attribute] is '':
                 blankAttributes.append(attribute)
         if len(blankAttributes) > 0:
             raise MutationValidationFailureException("Blank values found for attributes: " + str(blankAttributes))
-        
+
+        noMatchAttributes = []
         for attribute in MutationData.attributes:
-            noMatchAttributes= []
-            if mutation[attribute] <> mutation.__dict__[attribute]:
+            if mutation[attribute] != mutation.__dict__[attribute]:
                 noMatchAttributes.append(attribute)
         if len(noMatchAttributes) > 0:
-            raise MutationValidationFailureException("Attribute did not match dictionary value for " + str(noMatchAttributes) + " (dict, attribute): " + mutation[attribute] + ", " + mutation.__dict__[attribute])
+            raise MutationValidationFailureException("Attribute did not match dictionary value for " +
+                                                     str(noMatchAttributes) + " (dict, attribute): " +
+                                                     mutation[attribute] + ", " + mutation.__dict__[attribute])
         
         if mutation.chr.startswith("chr"):
             raise MutationValidationFailureException("Chromosome value started with chr: " + str(mutation.chr))
         
-        if (mutation.chr == "MT"):
+        if mutation.chr == "MT":
             raise MutationValidationFailureException("Mitochondria must be M, not MT.")
         # TODO: Check for valid chromosome values given the genome build
         
@@ -235,7 +383,8 @@ class MutUtils(object):
         return ("%s_%s_%s_%s_%s_%s" % (chr, start, end, ref_allele, alt_allele, other_info))
 
     @staticmethod
-    def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True, exposedFields=set()):
+    def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
+                            exposedFields=set()):
         """ Creates a dictionary of the output maf file headers to the annotations.
         Input:
             headers -- optional and required fields
@@ -273,7 +422,48 @@ class MutUtils(object):
         return result
 
     @staticmethod
-    def retrievePrecedingBase(m):
+    def retrieveMutCoordinatesForRendering(mut):
+        updated_start = mut.start
+        updated_ref_allele = mut.ref_allele
+        updated_alt_allele = mut.alt_allele
+        if mut.ref_allele == "-":  # detects insertions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
+            else:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromReference(mut)
+        elif mut.alt_allele == "-":  # detects deletions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+            else:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromReference(mut)
+        elif mut.ref_allele == mut.alt_allele:  # detects monomorphic SNPs
+            updated_alt_allele = ""
+
+        return updated_start, updated_ref_allele, updated_alt_allele
+
+    @staticmethod
+    def retrievePrecedingBaseFromAnnotationForDeletions(mut):
+        preceding_bases = mut[MutUtils.PRECEDING_BASES_ANNOTATION_NAME]
+        alt_allele = preceding_bases
+        ref_allele = preceding_bases + mut.ref_allele
+        updated_start = mut.start - len(preceding_bases)
+        return ref_allele, alt_allele, updated_start
+
+    @staticmethod
+    def retrievePrecedingBaseFromAnnotationForInsertions(mut):
+        preceding_bases = mut[MutUtils.PRECEDING_BASES_ANNOTATION_NAME]
+        alt_allele = preceding_bases + mut.alt_allele
+        ref_allele = preceding_bases
+        updated_start = mut.start - len(preceding_bases)
+
+        return ref_allele, alt_allele, updated_start
+
+    @staticmethod
+    def retrievePrecedingBaseFromReference(m):
         updated_start = m.start
         ref_allele = m.ref_allele
         if ref_allele == "-":

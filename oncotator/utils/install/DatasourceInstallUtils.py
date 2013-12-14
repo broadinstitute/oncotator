@@ -47,56 +47,26 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 import os
-import shutil
-from string import Template
-from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.Hasher import Hasher
+import collections
+from oncotator.index.DatasourceCreatorFactory import DatasourceBuilderFactory
 
 
 class DatasourceInstallUtils(object):
-    #TODO: unit tests do not exist.  These need to be created.
+
+    indexCols = collections.namedtuple("indexCols", ["type", "names"])
 
     @staticmethod
-    def determineIndexColumns(ds_type, index_columns):
-        """ Returns genomic_pos_cols and gene_col given a ds_type as a dict.  Note that unused indexes (such as gene_col for genomic position indexes), will be returned as ""
-        ds_type is a string
-        index_columns is a list, even if length 1.
-        """
-
-        result = dict()
-
-        # Keys from the config file.  TODO: Low priority: generate these dynamically
-        supportedKeys = ['genomic_pos_cols', 'gene_col', 'transcript_col','gene_protein_pos_cols']
-        for k in supportedKeys:
-            result[k] = ''
-
-        if ds_type.endswith("gp_tsv"):
-            result['genomic_pos_cols'] = index_columns
-        if ds_type == "gene_tsv":
-            result['gene_col'] = index_columns
-        if ds_type == "transcript_tsv":
-            result['transcript_col'] = index_columns
-        if ds_type == "gpp_tsv":
-            result['gene_protein_pos_cols'] = index_columns
-
-        return result
-
-    @staticmethod
-    def create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type, ds_version, index_columns):
-        # Grab appropriate template for the ds type
-        templateName = 'ds_config.template'
-        sourceConfigFP = ConfigUtils.createTemplateFP(templateName)
-        sTemplate = Template(sourceConfigFP.read())
-        indexColumnDict = DatasourceInstallUtils.determineIndexColumns(ds_type, index_columns.split(','))
-        # Populate template, which yields the config file.
-        finalText = sTemplate.safe_substitute(sTemplate, ds_title=ds_name, ds_version=ds_version, ds_type=ds_type,
-                                              src_file=baseDSFile,
-                                              genomic_pos_cols=",".join(indexColumnDict['genomic_pos_cols']),
-                                              gene_col=",".join(indexColumnDict['gene_col']),
-                                              transcript_col=",".join(indexColumnDict['transcript_col']),
-                                              gene_protein_position_cols=",".join(
-                                                  indexColumnDict['gene_protein_pos_cols']))
-        return finalText
+    def getIndexCols(dsType, index_columns):
+        if dsType == "gp_tsv":
+            return DatasourceInstallUtils.indexCols("genomic_position_cols", index_columns)
+        elif dsType == "gene_tsv":
+            return DatasourceInstallUtils.indexCols("gene_col", index_columns)
+        elif dsType == "transcript_tsv":
+            return DatasourceInstallUtils.indexCols("transcript_col", index_columns)
+        elif dsType == "gpp_tsv":
+            return DatasourceInstallUtils.indexCols("gene_protein_position_cols", index_columns)
+        return None
 
     @staticmethod
     def create_datasource_md5_file(datasource_dir):
@@ -115,22 +85,29 @@ class DatasourceInstallUtils(object):
         fp.close()
 
     @staticmethod
-    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns):
-        baseDSFile = os.path.basename(ds_file)
-        shutil.copy(ds_file, destDir + "/" + baseDSFile)
+    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns=[],
+                          ds_columns=None, ds_annotation_columns=None):
+        """
+        :param destDir: temporary destination directory (tmpdir/ds_foldername/genome_build)
+        :param ds_file: data source filename
+        :param ds_foldername:
+        :param ds_name:
+        :param ds_type: data source type (indexed_vcf, indexed_tsv, etc.)
+        :param ds_version: data source version
+        :param index_columns:
+        :param ds_columns: if data source is of type indexed tsv,
+        :param ds_annotation_columns: if data source is of type indexed tsv,
+        """
 
-        if ds_type == "indexed_vcf":
-            # TODO: Change this to be the appropriate code.
-            raise NotImplementedError("indexed_vcf not supported yet")
-        else:
-            finalText = DatasourceInstallUtils.create_config_file_string_for_generic_tsv(baseDSFile, ds_name, ds_type,
-                                                                                     ds_version, index_columns)
-        # Write the config file
-        configFilename = destDir + "/" + ds_foldername + ".config"
-        print("config file being written to: " + os.path.abspath(configFilename))
-        fp = file(configFilename, 'w')
-        fp.write(finalText)
-        fp.close()
+        datasourceBuilder = DatasourceBuilderFactory.getDatasourceCreatorInstance(ds_type)
+        baseDSFile = datasourceBuilder.createDatasource(destDir=destDir, ds_file=ds_file,
+                                                        index_column_names=index_columns, column_names=ds_columns)
+
+        configFilename = destDir + os.sep + ds_foldername + ".config"
+
+        datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=baseDSFile, ds_type=ds_type,
+                                           ds_name=ds_name, ds_version=ds_version, column_names=ds_columns,
+                                           annotation_column_names=ds_annotation_columns,
+                                           indexCols=DatasourceInstallUtils.getIndexCols(ds_type, index_columns))
 
         DatasourceInstallUtils.create_datasource_md5_file(destDir)
-

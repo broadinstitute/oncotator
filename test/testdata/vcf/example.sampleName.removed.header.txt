@@ -1,8 +1,11 @@
 ##fileformat=VCFv4.1
 ##fileDate=20090805
 ##source=myImputationProgramV3.1
-##reference=1000GenomesPilot-NCBI36
+##source=<ID=myImputationProgramV3.1>
+##reference=<ID=hg19,Source=http://www.bcgsc.ca/downloads/genomes/Homo_sapiens/hg19/1000genomes/bwa_ind/genome/GRCh37-lite.fa>
 ##phasing=partial
+##oncotator_version=Oncotator_v1.0.0.0rc30_|
+##reference=<ID=hg19,Source=http://www.bcgsc.ca/downloads/genomes/Homo_sapiens/hg19/1000genomes/bwa_ind/genome/GRCh37-lite.fa>
 ##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
 ##INFO=<ID=AF,Number=.,Type=Float,Description="Allele Frequency">

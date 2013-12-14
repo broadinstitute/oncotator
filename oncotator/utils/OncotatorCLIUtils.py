@@ -47,7 +47,7 @@
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
 import os
-from oncotator.datasources import TranscriptProvider
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 import logging
@@ -286,14 +286,14 @@ class OncotatorCLIUtils(object):
         return tmp.keys()
 
     @staticmethod
-    def create_input_creator(inputFilename, inputFormat):
+    def create_input_creator(inputFilename, inputFormat, genome_build="hg19"):
         inputCreator = None
         inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
         if inputFormat not in inputCreatorDict.keys():
             raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
         else:
             inputConfig = inputCreatorDict[inputFormat][1]
-            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig)
+            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig, genome_build)
         return inputCreator
 
     @staticmethod
@@ -325,7 +325,7 @@ class OncotatorCLIUtils(object):
         # TODO: Make sure that we can pass in both a class and a config file, not just a class.
 
         # Step 1 Initialize input and output
-        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat)
+        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild)
         outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
 
         # Step 2 Datasources
