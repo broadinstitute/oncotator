@@ -13,8 +13,10 @@ class TranscriptProviderUtils(object):
         elif observed_allele == '-': #is deletion
             return 'DEL'
         else:
-            if len(observed_allele) != len(reference_allele):
-                return 'ONP'
+            if len(observed_allele) > len(reference_allele):
+                return 'INS'
+            if len(observed_allele) > len(reference_allele):
+                return 'DEL'
             elif len(reference_allele) == 1:
                 return 'SNP'
             elif len(reference_allele) == 2:
