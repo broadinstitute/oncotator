@@ -296,5 +296,6 @@ class DatasourceCreator(object):
             3) Make sure that any Gaf datasources are put up front."""
         newlist = sorted(datasources, key=lambda k: isinstance(k, GenericGeneDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, PositionTransformingDatasource))
+        newlist = sorted(newlist, key=lambda k: not isinstance(k, ReferenceDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, TranscriptProvider))
         return newlist

@@ -80,7 +80,6 @@ class IndexedVcfDatasource(Datasource):
     def __init__(self, src_file, title='', version=None):
         # all of the info is coming from config file
         super(IndexedVcfDatasource, self).__init__(src_file, title=title, version=version)
-
         self.vcf_reader = vcf.Reader(filename=src_file, strict_whitespace=True)
         self.vcf_info_headers = self.vcf_reader.infos.keys()
 
@@ -170,7 +169,7 @@ class IndexedVcfDatasource(Datasource):
         for index in xrange(0, len(record.ALT)):
             ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
             if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
-                and mut.start == ds_mut.start and mut.end == ds_mut.end:
+                and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
                 return True
 
         return False
