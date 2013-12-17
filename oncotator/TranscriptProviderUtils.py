@@ -164,6 +164,20 @@ class TranscriptProviderUtils(object):
 
         return transcript_change
 
+    @staticmethod
+    def render_transcript_position(genomic_start, genomic_end, tx):
+        """
+        Create a transcript position that looks like [exon_start]_[exon_end] or [exon_position] (when start == end)
+        :param genomic_start: int
+        :param genomic_end: int
+        :return: a string representation
+        """
+        exon_start, exon_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(genomic_start, genomic_end, tx)
+        if exon_start == exon_end:
+            return "%d" % exon_start
+        else:
+            return "%d_%d" % (exon_start, exon_end)
+
 
     @staticmethod
     def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele):

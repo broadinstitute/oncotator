@@ -64,8 +64,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        self.logger = logging.getLogger(__name__)
-        self.config = TestUtils.createUnitTestConfig()
+        pass
 
     def tearDown(self):
         pass
