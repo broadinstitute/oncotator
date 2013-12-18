@@ -209,7 +209,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
     def testAnnotatingInsertionsWithMonomorphicDatasource(self):
         self.logger.info("Initializing Contrived")
         tabixIndexedVcfDirName = "testdata/contrived_monomorphic_vcf_ds/hg19"
-        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/contrived_monomorphic_vcf_ds.config",
+        tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(tabixIndexedVcfDirName + "/contrived_monomorphic_vcf_ds.config",
                                                                        tabixIndexedVcfDirName)
 
         # m1 in vcf specifications
