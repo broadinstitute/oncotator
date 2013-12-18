@@ -291,9 +291,10 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         for s in size_extensions:
             new_start = start - s
             if new_start < 0: new_start = 1
-            records = self.get_overlapping_transcripts(chr, new_start, end)
+            txs_unfiltered = self.get_overlapping_transcripts(chr, new_start, end)
+            txs = self._filter_transcripts(txs_unfiltered)
             nearest_gene_border = 0
-            for tx in records:
+            for tx in txs:
                 if tx.get_strand() == "-":
                     highest_genome_position = tx.determine_transcript_start()
                 else:
@@ -309,9 +310,10 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         right_gene, right_dist = None, None
         for s in size_extensions:
             new_end = end + s
-            records = self.get_overlapping_transcripts(chr, start, new_end)
+            txs_unfiltered = self.get_overlapping_transcripts(chr, start, new_end)
+            txs = self._filter_transcripts(txs_unfiltered)
             nearest_gene_border = int(1e9)
-            for tx in records:
+            for tx in txs:
                 if tx.get_strand() == "-":
                     lowest_genome_position = tx.determine_transcript_stop()
                 else:
