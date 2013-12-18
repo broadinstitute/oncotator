@@ -63,6 +63,7 @@ from oncotator.utils.ConfigUtils import ConfigUtils
 from collections import OrderedDict
 
 
+
 class TcgaMafOutputRenderer(OutputRenderer):
     """
     
@@ -125,6 +126,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         :return:
         """
         row = self._createMutationRow(m, fieldMapKeys, fieldMap)
+        if row['Entrez_Gene_Id'] == "":
+            row['Entrez_Gene_Id'] = "0"
         dw.writerow(row)
 
     def renderMutations(self, mutations, metadata=None, comments=None):

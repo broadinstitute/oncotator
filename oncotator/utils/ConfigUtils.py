@@ -58,6 +58,8 @@ import os.path
 import os
 import re
 import logging
+from os.path import expanduser
+
 class ConfigUtils(object):
     """
     Collection of utility methods.
@@ -117,9 +119,11 @@ class ConfigUtils(object):
         return False
     
     @staticmethod
-    def createConfigParser(sourceConfigFile, ignoreCase=True):
+    def createConfigParser(sourceConfigFile, ignoreCase=True, additional_config_dir=""):
         """ Creates a config parser instance using the Oncotator conventions for config files.  
         
+
+
         Note:  ALL config files must end with .config
         
         In order of precedence:
@@ -131,28 +135,35 @@ class ConfigUtils(object):
                 myConfig.local.config 
                 
                 All sections, keys, and values in the local config supersede the basic config.  No local configs should be 
-                committed to SVN.
+                committed to git.
         
-        IMPORTANT: If the config file is not found.  Attempts to find it again by prepending "configs/"  
+        IMPORTANT: If the config file is not found.  Attempts to find it again by prepending "configs/" and then checking
+         the additional_config_dir.
         If still not found, assumes that the file is part of the install package. 
            
            
         Precedence: 
                 1) File name relative to current dir (CWD)
                 2) Filename configs/CWD
-                3) User's HOME/.oncotator (TODO: Implement this)
+                3) Additional directory (additional_config_dir)
                 4) Package resources 
                 
                 .local.config can be found in any of these locations.
                 
                 In other words, test.config can be package resources and test.local.config can be in ~/.oncotator, 
                     and it will be as if these two files are local to each other.   
+
+        :param sourceConfigFile:
+        :param ignoreCase:
+        :param additional_config_dir: Lowest precedence directory to search.  Does NOT look for a config subdirectory here
+
+
             """
        
         # TODO: Must be more graceful way of handling this.
         # TODO: Add ~/.oncotator to areas that are searched for config files.
         
-        sourceConfigFP = ConfigUtils._locateConfigFile(sourceConfigFile)       
+        sourceConfigFP = ConfigUtils._locateConfigFile(sourceConfigFile, additional_config_dir)
         config = SafeConfigParser()
         if not ignoreCase:
             config.optionxform = str
@@ -161,20 +172,20 @@ class ConfigUtils(object):
         # Create the local filename string by grabbing the ending of .config and 
         configBaseFilename = os.path.basename(sourceConfigFP.name)
         
-        pattern="\.config$"
+        pattern = "\.config$"
         configLocalFilename = re.sub(pattern, ".local.config", configBaseFilename)
         
         dirName = os.path.dirname(sourceConfigFile)
         if dirName <> "":
             dirName = dirName + '/'
         configLocalSourceFilename = dirName + configLocalFilename
-        configLocalSourceFP = ConfigUtils._locateConfigFile(configLocalSourceFilename,isRelaxedLogging=True)
+        configLocalSourceFP = ConfigUtils._locateConfigFile(configLocalSourceFilename, isRelaxedLogging=True, additional_config_dir=additional_config_dir)
         if configLocalSourceFP <> None:
             config.readfp(configLocalSourceFP)
         return config
     
     @staticmethod
-    def _locateConfigFile(sourceConfigFile, isRelaxedLogging=False):
+    def _locateConfigFile(sourceConfigFile, isRelaxedLogging=False, additional_config_dir=None):
         """ This method implements the searching as described in createConfigParser.
         
         IMPORTANT: This returns a file pointer, not a filename. 
@@ -187,7 +198,11 @@ class ConfigUtils(object):
             if os.path.exists("configs/"+sourceConfigFile):
                 logging.getLogger(__name__).info("Found config file (" + sourceConfigFile + ") using configs/ prepend.")
                 sourceConfigFile = "configs/" + sourceConfigFile
-                sourceConfigFP = file(sourceConfigFile,'r')       
+                sourceConfigFP = file(sourceConfigFile, 'r')
+            elif additional_config_dir is not None and additional_config_dir.strip() != "" and os.path.exists(additional_config_dir + "/" + sourceConfigFile):
+                logging.getLogger(__name__).info("Found config file (" + sourceConfigFile + ") using " + additional_config_dir + ".")
+                sourceConfigFile = additional_config_dir + "/" + sourceConfigFile
+                sourceConfigFP = file(sourceConfigFile, 'r')
             else:
                 logging.getLogger(__name__).debug("Attempting to get " + sourceConfigFile + " from package resources")
                 sourceConfigFP = None

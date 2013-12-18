@@ -63,6 +63,16 @@ from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreator
 
 
 class VcfInputMutationCreator(InputMutationCreator):
+    """
+    TODO: Finish documentation
+    
+    Convert a VCF 4.1 into a MutationData generator.
+            Adds the following annotations (as INPUT annotation source):
+                sampleName -- the name of the sample in the VCF
+                altAlleleSeen -- whether the alternate allele was seen in the mutation.  This is whether a "1" appears in the GT field.
+                
+    
+    """
 
     def __init__(self, filename, configFile='vcf.in.config', genomeBuild="hg19"):
         """
@@ -243,6 +253,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)
 
+        is_tn_vcf_warning_delivered = False
         for record in self.vcf_reader:
             for index in range(len(record.ALT)):
                 mut = self._createMutation(record, index)
@@ -253,9 +264,9 @@ class VcfInputMutationCreator(InputMutationCreator):
                     sampleRecList = record.samples
                     sample_names = [s.sample for s in sampleRecList]
                     is_tumor_normal_vcf = "NORMAL" in sample_names and len(sample_names) == 2
-                    if is_tumor_normal_vcf:
-                        logging.getLogger(__name__).info("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, "
-                                                         "unless GT field specified otherwise.")
+                    if not is_tn_vcf_warning_delivered and is_tumor_normal_vcf:
+                        is_tn_vcf_warning_delivered = True
+                        logging.getLogger(__name__).warn("Tumor-Normal VCF detected.  The Normal will assume GT= 0/0, unless GT field specified otherwise.")
 
                     for sample in sampleRecList:
                         sampleMut = copy.deepcopy(mut)

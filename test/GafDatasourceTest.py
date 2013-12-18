@@ -63,6 +63,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.MultiprocessingUtils import LoggingPool
 from oncotator.utils.MutUtils import MutUtils
 from TestUtils  import TestUtils
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 def annotate_mutation_global(t):
@@ -83,8 +84,8 @@ def annotate_mutations_global(t):
     return result
 
 TestUtils.setupLogging(__file__, __name__)
-
-
+# globalConfig = TestUtils.createUnitTestConfig()
+# @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test.  GAF 3.0 will not be supported for much longer.")
 class GafDatasourceTest(unittest.TestCase):
 
     # HACK: Allow config to be viewed by unittest decorators.
@@ -213,13 +214,6 @@ class GafDatasourceTest(unittest.TestCase):
         self.assertTrue(m['gene'] == "PNKD")
         self.assertTrue(m['variant_classification'] == "Intron", "Canonical no longer is Intron.  This test is no longer valid.  This failure can come up when changing the GAF datasource.")
 
-
-    @unittest.skip('This test has been disabled, since the backing implementation is incomplete.')
-    def testBasicInitWithENSEMBL(self):
-        gaf_fname = self.config.get("ENSEMBL", "gaf_fname")
-        gaf_transcripts_fname = self.config.get("ENSEMBL", "gaf_transcript_seqs_fname")
-
-        gafDatasource = Gaf(gaf_fname, gaf_transcripts_fname)
 
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def testSpliceSiteWithinNBases(self):
@@ -472,6 +466,52 @@ class GafDatasourceTest(unittest.TestCase):
         gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
         new_hashcode = gafDatasource.get_hashcode()
         self.assertTrue(old_hashcode != new_hashcode)
+
+    def test_start_codon(self):
+        """Test a start codon hit in a GAF datasource"""
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+
+        m = MutationData()
+        m.start = str(22221729)
+        m.end = str(22221729)
+        m.chr="22"
+        m.ref_allele = 'A'
+        m.alt_allele = 'T'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == VariantClassification.MISSENSE)
+
+    @unittest.skip("GAF 3.0 datasources are not being supported much longer, but this test may have exposed a minor bug, so is being preserved if a bugfix is implemented.")
+    def test_denovo(self):
+        """GAF de novo test """
+        gafDatasource = TestUtils.createGafDatasource(self.config)
+
+        m = MutationData()
+        m.start = str(22221735)
+        m.end = str(22221737)
+        m.chr="22"
+        m.ref_allele = ''
+        m.alt_allele = 'CAT'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == 'De_novo_Start_OutOfFrame')
+
+        m = MutationData()
+        m.start = str(22221735)
+        m.end = str(22221740)
+        m.chr="22"
+        m.ref_allele = ''
+        m.alt_allele = 'AACATAA'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == 'De_novo_Start_OutOfFrame')
+
+        m = MutationData()
+        m.start = str(22221735)
+        m.end = str(22221739)
+        m.chr="22"
+        m.ref_allele = ''
+        m.alt_allele = 'ACATAA'
+        m = gafDatasource.annotate_mutation(m)
+        self.assertTrue(m['variant_classification'] == 'De_novo_Start_InFrame')
+
 
     def _flattenChunks(self, chunks):
         [[(yield m) for m in c] for c in chunks]

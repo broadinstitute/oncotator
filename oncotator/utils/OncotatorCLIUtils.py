@@ -69,7 +69,7 @@ from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCrea
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from ConfigUtils import ConfigUtils
 
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.output.SimpleBedOutputRenderer import SimpleBedOutputRenderer
 from oncotator.output.TcgaVcfOutputRenderer import TcgaVcfOutputRenderer
@@ -329,7 +329,7 @@ class OncotatorCLIUtils(object):
         outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
 
         # Step 2 Datasources
-        datasourceList = DatasourceCreator.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+        datasourceList = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
 
         #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
         for ds in datasourceList:

@@ -74,7 +74,6 @@ class ReferenceDatasource(Datasource):
         src_dir is the parent directory of the chrXXX.txt files.
         """
 
-        # TODO: Low priority: Read window sizes from a config file.
         self.directoryName = src_dir
         self.windowSizeRef = int(windowSizeRef)
         self.windowSizeGC = windowSizeGCContent
@@ -92,10 +91,12 @@ class ReferenceDatasource(Datasource):
         # Populate gc content
         gcWindow = self.getRange(m['chr'], iStart - (self.windowSizeGC+1), iEnd + (self.windowSizeGC-1))
         gcCountInWindow = gcWindow.count("C") + gcWindow.count("G") + gcWindow.count("c") + gcWindow.count("g")
-        m.createAnnotation('gc_content', "0", self.title)
-        if len(gcWindow) <> 0:
+
+        if len(gcWindow) != 0:
             gc_content = "%0.3f" % (float(gcCountInWindow)/float(len(gcWindow)))
-            m['gc_content'] = gc_content
+        else:
+            gc_content = "0"
+        m.createAnnotation('gc_content', gc_content, self.title)
         return m
 
     def _getFilePointer(self, fullChrFilename):
@@ -128,7 +129,7 @@ class ReferenceDatasource(Datasource):
         result = fp.read(iEnd-iStart+1)
         return result
 
-    # TODO: Need cleanup of file pointers
+    # TODO: Low priority: Need cleanup of file pointers
 
     def convertMutationChrToFilename(self, chr):
         """ Convert the standard mutation chromosome convention to the convention used for the filenames.

@@ -3,7 +3,7 @@ from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager
 
 class CacheManagerTest(unittest.TestCase):
-
+    _multiprocess_can_split_ = True
     def test_cached_annots(self):
         """Test to make sure that we are not storing annotations that should not be cached.  Also, tests a simple store and retrieve."""
         cache_file = "out/shove.managertest.annots.cache"

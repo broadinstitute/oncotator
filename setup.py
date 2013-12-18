@@ -61,7 +61,9 @@ setup(
       'Oncotator = oncotator.Oncotator:main',
       'oncotator = oncotator.Oncotator:main',
       'initializeDatasource = oncotator.initializeDataSource:main',
+      'initializeTranscriptDatasource = oncotator.initializeTranscriptDatasource:main',
       'addDatasourceMd5 = oncotator.addDatasourceMd5:main',
+      'get_exons = oncotator.get_exons:main',
       # TODO: Make this work: 'oncotator-profile = oncotator.Oncotator:main_profile',
       # TODO: Uncomment the next line and debug
       #'oncotator-index = oncotator.oncotator-index'
@@ -73,7 +75,7 @@ setup(
         '': ['*.config', '*.template']
   },
   test_suite='test',
-  packages=['oncotator','oncotator.cache', 'oncotator.utils','oncotator.utils.install','oncotator.input','oncotator.output','oncotator.index','oncotator.configs', "oncotator.datasources", "oncotator.config_tables"],
+  packages=['oncotator','oncotator.cache', 'oncotator.utils','oncotator.utils.install','oncotator.input','oncotator.utils.txfilter','oncotator.output','oncotator.index','oncotator.configs', "oncotator.datasources", "oncotator.config_tables"],
   license='''
 # By downloading the PROGRAM you agree to the following terms of use:
 #

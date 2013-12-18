@@ -1,5 +1,6 @@
 #!/bin/bash
 # Have script stop if there is an error
+echo "Starting CI testing..."
 set -e
 
 # Make sure that a db-dir is specified, if not, set it to the default for the oncotator CI server at Broad.
@@ -28,6 +29,18 @@ mkdir -p out
 
 # Create a proper config file
 sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
+
+# Attempt simple command line functionality
+echo "Attempting a few command line calls (oncotator only) to make sure there are no egregious errors in the Oncotator CLI."
+echo "== Just running --help ==="
+oncotator --help
+
+echo "== Indel maflite 2 tcga maf test ==="
+oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.indel.maf.txt $VENV/test_Patient0.indel.maf.txt hg19
+
+echo "== SNV maflite 2 tcga maf test ==="
+oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.txt hg19
+########
 
 set +e
 # Do not use multiprocess mode with profiling or coverage.  Bug in nosetests also disallows --processes and --with-xunit

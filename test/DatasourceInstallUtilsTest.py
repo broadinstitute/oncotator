@@ -53,7 +53,7 @@ from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 import os
 import vcf
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.utils.TagConstants import TagConstants
@@ -181,7 +181,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(*[tmpDir, datasourceFoldername, genomeBuild + ".md5"])),
                         "No md5 file was generated.")
 
-        datasource = DatasourceCreator.createDatasource(configFilename, destDir)
+        datasource = DatasourceFactory.createDatasource(configFilename, destDir)
 
         m1 = MutationData()
         m1.chr = "1"

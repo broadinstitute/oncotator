@@ -760,28 +760,12 @@ def correct_transcript_coordinates(data, gaf):
                             continue
         
         yield d
-    
+
 def infer_output_fields(data, gaf):
     for i,m in enumerate(data):
         if m['variant_type'] != 'ERR':
 
-            genome_change = ''
-            start = int(m.start)
-            end = int(m.end)
-            if m['variant_type'] == 'SNP':
-                genome_change = 'g.chr%s:%d%s>%s' % (m.chr, start, m.ref_allele,
-                    m.alt_allele)
-            elif m['variant_type'].endswith('NP'):
-                genome_change = 'g.chr%s:%d_%d%s>%s' % (m.chr, start, end,
-                    m.ref_allele, m.alt_allele)
-            elif m['variant_type'] == 'DEL':
-                if m.start == m.end:
-                    genome_change = 'g.chr%s:%ddel%s' % (m.chr, start, m.ref_allele)
-                else:
-                    genome_change = 'g.chr%s:%d_%ddel%s' % (m.chr, start, end, m.ref_allele)
-            elif m['variant_type'] == 'INS':
-                genome_change = 'g.chr%s:%d_%dins%s' % (m.chr, start, end,
-                    m.alt_allele)
+            genome_change = TranscriptProviderUtils.determine_genome_change(m.chr, m.start, m.end, m.ref_allele, m.alt_allele, m['variant_type'])
             m.createAnnotation('genome_change', genome_change, gaf.title)
             
             for t in m['transcripts']:

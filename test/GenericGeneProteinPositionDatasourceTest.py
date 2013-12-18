@@ -49,7 +49,7 @@
 
 
 from oncotator.Annotator import Annotator
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MissingAnnotationException import MissingAnnotationException
 from oncotator.MutationData import MutationData
 from oncotator.datasources.GenericGeneProteinPositionDatasource import GenericGeneProteinPositionDatasource
@@ -93,7 +93,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         outputFilename = 'out/genericGeneProteinPositionTest.out.tsv'
 
         gafDS = TestUtils.createGafDatasource(self.config)
-        gppDS = DatasourceCreator.createDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.config", "testdata/simple_uniprot_natvar/")
+        gppDS = DatasourceFactory.createDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.config", "testdata/simple_uniprot_natvar/")
 
         annotator = Annotator()
         annotator.setInputCreator(MafliteInputMutationCreator('testdata/maflite/tiny_maflite_natvar.maf.tsv'))

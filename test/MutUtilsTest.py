@@ -58,6 +58,9 @@ TestUtils.setupLogging(__file__, __name__)
 
 
 class MutUtilsTest(unittest.TestCase):
+
+    _multiprocess_can_split_ = True
+
     def testProteinChange(self):
         """ Test that protein change parsing of start and end works.
         """

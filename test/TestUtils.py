@@ -46,14 +46,42 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+from functools import wraps
+import shutil
+from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.dbSNP import dbSNP
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
 import logging
+import traceback
+from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
+
+
+def data_provider_decorator(fn_data_provider):
+    """Data provider decorator, allows another callable to provide the data for the test.
+    Modified from https://pypi.python.org/pypi/unittest-data-provider/1.0.0
+    to work with nose and to accumulate assertion errors."""
+
+    def test_decorator(fn):
+        @wraps(fn)
+        def repl(self, *args):
+            assertion_errors = []
+            ctr = 0
+            for i in fn_data_provider():
+                try:
+                    ctr += 1
+                    fn(self, *i)
+                except AssertionError as ae:
+                    stack_trace = traceback.format_exc()
+                    assertion_errors.append("\n\n ==== Assertion error on data %s: %s -- %s\n\n%s" % (str(ctr), str(i), ae.message, stack_trace))
+            if len(assertion_errors) > 0:
+                raise AssertionError("\n"+"\n".join(assertion_errors) + "\n" + str(len(assertion_errors)) + " of " + str(ctr) + " tests failed.")
+        return repl
+    return test_decorator
 
 
 class TestUtils(object):
@@ -113,7 +141,7 @@ class TestUtils(object):
         """ Creates a Cosmic datasource from a config file.
             """
         cosmic_dirname = config.get("COSMIC", "CosmicDir")
-        cosmicDatasource = DatasourceCreator.createDatasource(cosmic_dirname + "/cosmic.config", cosmic_dirname)
+        cosmicDatasource = DatasourceFactory.createDatasource(cosmic_dirname + "/cosmic.config", cosmic_dirname)
         return cosmicDatasource
 
     @staticmethod
@@ -128,6 +156,22 @@ class TestUtils(object):
 
         """
         #TODO: Low priority: Use decorator instead of TestUtils.setupLogging(...)
-        curdir = os.path.dirname(filename)
+        curdir = os.path.dirname(filename) + '/'
         logging.basicConfig(filemode='w', filename=(os.path.join(curdir, 'out/oncotator_unitTest_' + package_name + '.log')),
                             level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
+
+    @staticmethod
+    def _create_test_gencode_ds(base_output_filename):
+        genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1"]
+        gtf_list = []
+        fasta_list = []
+        for gene in genes:
+            gtf_list.append("testdata/gencode/" + gene + ".gencode.v18.annotation.gtf")
+            fasta_list.append("testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa")
+        shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
+        shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
+        genome_build_factory = GenomeBuildFactory()
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename)
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic")
+        return ensembl_ds

@@ -56,7 +56,7 @@ Created on Jan 9, 2013
 '''
 import unittest
 
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.Annotator import Annotator
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator 
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
@@ -89,7 +89,7 @@ class GenericGeneDataSourceTest(unittest.TestCase):
         # We need a gaf data source to annotate gene
 
         gafDatasource = TestUtils.createGafDatasource(config=self.config)
-        geneDS = DatasourceCreator.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
+        geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         outputFilename = 'out/genericGeneTest.out.tsv'
         
         annotator = Annotator()
@@ -118,7 +118,7 @@ class GenericGeneDataSourceTest(unittest.TestCase):
     
     def testAnnotationSourceIsPopulated(self):
         ''' Tests that the annotation source is not blank for the example tsv datasource. '''
-        geneDS = DatasourceCreator.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
+        geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
         
         m = MutationData()

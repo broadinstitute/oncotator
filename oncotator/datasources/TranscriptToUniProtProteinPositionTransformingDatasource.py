@@ -82,11 +82,6 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
         self.outputAnnotationName = self.title + "_" + outputPositionAnnotationName
         self.proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)")
 
-        logging.getLogger(__name__).info("Loading keys for aa xform uniprot...")
-        # Since this is a readonly datasource, cache all of the available keys ahead of time.  This saves a lot of time.
-        self.dbKeys = self.db.keys()
-        logging.getLogger(__name__).info("Keys loaded aa xform uniprot...")
-
     def _parsePosition(self, position):
         """ Utility class to strip decoration from the position itself.
         """
@@ -149,9 +144,13 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
         transcript_id = mutation['transcript_id']
         positionOnly = self._parsePosition(val)
         newPos = ""
-        if (positionOnly is not None) and (positionOnly != "") and (transcript_id in self.dbKeys):
-            adata = self.db[transcript_id]
-            newPos = str(self._get_uni_pos(adata, int(positionOnly))[0])
+        if (positionOnly is not None) and (positionOnly != ""):
+            try:
+                adata = self.db[transcript_id]
+                newPos = str(self._get_uni_pos(adata, int(positionOnly))[0])
+            except KeyError:
+                # Do nothing, we will end up just annotting with ""
+                pass
 
         mutation.createAnnotation(self.outputAnnotationName, newPos, annotationSource=self.title)
         return mutation

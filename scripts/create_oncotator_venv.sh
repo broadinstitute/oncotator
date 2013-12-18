@@ -72,6 +72,7 @@ echo " "
 echo "python-memcached ========================="
 pip install python-memcached
 
-echo " NOTE:  Some dependencies may not have been installed, you should still install oncotator normally."
+echo " NOTE:  Some dependencies may not have been installed."
+echo " NOTE:  Oncotator has not been installed.  Just the dependencies.  You MUST still install oncotator normally.  "
 
 deactivate

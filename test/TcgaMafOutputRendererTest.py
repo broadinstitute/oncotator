@@ -65,7 +65,7 @@ from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
 import os
 from oncotator.utils.GenericTsvReader import GenericTsvReader
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 
 TestUtils.setupLogging(__file__, __name__)
 

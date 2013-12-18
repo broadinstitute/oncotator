@@ -58,7 +58,7 @@ import unittest
 
 import os
 
-from oncotator.DatasourceCreator import DatasourceCreator
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.Annotator import Annotator
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator 
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
@@ -84,7 +84,7 @@ class GenericGenomicPositionDatasourceTest(unittest.TestCase):
         '''
         outputFilename = 'out/genericGenomePositionTest.out.tsv'
         
-        gpDS = DatasourceCreator.createDatasource("testdata/small_genome_position_tsv_ds/oreganno_trim.config", "testdata/small_genome_position_tsv_ds/")
+        gpDS = DatasourceFactory.createDatasource("testdata/small_genome_position_tsv_ds/oreganno_trim.config", "testdata/small_genome_position_tsv_ds/")
         
         annotator = Annotator()
         annotator.setInputCreator(MafliteInputMutationCreator('testdata/maflite/tiny_maflite.maf.txt'))
@@ -110,7 +110,7 @@ class GenericGenomicPositionDatasourceTest(unittest.TestCase):
         ''' Given a maf file that used to cause a duplicate annotation exception, do not throw that (or any) exception. '''
         outputFilename = 'out/genericGenomePositionDoubleAnnotationTest.out.tsv'
         
-        gpDS = DatasourceCreator.createDatasource("testdata/small_genome_position_tsv_ds/oreganno_trim.config", "testdata/small_genome_position_tsv_ds/")
+        gpDS = DatasourceFactory.createDatasource("testdata/small_genome_position_tsv_ds/oreganno_trim.config", "testdata/small_genome_position_tsv_ds/")
         
         
         annotator = Annotator()
