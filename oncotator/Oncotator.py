@@ -1,4 +1,5 @@
 #!/usr/local/bin/python2.7
+#!/usr/local/bin/python2.7
 # encoding: utf-8
 '''
 Oncotator -- An annotation engine for Cancer
@@ -194,6 +195,7 @@ USAGE
         read_only_cache = args.read_only_cache
         tx_mode = args.tx_mode
         is_skip_no_alts = args.skip_no_alt
+        genome_build = args.build
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
@@ -220,7 +222,7 @@ USAGE
                                                       isMulticore=(not args.noMulticore),
                                                       defaultAnnotations=defaultValues, cacheUrl=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
-                                                      is_skip_no_alts=is_skip_no_alts)
+                                                      is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build)
            
         annotator = Annotator()
         annotator.initialize(runConfig)
