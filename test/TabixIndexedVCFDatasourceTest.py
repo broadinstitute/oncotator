@@ -54,6 +54,7 @@ from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from TestUtils import TestUtils
 from oncotator.utils.TagConstants import TagConstants
+from oncotator.utils.MutUtils import MutUtils
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -173,6 +174,8 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         tabixIndexedVcfDirName = "testdata/contrived_vcf_ds"
         tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/contrived_vcf.config",
                                                                        tabixIndexedVcfDirName)
+
+        # m1 in vcf specifications
         m1 = MutationData()
         m1.chr = "20"
         m1.start = "1000001"
@@ -180,7 +183,18 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         m1.ref_allele = "A"
         m1.alt_allele = "AACT"
 
+        # Convert m1 to maf specifications
+        preceding_bases, updated_alt_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForInsertions(m1)
+        m1.ref_allele = "-"
+        m1.alt_allele = updated_alt_allele
+        m1.start = updated_start
+        m1.end = updated_end
+        m1.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
+
+        # Annotate m1
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
+
         m1_annotation = m1_annotated.getAnnotation("contrived_AB")
         cur_annotation = Annotation(value="201", datasourceName="contrived", dataType="Integer", description="A.B.",
                                     tags=[TagConstants.INFO, TagConstants.SPLIT], number=-1)
@@ -191,3 +205,29 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         cur_annotation = Annotation(value="101,201", datasourceName="contrived", dataType="Integer", description="B.C.",
                                     tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testAnnotatingInsertionsWithMonomorphicDatasource(self):
+        self.logger.info("Initializing Contrived")
+        tabixIndexedVcfDirName = "testdata/contrived_monomorphic_vcf_ds/hg19"
+        tabixIndexedVcfDatasource = DatasourceCreator.createDatasource(tabixIndexedVcfDirName + "/contrived_monomorphic_vcf_ds.config",
+                                                                       tabixIndexedVcfDirName)
+
+        # m1 in vcf specifications
+        m1 = MutationData()
+        m1.chr = "20"
+        m1.start = "1000001"
+        m1.end = "1000002"
+        m1.ref_allele = "A"
+        m1.alt_allele = "AACT"
+
+        # Convert m1 to maf specifications
+        preceding_bases, updated_alt_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForInsertions(m1)
+        m1.ref_allele = "-"
+        m1.alt_allele = updated_alt_allele
+        m1.start = updated_start
+        m1.end = updated_end
+        m1.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
+
+        # Annotate m1
+        m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)

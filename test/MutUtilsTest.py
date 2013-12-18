@@ -52,7 +52,7 @@ import unittest
 from oncotator.MutationData import MutationData
 from oncotator.utils.MutUtils import MutUtils
 from TestUtils import TestUtils
-
+import vcf
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -125,7 +125,7 @@ class MutUtilsTest(unittest.TestCase):
         self.assertTrue(h["mt"] == 3, "For chrom mt, hash code should be 3 but it was %s." % h["mt"])
         self.assertTrue(h["contig1"] == 4, "For chrom contig1, hash code should be 4 but it was %s." % h["contig1"])
 
-    def testAlterMutForDeletions(self):
+    def testRetrievePrecedingBasesForDeletions(self):
         chrom = "1"
         start = 1234567
         end = 1234567  # incorrect, but doesn't matter for the purposed of testing
@@ -133,7 +133,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "G"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForDeletions(mut)
+        preceding_bases, updated_ref_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForDeletions(mut)
+        mut.ref_allele = updated_ref_allele
+        mut.alt_allele = "-"
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
         self.assertTrue(mut.start == 1234568, "Mut start should be 1234568 but was %s." % mut.start)
         self.assertTrue(mut.end == 1234569, "Mut end should be 1234569 but was %s." % mut.end)
@@ -147,7 +153,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "GTC"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForDeletions(mut)
+        preceding_bases, updated_ref_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForDeletions(mut)
+        mut.ref_allele = updated_ref_allele
+        mut.alt_allele = "-"
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
         self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
         self.assertTrue(mut.end == 1234570, "Mut end should be 1234570 but was %s." % mut.end)
@@ -161,7 +173,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "C"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForDeletions(mut)
+        preceding_bases, updated_ref_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForDeletions(mut)
+        mut.ref_allele = updated_ref_allele
+        mut.alt_allele = "-"
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
         self.assertTrue(mut.start == 152497146, "Mut start should be 1234570 but was %s." % mut.start)
         self.assertTrue(mut.end == 152497170, "Mut end should be 1234570 but was %s." % mut.end)
@@ -169,7 +187,7 @@ class MutUtilsTest(unittest.TestCase):
                                                                        % mut.ref_allele)
         self.assertTrue(mut.alt_allele == "-", "Alt allele should be - but was %s." % mut.alt_allele)
 
-    def testAlterMutForInsertions(self):
+    def testRetrievePrecedingBasesForInsertions(self):
         chrom = "1"
         start = 1234567
         end = 1234567  # incorrect, but doesn't matter for the purposed of testing
@@ -177,10 +195,16 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "GTCT"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForInsertions(mut)
+        preceding_bases, updated_alt_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForInsertions(mut)
+        mut.ref_allele = "-"
+        mut.alt_allele = updated_alt_allele
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
         self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
-        self.assertTrue(mut.end == 1234570, "Mut end should be 1234571 but was %s." % mut.end)
+        self.assertTrue(mut.end == 1234570, "Mut end should be 1234570 but was %s." % mut.end)
         self.assertTrue(mut.ref_allele == "-", "Ref allele should be - but was %s." % mut.ref_allele)
         self.assertTrue(mut.alt_allele == "T", "Alt allele should be T but was %s." % mut.alt_allele)
 
@@ -191,7 +215,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "GTCTT"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForInsertions(mut)
+        preceding_bases, updated_alt_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForInsertions(mut)
+        mut.ref_allele = "-"
+        mut.alt_allele = updated_alt_allele
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
         self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
         self.assertTrue(mut.end == 1234571, "Mut end should be 1234571 but was %s." % mut.end)
@@ -206,14 +236,19 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "G"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForDeletions(mut)
+        preceding_bases, updated_ref_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForDeletions(mut)
+        mut.ref_allele = updated_ref_allele
+        mut.alt_allele = "-"
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         updated_ref_allele, updated_alt_allele, updated_start = \
             MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
         self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
         self.assertTrue(updated_ref_allele == ref_allele, "Ref allele should be %s but was %s."
                                                           % (ref_allele, updated_ref_allele))
-        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
-                                                          % (alt_allele, updated_alt_allele))
+        self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s." % (alt_allele, updated_alt_allele))
 
         chrom = "1"
         start = 1234567
@@ -222,7 +257,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "GTC"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForDeletions(mut)
+        preceding_bases, updated_ref_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForDeletions(mut)
+        mut.ref_allele = updated_ref_allele
+        mut.alt_allele = "-"
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         updated_ref_allele, updated_alt_allele, updated_start = \
             MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
         self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
@@ -238,7 +279,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "C"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForDeletions(mut)
+        preceding_bases, updated_ref_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForDeletions(mut)
+        mut.ref_allele = updated_ref_allele
+        mut.alt_allele = "-"
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         updated_ref_allele, updated_alt_allele, updated_start = \
             MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
         self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
@@ -255,7 +302,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "GTCT"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForInsertions(mut)
+        preceding_bases, updated_alt_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForInsertions(mut)
+        mut.ref_allele = "-"
+        mut.alt_allele = updated_alt_allele
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         updated_ref_allele, updated_alt_allele, updated_start = \
             MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
         self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))
@@ -271,7 +324,13 @@ class MutUtilsTest(unittest.TestCase):
         alt_allele = "GTCTT"
         build = "19"
         mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
-        mut = MutUtils.alterMutationForInsertions(mut)
+        preceding_bases, updated_alt_allele, updated_start, updated_end = \
+            MutUtils.retrievePrecedingBasesForInsertions(mut)
+        mut.ref_allele = "-"
+        mut.alt_allele = updated_alt_allele
+        mut.start = updated_start
+        mut.end = updated_end
+        mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         updated_ref_allele, updated_alt_allele, updated_start = \
             MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
         self.assertTrue(updated_start == start, "Mut start should be %s but was %s." % (start, updated_start))

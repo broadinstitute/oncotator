@@ -53,6 +53,7 @@ import string
 import vcf
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.datasources.Datasource import Datasource
+from oncotator.utils.MutUtils import MutUtils
 
 
 class IndexedVcfDatasource(Datasource):
@@ -77,8 +78,8 @@ class IndexedVcfDatasource(Datasource):
 
     """
     def __init__(self, src_file, title='', version=None):
-        super(IndexedVcfDatasource, self).__init__(src_file, title=title, version=version)  # all of the info is coming from config file
-
+        # all of the info is coming from config file
+        super(IndexedVcfDatasource, self).__init__(src_file, title=title, version=version)
         self.vcf_reader = vcf.Reader(filename=src_file, strict_whitespace=True)
         self.vcf_info_headers = self.vcf_reader.infos.keys()
 
@@ -161,26 +162,17 @@ class IndexedVcfDatasource(Datasource):
         return val
 
     def _is_matching(self, mut, record):
-        if int(mut.start) != int(record.POS):
-            return False
+        if record.is_monomorphic:
+            return True
 
-        if mut.ref_allele != record.REF:
-            return False
+        # Iterate over all records
+        for index in xrange(0, len(record.ALT)):
+            ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
+            if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
+                and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
+                return True
 
-        record_alts = map(str, record.ALT)
-        if mut.alt_allele not in record_alts:
-            return False
-
-        record_end = int(record.POS)
-        if len(mut.alt_allele) < len(mut.ref_allele):  # deletion
-            record_end += len(mut.ref_allele) - len(mut.alt_allele) - 1
-        elif len(mut.alt_allele) > len(mut.ref_allele):  # insertion
-            record_end += 1
-
-        if int(mut.end) != record_end:
-            return False
-
-        return True
+        return False
 
     def annotate_mutation(self, mutation):
         """
@@ -189,19 +181,20 @@ class IndexedVcfDatasource(Datasource):
         :param mutation: mutation to annotate
         :return: annotated mutation
         """
-        vcf_records = None
 
+        vcf_records = None
+        updated_alt_allele = ""
         # Get all the records corresponding to the given mutation object
         try:
-            vcf_records = self.vcf_reader.fetch(mutation.chr, int(mutation.start), int(mutation.end))
+            # Compute the start and end vcf format
+            updated_start, updated_ref_allele, updated_alt_allele = \
+                MutUtils.retrieveMutCoordinatesForRendering(mutation)
+            vcf_records = self.vcf_reader.fetch(mutation.chr, int(updated_start), int(updated_start))
         except ValueError as ve:
             self.logger.warn("Exception when looking for vcf records. Empty set of records being returned: " +
                              repr(ve))
-
         tagsMap = self._determine_tags()
         valsMap = dict()
-
-        alt = mutation.alt_allele
 
         # iterate over all vcf records found
         if vcf_records is not None:
@@ -209,8 +202,10 @@ class IndexedVcfDatasource(Datasource):
                 if not self._is_matching(mutation, vcf_record):
                     continue
 
-                vcf_record_alts = map(str, vcf_record.ALT)
-                vcf_record_alt_index = vcf_record_alts.index(alt)
+                vcf_record_alt_index = 0
+                if not vcf_record.is_monomorphic:
+                    vcf_record_alts = map(str, vcf_record.ALT)
+                    vcf_record_alt_index = vcf_record_alts.index(updated_alt_allele)
 
                 for ID in self.vcf_info_headers:
                     val = self._determine_info_annotation_value(vcf_record, ID, vcf_record_alt_index)

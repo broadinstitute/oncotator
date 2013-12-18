@@ -64,20 +64,21 @@ from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreator
 
 class VcfInputMutationCreator(InputMutationCreator):
 
-    def __init__(self, filename, configFile='vcf.in.config'):
+    def __init__(self, filename, configFile='vcf.in.config', genomeBuild="hg19"):
         """
 
         :param filename:
         :param configFile:
         """
         self.filename = filename
+        self.build = genomeBuild
         self.configFilename = configFile
         self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
         self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("input_vcf")
         self.isTagSplit = dict()
         self.logger = logging.getLogger(__name__)
 
-    def _addGenotypeDataToMutation(self, mutation, record, index):
+    def _addGenotypeData2Mutation(self, mutation, record, index):
         """
 
 
@@ -134,7 +135,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         return mutation
 
-    def _addInfoDataToMutation(self, mutation, record, index):
+    def _addInfoData2Mutation(self, mutation, record, index):
         """
         This method
 
@@ -274,46 +275,21 @@ class VcfInputMutationCreator(InputMutationCreator):
                         if is_tumor_normal_vcf and sample_name == "NORMAL" and (genotype not in sample.data._fields):
                             is_alt_seen = "False"
                         sampleMut["alt_allele_seen"] = is_alt_seen
-                        sampleMut = self._addGenotypeDataToMutation(sampleMut, record, index)
+                        sampleMut = self._addGenotypeData2Mutation(sampleMut, record, index)
 
                         yield sampleMut
 
-    def _createMutation(self, record, index):
-        """
-
-        :param record:
-        :param index:
-        :return:
-        """
-        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
-
-        ref = record.REF
-        if ref == ".":
-            ref = ""
-
-        alt = record.ALT[index]
-        if alt is None:
-            alt = ref
-        else:
-            alt = str(alt)
-
-        startPos = record.POS
-        endPos = int(record.POS)
-        mut = MutationData(chrom, startPos, endPos, ref, alt, "hg19")
-
-        if len(alt) == len(ref):  # Snps
-            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
-        if len(alt) < len(ref):  # deletion
-            mut = MutUtils.alterMutationForDeletions(mut)
-        elif len(alt) > len(ref):  # insertion
-            mut = MutUtils.alterMutationForInsertions(mut)
-
-        ID = record.ID
-        if ID is None:
-            ID = ""
+    def _createMutation(self, record, alt_index):
+        mut = MutUtils.initializeMutAttributesFromRecord(self.build, record, alt_index)
+        ID = "" if record.ID is None else record.ID
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
-
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])
+        mut.createAnnotation("alt_allele_seen", str(True), "INPUT")
+        mut = self._addFilterData2Mutation(mut, record)
+        mut = self._addInfoData2Mutation(mut, record, alt_index)
+        return mut
+
+    def _addFilterData2Mutation(self, mut, record):
         for flt in self.vcf_reader.filters:  # for each filter in the header
             description = self.vcf_reader.filters[flt].desc  # parse the description
             if (len(record.FILTER) != 0) and \
@@ -323,8 +299,6 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 mut.createAnnotation(flt, "PASS", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
-        mut.createAnnotation("alt_allele_seen", str(True), "INPUT")
-        mut = self._addInfoDataToMutation(mut, record, index)
         return mut
 
     def reset(self):
@@ -447,7 +421,6 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)
-
         metadata = Metadata()
         metadata = self._addFilterFields2Metadata(metadata)
         metadata = self._addFormatFields2Metadata(metadata)

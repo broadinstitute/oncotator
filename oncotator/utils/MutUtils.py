@@ -78,34 +78,98 @@ class MutUtils(object):
         pass
 
     @staticmethod
-    def alterMutationForInsertions(m):
+    def isSNP(m):
+        if len(m.ref_allele) > 1:
+            return False
+        if m.alt_allele not in ["A", "C", "T", "G"]:
+            return False
+        return True
+
+    @staticmethod
+    def isDeletion(m):
+        if len(m.ref_allele) > len(m.alt_allele):
+            return True
+        return False
+
+    @staticmethod
+    def isInsertion(m):
+        if len(m.ref_allele) < len(m.alt_allele):
+            return True
+        return False
+
+    @staticmethod
+    def determineVariantType(m):
+        if MutUtils.isSNP(m):
+            return "snp"
+        elif MutUtils.isDeletion(m):
+            return "del"
+        elif MutUtils.isInsertion(m):
+            return "ins"
+        return "unknown"
+
+    @staticmethod
+    def initializeMutAttributesFromRecord(build, record, alt_index):
+        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+        ref = record.REF
+        ref = "" if ref == "." else ref
+
+        alt = ref
+        if not record.is_monomorphic:
+            alt = str(record.ALT[alt_index])
+        startPos = record.POS
+        endPos = int(record.POS)
+        mut = MutationData(chrom, startPos, endPos, ref, alt, build)
+
+        varType = MutUtils.determineVariantType(mut)
+
+        if varType == "snp":  # Snps
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
+        if varType == "del":  # deletion
+            preceding_bases, updated_ref_allele, updated_start, updated_end =\
+                MutUtils.retrievePrecedingBasesForDeletions(mut)
+            mut.ref_allele = updated_ref_allele
+            mut.alt_allele = "-"
+            mut.start = updated_start
+            mut.end = updated_end
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
+                                 annotationValue=preceding_bases)
+        elif varType == "ins":  # insertion
+            preceding_bases, updated_alt_allele, updated_start, updated_end = \
+                MutUtils.retrievePrecedingBasesForInsertions(mut)
+            mut.ref_allele = "-"
+            mut.alt_allele = updated_alt_allele
+            mut.start = updated_start
+            mut.end = updated_end
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
+                                 annotationValue=preceding_bases)
+
+        return mut
+
+    @staticmethod
+    def retrievePrecedingBasesForInsertions(m):
         ref_allele = m.ref_allele
         alt_allele = m.alt_allele
         start = int(m.start)
 
         preceding_bases = ref_allele
-        m.ref_allele = "-"
-        m.alt_allele = alt_allele[len(preceding_bases):]
-        m.start = start + len(preceding_bases)
-        m.end = m.start + len(m.alt_allele) - 1
+        updated_alt_allele = alt_allele[len(preceding_bases):]
+        updated_start = start + len(preceding_bases)
+        updated_end = updated_start + len(updated_alt_allele) - 1
 
-        m.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
-        return m
+        return preceding_bases, updated_alt_allele, updated_start, updated_end
 
     @staticmethod
-    def alterMutationForDeletions(m):
+    def retrievePrecedingBasesForDeletions(m):
         ref_allele = m.ref_allele
         alt_allele = m.alt_allele
         start = int(m.start)
 
         preceding_bases = alt_allele
-        m.alt_allele = "-"
-        m.ref_allele = ref_allele[len(preceding_bases):]
-        m.start = start + len(preceding_bases)
-        m.end = m.start + len(m.ref_allele) - 1
+        updated_ref_allele = ref_allele[len(preceding_bases):]
+        updated_start = start + len(preceding_bases)
+        updated_end = updated_start + len(updated_ref_allele) - 1
 
-        m.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
-        return m
+        return preceding_bases, updated_ref_allele, updated_start, updated_end
 
     @staticmethod
     def removeDir(currentDir):
@@ -356,6 +420,30 @@ class MutUtils(object):
                         result["i_" + i] = i
 
         return result
+
+    @staticmethod
+    def retrieveMutCoordinatesForRendering(mut):
+        updated_start = mut.start
+        updated_ref_allele = mut.ref_allele
+        updated_alt_allele = mut.alt_allele
+        if mut.ref_allele == "-":  # detects insertions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromAnnotationForInsertions(mut)
+            else:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromReference(mut)
+        elif mut.alt_allele == "-":  # detects deletions in cases where the input is a maf
+            if MutUtils.PRECEDING_BASES_ANNOTATION_NAME in mut:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromAnnotationForDeletions(mut)
+            else:
+                updated_ref_allele, updated_alt_allele, updated_start = \
+                    MutUtils.retrievePrecedingBaseFromReference(mut)
+        elif mut.ref_allele == mut.alt_allele:  # detects monomorphic SNPs
+            updated_alt_allele = ""
+
+        return updated_start, updated_ref_allele, updated_alt_allele
 
     @staticmethod
     def retrievePrecedingBaseFromAnnotationForDeletions(mut):

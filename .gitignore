@@ -28,4 +28,6 @@
 /oncotator/profile_stats.txt
 /master.zip*
 /md5_dir.py
+/.idea
+/oncotator/.DS_Store
 

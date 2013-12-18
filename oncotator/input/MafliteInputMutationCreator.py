@@ -76,7 +76,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
     IMPORTANT NOTE: maflite will look at all aliases for alt_allele (see maflite_input.config) and choose the first that does not match the ref_allele
     """
 
-    def __init__(self, filename, configFile='maflite_input.config', build="hg19"):
+    def __init__(self, filename, configFile='maflite_input.config', genomeBuild="hg19"):
         """
         Constructor
         #TODO: Low priority. Too much logic in the constructor.  Need to move initialization check outside of the constructor.
@@ -94,7 +94,8 @@ class MafliteInputMutationCreator(InputMutationCreator):
         missingRequiredHeaders = []
         specifiedFields = self._tsvReader.getFieldNames()
         requiredColumns = sorted(list(MutationData.attributes))
-        
+        self._build = genomeBuild
+
         for col in requiredColumns:
             if col not in specifiedFields:
                 isAltFound = False
@@ -147,8 +148,8 @@ class MafliteInputMutationCreator(InputMutationCreator):
         for line in self._tsvReader:
 
             # We only need to assign fields that are mutation attributes and have a different name in the maflite file.
-            mut = MutationData()
-            
+            mut = MutationData(build=self._build)
+
             for col in allColumns:
                 # Three scenarios:
                 #   1) col is name of mutation data field -- simple createAnnotation
