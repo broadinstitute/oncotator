@@ -76,10 +76,9 @@ class dbSNP(Datasource):
     def annotate_mutation(self, mutation):
         chrom, start, end = mutation.chr, int(mutation.start), int(mutation.end)
 
-        #TODO: Do not annotate with a set.  Create set variables and then convert to string and annotate. This should give a speedup.
-
+        final_values = {}
         for header in self.output_headers:
-            mutation.createAnnotation(header, set(), self.title)
+            final_values[header] = set()
 
         overlapping_vcf_records = []
         try:
@@ -89,13 +88,13 @@ class dbSNP(Datasource):
 
         for vcf_rec in overlapping_vcf_records:
             for header in self.output_headers:
-                mutation['dbSNP_RS'].add(vcf_rec.ID)
+                final_values['dbSNP_RS'].add(vcf_rec.ID)
                 if 'VLD' in vcf_rec.INFO:
-                    mutation['dbSNP_Val_Status'].add('byFrequency')
+                    final_values['dbSNP_Val_Status'].add('byFrequency')
                 if 'KGVAL' in vcf_rec.INFO or 'KGPROD' in vcf_rec.INFO or 'KGPilot1' in vcf_rec.INFO or 'KGPilot123' in vcf_rec.INFO:
-                    mutation['dbSNP_Val_Status'].add('by1000genomes')
+                    final_values['dbSNP_Val_Status'].add('by1000genomes')
 
         for header in self.output_headers:
-            mutation[header] = '|'.join(mutation[header])
+            mutation.createAnnotation(header, '|'.join(final_values[header]), self.title)
 
         return mutation
