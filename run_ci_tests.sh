@@ -1,5 +1,6 @@
 #!/bin/bash
 # Have script stop if there is an error
+echo "Starting CI testing..."
 set -e
 
 # Make sure that a db-dir is specified, if not, set it to the default for the oncotator CI server at Broad.
@@ -34,6 +35,12 @@ set +e
 #  --processes=4 --process-timeout=480  --process-restartworker
 nosetests --all-modules --exe --with-xunit --xunit-file=nosetests.xml -w test -v
 set -e
+
+# Attempt simple command line functionality
+echo "Attempting a few command line calls (oncotator only) to make sure there are no egregious errors in the Oncotator CLI.
+oncotator --help
+oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.indel.maf.txt $VENV/test_Patient0.indel.maf.txt hg19
+oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.txt hg19
 
 echo "Deactivating and deleting test python virtual environment"
 deactivate
