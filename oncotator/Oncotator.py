@@ -106,7 +106,7 @@ def parseOptions(program_license, program_version_message):
                    help='Input file to be annotated.  Type is specified through options.')
     parser.add_argument('output_file', type=str, 
                     help='Output file name of annotated file.')
-    parser.add_argument('genome_build', metavar='build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
+    parser.add_argument('genome_build', metavar='genome_build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
     parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
     parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
@@ -195,7 +195,7 @@ USAGE
         read_only_cache = args.read_only_cache
         tx_mode = args.tx_mode
         is_skip_no_alts = args.skip_no_alt
-        genome_build = args.build
+        genome_build = args.genome_build
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
