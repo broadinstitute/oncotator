@@ -31,7 +31,7 @@ mkdir -p out
 sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
 
 # Attempt simple command line functionality
-echo "Attempting a few command line calls (oncotator only) to make sure there are no egregious errors in the Oncotator CLI.
+echo "Attempting a few command line calls (oncotator only) to make sure there are no egregious errors in the Oncotator CLI."
 echo "== Just running --help ==="
 oncotator --help
 
