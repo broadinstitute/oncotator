@@ -6,6 +6,7 @@ import collections
 import itertools
 import copy
 import tempfile
+import re
 import os
 
 from oncotator.utils.TsvFileSorter import TsvFileSorter
@@ -294,22 +295,27 @@ class OutputDataManager:
         headers = ["##fileformat=VCFv4.1"]  # 'fileformat' is a required field; fixed since output vcf will be v4.1
         contigs = []
         alts = []
+
         for comment in comments:
-            if comment and not comment.startswith("fileformat"):
-                if comment.startswith("contig=<"):
-                    comment = string.join(["##", comment], "")
-                    contigs += [comment]
-                elif comment.startswith("Oncotator"):
-                    comment = string.replace(comment, " ", "_")
-                    comment = string.join(["##oncotator_version=", comment], "")
+            if comment:
+                if comment.startswith("##ALT"):
                     headers += [comment]
-                elif comment.startswith("ALT=<"):
-                    comment = string.join(["##", comment], "")
-                    alts += [comment]
+                elif comment.startswith('##contig'):
+                    headers += [comment]
                 else:
-                    comment = string.replace(comment, " ", "_")
-                    comment = string.join(["##", comment], "")
-                    headers += [comment]
+                    pattern = re.compile(r'''##(?P<key>.+?)=(?P<val>.+)''')
+                    match = pattern.match(comment)
+                    if match is not None:
+                        headers += [comment]
+                    else:
+                        key = "comment"
+                        val = string.replace(comment, "#", "")
+                        val = string.replace(val, " ", "_")
+                        if val.startswith("Oncotator"):
+                            key = "oncotator_version"
+                        comment = string.join([key, val], "=")
+                        comment = string.join(["##", comment], "")
+                        headers += [comment]
 
         annotations = self.annotationTable.values()
         gt = False

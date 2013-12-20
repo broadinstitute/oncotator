@@ -336,6 +336,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                         val = str(itm)
 
                     comment = string.join([key, val], "=")
+                    comment = string.join(["##", comment], "")
                     comments.append(comment)
             elif isinstance(vals, dict):
                 val = [string.join([str(k), str(v)], "=") for k, v in vals.iteritems()]
@@ -343,10 +344,12 @@ class VcfInputMutationCreator(InputMutationCreator):
                 val = string.join(["<", ">"], val)
 
                 comment = string.join([key, val], "=")
+                comment = string.join(["##", comment], "")
                 comments.append(comment)
             else:
                 val = str(vals)
                 comment = string.join([key, val], "=")
+                comment = string.join(["##", comment], "")
                 comments.append(comment)
         return comments
 
@@ -357,7 +360,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             val = self.vcf_reader.contigs[key]
             ID = val.id
             length = str(val.length)
-            val = string.join(["contig=<ID=", ID, ",length=", length, ">"], "")
+            val = string.join(["##contig=<ID=", ID, ",length=", length, ">"], "")
             comments.append(val)
         return comments
 
@@ -368,7 +371,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             val = self.vcf_reader.alts[key]
             ID = val.id
             desc = val.desc
-            val = string.join(["ALT=<ID=", ID, ",Description=\"", desc, "\">"], "")
+            val = string.join(["##ALT=<ID=", ID, ",Description=\"", desc, "\">"], "")
             comments.append(val)
         return comments
 
