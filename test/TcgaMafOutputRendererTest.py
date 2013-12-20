@@ -120,6 +120,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
                 self.assertTrue(lineDict['Hugo_Symbol'] == "Unknown", "Entrez_Gene_Id was zero, but Hugo Symbol was not 'Unknown'.  Line: " + str(ctr))
             
             unknownKeys = []
+            self.assertTrue(lineDict["Tumor_Seq_Allele1"] != lineDict["Tumor_Seq_Allele2"], "Reference and alternate were equal in TCGA MAF output on line %d (%s)" % (ctr, lineDict["Tumor_Seq_Allele1"]))
             for k in lineDict.keys():
                 if lineDict[k] == "__UNKNOWN__":
                     unknownKeys.append(k)
