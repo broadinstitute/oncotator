@@ -306,6 +306,8 @@ class OutputDataManager:
                     pattern = re.compile(r'''##(?P<key>.+?)=(?P<val>.+)''')
                     match = pattern.match(comment)
                     if match is not None:
+                        if match.group("key") == "fileformat":
+                            continue
                         headers += [comment]
                     else:
                         key = "comment"
