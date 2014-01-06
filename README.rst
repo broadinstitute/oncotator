@@ -77,6 +77,14 @@ not already performed.  Then run (in the same directory as setup.py)::
 
 Please note that there is a known bug with ```--processes``` and output to XML.  If you alter the above nosetests command to include junit xml (```--with-xunit```), remove the last three options (```--processes=4 --process-timeout=480  --process-restartworker```).  This will cause tests to only run on one core.
 
+Creating a Virtual Environment for Running Oncotator
+--------------------
+Follow these steps from the same directory as setup.py.  The first command will take several minutes::
+
+    bash scripts/create_oncotator_venv.sh <venv_location>
+    source <venv_location>/bin/activate
+    python setup.py install
+
 Version Information
 -------------------
 
