@@ -17,9 +17,6 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.config = TestUtils.createUnitTestConfig()
         pass
 
-    def tearDown(self):
-        pass
-
     def testESPCoverageAnnotationWithSNPExactMatch(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
