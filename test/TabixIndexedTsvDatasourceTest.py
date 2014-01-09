@@ -5,6 +5,7 @@ from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.utils.TagConstants import TagConstants
 from TestUtils import TestUtils
+import os
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -19,140 +20,331 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testESPAnnotationWithMissingMutation(self):
+    def testESPCoverageAnnotationWithSNPExactMatch(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
-        tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
-                                                                       tabixIndexedTsvDirName)
-        m1 = MutationData()
-        m1.chr = "1"
-        m1.start = "123456"
-        m1.end = "123456"
-        m1.ref_allele = "T"
-        m1.alt_allele = "C"
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
 
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075334"
+        m1.end = "100075334"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="75.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithSNPAvgMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075334"
+        m1.end = "100075334"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="75.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithSNPOverlapMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075334"
+        m1.end = "100075334"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="75.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithMissingSNPExactMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075333"
+        m1.end = "100075333"
+
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
+                                    tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithMissingSNPAvgMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075333"
+        m1.end = "100075333"
+
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
+                                    tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithMissingSNPOverlapMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075333"
+        m1.end = "100075333"
+
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
+                                    tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithIndelExactMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075337"
+        m1.end = "100075340"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="85.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithIndelAvgMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075337"
+        m1.end = "100075340"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="83.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X|X|X|X|X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithIndelOverlapMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075337"
+        m1.end = "100075340"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="81.0|85.0|84.0|84.0|81.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692|692|692|692|692", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X|X|X|X|X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithMissingIndelExactMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075300"
+        m1.end = "100075336"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
         cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-
-        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-    def testESPAnnotationWithExistingMutation(self):
-        self.logger.info("Initializing ESP6500SI-V2 Coverage")
-        tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
-                                                                       tabixIndexedTsvDirName)
-        m1 = MutationData()
-        m1.chr = "1"
-        m1.start = "30348"
-        m1.end = "30348"
-        m1.ref_allele = "T"
-        m1.alt_allele = "C"
-
-        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        cur_annotation = Annotation(value="1.0", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        cur_annotation = Annotation(value="5", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        cur_annotation = Annotation(value="1.0", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        cur_annotation = Annotation(value="1.0", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        cur_annotation = Annotation(value="2", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-    def testESPAnnotationWithMissingIndel(self):
-        self.logger.info("Initializing ESP6500SI-V2 Coverage")
-        tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
-                                                                       tabixIndexedTsvDirName)
-        m1 = MutationData()
-        m1.chr = "1"
-        m1.start = "10000"
-        m1.end = "10005"
-        m1.ref_allele = "T"
-        m1.alt_allele = "C"
-
         cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-
-        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-    def testESPAnnotationWithExistingIndel(self):
+    def testESPCoverageAnnotationWithMissingIndelAvgMatch(self):
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
-        tabixIndexedTsvDirName = "testdata/small_esp_coverage_ds"
-        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(tabixIndexedTsvDirName + "/esp_coverage.config",
-                                                                       tabixIndexedTsvDirName)
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
+
         m1 = MutationData()
-        m1.chr = "1"
-        m1.start = "69428"
-        m1.end = "69432"
-        m1.ref_allele = "T"
-        m1.alt_allele = "C"
+        m1.chr = "X"
+        m1.start = "100075300"
+        m1.end = "100075336"
 
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        cur_annotation = Annotation(value="139.0|142.0|144.0|147.0|150.0", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_TotalSamplesCovered")
-        cur_annotation = Annotation(value="5335|5350|5360|5379|5400", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
-        cur_annotation = Annotation(value="110.0|113.0|115.0|117.0|119.0", datasourceName="ESP", dataType="String",
-                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-
-        m1_annotation = m1_annotated.getAnnotation("ESP_AvgEAsampleReadDepth")
-        cur_annotation = Annotation(value="94.0|96.0|98.0|100.0|101.0", datasourceName="ESP", dataType="String",
+        cur_annotation = Annotation(value="79.0", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        cur_annotation = Annotation(value="1911|1914|1917|1920|1925", datasourceName="ESP", dataType="String",
+        cur_annotation = Annotation(value="692.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X|X|X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithMissingIndelOverlapMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075300"
+        m1.end = "100075336"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
+        cur_annotation = Annotation(value="75.0|81.0|81.0", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
+        cur_annotation = Annotation(value="692|692|692", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Chromosome")
+        cur_annotation = Annotation(value="X|X|X", datasourceName="ESP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testESPCoverageAnnotationWithMissingAnnotationValuesIndelAvgMatch(self):
+        self.logger.info("Initializing ESP6500SI-V2 Coverage")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "X"
+        m1.start = "100075350"
+        m1.end = "100075356"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
+        cur_annotation = Annotation(value="91.25", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")

@@ -54,6 +54,7 @@ import vcf
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.datasources.Datasource import Datasource
 from oncotator.utils.MutUtils import MutUtils
+import operator
 
 
 class IndexedVcfDatasource(Datasource):
@@ -77,24 +78,20 @@ class IndexedVcfDatasource(Datasource):
     TODO: Support for FORMAT and sample columns in output
 
     """
-    def __init__(self, src_file, title='', version=None):
+    def __init__(self, src_file, title='', version=None, match_mode="exact"):
         # all of the info is coming from config file
         super(IndexedVcfDatasource, self).__init__(src_file, title=title, version=version)
         self.vcf_reader = vcf.Reader(filename=src_file, strict_whitespace=True)
         self.vcf_info_headers = self.vcf_reader.infos.keys()
-
         # Annotation name from INFO columns
         self.output_vcf_headers = dict([(ID, '_'.join([self.title, ID])) for ID in self.vcf_info_headers])
-
         # Type information
         self.output_vcf_types = dict([(ID, self.vcf_reader.infos[ID].type) for ID in self.vcf_info_headers])
-
         # Number information
         self.output_vcf_nums = dict([(ID, self.vcf_reader.infos[ID].num) for ID in self.vcf_info_headers])
-
         # Descriptions
         self.output_vcf_descs = dict([(ID, self.vcf_reader.infos[ID].desc) for ID in self.vcf_info_headers])
-
+        self.match_mode = match_mode
         self.logger = logging.getLogger(__name__)
 
     def _determine_tags(self):
@@ -112,13 +109,13 @@ class IndexedVcfDatasource(Datasource):
                 tagsMap[ID] = [TagConstants.INFO, TagConstants.NOT_SPLIT]
         return tagsMap
 
-    def _determine_info_annotation_value(self, vcf_record, ID, vcf_record_alt_index):
+    def _determine_info_annotation_value(self, vcf_record, ID, alt_index):
         """
         Determine the appropriate value that corresponds to a given ID.
         This method checks whether ID is present in the input Vcf record or not. If it is not found, then an appropriate
         missing value is computed.
 
-        :param vcf_record_alt_index:
+        :param alt_index:
         :param vcf_record: input Vcf record
         :param ID: ID
         :return: value that corresponds to a given ID
@@ -128,13 +125,12 @@ class IndexedVcfDatasource(Datasource):
             num = self.output_vcf_nums[ID]
 
             if isinstance(vals, list):
-                vals = map(str, ["" if val is None else val for val in vals])
-                if num == -1:
-                    val = vals[vcf_record_alt_index]
+                if num == -1 and alt_index >= 0 and alt_index is not None:
+                    val = [vals[alt_index]]
                 else:
-                    val = string.join(vals, ",")
+                    val = vals
             else:
-                val = str(vals)
+                val = [vals]
         else:
             val = self._determine_missing_value(ID)
         return val
@@ -150,29 +146,30 @@ class IndexedVcfDatasource(Datasource):
         nsamples = len(self.vcf_reader.samples)
         num = self.output_vcf_nums[ID]
         if num == -2:
-            val = ",".join([""]*nsamples)
+            return [""]*nsamples
         elif num == -1:
-            val = ""
+            return [""]
         elif num == 0:
-            val = "False"
+            return [False]
         elif num is None:
-            val = ""
-        else:
-            val = ",".join([""]*num)
-        return val
+            return [""]
 
-    def _is_matching(self, mut, record):
-        if record.is_monomorphic:
-            return True
+        return [""]*num
+
+    def _determine_matching_alt_index(self, mut, record):
+        index = None
+        ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
+        if record.is_monomorphic and mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele:
+            return -1
 
         # Iterate over all records
         for index in xrange(0, len(record.ALT)):
             ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
             if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
                 and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
-                return True
+                return index
 
-        return False
+        return None
 
     def annotate_mutation(self, mutation):
         """
@@ -182,47 +179,122 @@ class IndexedVcfDatasource(Datasource):
         :return: annotated mutation
         """
 
-        vcf_records = None
-        updated_alt_allele = ""
         # Get all the records corresponding to the given mutation object
+
+        mut_start = int(mutation.start)
+        mut_end = int(mutation.end)
+        vals = dict()
+        if mutation.ref_allele == "-":  # adjust for cases where there is an insertion
+            mut_start -= 1
         try:
-            # Compute the start and end vcf format
-            updated_start, updated_ref_allele, updated_alt_allele = \
-                MutUtils.retrieveMutCoordinatesForRendering(mutation)
-            vcf_records = self.vcf_reader.fetch(mutation.chr, int(updated_start), int(updated_start))
+            vcf_records = self.vcf_reader.fetch(mutation.chr, mut_start, mut_end)
         except ValueError as ve:
-            self.logger.warn("Exception when looking for vcf records. Empty set of records being returned: " +
-                             repr(ve))
-        tagsMap = self._determine_tags()
-        valsMap = dict()
+            self.logger.warn("Exception when looking for vcf records. Empty set of records being returned: " + repr(ve))
+        else:
+            # Process values.
+            for record in vcf_records:
+                if self.match_mode == "exact":
+                    alt_index = self._determine_matching_alt_index(mutation, record)
+                    for ID in self.vcf_info_headers:
+                        if alt_index is None:  # no match found
+                            val = self._determine_missing_value(ID)
+                        elif alt_index == -1:  # monomorphic site
+                            val = self._determine_info_annotation_value(record, ID, alt_index)
+                        else:  # match found
+                            val = self._determine_info_annotation_value(record, ID, alt_index)
+                        vals[ID] = val
+                    break
+                else:
+                    alt_index = None
+                    for ID in self.vcf_info_headers:
+                        val = self._determine_info_annotation_value(record, ID, alt_index)
+                        if ID not in vals:
+                            vals[ID] = [val]
+                        else:
+                            vals[ID] += [val]
 
-        # iterate over all vcf records found
-        if vcf_records is not None:
-            for vcf_record in vcf_records:  # for all records found, add their information iff the ref and alt alleles matches
-                if not self._is_matching(mutation, vcf_record):
-                    continue
-
-                vcf_record_alt_index = 0
-                if not vcf_record.is_monomorphic:
-                    vcf_record_alts = map(str, vcf_record.ALT)
-                    vcf_record_alt_index = vcf_record_alts.index(updated_alt_allele)
-
-                for ID in self.vcf_info_headers:
-                    val = self._determine_info_annotation_value(vcf_record, ID, vcf_record_alt_index)
-                    if ID not in valsMap:
-                        valsMap[ID] = [val]
-                    else:
-                        valsMap[ID] += [val]
-
-        if len(valsMap) == 0:  # nothing was added
-            for ID in self.vcf_info_headers:
-                val = self._determine_missing_value(ID)
-                valsMap[ID] = [val]
-
+        tags = self._determine_tags()
         for ID in self.vcf_info_headers:
             # multiple values are delimited by "|"
-            val = "|".join(valsMap[ID])
-            tags = copy.copy(tagsMap[ID])
-            mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
-                                      self.output_vcf_descs[ID], tags=tags, number=self.output_vcf_nums[ID])
+            if len(vals) != 0:
+                if self.match_mode == "exact":
+                    val = string.join(map(str, [val if val is not None else "" for val in vals[ID]]), ",")
+                    mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
+                                              self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
+                                              number=self.output_vcf_nums[ID])
+                elif self.match_mode == "avg":
+                    if self.output_vcf_types[ID] in ("Integer", "Float"):
+                        vals[ID] = reduce(operator.add, vals[ID])
+                        val = [val for val in vals[ID] if val is not None and val != '']
+                        if len(val) > 1:
+                            val = str(float(sum(val))/len(val))
+                        else:
+                            val = str(val[0])
+                        self.output_vcf_types[ID] = "Float"
+                    elif self.output_vcf_types[ID] == "Flag":
+                        vals[ID] = reduce(operator.add, vals[ID])
+                        val = [val for val in vals[ID] if val is not None and val != '']
+                        if len(val) != 0:
+                            val = bool(reduce(operator.mul, val))
+                            val = str(val)
+                        else:
+                            val = str(False)
+                        mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title,
+                                                  self.output_vcf_types[ID],
+                                                  self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
+                                                  number=self.output_vcf_nums[ID])
+                    elif self.output_vcf_types[ID] == "Character":
+                        val = []
+                        for v in vals[ID]:
+                            val += map(str, [string.join([v if v is not None else "" for v in v], ",")])
+                        val = string.join(val, "|")
+                        self.output_vcf_types[ID] = "String"
+                    else:
+                        val = []
+                        for v in vals[ID]:
+                            v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
+                            if v:
+                                val += [v]
+                        val = string.join(val, "|")
+                    mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title,
+                                              self.output_vcf_types[ID],
+                                              self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
+                                              number=self.output_vcf_nums[ID])
+
+                else:
+                    if self.output_vcf_types[ID] == "Flag":
+                        vals[ID] = reduce(operator.add, vals[ID])
+                        val = [val for val in vals[ID] if val is not None]
+                        if len(val) != 0:
+                            val = bool(reduce(operator.mul, val))
+                            val = str(val)
+                        else:
+                            val = str(False)
+                    else:
+                        self.output_vcf_types[ID] = "String"
+                        val = []
+                        for v in vals[ID]:
+                            v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
+                            if v:
+                                val += [v]
+                        val = string.join(val, "|")
+                    mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
+                                              self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
+                                              number=self.output_vcf_nums[ID])
+            else:
+                if self.match_mode == "overlap":
+                    if self.output_vcf_types[ID] != "Flag":
+                        self.output_vcf_types[ID] = "String"
+                elif self.match_mode == "avg":
+                    if self.output_vcf_types[ID] == "Character":
+                        self.output_vcf_types[ID] = "String"
+                    elif self.output_vcf_types[ID] == "Integer":
+                        self.output_vcf_types[ID] = "Float"
+
+                val = self._determine_missing_value(ID)
+                val = string.join(map(str, val), ",")
+                mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
+                                          self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
+                                          number=self.output_vcf_nums[ID])
+
         return mutation

@@ -4,7 +4,7 @@ from test.TestUtils import TestUtils
 from oncotator.utils.ConfigUtils import ConfigUtils
 import pysam
 import string
-
+from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 __author__ = 'lichtens'
 
 import unittest
@@ -54,13 +54,18 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         dataSourceType = "indexed_tsv"
         dataSourceName = "ESP"
         dataSourceVersion = "6500SI-V2"
+        dataSourceMatchMode = "overlap"
+        indexColumnNames = "Chromosome,Position,Position"
         columnNames = "Chromosome,Position,TotalSamplesCovered,AvgSampleReadDepth,TotalEAsamplesCovered,AvgEAsampleReadDepth,TotalAAsamplesCovered,AvgAAsampleReadDepth"
         annotationColumnNames = "TotalSamplesCovered,AvgSampleReadDepth,AvgEAsampleReadDepth,TotalAAsamplesCovered,AvgAAsampleReadDepth"
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_type=dataSourceType, ds_name=dataSourceName, ds_version=dataSourceVersion,
-                                           column_names=columnNames, annotation_column_names=annotationColumnNames)
+                                           column_names=columnNames, annotation_column_names=annotationColumnNames,
+                                           ds_match_mode=dataSourceMatchMode,
+                                           indexCols=DatasourceInstallUtils.getIndexCols(dataSourceType,
+                                                                                         indexColumnNames))
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
         self.assertTrue(configParser.has_option("general", "type"), "type option is missing in general section.")
@@ -72,6 +77,10 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
                         "column_names option is missing in general section.")
         self.assertTrue(configParser.has_option("general", "annotation_column_names"),
                         "annotation_column_names option is missing in general section.")
+        self.assertTrue(configParser.has_option("general", "match_mode"),
+                        "match_mode option is missing in general section")
+        self.assertTrue(configParser.has_option("general", "index_column_names"),
+                        "index_column_names option is missing in general section.")
 
         self.assertEqual(configParser.get("general", "type"), dataSourceType,
                          "Expected data source type is %s but was %s."
@@ -91,3 +100,9 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         self.assertEqual(configParser.get("general", "annotation_column_names"), annotationColumnNames,
                          "Expected data source annotation column names is %s but was %s."
                          % (annotationColumnNames, configParser.get("general", "annotation_column_names")))
+        self.assertEqual(configParser.get("general", "match_mode"), dataSourceMatchMode,
+                         "Expected data source match mode is %s but was %s."
+                         % (dataSourceMatchMode, configParser.get("general", "match_mode")))
+        self.assertEqual(configParser.get("general", "index_column_names"), indexColumnNames,
+                         "Expected data source index column names is %s but was %s."
+                         % (indexColumnNames, configParser.get("general", "index_column_names")))

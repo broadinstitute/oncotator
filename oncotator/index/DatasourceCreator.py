@@ -13,8 +13,8 @@ class DatasourceCreator(object):
         raise NotImplementedError
 
     @abstractmethod
-    def createConfigFile(self, configFilename, baseDSFile, ds_type, ds_name, ds_version, column_names,
-                         annotation_column_names, indexCols):
+    def createConfigFile(self, configFilename, baseDSFile, ds_type, ds_name, ds_version, ds_match_mode,
+                         column_names, annotation_column_names, indexCols):
 
         """
 

@@ -66,6 +66,8 @@ class DatasourceInstallUtils(object):
             return DatasourceInstallUtils.indexCols("transcript_col", index_columns)
         elif dsType == "gpp_tsv":
             return DatasourceInstallUtils.indexCols("gene_protein_position_cols", index_columns)
+        elif dsType == "indexed_tsv":
+            return DatasourceInstallUtils.indexCols("index_column_names", index_columns)
         return None
 
     @staticmethod
@@ -86,8 +88,10 @@ class DatasourceInstallUtils(object):
 
     @staticmethod
     def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns=[],
-                          ds_columns=None, ds_annotation_columns=None):
+                          ds_columns=None, ds_annotation_columns=None, ds_match_mode="exact"):
         """
+
+        :param ds_match_mode: describes how to annotate mutations from an indexed tsv or indexed vcf datasources
         :param destDir: temporary destination directory (tmpdir/ds_foldername/genome_build)
         :param ds_file: data source filename
         :param ds_foldername:
@@ -106,8 +110,8 @@ class DatasourceInstallUtils(object):
         configFilename = destDir + os.sep + ds_foldername + ".config"
 
         datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=baseDSFile, ds_type=ds_type,
-                                           ds_name=ds_name, ds_version=ds_version, column_names=ds_columns,
-                                           annotation_column_names=ds_annotation_columns,
+                                           ds_name=ds_name, ds_version=ds_version, ds_match_mode=ds_match_mode,
+                                           column_names=ds_columns, annotation_column_names=ds_annotation_columns,
                                            indexCols=DatasourceInstallUtils.getIndexCols(ds_type, index_columns))
 
         DatasourceInstallUtils.create_datasource_md5_file(destDir)

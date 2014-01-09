@@ -22,8 +22,8 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
 
         return baseDSFile
 
-    def createConfigFile(self, configFilename, baseDSFile, ds_type, ds_name, ds_version, column_names,
-                         annotation_column_names, indexCols=None):
+    def createConfigFile(self, configFilename, baseDSFile, ds_type, ds_name, ds_version, ds_match_mode, column_names,
+                         annotation_column_names, indexCols):
         """
 
 
@@ -35,6 +35,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
         :param column_names: column names in the input data source file
         :param annotation_column_names: column names whose values are used for annotation
         :param indexCols: named tuple consisting of index column type and corresponding column names
+        :param ds_match_mode: describes how to annotate mutations from an indexed tsv or indexed vcf datasources
         """
         config = ConfigParser()
         filePtr = open(configFilename, 'w')
@@ -45,5 +46,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
         config.set("general", "src_file", baseDSFile)
         config.set("general", "column_names", column_names)
         config.set("general", "annotation_column_names", annotation_column_names)
+        config.set("general", indexCols.type, indexCols.names)
+        config.set("general", "match_mode", ds_match_mode)
         config.write(filePtr)
         filePtr.close()

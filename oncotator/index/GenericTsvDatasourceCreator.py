@@ -16,7 +16,7 @@ class GenericTsvDatasourceCreator(DatasourceCreator):
         return baseDSFile
 
     def createConfigFile(self, configFilename, baseDSFile, ds_type, ds_name, ds_version, indexCols,
-                         column_names=None, annotation_column_names=None):
+                         ds_match_mode="exact", column_names=None, annotation_column_names=None):
         """
 
 
@@ -28,6 +28,7 @@ class GenericTsvDatasourceCreator(DatasourceCreator):
         :param column_names: column names in the input data source file
         :param annotation_column_names: column names whose values are used for annotation
         :param indexCols: named tuple consisting of index column type and corresponding column names
+        :param ds_match_mode: describes how to annotate mutations from an indexed tsv or indexed vcf datasources
         """
         config = ConfigParser()
         filePtr = open(configFilename, 'w')
