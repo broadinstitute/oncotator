@@ -58,7 +58,7 @@ Before running the unit tests for the first time, please perform the following s
 
 Running the Automated Unit Tests (with Virtual Env Creation)
 --------------------
-The automated unit tests (```run_ci_tests.sh```) require 6 GB to run.
+The automated unit tests (``run_ci_tests.sh``) require 6 GB to run.
 This can take a fair amount of time (~20 minutes), since a full install into a new virtual environment is performed.
 
 Execute the following line in the same directory as setup.py (provide the appropriate path to the db dir with your datasources)::
@@ -75,7 +75,15 @@ not already performed.  Then run (in the same directory as setup.py)::
     $ nosetests --all-modules --exe -w test -v --processes=4 --process-timeout=480  --process-restartworker
 
 
-Please note that there is a known bug with ```--processes``` and output to XML.  If you alter the above nosetests command to include junit xml (```--with-xunit```), remove the last three options (```--processes=4 --process-timeout=480  --process-restartworker```).  This will cause tests to only run on one core.
+Please note that there is a known bug with ``--processes`` and output to XML.  If you alter the above nosetests command to include junit xml (``--with-xunit``), remove the last three options (```--processes=4 --process-timeout=480  --process-restartworker```).  This will cause tests to only run on one core.
+
+Creating a Virtual Environment for Running Oncotator
+--------------------
+Follow these steps from the same directory as setup.py.  The first command will take several minutes::
+
+    bash scripts/create_oncotator_venv.sh <venv_location>
+    source <venv_location>/bin/activate
+    python setup.py install
 
 Version Information
 -------------------
