@@ -228,8 +228,10 @@ class IndexedVcfDatasource(Datasource):
                         val = [val for val in vals[ID] if val is not None and val != '']
                         if len(val) > 1:
                             val = str(float(sum(val))/len(val))
+                        elif len(val) == 1:
+                            val = str(float(val[0]))
                         else:
-                            val = str(val[0])
+                            val = ""
                         self.output_vcf_types[ID] = "Float"
                     elif self.output_vcf_types[ID] == "Flag":
                         vals[ID] = reduce(operator.add, vals[ID])
