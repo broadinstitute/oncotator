@@ -116,6 +116,7 @@ class IndexedTsvDatasource(Datasource):
 
         for colName in self.output_tsv_headers:
             val = ""
+            ds_type = "String"
             if len(vals) != 0:
                 if self.match_mode == "exact":
                     val = vals[colName]
@@ -125,14 +126,16 @@ class IndexedTsvDatasource(Datasource):
                     val_num = 0
                     for v in val:
                         try:  # attempt to convert values to float
-                            if v in ("", ".",):
+                            if v in ("", ".", "-",):
                                 continue
                             val_sum += float(v)  # attempt to convert the
                             val_num += 1
+                            ds_type = "Float"
                         except ValueError:  # in cases where it's unsuccessful, default of overlap behavior
                             msg = "Exception when trying to cast %s value to float." % colName
                             self.logger.warn(msg)
                             val = string.join(map(str, vals[colName]), "|")
+                            ds_type = "String"
                             break
                     if val_num != 0:
                         val = str(val_sum/val_num)
@@ -143,7 +146,7 @@ class IndexedTsvDatasource(Datasource):
                       "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
                 self.logger.warn(msg)
 
-            mutation.createAnnotation(self.output_tsv_headers[colName], val, self.title,
+            mutation.createAnnotation(self.output_tsv_headers[colName], val, self.title, annotationDataType=ds_type,
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])
 
         return mutation

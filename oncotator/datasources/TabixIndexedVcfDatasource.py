@@ -224,14 +224,17 @@ class IndexedVcfDatasource(Datasource):
                                               number=self.output_vcf_nums[ID])
                 elif self.match_mode == "avg":
                     if self.output_vcf_types[ID] in ("Integer", "Float"):
-                        vals[ID] = reduce(operator.add, vals[ID])
-                        val = [val for val in vals[ID] if val is not None and val != '']
-                        if len(val) > 1:
-                            val = str(float(sum(val))/len(val))
-                        elif len(val) == 1:
-                            val = str(float(val[0]))
+                        if num in (None, -1, 0, 1,):
+                            vals[ID] = reduce(operator.add, vals[ID])
+                            val = [val for val in vals[ID] if val is not None and val != '']
+                            if len(val) > 1:
+                                val = str(float(sum(val))/len(val))
+                            elif len(val) == 1:
+                                val = str(float(val[0]))
+                            else:
+                                val = ""
                         else:
-                            val = ""
+                            pass
                         self.output_vcf_types[ID] = "Float"
                     elif self.output_vcf_types[ID] == "Flag":
                         vals[ID] = reduce(operator.add, vals[ID])
