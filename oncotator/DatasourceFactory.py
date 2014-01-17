@@ -190,13 +190,18 @@ class DatasourceFactory(object):
             indexColNames = configParser.get("general", "index_column_names")
             indexColNames = indexColNames.split(",")
 
+            colDataTypes = dict()
+            for colName in annotationColNames:
+                colDataTypes[colName] = configParser.get("data_types", colName)
+
             result = IndexedTsvDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get('general', 'version'),
                                            colNames=colNames,
                                            annotationColNames=annotationColNames,
                                            indexColNames=indexColNames,
-                                           match_mode=configParser.get('general', 'match_mode'))
+                                           match_mode=configParser.get('general', 'match_mode'),
+                                           colDataTypes=colDataTypes)
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)

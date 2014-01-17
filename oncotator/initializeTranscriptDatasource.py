@@ -79,7 +79,7 @@ def main():
 
         config_file_creator = GenericTsvDatasourceCreator()
         idx_cols = DatasourceInstallUtils.indexCols("dummy_option", "dummy_values")
-        config_file_creator.createConfigFile(configFilename=config_filename + ".tmp", baseDSFile=os.path.basename(gtf_files[0]),ds_type="ensembl", ds_version=ver, ds_name=name, indexCols=idx_cols)
+        config_file_creator._createConfigFile(configFilename=config_filename + ".tmp", baseDSFile=os.path.basename(gtf_files[0]),ds_type="ensembl", ds_version=ver, ds_name=name, indexCols=idx_cols)
 
         # Append the tx_filter
         config_parser = SafeConfigParser()

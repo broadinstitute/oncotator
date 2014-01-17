@@ -205,6 +205,12 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
                                     number=1)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value=",,", datasourceName="ESP", dataType="Float",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
     def testExampleVcfDBAnnotationWithMissingSNPExactMatch(self):
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_exact", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
@@ -278,6 +284,12 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
                                     number=-2)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value=",,", datasourceName="ESP", dataType="Float",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
     def testExampleVcfDBAnnotationWithMissingIndelExactMatch(self):
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_exact", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
@@ -317,6 +329,12 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
                                     number=-2)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value=",,", datasourceName="ESP", dataType="Float",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
     def testExampleVcfDBAnnotationWithSNPOverlapMatch(self):
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_overlap", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
@@ -345,9 +363,15 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value=",,", datasourceName="ESP", dataType="String",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         chrom = "20"
@@ -424,15 +448,21 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="False|False|False", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_AA")
         cur_annotation = Annotation(value="T", datasourceName="ESP", dataType="String",
                                     description="Ancestral Allele", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
                                     number=1)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value="1.0,2.0,3.0|4.0,5.0,|0.0,2.0,1.0", datasourceName="ESP", dataType="String",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingSNPOverlapMatch(self):
@@ -463,9 +493,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_Y")
@@ -497,9 +527,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_Y")
@@ -536,49 +566,55 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_Y")
         cur_annotation = Annotation(value=",,", datasourceName="ESP", dataType="String",
-                                    description="A random variable, Y", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=-2)
+                                    description="A random variable, Y", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=-2)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithSNPAvgMatch(self):
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_avg", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_avg.config"), tabixIndexedVcfDirName)
-        #
-        # chrom = "20"
-        # start = "1110696"
-        # end = "1110696"
-        # ref_allele = "A"
-        # alt_allele = "T"
-        # build = "hg19"
-        # m1 = self._createMut(chrom, start, end, ref_allele, alt_allele, build)
-        #
-        # m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
-        #
-        # m1_annotation = m1_annotated.getAnnotation("ESP_AF")
-        # cur_annotation = Annotation(value="0.5", datasourceName="ESP", dataType="Float",
-        #                             description="Allele Frequency", tags=[TagConstants.INFO, TagConstants.SPLIT],
-        #                             number=-1)
-        # self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-        #
-        # m1_annotation = m1_annotated.getAnnotation("ESP_AC")
-        # cur_annotation = Annotation(value="3.0", datasourceName="ESP", dataType="Float",
-        #                             description="Allele Count", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-        #                             number=None)
-        # self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
-        #
-        # m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        # cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
-        #                             description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-        #                             number=0)
-        # self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        chrom = "20"
+        start = "1110696"
+        end = "1110696"
+        ref_allele = "A"
+        alt_allele = "T"
+        build = "hg19"
+        m1 = self._createMut(chrom, start, end, ref_allele, alt_allele, build)
+
+        m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_AF")
+        cur_annotation = Annotation(value="0.5", datasourceName="ESP", dataType="Float",
+                                    description="Allele Frequency", tags=[TagConstants.INFO, TagConstants.SPLIT],
+                                    number=-1)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_AC")
+        cur_annotation = Annotation(value="3.0", datasourceName="ESP", dataType="Float",
+                                    description="Allele Count", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
+                                    number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_H2")
+        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="String",
+                                    description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
+                                    number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value=",,", datasourceName="ESP", dataType="Float",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         chrom = "20"
         start = "1230237"
@@ -654,15 +690,21 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="False|False|False", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_AA")
         cur_annotation = Annotation(value="T", datasourceName="ESP", dataType="String",
                                     description="Ancestral Allele", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
                                     number=1)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("ESP_Z")
+        cur_annotation = Annotation(value="1.66666666667,2.33333333333,2.25", datasourceName="ESP", dataType="Float",
+                                    description="A random variable, Z", tags=[TagConstants.INFO,
+                                                                              TagConstants.NOT_SPLIT], number=3)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingSNPAvgMatch(self):
@@ -693,9 +735,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_Y")
@@ -727,9 +769,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_Y")
@@ -766,9 +808,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_H2")
-        cur_annotation = Annotation(value="False", datasourceName="ESP", dataType="Flag",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
-                                    number=0)
+                                    number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_Y")

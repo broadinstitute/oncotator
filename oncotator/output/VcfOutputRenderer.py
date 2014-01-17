@@ -60,6 +60,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordBuilder import RecordBuilder
 from oncotator.output.OutputDataManager import OutputDataManager
 from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
+import traceback
 
 
 class VcfOutputRenderer(OutputRenderer):
@@ -170,32 +171,41 @@ class VcfOutputRenderer(OutputRenderer):
         chrom = None
         pos = None
         recordBuilder = None
-        for m in tsvReader:
-            isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"])
-            if isNewRecord:
-                if recordBuilder is not None:
-                    record = recordBuilder.createRecord()
-                    vcfWriter.write_record(record)
-                    index += 1
-                    if index % nrecords == 0:
-                        self.logger.info("Rendered " + str(index) + " vcf records.")
-                        vcfWriter.flush()
 
-                chrom = m["chr"]
-                if chrom.startswith("GL"):
-                    chrom = "<" + chrom + ">"
-                pos = m["start"]
-                refAllele = m["ref_allele"]
+        ctr = 0
+        m = None
+        try:
+            for m in tsvReader:
+                ctr += 1
+                isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"])
+                if isNewRecord:
+                    if recordBuilder is not None:
+                        record = recordBuilder.createRecord()
+                        vcfWriter.write_record(record)
+                        index += 1
+                        if index % nrecords == 0:
+                            self.logger.info("Rendered " + str(index) + " vcf records.")
+                            vcfWriter.flush()
 
-                recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
+                    chrom = m["chr"]
+                    if chrom.startswith("GL"):
+                        chrom = "<" + chrom + ">"
+                    pos = m["start"]
+                    refAllele = m["ref_allele"]
 
-            recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager)
+                    recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
 
-        if recordBuilder is not None:
-            record = recordBuilder.createRecord()
-            vcfWriter.write_record(record)
+                recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager)
 
-        vcfWriter.close()
+            if recordBuilder is not None:
+                record = recordBuilder.createRecord()
+                vcfWriter.write_record(record)
+            vcfWriter.close()
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error("Error at mutation " + str(ctr) + " " + str([m.chr, m.start, m.end]) + ": ")
+
         self.logger.info("Rendered all " + str(index) + " vcf records.")
 
     def _parseRecordBuilder(self, m, recordBuilder, dataManager):

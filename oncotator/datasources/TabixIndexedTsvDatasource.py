@@ -67,7 +67,7 @@ class IndexedTsvDatasource(Datasource):
 
     Multiple annotation data for the same mutation will be delimited by "|".
     """
-    def __init__(self, src_file, title, version, colNames, indexColNames, annotationColNames, match_mode):
+    def __init__(self, src_file, title, version, colNames, indexColNames, annotationColNames, match_mode, colDataTypes):
         super(IndexedTsvDatasource, self).__init__(src_file, title=title, version=version)
         self.tsv_reader = pysam.Tabixfile(filename=src_file)  # initialize the tsv reader
         self.tsv_headers = dict([(colName, index) for (index, colName) in enumerate(colNames)])  # index the column names in tsv header
@@ -76,6 +76,7 @@ class IndexedTsvDatasource(Datasource):
         self.tsv_index = {"chrom": self.tsv_headers[indexColNames[0]],
                           "start": self.tsv_headers[indexColNames[1]],
                           "end": self.tsv_headers[indexColNames[2]]}
+        self.dataTypes = colDataTypes
         self.match_mode = match_mode
         self.logger = logging.getLogger(__name__)
 
@@ -116,11 +117,12 @@ class IndexedTsvDatasource(Datasource):
 
         for colName in self.output_tsv_headers:
             val = ""
-            ds_type = "String"
+            ds_type = self.dataTypes[colName]
             if len(vals) != 0:
                 if self.match_mode == "exact":
                     val = vals[colName]
-                elif self.match_mode == "avg":
+                elif self.match_mode == "avg" and ds_type in ("Integer", "Float",):
+                    ds_type = "Float"
                     val = vals[colName]
                     val_sum = 0
                     val_num = 0
@@ -140,6 +142,7 @@ class IndexedTsvDatasource(Datasource):
                     if val_num != 0:
                         val = str(val_sum/val_num)
                 else:
+                    ds_type = "String"
                     val = string.join(vals[colName], "|")
             else:
                 msg = "Exception when looking for tsv records for chr%s:%s-%s. " \

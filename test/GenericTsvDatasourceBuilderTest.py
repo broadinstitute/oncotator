@@ -19,7 +19,7 @@ class GenericTsvDatasourceBuilderTest(unittest.TestCase):
         dsFile = "testdata/small_genome_position_tsv_ds/oreganno_trim.hg19.txt"
         destDir = "out"
         datasourceBuilder = GenericTsvDatasourceCreator()
-        datasourceFilename = datasourceBuilder.createDatasource(destDir=destDir, ds_file=dsFile)
+        datasourceFilename = datasourceBuilder._createDatabase(destDir=destDir, ds_file=dsFile)
         datasourceFilename = string.join([destDir, os.sep, datasourceFilename], "")
 
         self.assertTrue(os.path.exists(datasourceFilename), "No data source file was generated.")
@@ -33,7 +33,7 @@ class GenericTsvDatasourceBuilderTest(unittest.TestCase):
         genomicPositionColumnNames = "chr,start,end"
 
         datasourceBuilder = GenericTsvDatasourceCreator()
-        datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
+        datasourceBuilder._createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_name=dataSourceName, ds_type=dataSourceType, ds_version=dataSourceVersion,
                                            indexCols=DatasourceInstallUtils.getIndexCols("gp_tsv",
                                                                                          genomicPositionColumnNames))
@@ -73,7 +73,7 @@ class GenericTsvDatasourceBuilderTest(unittest.TestCase):
         geneColumnName = "gene"
 
         datasourceBuilder = GenericTsvDatasourceCreator()
-        datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
+        datasourceBuilder._createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
                                            ds_name=dataSourceName, ds_type=dataSourceType, ds_version=dataSourceVersion,
                                            indexCols=DatasourceInstallUtils.getIndexCols("gene_tsv", geneColumnName))
 

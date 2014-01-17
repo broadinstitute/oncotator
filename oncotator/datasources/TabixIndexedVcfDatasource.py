@@ -184,6 +184,8 @@ class IndexedVcfDatasource(Datasource):
         mut_start = int(mutation.start)
         mut_end = int(mutation.end)
         vals = dict()
+        record = None
+
         if mutation.ref_allele == "-":  # adjust for cases where there is an insertion
             mut_start -= 1
         try:
@@ -213,17 +215,25 @@ class IndexedVcfDatasource(Datasource):
                         else:
                             vals[ID] += [val]
 
+        if record is None:
+            msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
+                  "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
+            self.logger.warn(msg)
+
+
         tags = self._determine_tags()
         for ID in self.vcf_info_headers:
+
+            if ID == "H2":
+                pass
+
             # multiple values are delimited by "|"
             if len(vals) != 0:
                 if self.match_mode == "exact":
                     val = string.join(map(str, [val if val is not None else "" for val in vals[ID]]), ",")
-                    mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
-                                              self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
-                                              number=self.output_vcf_nums[ID])
                 elif self.match_mode == "avg":
                     if self.output_vcf_types[ID] in ("Integer", "Float"):
+                        num = self.output_vcf_nums[ID]
                         if num in (None, -1, 0, 1,):
                             vals[ID] = reduce(operator.add, vals[ID])
                             val = [val for val in vals[ID] if val is not None and val != '']
@@ -234,24 +244,23 @@ class IndexedVcfDatasource(Datasource):
                             else:
                                 val = ""
                         else:
-                            pass
+                            nvals = len(vals[ID])
+                            val = [[]]*num
+                            for i in xrange(num):
+                                for j in xrange(nvals):
+                                    v = vals[ID][j][i]
+                                    if v not in (None, "", "."):
+                                        val[i] += [v]
+                                if len(val[i]) >= 1:
+                                    val[i] = str(float(sum(val[i]))/len(val[i]))
+                                else:
+                                    val[i] = ""
+                            val = string.join(val, ",")
                         self.output_vcf_types[ID] = "Float"
-                    elif self.output_vcf_types[ID] == "Flag":
-                        vals[ID] = reduce(operator.add, vals[ID])
-                        val = [val for val in vals[ID] if val is not None and val != '']
-                        if len(val) != 0:
-                            val = bool(reduce(operator.mul, val))
-                            val = str(val)
-                        else:
-                            val = str(False)
-                        mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title,
-                                                  self.output_vcf_types[ID],
-                                                  self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
-                                                  number=self.output_vcf_nums[ID])
                     elif self.output_vcf_types[ID] == "Character":
                         val = []
                         for v in vals[ID]:
-                            val += map(str, [string.join([v if v is not None else "" for v in v], ",")])
+                            val += [map(str, [string.join([v if v is not None else "" for v in v], ",")])]
                         val = string.join(val, "|")
                         self.output_vcf_types[ID] = "String"
                     else:
@@ -261,45 +270,41 @@ class IndexedVcfDatasource(Datasource):
                             if v:
                                 val += [v]
                         val = string.join(val, "|")
-                    mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title,
-                                              self.output_vcf_types[ID],
-                                              self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
-                                              number=self.output_vcf_nums[ID])
-
-                else:
-                    if self.output_vcf_types[ID] == "Flag":
-                        vals[ID] = reduce(operator.add, vals[ID])
-                        val = [val for val in vals[ID] if val is not None]
-                        if len(val) != 0:
-                            val = bool(reduce(operator.mul, val))
-                            val = str(val)
-                        else:
-                            val = str(False)
-                    else:
                         self.output_vcf_types[ID] = "String"
-                        val = []
-                        for v in vals[ID]:
-                            v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
-                            if v:
-                                val += [v]
-                        val = string.join(val, "|")
-                    mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
-                                              self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
-                                              number=self.output_vcf_nums[ID])
+                        if self.output_vcf_nums[ID] == 0:
+                            self.output_vcf_nums[ID] = None
+                else:  # overlap
+                    # values are delimited by pipe, and thus, the type is forced to be a String
+                    val = []
+                    for v in vals[ID]:
+                        v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
+                        if v:
+                            val += [v]
+                    val = string.join(val, "|")
+                    self.output_vcf_types[ID] = "String"
+                    if self.output_vcf_nums[ID] == 0:
+                        self.output_vcf_nums[ID] = None
             else:
-                if self.match_mode == "overlap":
-                    if self.output_vcf_types[ID] != "Flag":
-                        self.output_vcf_types[ID] = "String"
+                if self.match_mode == "exact":
+                    pass
                 elif self.match_mode == "avg":
                     if self.output_vcf_types[ID] == "Character":
                         self.output_vcf_types[ID] = "String"
                     elif self.output_vcf_types[ID] == "Integer":
                         self.output_vcf_types[ID] = "Float"
+                    elif self.output_vcf_types[ID] == "Flag":
+                        self.output_vcf_types[ID] = "String"
+                        self.output_vcf_nums[ID] = None
+                elif self.match_mode == "overlap":
+                    self.output_vcf_types[ID] = "String"
+                    if self.output_vcf_nums[ID] == 0:
+                        self.output_vcf_nums[ID] = None
 
                 val = self._determine_missing_value(ID)
                 val = string.join(map(str, val), ",")
-                mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
-                                          self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
-                                          number=self.output_vcf_nums[ID])
+
+            mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
+                                      self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),
+                                      number=self.output_vcf_nums[ID])
 
         return mutation
