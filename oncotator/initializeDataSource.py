@@ -210,6 +210,13 @@ def parseOptions():
                         dest="annotation_columns",
                         type=str,
                         help="Comma separated list of annotation columns. MUST be the name of the columns.  This (optional) parameter is specified for indexed_tsv only.")
+    parser.add_argument("--match_mode",
+                        action="store",
+                        dest="match_mode",
+                        type=str,
+                        help="Comma separated list of annotation columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv and indexed_vcf only [default: exact].",
+                        choices=["overlap", "exact", "avg"],
+                        default="exact")
 
     # Process arguments
     args = parser.parse_args()
@@ -221,8 +228,7 @@ def validateArgs(args):
     """ Throw an exception if poor arguments were chosen."""
     if args.ds_type not in supportedDSTypes:
         raise ValueError("Unsupported datasource type: " + args.ds_type + ".  Must be one of: " + str(supportedDSTypes))
-    if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and len(
-            args.index_columns.split(',')) != 3:
+    if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and len(args.index_columns.split(',')) != 3:
         raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3")
     if os.path.exists(os.path.join(args.dbDir, args.ds_foldername)):
         raise ValueError("Destination path already exists.  Please remove or choose a different location: " +
@@ -230,6 +236,8 @@ def validateArgs(args):
     if args.ds_type in ("indexed_tsv",):
         if not args.columns:
             raise ValueError("columns field was not specified.  Must be a comma separated list.")
+        if not args.index_columns:
+            raise ValueError("index_columns field was not specified.  Must be a comma separated list.")
 
 
 def createDatasource(tmpDir):
@@ -250,6 +258,7 @@ def createDatasource(tmpDir):
     dbDir = args.dbDir
     genome_build = args.genome_build
     ds_file = args.ds_file
+    ds_match_mode = args.match_mode
 
     # Parameters for indexed_tsv only.
     ds_columns = args.columns
@@ -264,7 +273,7 @@ def createDatasource(tmpDir):
 
     # Copy the tsv file into genome build dir
     DatasourceInstallUtils.create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version,
-                                             index_columns, ds_columns, ds_annotation_columns)
+                                             index_columns, ds_columns, ds_annotation_columns, ds_match_mode)
 
     print("Config file created: " + os.path.join(destDir, ds_foldername) + ".config")
 

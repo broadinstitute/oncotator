@@ -14,11 +14,11 @@ TestUtils.setupLogging(__file__, __name__)
 
 class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
 
-    def testCreateDatasource(self):
+    def testCreateDatabase(self):
         dsFile = "testdata/vcf/example.vcf"
         destDir = "out"
         datasourceBuilder = TabixIndexedVcfDatasourceCreator()
-        datasourceFilename = datasourceBuilder.createDatasource(destDir=destDir, ds_file=dsFile)
+        datasourceFilename = datasourceBuilder._createDatabase(destDir=destDir, ds_file=dsFile)
         tabixIndexedFilename = string.join([destDir, os.sep, datasourceFilename], "")
 
         self.assertTrue(os.path.exists(tabixIndexedFilename), "No index file was generated.")
@@ -33,12 +33,14 @@ class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
         configFilename = "out/esp.config"
         datasourceFilename = "ESP6500SI-V2.vcf.gz"
         dataSourceType = "indexed_vcf"
+        datasourceMatchMode = "avg"
         dataSourceName = "ESP"
         dataSourceVersion = "6500SI-V2"
 
         datasourceBuilder = TabixIndexedVcfDatasourceCreator()
-        datasourceBuilder.createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
-                                           ds_type=dataSourceType, ds_name=dataSourceName, ds_version=dataSourceVersion)
+        datasourceBuilder._createConfigFile(configFilename=configFilename, baseDSFile=datasourceFilename,
+                                           ds_type=dataSourceType, ds_name=dataSourceName, ds_version=dataSourceVersion,
+                                           ds_match_mode=datasourceMatchMode)
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
         self.assertTrue(configParser.has_option("general", "type"), "type option is missing in general section.")
@@ -46,6 +48,8 @@ class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
                         "src_file option is missing in general section.")
         self.assertTrue(configParser.has_option("general", "title"), "title option is missing in general section.")
         self.assertTrue(configParser.has_option("general", "version"), "version option is missing in general section.")
+        self.assertTrue(configParser.has_option("general", "match_mode"),
+                        "match_mode option is missing in general section.")
 
         self.assertEqual(configParser.get("general", "type"), dataSourceType,
                          "Expected data source type is %s but was %s."
@@ -59,3 +63,46 @@ class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
         self.assertEqual(configParser.get("general", "version"), dataSourceVersion,
                          "Expected data source version is %s but was %s."
                          % (dataSourceVersion, configParser.get("general", "version")))
+        self.assertEqual(configParser.get("general", "match_mode"), datasourceMatchMode,
+                         "Expected data source match mode is %s but was %s."
+                         % (datasourceMatchMode, configParser.get("general", "match_mode")))
+
+    def testCreateDatasource(self):
+        dsFile = "testdata/vcf/example.vcf"
+        destDir = "out"
+        configFilename = "out/esp.config"
+        datasourceFilename = "example.tabix_indexed.vcf.gz"
+        dataSourceType = "indexed_vcf"
+        datasourceMatchMode = "avg"
+        dataSourceName = "ESP"
+        dataSourceVersion = "6500SI-V2"
+
+        datasourceBuilder = TabixIndexedVcfDatasourceCreator()
+        datasourceBuilder.createDatasource(destDir, dsFile, configFilename, dataSourceType, dataSourceName,
+                                           dataSourceVersion, datasourceMatchMode)
+
+        configParser = ConfigUtils.createConfigParser(configFilename)
+        self.assertTrue(configParser.has_section("general"), "general section is missing.")
+        self.assertTrue(configParser.has_option("general", "type"), "type option is missing in general section.")
+        self.assertTrue(configParser.has_option("general", "src_file"),
+                        "src_file option is missing in general section.")
+        self.assertTrue(configParser.has_option("general", "title"), "title option is missing in general section.")
+        self.assertTrue(configParser.has_option("general", "version"), "version option is missing in general section.")
+        self.assertTrue(configParser.has_option("general", "match_mode"),
+                        "match_mode option is missing in general section.")
+
+        self.assertEqual(configParser.get("general", "type"), dataSourceType,
+                         "Expected data source type is %s but was %s."
+                         % (dataSourceType, configParser.get("general", "type")))
+        self.assertEqual(configParser.get("general", "src_file"), datasourceFilename,
+                         "Expected data source src_file is %s but was %s."
+                         % (datasourceFilename, configParser.get("general", "src_file")))
+        self.assertEqual(configParser.get("general", "title"), dataSourceName,
+                         "Expected data source title is %s but was %s."
+                         % (dataSourceName, configParser.get("general", "title")))
+        self.assertEqual(configParser.get("general", "version"), dataSourceVersion,
+                         "Expected data source version is %s but was %s."
+                         % (dataSourceVersion, configParser.get("general", "version")))
+        self.assertEqual(configParser.get("general", "match_mode"), datasourceMatchMode,
+                         "Expected data source match mode is %s but was %s."
+                         % (datasourceMatchMode, configParser.get("general", "match_mode")))

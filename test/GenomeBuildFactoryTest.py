@@ -164,15 +164,30 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
         seq_index = Shove("file://" + base_output_filename + ".transcript_by_gene.idx", optimize=False)
         transcripts = seq_index['SEO1']
-
-        self.assertTrue(transcripts[0].get_seq().startswith('ATGTATTCAATTGTTAAAGAGATTATTGTAGATCCTTACAAAAGACTAAAATGGGGTTTT'))
+        transcript = transcripts[0]
+        for i in xrange(len(transcripts)):
+            transcript = transcripts[i]
+            if transcript._transcript_id == "YAL067C":
+                break
+        self.assertTrue(transcript.get_seq().startswith('ATGTATTCAATTGTTAAAGAGATTATTGTAGATCCTTACAAAAGACTAAAATGGGGTTTT'))
 
         transcripts = seq_index['PAU8']
-        self.assertTrue(transcripts[0].get_strand() == "-")
+        transcript = transcripts[0]
+        for i in xrange(len(transcripts)):
+            transcript = transcripts[i]
+            if transcript._transcript_id == "YAL068C":
+                break
+        self.assertTrue(transcript.get_strand() == "-")
 
         seq_index_gp = Shove("file://" + base_output_filename + ".transcript_by_gp_bin.idx", "memory://")
         transcripts = seq_index_gp["I_585"]
-        self.assertTrue(transcripts[0].get_strand() == "+")
+        self.assertTrue(len(transcripts) == 5, "There should be 5 transcripts.")
+        transcript = transcripts[0]
+        for i in xrange(len(transcripts)):
+            transcript = transcripts[i]
+            if transcript._transcript_id == "YAL069W":
+                break
+        self.assertTrue(transcript.get_strand() == "+")
 
     def test_gencode_small(self):
         """Test that we can create Transcript instances from a small gencode gtf and fasta."""

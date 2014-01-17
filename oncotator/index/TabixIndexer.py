@@ -83,7 +83,7 @@ class TabixIndexer(object):
         raise NotImplementedError("This is a static class -- do not instantiate")
     
     @staticmethod
-    def index(destDir, inputFilename, fileColumnNumList=[], preset=None):
+    def index(destDir, inputFilename, fileColumnNumList=None, preset=None):
         """
         Create a tabix index file for genomic position datasource tsv files.
         Prerequisites (for genomic position indexed):
@@ -101,7 +101,7 @@ class TabixIndexer(object):
         :param preset: if preset is provided, the column coordinates are taken from a preset. Valid values for preset
         are "gff", "bed", "sam", "vcf", "psltbl", and "pileup".
         """
-
+        fileColumnNumList = [] if fileColumnNumList is None else fileColumnNumList
         inputFilename = os.path.abspath(inputFilename)
         fileName, fileExtension = os.path.splitext(os.path.basename(inputFilename))
         outputFilename = string.join([destDir, os.sep, fileName, ".tabix_indexed", fileExtension], "")

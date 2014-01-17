@@ -176,21 +176,32 @@ class DatasourceFactory(object):
         elif dsType == "indexed_vcf":
             result = IndexedVcfDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
-                                           version=configParser.get('general', 'version'))
+                                           version=configParser.get('general', 'version'),
+                                           match_mode=configParser.get('general', 'match_mode'))
         elif dsType == "indexed_tsv":
             colNames = configParser.get("general", "column_names")
             colNames = colNames.split(",")
 
-            annotationColnames = configParser.get("general", "annotation_column_names")
-            annotationColnames = annotationColnames.split(",")
+            annotationColNames = configParser.get("general", "annotation_column_names")
+            annotationColNames = annotationColNames.split(",")
 
-            DatasourceFactory._log_missing_column_name_msg(colNames, annotationColnames)
+            DatasourceFactory._log_missing_column_name_msg(colNames, annotationColNames)
+
+            indexColNames = configParser.get("general", "index_column_names")
+            indexColNames = indexColNames.split(",")
+
+            colDataTypes = dict()
+            for colName in annotationColNames:
+                colDataTypes[colName] = configParser.get("data_types", colName)
 
             result = IndexedTsvDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get('general', 'version'),
                                            colNames=colNames,
-                                           annotationColNames=annotationColnames)
+                                           annotationColNames=annotationColNames,
+                                           indexColNames=indexColNames,
+                                           match_mode=configParser.get('general', 'match_mode'),
+                                           colDataTypes=colDataTypes)
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)

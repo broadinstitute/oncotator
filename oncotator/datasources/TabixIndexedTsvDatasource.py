@@ -51,6 +51,7 @@ import logging
 import pysam
 from oncotator.datasources.Datasource import Datasource
 from oncotator.utils.TagConstants import TagConstants
+import string
 
 
 class IndexedTsvDatasource(Datasource):
@@ -66,13 +67,17 @@ class IndexedTsvDatasource(Datasource):
 
     Multiple annotation data for the same mutation will be delimited by "|".
     """
-    def __init__(self, src_file, title='', version=None, colNames=[], annotationColNames=[]):
+    def __init__(self, src_file, title, version, colNames, indexColNames, annotationColNames, match_mode, colDataTypes):
         super(IndexedTsvDatasource, self).__init__(src_file, title=title, version=version)
-
         self.tsv_reader = pysam.Tabixfile(filename=src_file)  # initialize the tsv reader
-        self.tsv_headers = dict([(x, i) for (i, x) in enumerate(colNames)])  # index the column names in tsv header
+        self.tsv_headers = dict([(colName, index) for (index, colName) in enumerate(colNames)])  # index the column names in tsv header
         # Annotation column names are the only columns that are used for annotating a mutation object.
         self.output_tsv_headers = dict([(colName, '_'.join([self.title, colName])) for colName in annotationColNames])
+        self.tsv_index = {"chrom": self.tsv_headers[indexColNames[0]],
+                          "start": self.tsv_headers[indexColNames[1]],
+                          "end": self.tsv_headers[indexColNames[2]]}
+        self.dataTypes = colDataTypes
+        self.match_mode = match_mode
         self.logger = logging.getLogger(__name__)
 
     def annotate_mutation(self, mutation):
@@ -82,34 +87,69 @@ class IndexedTsvDatasource(Datasource):
         :param mutation: mutation to annotate
         :return: annotated mutation
         """
-        valsMap = dict()
+        vals = dict()
+        mut_start = int(mutation.start) - 1  # tabix needs position - 1
+        mut_end = int(mutation.end)
         try:
-            tsv_records = self.tsv_reader.fetch(mutation.chr, int(mutation.start)-1, int(mutation.end),
-                                                parser=pysam.asTuple())
-            for tsv_record in tsv_records:
-                for colName in self.output_tsv_headers:
-                    val = ""
-                    if tsv_record is not None:
-                        val = tsv_record[self.tsv_headers[colName]]
+            tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start, mut_end, parser=pysam.asTuple())
 
-                    # multiple records are delimited by "|"
-                    if colName not in valsMap:
-                        valsMap[colName] = val
+            for tsv_record in tsv_records:
+                if not tsv_record:
+                    continue
+
+                for colName in self.output_tsv_headers:
+                    val = tsv_record[self.tsv_headers[colName]]
+
+                    if self.match_mode == "exact":
+                        rec_start = int(tsv_record[self.tsv_index["start"]]) - 1
+                        rec_end = int(tsv_record[self.tsv_index["end"]])
+                        if mut_start == rec_start and mut_end == rec_end:
+                            vals[colName] = val
                     else:
-                        valsMap[colName] += "|" + val
+                        if colName not in vals:
+                            vals[colName] = [val]
+                        else:
+                            vals[colName] += [val]
+
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
             self.logger.warn(msg)
 
-        for colname in self.output_tsv_headers:
+        for colName in self.output_tsv_headers:
             val = ""
-            if len(valsMap) != 0:
-                val = valsMap[colname]
+            ds_type = self.dataTypes[colName]
+            if len(vals) != 0:
+                if self.match_mode == "exact":
+                    val = vals[colName]
+                elif self.match_mode == "avg" and ds_type in ("Integer", "Float",):
+                    ds_type = "Float"
+                    val = vals[colName]
+                    val_sum = 0
+                    val_num = 0
+                    for v in val:
+                        try:  # attempt to convert values to float
+                            if v in ("", ".", "-",):
+                                continue
+                            val_sum += float(v)  # attempt to convert the
+                            val_num += 1
+                            ds_type = "Float"
+                        except ValueError:  # in cases where it's unsuccessful, default of overlap behavior
+                            msg = "Exception when trying to cast %s value to float." % colName
+                            self.logger.warn(msg)
+                            val = string.join(map(str, vals[colName]), "|")
+                            ds_type = "String"
+                            break
+                    if val_num != 0:
+                        val = str(val_sum/val_num)
+                else:
+                    ds_type = "String"
+                    val = string.join(vals[colName], "|")
             else:
-                msg = "Exception when looking for tsv records. Empty set of records being returned."
+                msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
+                      "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
                 self.logger.warn(msg)
 
-            mutation.createAnnotation(self.output_tsv_headers[colname], val, self.title,
+            mutation.createAnnotation(self.output_tsv_headers[colName], val, self.title, annotationDataType=ds_type,
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])
 
         return mutation
