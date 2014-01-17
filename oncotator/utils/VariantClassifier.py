@@ -614,8 +614,12 @@ class VariantClassifier(object):
             return ""
         exon_position_start,exon_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(int(start_genomic_space), int(end_genomic_space), tx)
 
-        cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())+1
-        cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())+1
+        if tx.get_strand() == "-":
+            cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())+1
+            cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())+1
+        else:
+            cds_position_start_cds_space = exon_position_start - int(vc.get_cds_start_in_exon_space())
+            cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())
 
         observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
         result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded)
