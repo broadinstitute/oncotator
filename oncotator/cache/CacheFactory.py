@@ -8,7 +8,7 @@ class CacheFactory(object):
     """Currently, only supports Shove cache and a custom interface to memcache. """
 
     @staticmethod
-    def createCache(url, is_thread_safe=False):
+    def createCache(url, is_thread_safe=True):
         """
 
         :param is_thread_safe: If this is True, uses a slower, but thread safe version of the Cache, if available.
