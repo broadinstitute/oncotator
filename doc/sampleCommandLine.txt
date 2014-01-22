@@ -1,1 +1,1 @@
-python Oncotator.py -v --input_format=maflite --output_format=tcgaMAF myInputFile.maflite myOutputFile.maf.annotated hg19
+python Oncotator.py -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
