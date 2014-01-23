@@ -221,9 +221,13 @@ class VariantClassifier(object):
         :return:
         """
         observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
-
         transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
             start, end, tx)
+
+        if tx.get_strand() == "+":
+            transcript_position_start -= 1
+            transcript_position_end -= 1
+
         transcript_seq = tx.get_seq()
         protein_seq = tx.get_protein_seq()
         cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
@@ -290,9 +294,9 @@ class VariantClassifier(object):
         if codon_tuple is None:
             return False
         if variant_type == VariantClassification.VT_INS:
-            is_codon_overlap = TranscriptProviderUtils.test_overlap(s, s, codon_tuple[0], codon_tuple[1])
+            is_codon_overlap = TranscriptProviderUtils.test_overlap(s, s, codon_tuple[0]+1, codon_tuple[1])
         else:
-            is_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, codon_tuple[0], codon_tuple[1])
+            is_codon_overlap = TranscriptProviderUtils.test_overlap(s, e, codon_tuple[0]+1, codon_tuple[1])
         return is_codon_overlap
 
     def variant_classify(self, tx, ref_allele, alt_allele, start, end, variant_type, dist=2):
@@ -421,23 +425,22 @@ class VariantClassifier(object):
         :param tx: Transcript
         :return: str ("3'" or "5'")
         """
+        cds_start, cds_end = tx.determine_cds_footprint()
         strand = tx.get_strand()
-        tx_start = tx.get_start()
-        tx_end = tx.get_end()
 
-        is_beyond_exons_left = (start < tx_start and end < tx_start)
-        is_beyond_exons_right = (start > tx_end and end > tx_end)
-        if is_beyond_exons_left and strand == "+":
+        is_beyond_cds_left = (start < cds_start and end < cds_start)
+        is_beyond_cds_right = (start > cds_end and end > cds_end)
+        if is_beyond_cds_left and strand == "+":
             return "5'"
-        if is_beyond_exons_left and strand == "-":
+        if is_beyond_cds_left and strand == "-":
             return "3'"
-        if is_beyond_exons_right and strand == "+":
+        if is_beyond_cds_right and strand == "+":
             return "3'"
-        if is_beyond_exons_right and strand == "-":
+        if is_beyond_cds_right and strand == "-":
             return "5'"
 
-        d_left = min(abs(start - tx_start), abs(end - tx_start))
-        d_right = min(abs(start - tx_end), abs(end - tx_end))
+        d_left = min(abs(start - cds_start), abs(end - cds_start))
+        d_right = min(abs(start - cds_end), abs(end - cds_end))
 
         if d_left <= d_right:
             if strand == "+":

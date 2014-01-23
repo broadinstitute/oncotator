@@ -1,4 +1,37 @@
-muc16_change_testdata = lambda: (
+""" To genereate this file:
+
+# For a tsv of the PIK3CA entries:
+egrep "^PIK3CA\W+" /cga/tcga-gsc/cga_dcc_submissions/for_submission/broad.mit.edu_SKCM.IlluminaGA_DNASeq.Level_2.0.3.0/PR_TCGA_SKCM_PAIR_Capture_All_Pairs_QCPASS_v3.aggregated.capture.tcga.uuid.somatic.maf | cut -f 1,5,6,7,9,10,11,13,35,37,40,41,42 | sort | uniq | sed -r "s/\t+/\"\, \"/g" | sed -r "s/^/\(\"/g" | sed -r "s/$/\"\)\,/g"
+
+"""
+change_testdata = lambda: (
+("MUC16", "19", "9091811", "9091811", "Silent", "SNP","G", "A", "g.chr19:9091811G>A","-", "c.4C>T", "c.(4-6)Ctg>Ttg","p.L2L"),
+("MUC16", "19", "9091812", "9091812", "Start_Codon_SNP", "SNP","C", "A", "g.chr19:9091812C>A","-", "c.3G>T", "c.(1-3)atG>atT","p.M1I"),
+("MUC16", "19", "9091813", "9091813", "Start_Codon_SNP", "SNP","A", "G", "g.chr19:9091813A>G","-", "c.2T>C", "c.(1-3)aTg>aCg","p.M1T"),
+("MUC16", "19", "9091814", "9091814", "Start_Codon_SNP", "SNP","T", "A", "g.chr19:9091814T>A","-", "c.1A>T", "c.(1-3)Atg>Ttg","p.M1L"),
+("MUC16", "19", "9091815", "9091815", "5'UTR", "SNP","G", "A", "g.chr19:9091815G>A", "-","", "",""),
+("MUC16", "19", "8959605", "8959605", "3'UTR", "SNP","C", "A", "g.chr19:8959605C>A", "-","", "",""),
+("MUC16", "19", "8959606", "8959606", "3'UTR", "SNP","A", "G", "g.chr19:8959606A>G", "-","", "",""),
+("MUC16", "19", "8959607", "8959607", "3'UTR", "SNP","G", "A", "g.chr19:8959607G>A", "-","", "",""),
+("MUC16", "19", "8959608", "8959608", "Nonstop_Mutation", "SNP","T", "A", "g.chr19:8959608T>A", "-","c.43524A>T", "c.(43522-43524)tgA>tgT","p.*14508C"),
+("MUC16", "19", "8959609", "8959609", "Nonstop_Mutation", "SNP","C", "A", "g.chr19:8959609C>A", "-","c.43523G>T", "c.(43522-43524)tGa>tTa","p.*14508L"),
+("MUC16", "19", "8959610", "8959610", "Nonstop_Mutation", "SNP","A", "G", "g.chr19:8959610A>G", "-","c.43522T>C", "c.(43522-43524)Tga>Cga","p.*14508R"),
+("MUC16", "19", "8959611", "8959611", "Missense_Mutation", "SNP","T", "A", "g.chr19:8959611T>A", "-","c.43521A>T", "c.(43519-43521)caA>caT","p.Q14507H"),
+("PIK3CA", "3", "178916619", "178916619", "Silent", "SNP", "T", "A", "g.chr3:178916619T>A", "+", "c.6T>A", "c.(4-6)ccT>ccA", "p.P2P"),
+("PIK3CA", "3", "178916620", "178916620", "Missense_Mutation", "SNP", "C", "T", "g.chr3:178916620C>T", "+", "c.7C>T", "c.(7-9)Cca>Tca", "p.P3S"),
+("PIK3CA", "3", "178916617", "178916617", "Missense_Mutation", "SNP", "C", "T", "g.chr3:178916617C>T", "+", "c.4C>T", "c.(4-6)Cct>Tct", "p.P2S"),
+("PIK3CA", "3", "178919220", "178919220", "Silent", "SNP", "C", "T", "g.chr3:178919220C>T", "+", "c.705C>T", "c.(703-705)tcC>tcT", "p.S235S"),
+("PIK3CA", "3", "178921433", "178921433", "Silent", "SNP", "A", "T", "g.chr3:178921433A>T", "+", "c.915A>T", "c.(913-915)ccA>ccT", "p.P305P"),
+("PIK3CA", "3", "178922366", "178922366", "Missense_Mutation", "SNP", "T", "A", "g.chr3:178922366T>A", "+", "c.1135T>A", "c.(1135-1137)Tcc>Acc", "p.S379T"),
+("PIK3CA", "3", "178928317", "178928317", "Silent", "SNP", "C", "T", "g.chr3:178928317C>T", "+", "c.1503C>T", "c.(1501-1503)tcC>tcT", "p.S501S"),
+("PIK3CA", "3", "178936091", "178936091", "Missense_Mutation", "SNP", "G", "A", "g.chr3:178936091G>A", "+", "c.1633G>A", "c.(1633-1635)Gag>Aag", "p.E545K"),
+("PIK3CA", "3", "178937063", "178937063", "Nonsense_Mutation", "SNP", "C", "T", "g.chr3:178937063C>T", "+", "c.1744C>T", "c.(1744-1746)Cag>Tag", "p.Q582*"),
+("PIK3CA", "3", "178941890", "178941890", "Missense_Mutation", "SNP", "G", "A", "g.chr3:178941890G>A", "+", "c.2209G>A", "c.(2209-2211)Gag>Aag", "p.E737K"),
+("PIK3CA", "3", "178942511", "178942511", "Missense_Mutation", "SNP", "C", "T", "g.chr3:178942511C>T", "+", "c.2318C>T", "c.(2317-2319)tCc>tTc", "p.S773F"),
+("PIK3CA", "3", "178942523", "178942523", "Missense_Mutation", "SNP", "G", "A", "g.chr3:178942523G>A", "+", "c.2330G>A", "c.(2329-2331)aGg>aAg", "p.R777K"),
+("PIK3CA", "3", "178943785", "178943785", "Missense_Mutation", "SNP", "C", "T", "g.chr3:178943785C>T", "+", "c.2452C>T", "c.(2452-2454)Cgt>Tgt", "p.R818C"),
+("PIK3CA", "3", "178947158", "178947158", "Missense_Mutation", "SNP", "G", "A", "g.chr3:178947158G>A", "+", "c.2594G>A", "c.(2593-2595)gGc>gAc", "p.G865D"),
+("PIK3CA", "3", "178952085", "178952085", "Missense_Mutation", "SNP", "A", "T", "g.chr3:178952085A>T", "+", "c.3140A>T", "c.(3139-3141)cAt>cTt", "p.H1047L"),
 # Had to change gt transcript change.  Had to change protein change for proper codon
 ("MUC16", "19", "9002672", "9002672", "Splice_Site", "SNP", "G", "A", "g.chr19:9002672G>A", "-", "c.40142_splice", "c.e51-1", "p.P13382_splice"),
 # Had to change GT for the protein change, since this is an intron splice site.
