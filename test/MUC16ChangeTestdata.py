@@ -5,6 +5,18 @@ egrep "^PIK3CA\W+" /cga/tcga-gsc/cga_dcc_submissions/for_submission/broad.mit.ed
 
 """
 change_testdata = lambda: (
+("MUC16", "19", "9091811", "9091811", "Silent", "SNP","G", "A", "g.chr19:9091811G>A","-", "c.4C>T", "c.(4-6)Ctg>Ttg","p.L2L"),
+("MUC16", "19", "9091812", "9091812", "Start_Codon_SNP", "SNP","C", "A", "g.chr19:9091812C>A","-", "c.3G>T", "c.(1-3)atG>atT","p.M1I"),
+("MUC16", "19", "9091813", "9091813", "Start_Codon_SNP", "SNP","A", "G", "g.chr19:9091813A>G","-", "c.2T>C", "c.(1-3)aTg>aCg","p.M1T"),
+("MUC16", "19", "9091814", "9091814", "Start_Codon_SNP", "SNP","T", "A", "g.chr19:9091814T>A","-", "c.1A>T", "c.(1-3)Atg>Ttg","p.M1L"),
+("MUC16", "19", "9091815", "9091815", "5'UTR", "SNP","G", "A", "g.chr19:9091815G>A", "-","", "",""),
+("MUC16", "19", "8959605", "8959605", "3'UTR", "SNP","C", "A", "g.chr19:8959605C>A", "-","", "",""),
+("MUC16", "19", "8959606", "8959606", "3'UTR", "SNP","A", "G", "g.chr19:8959606A>G", "-","", "",""),
+("MUC16", "19", "8959607", "8959607", "3'UTR", "SNP","G", "A", "g.chr19:8959607G>A", "-","", "",""),
+("MUC16", "19", "8959608", "8959608", "Nonstop_Mutation", "SNP","T", "A", "g.chr19:8959608T>A", "-","c.43524A>T", "c.(43522-43524)tgA>tgT","p.*14508C"),
+("MUC16", "19", "8959609", "8959609", "Nonstop_Mutation", "SNP","C", "A", "g.chr19:8959609C>A", "-","c.43523G>T", "c.(43522-43524)tGa>tTa","p.*14508L"),
+("MUC16", "19", "8959610", "8959610", "Nonstop_Mutation", "SNP","A", "G", "g.chr19:8959610A>G", "-","c.43522T>C", "c.(43522-43524)Tga>Cga","p.*14508R"),
+("MUC16", "19", "8959611", "8959611", "Missense_Mutation", "SNP","T", "A", "g.chr19:8959611T>A", "-","c.43521A>T", "c.(43519-43521)caA>caT","p.Q14507H"),
 ("PIK3CA", "3", "178916619", "178916619", "Silent", "SNP", "T", "A", "g.chr3:178916619T>A", "+", "c.6T>A", "c.(4-6)ccT>ccA", "p.P2P"),
 ("PIK3CA", "3", "178916620", "178916620", "Missense_Mutation", "SNP", "C", "T", "g.chr3:178916620C>T", "+", "c.7C>T", "c.(7-9)Cca>Tca", "p.P3S"),
 ("PIK3CA", "3", "178916617", "178916617", "Missense_Mutation", "SNP", "C", "T", "g.chr3:178916617C>T", "+", "c.4C>T", "c.(4-6)Cct>Tct", "p.P2S"),
