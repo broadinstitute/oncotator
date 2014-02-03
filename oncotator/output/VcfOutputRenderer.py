@@ -105,7 +105,7 @@ class VcfOutputRenderer(OutputRenderer):
         metadata = [] if metadata is None else metadata
         comments = [] if comments is None else comments
 
-        self.logger.info("Rendering VCF output file: " + self._filename)
+        self.logger.info("Rendering VCF output file: %s" % self._filename)
 
         # Initialize config table
         self.configTable = self.configTableBuilder.getConfigTable(configFilename=self.configFilename)

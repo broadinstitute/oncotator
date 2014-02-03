@@ -147,9 +147,6 @@ class OutputDataManager:
 
                 if ctr == 0:
                     fieldnames2Render = MutUtils.getAllAttributeNames(mut)
-                    for index in range(0, len(fieldnames2Render)):
-                        fieldnames2Render[index] = MutUtils.replaceChrs(fieldnames2Render[index], "=; :", "~|_>")
-
                     if sampleNameAnnotationName is not None:
                         fieldnames2Render += [sampleNameAnnotationName]
                     for fieldname in fieldnames2Render:  # fieldnames that start "_" aren't rendered
@@ -160,8 +157,7 @@ class OutputDataManager:
                                             lineterminator=self.lineterminator)
                     writer.writeheader()
 
-                m = {MutUtils.replaceChrs(k, "=; :", "~|_>"): v for (k, v) in mut.iteritems()}
-                writer.writerow(m)
+                writer.writerow(mut)
 
                 ctr += 1
                 if (ctr % 1000) == 0:
@@ -377,10 +373,13 @@ class OutputDataManager:
             if md is not None and len(md) != 0:
                 fieldnames = md.keys()
 
-        for index in range(0, len(fieldnames)):
-            fieldnames[index] = MutUtils.replaceChrs(fieldnames[index], "=; :", "~|_>")
-
         return fieldnames
+
+    def _correctFieldName(self, fieldName):
+        fieldName = MutUtils.replaceChrs(fieldName, "=; :", "~|_>")  # Replace whitespace and other characters
+        if fieldName.endswith("__FORMAT__"):  # Drop "__FORMAT__" from the end
+            fieldName = fieldName[0:len(fieldName)-len("__FORMAT__")]
+        return fieldName
 
     def _createTables(self, md, mut):
         """
@@ -413,10 +412,12 @@ class OutputDataManager:
             desc = annotation.getDescription()
             src = annotation.getDatasource()
 
-            fieldType = self._resolveFieldType(fieldName, tags)
-            ID = self._resolveFieldID(fieldType, fieldName)
+            name = self._correctFieldName(fieldName)
+
+            fieldType = self._resolveFieldType(name, tags)
+            ID = self._resolveFieldID(fieldType, name)
             dataType = self._resolveFieldDataType(fieldType, ID, dataType)
-            desc = self._resolveFieldDescription(fieldType, fieldName, desc)
+            desc = self._resolveFieldDescription(fieldType, name, desc)
 
             isSplit = False
             if fieldType in ("INFO", "FORMAT",):  # determine whether to split or not for only INFO and FORMAT fields
@@ -507,6 +508,8 @@ class OutputDataManager:
             return "INFO"
         elif name in self.configTable.getFormatFieldNames():
             return "FORMAT"
+        elif name in self.configTable.getFilterFieldNames():
+            return "FILTER"
         elif name in self.configTable.getOtherFieldNames():
             return self.configTable.getOtherFieldID(name)
 
