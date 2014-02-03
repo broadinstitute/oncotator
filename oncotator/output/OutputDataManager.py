@@ -90,11 +90,17 @@ class OutputDataManager:
         tumorSampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_TUMOR_NAME")
         normalSampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_NORMAL_NAME")
 
+        mutAttributeNames = []
+
         with open(tempTsvFile.name, 'w') as fptr:
             ctr = 0
             for mut in muts:
+
                 sampleName = None
                 sampleNameAnnotationName = None
+
+                if len(mutAttributeNames) == 0:
+                    mutAttributeNames = mut.getAttributeNames()
 
                 # Sample name annotation is present
                 if len(sampleNameAnnotationNames) != 0:
@@ -141,9 +147,12 @@ class OutputDataManager:
 
                 if ctr == 0:
                     fieldnames2Render = MutUtils.getAllAttributeNames(mut)
+                    for index in range(0, len(fieldnames2Render)):
+                        fieldnames2Render[index] = MutUtils.replaceChrs(fieldnames2Render[index], "=; :", "~|_>")
+
                     if sampleNameAnnotationName is not None:
                         fieldnames2Render += [sampleNameAnnotationName]
-                    for fieldname in fieldnames2Render:
+                    for fieldname in fieldnames2Render:  # fieldnames that start "_" aren't rendered
                         if fieldname.startswith("_"):
                             fieldnames2Render.remove(fieldname)
 
@@ -151,7 +160,8 @@ class OutputDataManager:
                                             lineterminator=self.lineterminator)
                     writer.writeheader()
 
-                writer.writerow(mut)
+                m = {MutUtils.replaceChrs(k, "=; :", "~|_>"): v for (k, v) in mut.iteritems()}
+                writer.writerow(m)
 
                 ctr += 1
                 if (ctr % 1000) == 0:
@@ -354,13 +364,21 @@ class OutputDataManager:
         return header
 
     def _getFieldnames(self, md, mut):
+        fieldnames = []
         if mut is not None:
-            fieldnames = set(md.keys())
+            if md is not None and len(md) != 0:
+                fieldnames = md.keys()
+            fieldnames = set(fieldnames)  # convert list to set
             fieldnames = fieldnames.union(mut.keys())
             fieldnames = fieldnames.difference(['chr', 'start', 'end', 'ref_allele', 'alt_allele', 'alt_allele_seen',
                                                 'build'])
+            fieldnames = list(fieldnames)  # convert back to list
         else:
-            fieldnames = md.keys()
+            if md is not None and len(md) != 0:
+                fieldnames = md.keys()
+
+        for index in range(0, len(fieldnames)):
+            fieldnames[index] = MutUtils.replaceChrs(fieldnames[index], "=; :", "~|_>")
 
         return fieldnames
 
@@ -381,7 +399,7 @@ class OutputDataManager:
         table = dict()
         revTable = dict()
         for fieldName in fieldnames:
-            if fieldName.startswith("_"):
+            if fieldName.startswith("_"):  # skip rendering any fieldnames that start with a "_"
                 continue
 
             if fieldName in md:

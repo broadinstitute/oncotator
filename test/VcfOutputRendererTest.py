@@ -57,7 +57,10 @@ from oncotator.utils.version import VERSION
 import string
 import logging
 import vcf
+import os
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
+from oncotator.output.OutputDataManager import OutputDataManager
+from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -565,6 +568,25 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename='out/vcf2vcf.example.normal_tumor_sample_name.del.vcf',
                                       strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testWhitespaceInAnnotationName(self):
+        creator = MafliteInputMutationCreator('testdata/vcf/example.with_space.tsv')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.with_space.out.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename='out/example.with_space.out.vcf', strict_whitespace=True)
+        chars = ["=", ";", " ", ":"]
+        for record in vcfReader:
+            for key in record.INFO.keys():
+                for char in chars:
+                    msg = "The %s INFO key in record (chr:%s, pos:%s) contains %s character." \
+                          % (key, record.CHROM, record.POS, char)
+                    self.assertTrue(key.find(char) == -1, msg)
 
 if __name__ == "__main__":
     unittest.main()
