@@ -147,7 +147,7 @@ class OutputDataManager:
 
                 if ctr == 0:
                     fieldnames2Render = MutUtils.getAllAttributeNames(mut)
-                    for index in range(0, len(fieldnames2Render)):
+                    for index in range(0, len(fieldnames2Render)):  # remove whitespace, etc. form the annotation name
                         fieldnames2Render[index] = MutUtils.replaceChrs(fieldnames2Render[index], "=; :", "~|_>")
 
                     if sampleNameAnnotationName is not None:
@@ -160,8 +160,8 @@ class OutputDataManager:
                                             lineterminator=self.lineterminator)
                     writer.writeheader()
 
-                m = {MutUtils.replaceChrs(k, "=; :", "~|_>"): v for (k, v) in mut.iteritems()}
-                writer.writerow(m)
+                # m = {MutUtils.replaceChrs(k, "=; :", "~|_>"): v for (k, v) in mut.iteritems()}
+                writer.writerow(mut)
 
                 ctr += 1
                 if (ctr % 1000) == 0:
@@ -377,9 +377,6 @@ class OutputDataManager:
             if md is not None and len(md) != 0:
                 fieldnames = md.keys()
 
-        for index in range(0, len(fieldnames)):
-            fieldnames[index] = MutUtils.replaceChrs(fieldnames[index], "=; :", "~|_>")
-
         return fieldnames
 
     def _createTables(self, md, mut):
@@ -507,6 +504,8 @@ class OutputDataManager:
             return "INFO"
         elif name in self.configTable.getFormatFieldNames():
             return "FORMAT"
+        elif name in self.configTable.getFilterFieldNames():
+            return "FILTER"
         elif name in self.configTable.getOtherFieldNames():
             return self.configTable.getOtherFieldID(name)
 
@@ -527,6 +526,11 @@ class OutputDataManager:
         :param name: unmapped field ID
         :return: mapped field ID
         """
+        # This is only encountered in cases where we are converting maf to vcf
+        name = MutUtils.replaceChrs(name, "=; :", "~|_>")
+        if name.endswith("__FORMAT__"):
+            name = name[0:len(name)-len("__FORMAT__")]
+
         if fieldType == "FORMAT":
             return self.configTable.getFormatFieldID(name)
         elif fieldType == "INFO":
