@@ -174,5 +174,33 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         genes = ds.get_overlapping_genes("22", 22115000, 22120000)
         self.assertTrue(len(set(["MAPK1"]) - genes) == 0)
 
+    def test_small_positive_strand_transcript_change(self):
+        """Test one location on a transcript and make sure that the transcript change rendered properly """
+        ds = TestUtils._create_test_gencode_ds("out/small_positive_strand_")
+
+        # Now for a negative strand
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22221730"
+        m.end = "22221730"
+        m.ref_allele = "T"
+        m.alt_allele = "G"
+        m2 = ds.annotate_mutation(m)
+        self.assertTrue(m2['transcript_change'] == "c.1A>C", "Incorrect transcript change: " + m2['transcript_change'])
+
+        # positive strand
+        m = MutationData()
+        m.chr = "3"
+        m.start = "178916614"
+        m.end = "178916614"
+        m.ref_allele = "G"
+        m.alt_allele = "T"
+        m2 = ds.annotate_mutation(m)
+        self.assertTrue(m2['transcript_change'] == "c.1G>T", "Incorrect transcript change: " + m2['transcript_change'])
+
+
+        pass
+
+
 if __name__ == '__main__':
     unittest.main()

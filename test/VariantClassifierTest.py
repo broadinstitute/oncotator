@@ -6,7 +6,8 @@ from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.VariantClassification import VariantClassification
-from test.MUC16ChangeTestdata import muc16_change_testdata
+from test.MUC16ChangeTestdata import change_testdata
+from test.PIK3CATestdata import pik3ca_testdata
 from test.TestUtils import TestUtils,data_provider_decorator
 from test.MUC16Testdata import muc16testdata
 import unittest
@@ -90,7 +91,7 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(vcer.is_frameshift_indel(vt, s, e, alt) == gt)
 
     # ("MUC16", "19", "9057555", "9057555", "Missense_Mutation", "SNP", "C", "A", "g.chr19:9057555C>A", "-", "c.29891G>T", "c.(29890-29892)gGg>gTg", "p.G9964V"),
-    @data_provider_decorator(muc16_change_testdata)
+    @data_provider_decorator(change_testdata)
     def test_muc16_change_genome(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         """ Test all of the MUC16 changes (protein, genome, codon, and transcript)."""
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
@@ -98,21 +99,21 @@ class VariantClassifierTest(unittest.TestCase):
         genome_change = TranscriptProviderUtils.determine_genome_change(chr, start, end, ref, alt, vc.get_vt())
         self.assertTrue(genome_change == genome_change_gt, "Genome change did not match gt (%s): %s" %(genome_change_gt, genome_change))
 
-    @data_provider_decorator(muc16_change_testdata)
+    @data_provider_decorator(change_testdata)
     def test_muc16_change_transcript(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
         vcer = VariantClassifier()
         transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, int(start), int(end), ref, alt)
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
-    @data_provider_decorator(muc16_change_testdata)
+    @data_provider_decorator(change_testdata)
     def test_muc16_change_codon(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
         vcer = VariantClassifier()
         codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
         self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): (%s)" % (codon_change_gt, codon_change))
 
-    @data_provider_decorator(muc16_change_testdata)
+    @data_provider_decorator(change_testdata)
     def test_muc16_change_protein(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
         vcer = VariantClassifier()
@@ -123,6 +124,29 @@ class VariantClassifierTest(unittest.TestCase):
     def test_muc16_snps(self, chr, start, end, gt_vc, vt, ref, alt):
         """ Test all of the MUC16 SNPs."""
         self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+
+    @data_provider_decorator(pik3ca_testdata)
+    def test_pik3ca_change_protein(self, gene, chr, start, end, gt_vc, ref, alt, vt, genome_change_gt, transcript_change_gt, protein_change_gt):
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        self.assertTrue(protein_change == protein_change_gt, "Protein change did not match gt (%s): (%s) for %s" % (protein_change_gt, protein_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
+
+    @data_provider_decorator(pik3ca_testdata)
+    def test_pik3ca_change_genome(self, gene, chr, start, end, gt_vc, ref, alt, vt, genome_change_gt, transcript_change_gt, protein_change_gt):
+        """ Test all of the MUC16 changes (protein, genome, codon, and transcript)."""
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        genome_change = TranscriptProviderUtils.determine_genome_change(chr, start, end, ref, alt, vc.get_vt())
+        self.assertTrue(genome_change == genome_change_gt, "Genome change did not match gt (%s): %s" %(genome_change_gt, genome_change))
+
+    @data_provider_decorator(pik3ca_testdata)
+    def test_pik3ca_change_transcript(self, gene, chr, start, end, gt_vc, ref, alt, vt, genome_change_gt, transcript_change_gt, protein_change_gt):
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, int(start), int(end), ref, alt)
+        self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
+
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) "-" strand) and test the entire 5'UTR"""
@@ -259,7 +283,7 @@ class VariantClassifierTest(unittest.TestCase):
 
 
     transcript_ids = lambda: (
-        # PIK3CA "+"
+        # PIK3CA "+" chr 3
         ('ENST00000263967.3', ""),
         # MAPK1 "-"
         ('ENST00000215832.6', "")
@@ -296,7 +320,7 @@ class VariantClassifierTest(unittest.TestCase):
                 vt = VariantClassification.VT_SNP
                 ref = "C"
                 alt = "A"
-                vc = vcer.variant_classify(tx, ref, alt, start-1, end, vt)
+                vc = vcer.variant_classify(tx, ref, alt, start, end, vt)
                 prot_position_start = vc.get_ref_protein_start()
                 self.assertTrue(vc.get_vc() != VariantClassification.INTRON and vc.get_secondary_vc() != VariantClassification.INTRON, "Intron should not have been seen here.  Failed on the %d position on the %d exon... %d .... %s" % (i, j, start, vc.get_vc()))
                 self.assertTrue(prot_position_start == protein_position_gt, "Protein position failed on the %d position on the %d exon... (gt/guess) %d/%d  --- %d .... %s" % (i, j, protein_position_gt, prot_position_start, start, vc.get_vc()))

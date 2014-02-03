@@ -13,6 +13,12 @@ def parseOptions():
 
     This script is experimental and has minimal error checking.
 
+    To create a gene list from GENCODE (and probably ENSEMBL) gtfs:
+        egrep "basic" gencode.v18.annotation.gtf | sed -r "s/.+gene_name\ \"([A-Za-z0-9]+)\".+/\1/g" | sort | uniq >gene_list.txt
+
+    To append genes from another GENCODE/ENSEMBL gtf:
+        egrep "basic" gencode.v18.long_noncoding_RNAs.gtf | sed -r "s/.+gene_name\ \"([A-Za-z0-9]+)\".+/\1/g" | sort | uniq >> gene_list.txt
+
     To get the output of this file into a BED format, for example, with a given gene list and gencode datasource :
         get_exons gene_list.txt /my_db_dir/gencode_out2/hg19/gencode_out2.config gencode_basic_exons.txt
         awk '{print $2 "\t" $3 "\t" $4 "\t" $1}' gencode_basic_exons.txt | sort -k1,1 -k2,2n  > gencode_basic_exons.bed.txt

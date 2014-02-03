@@ -254,13 +254,17 @@ class TranscriptProviderUtils(object):
         """
         d = 0
         for exon in exons:
-            if s >= exon[0] and s < exon[1]:
-                if strand == "-":
-                    d += (exon[1] - s)
-                else:
+
+            if strand =="+":
+                if s > exon[0] and s <= exon[1]:
                     d += (s - exon[0])
-                break
-            elif (s > exon[1] and strand == "+") or (s < exon[0] and strand == "-"):
+                    break
+            else:
+                if s >= exon[0] and s < exon[1]:
+                    d += (exon[1] - s)
+                    break
+
+            if (s > exon[1] and strand == "+") or (s < exon[0] and strand == "-"):
                 d += (exon[1] - exon[0])
             else:
                 break

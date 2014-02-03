@@ -9,7 +9,7 @@ class ShoveCache(Cache):
     Maintains a cache of keys to speed performance."""
 
     def __init__(self, url_db, url_cache):
-        self.db = Shove(url_db, url_cache, optimize=False)
+        self.db = Shove(url_db, url_cache, optimize=False, max_entries=2000)
 
     def retrieve_from_cache(self, key):
         try:
