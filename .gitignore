@@ -31,3 +31,4 @@
 /.idea
 /oncotator/.DS_Store
 /scripts/create_PIK3CA_testdata.py
+/profile_stats.*
