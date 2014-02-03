@@ -1,0 +1,13 @@
+##fileformat=VCFv4.1
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership">
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=AC,Number=.,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=.,Type=Float,Description="Allele Frequency in primary data, for each ALT allele, in the same order as listed">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth across samples">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth at this position in the sample">
+##INFO=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
+##FORMAT=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	TCGA-02-0001-01C-01D
+22	123456789	.	G	T	0	PASS	AC=1;AF=0.5;AN=2;DP=135;SS=2	GT:DP:SS	0/1:89:0

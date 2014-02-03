@@ -239,8 +239,8 @@ class DatasourceFactory(object):
         dsDirs = []
         dirs = os.listdir(datasourceDir)
         for d in dirs:
-            tmpD = datasourceDir + '/' + d 
-            fullD = tmpD + "/" + genomeBuild + "/"
+            tmpD = os.path.join(datasourceDir, d)
+            fullD = os.path.join(*[tmpD, genomeBuild, ""])
             if not os.path.exists(fullD):
                 logging.getLogger(__name__).warn("Potential datasource directory is missing a genome build subdirectory and will be ignored: " + tmpD)
             elif os.path.isdir(fullD):

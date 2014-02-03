@@ -351,5 +351,39 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue(ctr == 7,
                         str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
 
+    def testDuplicateAnnotation(self):
+        inputFilename = 'testdata/vcf/example.duplicate_annotation.vcf'
+        outputFilename = 'out/example.duplicate_annotation.out.tsv'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        tsvReader = GenericTsvReader(outputFilename)
+        fieldnames = tsvReader.getFieldNames()
+        self.assertTrue("SS" in fieldnames, "SS field is missing in the header.")
+        self.assertTrue("SS__FORMAT__" in fieldnames, "SS__FORMAT__ is missing in the header.")
+
+        row = tsvReader.next()
+        self.assertTrue("SS" in row, "SS field is missing in the row.")
+        self.assertTrue("SS__FORMAT__" in row, "SS__FORMAT__ is missing in the row.")
+
+        self.assertEqual("2", row["SS"], "Incorrect value of SS.")
+        self.assertEqual("0", row["SS__FORMAT__"], "Incorrect value of SS__FORMAT__")
+
+    def testDuplicateAnnotationMetaData(self):
+        inputFilename = 'testdata/vcf/example.duplicate_annotation.vcf'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        md = creator.getMetadata()
+
+        self.assertTrue("SS" in md, "SS field is missing in metadata.")
+        self.assertTrue("SS__FORMAT__" in md, "SS__FORMAT__ is missing in metadata.")
+
+
 if __name__ == "__main__":
     unittest.main()

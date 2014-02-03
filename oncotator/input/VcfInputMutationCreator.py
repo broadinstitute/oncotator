@@ -139,7 +139,8 @@ class VcfInputMutationCreator(InputMutationCreator):
                     val = string.join(["" if v is None else str(v) for v in val], ",")
                 else:
                     val = str(val)
-
+                if name in mutation:
+                    name = string.join(words=[name, "__FORMAT__"], sep="")
                 mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.formats[ID].desc, tags=tags,
                                           number=num)
 
@@ -395,6 +396,8 @@ class VcfInputMutationCreator(InputMutationCreator):
             isSplitTag = self._determineIsSplit(ID, num, "FORMAT")
             if isSplitTag:
                 tags += [TagConstants.SPLIT]
+            if name in metadata:
+                name = string.join(words=[name, "__FORMAT__"], sep="")
             metadata[name] = Annotation("", "INPUT", self.vcf_reader.formats[ID].type, self.vcf_reader.formats[ID].desc,
                                         tags=tags, number=num)
         return metadata
@@ -437,8 +440,8 @@ class VcfInputMutationCreator(InputMutationCreator):
                                                                   configFilename=self.configFilename)
         metadata = Metadata()
         metadata = self._addFilterFields2Metadata(metadata)
-        metadata = self._addFormatFields2Metadata(metadata)
         metaData = self._addInfoFields2Metadata(metadata)
+        metadata = self._addFormatFields2Metadata(metadata)
 
         metaData["id"] = Annotation("", "INPUT", "String", "", [TagConstants.ID])
         metaData["qual"] = Annotation("", "INPUT", "String", "", [TagConstants.QUAL])
