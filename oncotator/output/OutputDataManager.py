@@ -147,9 +147,6 @@ class OutputDataManager:
 
                 if ctr == 0:
                     fieldnames2Render = MutUtils.getAllAttributeNames(mut)
-                    for index in range(0, len(fieldnames2Render)):  # remove whitespace, etc. form the annotation name
-                        fieldnames2Render[index] = MutUtils.replaceChrs(fieldnames2Render[index], "=; :", "~|_>")
-
                     if sampleNameAnnotationName is not None:
                         fieldnames2Render += [sampleNameAnnotationName]
                     for fieldname in fieldnames2Render:  # fieldnames that start "_" aren't rendered
@@ -160,7 +157,6 @@ class OutputDataManager:
                                             lineterminator=self.lineterminator)
                     writer.writeheader()
 
-                # m = {MutUtils.replaceChrs(k, "=; :", "~|_>"): v for (k, v) in mut.iteritems()}
                 writer.writerow(mut)
 
                 ctr += 1
@@ -379,6 +375,12 @@ class OutputDataManager:
 
         return fieldnames
 
+    def _correctFieldName(self, fieldName):
+        fieldName = MutUtils.replaceChrs(fieldName, "=; :", "~|_>")  # Replace whitespace and other characters
+        if fieldName.endswith("__FORMAT__"):  # Drop "__FORMAT__" from the end
+            fieldName = fieldName[0:len(fieldName)-len("__FORMAT__")]
+        return fieldName
+
     def _createTables(self, md, mut):
         """
         Constructs two tables, one that maps each field name to an VcfOutputAnnotation object and the other that lists
@@ -410,10 +412,12 @@ class OutputDataManager:
             desc = annotation.getDescription()
             src = annotation.getDatasource()
 
-            fieldType = self._resolveFieldType(fieldName, tags)
-            ID = self._resolveFieldID(fieldType, fieldName)
+            name = self._correctFieldName(fieldName)
+
+            fieldType = self._resolveFieldType(name, tags)
+            ID = self._resolveFieldID(fieldType, name)
             dataType = self._resolveFieldDataType(fieldType, ID, dataType)
-            desc = self._resolveFieldDescription(fieldType, fieldName, desc)
+            desc = self._resolveFieldDescription(fieldType, name, desc)
 
             isSplit = False
             if fieldType in ("INFO", "FORMAT",):  # determine whether to split or not for only INFO and FORMAT fields
@@ -526,11 +530,6 @@ class OutputDataManager:
         :param name: unmapped field ID
         :return: mapped field ID
         """
-        # This is only encountered in cases where we are converting maf to vcf
-        name = MutUtils.replaceChrs(name, "=; :", "~|_>")
-        if name.endswith("__FORMAT__"):
-            name = name[0:len(name)-len("__FORMAT__")]
-
         if fieldType == "FORMAT":
             return self.configTable.getFormatFieldID(name)
         elif fieldType == "INFO":
