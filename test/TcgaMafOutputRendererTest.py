@@ -112,7 +112,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         
         tsvReader = GenericTsvReader(filename)
         
-        self.assertTrue(tsvReader.getComments().find('#version') <> -1, "First line did not specify a version number")
+        self.assertTrue(tsvReader.getComments().find('#version') != -1, "First line did not specify a version number")
 
         ctr = 1
         for lineDict in tsvReader:
@@ -181,7 +181,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
-
 
     def testInternalFields(self):
         """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
