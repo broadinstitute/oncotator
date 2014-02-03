@@ -588,5 +588,35 @@ class VcfOutputRendererTest(unittest.TestCase):
                           % (key, record.CHROM, record.POS, char)
                     self.assertTrue(key.find(char) == -1, msg)
 
+    def testDuplicateAnnotationException(self):
+        inputFilename = 'testdata/vcf/example.duplicate_annotation.vcf'
+        outputFilename = 'out/example.duplicate_annotation.out.vcf'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename='out/example.duplicate_annotation.out.vcf', strict_whitespace=True)
+        self.assertTrue("SS" in vcfReader.infos, "SS is missing in INFO.")
+        self.assertTrue("SS" in vcfReader.formats, "SS is missing in FORMAT.")
+
+    def testMaf2VcfMissingFilterAnnotations(self):
+        creator = MafliteInputMutationCreator('testdata/vcf/example.expected.out.tsv')
+        creator.createMutations()
+        renderer = VcfOutputRenderer('out/example.expected.out.vcf')
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename='out/example.expected.out.vcf', strict_whitespace=True)
+        self.assertTrue("s50" in vcfReader.filters, "s50 is missing in FILTER.")
+        self.assertTrue("q10" in vcfReader.filters, "q10 is missing in FILTER.")
+
 if __name__ == "__main__":
     unittest.main()
