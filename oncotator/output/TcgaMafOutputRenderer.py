@@ -163,7 +163,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
             if row['Mutation_Status'] != "None":
                 row['Mutation_Status'] = "None"
 
-            # If the alleles are blank, populate properly for invalid mutation
+            # If the alleles are blank, populate properly for invalid mutation.  Basically, everything becomes reference
             row['Match_Norm_Validation_Allele1'] = self._determine_new_allele_if_blank(row,
                                                                                        'Match_Norm_Validation_Allele1',
                                                                                        row['Reference_Allele'])
