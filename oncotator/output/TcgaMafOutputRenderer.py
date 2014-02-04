@@ -158,19 +158,23 @@ class TcgaMafOutputRenderer(OutputRenderer):
                                                                                            row['Reference_Allele'])
 
         if row['Validation_Status'] == "Invalid":
-            if row['Mutation_Status'] == "Somatic":
-                row['Match_Norm_Validation_Allele1'] = self._determine_new_allele_if_blank(row,
-                                                                                           'Match_Norm_Validation_Allele1',
-                                                                                           row['Reference_Allele'])
-                row['Match_Norm_Validation_Allele2'] = self._determine_new_allele_if_blank(row,
-                                                                                           'Match_Norm_Validation_Allele2',
-                                                                                           row['Reference_Allele'])
-                row['Tumor_Validation_Allele1'] = self._determine_new_allele_if_blank(row, 'Tumor_Validation_Allele1',
-                                                                                      row[
-                                                                                          'Match_Norm_Validation_Allele1'])
-                row['Tumor_Validation_Allele2'] = self._determine_new_allele_if_blank(row, 'Tumor_Validation_Allele2',
-                                                                                      row[
-                                                                                          'Match_Norm_Validation_Allele2'])
+
+            # Only valid mutation status value is None for an invalid mutation
+            if row['Mutation_Status'] != "None":
+                row['Mutation_Status'] = "None"
+
+            # If the alleles are blank, populate properly for invalid mutation.  Basically, everything becomes reference
+            row['Match_Norm_Validation_Allele1'] = self._determine_new_allele_if_blank(row,
+                                                                                       'Match_Norm_Validation_Allele1',
+                                                                                       row['Reference_Allele'])
+            row['Match_Norm_Validation_Allele2'] = self._determine_new_allele_if_blank(row,
+                                                                                       'Match_Norm_Validation_Allele2',
+                                                                                       row['Reference_Allele'])
+            row['Tumor_Validation_Allele1'] = self._determine_new_allele_if_blank(row, 'Tumor_Validation_Allele1',
+                                                                                  row['Match_Norm_Validation_Allele1'])
+            row['Tumor_Validation_Allele2'] = self._determine_new_allele_if_blank(row, 'Tumor_Validation_Allele2',
+                                                                                  row['Match_Norm_Validation_Allele2'])
+
 
     def _writeMutationRow(self, dw, fieldMap, fieldMapKeys, m):
         """ If this row should be rendered, then write it to the given DictWriter
