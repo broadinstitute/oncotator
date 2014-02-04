@@ -5,7 +5,11 @@ __author__ = 'lichtens'
 
 def parseOptions():
     desc = "Collapse transcript xref file, so that each transcript is only listed once and display on command line."
-    epilog = ''' This script will effectively load the entire input file into RAM, so be warned.'''
+    epilog = ''' This script will effectively load the entire input file into RAM, so be warned.
+
+    python createGencodeXrefTsv.py -k 0 /home/lichtens/broad_oncotator_configs/gencode/gencode.v18.metadata.RefSeq transcript_id,mRNA_id,prot_acc >~/broad_oncotator_configs/gencode_xrefseq.tsv
+
+    '''
     parser = ArgumentParser(description=desc, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("xref_file", type=str, help="tsv file generated assumes no header.")
     parser.add_argument("column_names", type=str, help="comma separated list of column names, in order, for the tsv.  No spaces")
