@@ -320,6 +320,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Tumor_Validation_Allele2'], "Tumor alleles did not match normal alleles for an invalid validation result.")
             self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Reference_Allele'], "Norm validation alleles did not match reference (norm, reference): (%s, %s)" %(line_dict['Match_Norm_Validation_Allele1'] ,line_dict['Reference_Allele']) )
             self.assertTrue("G" == line_dict['Reference_Allele'], "Reference allele should have been G, but was " + line_dict['Reference_Allele'])
+            self.assertTrue("None" == line_dict['Mutation_Status'], "Mutation Status must be None when Validation Status is Invalid: " + line_dict['Mutation_Status'])
 
     def test_validation_correction_valid(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for a valid mutation.
