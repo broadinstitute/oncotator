@@ -149,74 +149,31 @@ def parseOptions():
     """
 
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
-    parser.add_argument("--ds_type",
-                        action="store",
-                        dest="ds_type",
-                        required=True,
-                        type=str,
-                        help="datasource type.  Type of datasource to create.",
-                        choices=supportedDSTypes)
-    parser.add_argument("--ds_file",
-                        action="store",
-                        dest="ds_file",
-                        required=True,
-                        type=str,
+    parser.add_argument("--ds_type", action="store", dest="ds_type", required=True, type=str, choices=supportedDSTypes,
+                        help="datasource type.  Type of datasource to create.")
+    parser.add_argument("--ds_file", action="store", dest="ds_file", required=True, type=str,
                         help="datasource filename.  Headers must be on the first line.  This is the source file that contains annotation data.")
-    parser.add_argument("--name",
-                        action="store",
-                        dest="name",
-                        required=True,
-                        type=str,
+    parser.add_argument("--name", action="store", dest="name", required=True, type=str,
                         help="datasource name. Plain name for the datasource.  E.g. 'MutSig_Published_Results'")
-    parser.add_argument("--version",
-                        action="store",
-                        dest="version",
-                        required=True,
-                        type=str,
+    parser.add_argument("--version", action="store", dest="version", required=True, type=str,
                         help="version of the datasource.  This should be the version of the data itself, such as '3.0' for Gaf 3.0")
-    parser.add_argument("--dbDir",
-                        action="store",
-                        dest="dbDir",
-                        required=True,
-                        type=str,
+    parser.add_argument("--dbDir", action="store", dest="dbDir", required=True, type=str,
                         help="Main datasource directory that contains other datasources.  I.e. the destination directory for the newly created datasource.")
-    parser.add_argument("--ds_foldername",
-                        action="store",
-                        dest="ds_foldername",
-                        required=True,
-                        type=str,
+    parser.add_argument("--ds_foldername", action="store", dest="ds_foldername", required=True, type=str,
                         help="Name of the folder that should appear in dbDir")
-    parser.add_argument("--genome_build",
-                        action="store",
-                        dest="genome_build",
-                        required=True,
-                        type=str,
-                        help="Genome build.  For example, hg19.",
-                        choices=['hg19'])
-    parser.add_argument("--index_columns",
-                        action="store",
-                        dest="index_columns",
-                        type=str,
+    parser.add_argument("--genome_build", action="store", dest="genome_build", required=True, type=str,
+                        choices=['hg19'], help="Genome build.  For example, hg19.")
+    parser.add_argument("--index_columns", action="store", dest="index_columns", type=str,
                         help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.  For gp_tsv, this parameter MUST be three entries corresponding to chr, start, and end.  gene_tsv and transcipt_tsv have only one entry.")
 
     # parameters specified for indexed tsv only
-    parser.add_argument("--columns",
-                        action="store",
-                        dest="columns",
-                        type=str,
+    parser.add_argument("--columns", action="store", dest="columns", type=str,
                         help="Comma separated list of columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv only.")
-    parser.add_argument("--annotation_columns",
-                        action="store",
-                        dest="annotation_columns",
-                        type=str,
+    parser.add_argument("--annotation_columns", action="store", dest="annotation_columns", type=str,
                         help="Comma separated list of annotation columns. MUST be the name of the columns.  This (optional) parameter is specified for indexed_tsv only.")
-    parser.add_argument("--match_mode",
-                        action="store",
-                        dest="match_mode",
-                        type=str,
-                        help="Comma separated list of annotation columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv and indexed_vcf only [default: exact].",
-                        choices=["overlap", "exact", "avg"],
-                        default="exact")
+    parser.add_argument("--match_mode", action="store", dest="match_mode", type=str,
+                        choices=["overlap", "exact", "avg"], default="exact",
+                        help="Comma separated list of annotation columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv and indexed_vcf only [default: exact].")
 
     # Process arguments
     args = parser.parse_args()
