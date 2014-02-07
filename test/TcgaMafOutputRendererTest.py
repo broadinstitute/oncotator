@@ -112,7 +112,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         
         tsvReader = GenericTsvReader(filename)
         
-        self.assertTrue(tsvReader.getComments().find('#version') <> -1, "First line did not specify a version number")
+        self.assertTrue(tsvReader.getComments().find('#version') != -1, "First line did not specify a version number")
 
         ctr = 1
         for lineDict in tsvReader:
@@ -181,7 +181,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
-
 
     def testInternalFields(self):
         """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
@@ -291,6 +290,70 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             ctr += 1
 
         self.assertTrue(ctr == 24, str(ctr) + " mutations found, but should have been 24." )
+
+    def test_validation_correction(self):
+        """ Test that the validation allele fields are determined automatically when not specified by the user for invalid mutation.
+        """
+        m = MutationData()
+        m.chr = "3"
+        m.start = "178948145"
+        m.end = "178948145"
+        m.alt_allele = "A"
+        m.ref_allele = "G"
+        m['validation_status'] = "Invalid"
+        m['Match_Norm_Validation_Allele1'] = ""
+        m['Match_Norm_Validation_Allele2'] = ""
+        m['Tumor_Validation_Allele1'] = ""
+        m['Tumor_Validation_Allele2'] = ""
+        m['Mutation_Status'] = "Somatic"
+
+        output_filename = "out/test_validation_correction1.maf.tsv"
+
+        outputRenderer = TcgaMafOutputRenderer(output_filename, configFile='configs/tcgaMAF2.4_output.config')
+        outputRenderer.renderMutations([m].__iter__())
+
+        tsv_reader = GenericTsvReader(output_filename)
+
+        for line_dict in tsv_reader:
+            self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Match_Norm_Validation_Allele2'], "Matched norm alleles did not match.")
+            self.assertTrue(line_dict['Tumor_Validation_Allele1'] == line_dict['Tumor_Validation_Allele2'], "Tumor alleles did not match for an invalid validation result.")
+            self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Tumor_Validation_Allele2'], "Tumor alleles did not match normal alleles for an invalid validation result.")
+            self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Reference_Allele'], "Norm validation alleles did not match reference (norm, reference): (%s, %s)" %(line_dict['Match_Norm_Validation_Allele1'] ,line_dict['Reference_Allele']) )
+            self.assertTrue("G" == line_dict['Reference_Allele'], "Reference allele should have been G, but was " + line_dict['Reference_Allele'])
+            self.assertTrue("None" == line_dict['Mutation_Status'], "Mutation Status must be None when Validation Status is Invalid: " + line_dict['Mutation_Status'])
+
+    def test_validation_correction_valid(self):
+        """ Test that the validation allele fields are determined automatically when not specified by the user for a valid mutation.
+        """
+        m = MutationData()
+        m.chr = "3"
+        m.start = "178948145"
+        m.end = "178948145"
+        m.alt_allele = "A"
+        m.ref_allele = "G"
+        m['validation_status'] = "Valid"
+        m['Match_Norm_Validation_Allele1'] = ""
+        m['Match_Norm_Validation_Allele2'] = ""
+        m['Tumor_Validation_Allele1'] = ""
+        m['Tumor_Validation_Allele2'] = ""
+        m['Mutation_Status'] = "Somatic"
+
+        output_filename = "out/test_validation_correction2.maf.tsv"
+
+        outputRenderer = TcgaMafOutputRenderer(output_filename, configFile='configs/tcgaMAF2.4_output.config')
+        outputRenderer.renderMutations([m].__iter__())
+
+        tsv_reader = GenericTsvReader(output_filename)
+
+        for line_dict in tsv_reader:
+            self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Match_Norm_Validation_Allele2'], "Matched norm alleles did not match.")
+            self.assertTrue(line_dict['Tumor_Validation_Allele1'] == line_dict['Reference_Allele'], "Tumor validation allele 1 did not match reference for a valid validation result.")
+            self.assertTrue(line_dict['Tumor_Validation_Allele2'] == line_dict['Tumor_Seq_Allele2'], "Tumor validation allele 2 did not match Tumor_Seq_Allele2 for a valid validation result.")
+            self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Tumor_Validation_Allele1'], "Tumor allele 1 did not match normal alleles for a valid validation result.")
+            self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Reference_Allele'], "Norm validation alleles did not match reference (norm, reference): (%s, %s)" %(line_dict['Match_Norm_Validation_Allele1'] ,line_dict['Reference_Allele']) )
+            self.assertTrue("G" == line_dict['Reference_Allele'], "Reference allele should have been G, but was " + line_dict['Reference_Allele'])
+            self.assertTrue("A" == line_dict['Tumor_Seq_Allele2'], "Alt allele should have been A, but was " + line_dict['Tumor_Seq_Allele2'])
+
 
 
 if __name__ == "__main__":
