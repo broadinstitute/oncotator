@@ -384,6 +384,41 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue("SS" in md, "SS field is missing in metadata.")
         self.assertTrue("SS__FORMAT__" in md, "SS__FORMAT__ is missing in metadata.")
 
+    def testMissingFilter(self):
+        inputFilename = 'testdata/vcf/example.missing_filters.vcf'
+        outputFilename = 'out/example.missing_filters.out.tsv'
+        expectedOutputFilename = 'testdata/vcf/example.expected.missing_filters.out.tsv'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        tsvReader = GenericTsvReader(outputFilename)
+
+        current = pandas.read_csv(outputFilename, sep='\t', header=len(tsvReader.getCommentsAsList()))
+        expected = pandas.read_csv(expectedOutputFilename, sep='\t')
+
+        currentColNames = set()
+        for i in range(len(current.columns)):
+            currentColNames.add(current.columns[i])
+
+        expectedColNames = set()
+        for i in range(len(expected.columns)):
+            expectedColNames.add(expected.columns[i])
+
+        self.assertTrue(len(currentColNames.symmetric_difference(expectedColNames)) is 0,
+                        "Should have the same columns")
+        self.assertTrue(len(current.index) == len(expected.index), "Should have the same number of rows")
+
+        for colName in currentColNames:
+            self.assertTrue(sum((current[colName] == expected[colName]) | (pandas.isnull(current[colName]) &
+                                                                           pandas.isnull(expected[colName]))) ==
+                            len(current.index), "Should have the same values in column " + colName)
+
 
 if __name__ == "__main__":
     unittest.main()

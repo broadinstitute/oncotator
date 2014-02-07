@@ -79,15 +79,18 @@ class VcfOutputRendererTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testRemoveAnnotationsThatBeginWithUnderscore(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        inputFilename = "testdata/vcf/example.vcf"
+        outputFilename = "out/example.out.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.out.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        vcfReader = vcf.Reader(filename="out/example.out.vcf", strict_whitespace=True)
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         for key in vcfReader.infos.keys():
             self.assertTrue(not key.startswith("_"), "INFO tag %s begins with _." % key)
 
@@ -98,25 +101,29 @@ class VcfOutputRendererTest(unittest.TestCase):
             self.assertTrue(not key.startswith("_"), "FILTER tag %s begins with _." % key)
 
     def testHeaderWithExampleVcf(self):
+        headerFilename = "testdata/vcf/example.header.txt"
+        inputFilename = "testdata/vcf/example.vcf"
+        outputFilename = "out/example.header.vcf"
+
         ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
-        with open('testdata/vcf/example.header.txt', 'r') as fp:
+        with open(headerFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##oncotator_version"):
                     expected.add(ver_str)
                 else:
                     expected.add(line.rstrip('\n'))
         
-        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.header.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
         
         current = set()
-        with open('out/example.header.vcf', 'r') as fp:
+        with open(outputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith('##'):
                     if line.startswith("##oncotator_version"):
@@ -128,25 +135,29 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamples(self):
+        headerFilename = "testdata/vcf/example.sampleName.removed.header.txt"
+        inputFilename = "testdata/vcf/example.sampleName.removed.vcf"
+        outputFilename = "out/example.sampleName.removed.header.vcf"
+
         ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
-        with open('testdata/vcf/example.sampleName.removed.header.txt', 'r') as fp:
+        with open(headerFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##oncotator_version"):
                     expected.add(ver_str)
                 elif line.startswith("##"):
                     expected.add(line.rstrip('\n'))
 
-        creator = VcfInputMutationCreator('testdata/vcf/example.sampleName.removed.vcf')
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.sampleName.removed.header.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
         current = set()
-        with open('out/example.sampleName.removed.header.vcf', 'r') as fp:
+        with open(outputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##oncotator_version"):
                     current.add(ver_str)
@@ -157,36 +168,43 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamplesOrVariants(self):
+        headerFilename = "testdata/vcf/example.sampleName.variants.removed.header.txt"
+        inputFilename = "testdata/vcf/example.sampleName.variants.removed.vcf"
+        outputFilename = "out/example.sampleName.variants.removed.header.vcf"
+
         expected = set()
-        with open('testdata/vcf/example.sampleName.variants.removed.header.txt', 'r') as fp:
+        with open(headerFilename, 'r') as fp:
             for line in iter(fp):
                 expected.add(line.rstrip('\n'))
 
-        creator = VcfInputMutationCreator('testdata/vcf/example.sampleName.variants.removed.vcf')
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.sampleName.variants.removed.header.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
         current = set()
-        with open('out/example.sampleName.variants.removed.header.vcf', 'r') as fp:
+        with open(outputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith('#'):
                     current.add(line.rstrip('\n'))
 
     def testContentofExampleVcfwith1Variant(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.1row.vcf')
+        inputFilename = "testdata/vcf/example.1row.vcf"
+        outputFilename = "out/example.variants.1row.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.variants.1row.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.1row.vcf', strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/example.variants.1row.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
 
         self.assertEquals(expectedVcfReader.samples, currentVcfReader.samples, "Sample names do not match.")
         self.assertTrue(len(set(expectedVcfReader.formats.keys()) - set(currentVcfReader.formats.keys())) == 0)
@@ -214,16 +232,19 @@ class VcfOutputRendererTest(unittest.TestCase):
                         self.assertEqual(filter(None, val), [], "Format field %s values do not match." % field)
 
     def testInfoContentofExampleVcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        inputFilename = "testdata/vcf/example.vcf"
+        outputFilename = "out/example.variants.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.variants.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.vcf', strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/example.variants.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
 
         self.assertEquals(expectedVcfReader.samples, currentVcfReader.samples, "Sample names do not match.")
         self.assertEquals(dict(expectedVcfReader.formats), dict(currentVcfReader.formats),
@@ -235,48 +256,60 @@ class VcfOutputRendererTest(unittest.TestCase):
             self.assertEqual(dict(expectedRecord.INFO), dict(currentRecord.INFO))
 
     def testContentofExampleVcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        inputFilename = "testdata/vcf/example.vcf"
+        outputFilename = "out/example.variants.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.variants.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.vcf', strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/example.variants.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testContentofExampleWithESP_MAFVcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.withESP_MAF.vcf')
+        inputFilename = "testdata/vcf/example.withESP_MAF.vcf"
+        outputFilename = "out/example.variants.withESP_MAF.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.variants.withESP_MAF.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.withESP_MAF.vcf', strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/example.variants.withESP_MAF.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testContentofExampleWithVcfThatHasNoFormat(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.no.format.vcf')
+        inputFilename = "testdata/vcf/example.no.format.vcf"
+        outputFilename = "out/example.no.format.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.no.format.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/example.no.format.vcf', strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/example.no.format.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.withESP_MAF.vcf')
+        inputFilename = "testdata/vcf/example.withESP_MAF.vcf"
+        outputFilename = "out/example.variants.gaf_annotated.withESP_MAF.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.variants.gaf_annotated.withESP_MAF.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
@@ -376,104 +409,120 @@ class VcfOutputRendererTest(unittest.TestCase):
                 self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
 
     def testMissingGenotypeTag(self):
-        creator = MafliteInputMutationCreator('testdata/maflite/example.pair_name.maf')
+        inputFilename = "testdata/maflite/example.pair_name.maf"
+        outputFilename = "out/maf2vcf.example.pair_name.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.pair_name.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        vcfReader = vcf.Reader(filename='out/maf2vcf.example.pair_name.vcf', strict_whitespace=True)
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self.assertTrue("GT" in vcfReader.formats, "Vcf is missing FORMAT the following field: GT")
 
     def testMaf2Vcf_PairNameAnnnotationExist(self):
         """
         Test maf to vcf conversion when "PairName" annotation exists in the input Maf file.
         """
-        creator = MafliteInputMutationCreator('testdata/maflite/example.pair_name.maf')
+        inputFilename = "testdata/maflite/example.pair_name.maf"
+        outputFilename = "out/maf2vcf.example.pair_name.vcf"
+        expectedOutputFilename = "testdata/vcf/maf2vcf.example.pair_name.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.pair_name.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.pair_name.vcf', strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.pair_name.vcf', strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testMaf2Vcf_OnlyNormalAndTumorSampleBarcodeExist(self):
         """
         Test maf to vcf conversion when "PairName" annotation is missing but only normal and tumor sample names exist.
         """
-        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.maf')
+        inputFilename = "testdata/maflite/example.normal_tumor_sample_name.maf"
+        outputFilename = "out/maf2vcf.example.normal_tumor_sample_name.vcf"
+        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_tumor_sample_name.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_tumor_sample_name.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_tumor_sample_name.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_tumor_sample_name.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testMaf2Vcf_OnlyNormalSampleBarcodeExist(self):
         """
         Test maf to vcf conversion when "PairName" annotation is missing but only normal sample names exist.
         """
-        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_sample_name.maf')
+        inputFilename = "testdata/maflite/example.normal_sample_name.maf"
+        outputFilename = "out/maf2vcf.example.normal_sample_name.vcf"
+        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_sample_name.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_sample_name.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_sample_name.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_sample_name.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testMaf2Vcf_OnlyTumorSampleBarcodeExist(self):
         """
         Test maf to vcf conversion when "PairName" annotation is missing but only tumor sample names exist.
         """
-        creator = MafliteInputMutationCreator('testdata/maflite/example.tumor_sample_name.maf')
+        inputFilename = "testdata/maflite/example.tumor_sample_name.maf"
+        outputFilename = "out/maf2vcf.example.tumor_sample_name.vcf"
+        expectedOutputFilename = "testdata/vcf/maf2vcf.example.tumor_sample_name.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.tumor_sample_name.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.tumor_sample_name.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.tumor_sample_name.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testContigsInVcf2Vcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.contigs.vcf')
+        inputFilename = "testdata/vcf/example.contigs.vcf"
+        outputFilename = "out/example.contigs.variants.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.contigs.variants.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
         expected = set()
-        with open('testdata/vcf/example.contigs.vcf', 'r') as fp:
+        with open(inputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##contig=<ID="):
                     expected.add(line.rstrip('\n'))
 
         current = set()
-        with open('out/example.contigs.variants.vcf', 'r') as fp:
+        with open(outputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##contig=<ID="):
                     current.add(line.rstrip('\n'))
@@ -482,22 +531,25 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of contig information do not match.")
 
     def testAltsInVcf2Vcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.contigs.alts.vcf')
+        inputFilename = "testdata/vcf/example.contigs.alts.vcf"
+        outputFilename = "out/example.contigs.alts.variants.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.contigs.alts.variants.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
         expected = set()
-        with open('testdata/vcf/example.contigs.alts.vcf', 'r') as fp:
+        with open(inputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##ALT=<"):
                     expected.add(line.rstrip('\n'))
 
         current = set()
-        with open('out/example.contigs.alts.variants.vcf', 'r') as fp:
+        with open(outputFilename, 'r') as fp:
             for line in iter(fp):
                 if line.startswith("##ALT=<"):
                     current.add(line.rstrip('\n'))
@@ -506,80 +558,91 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of alts information do not match.")
 
     def testINSMaf2Vcf(self):
-        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.ins.maf')
+        inputFilename = "testdata/maflite/example.normal_tumor_sample_name.ins.maf"
+        outputFilename = "out/maf2vcf.example.normal_tumor_sample_name.ins.vcf"
+        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_tumor_sample_name.ins.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_tumor_sample_name.ins.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_tumor_sample_name.ins.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_tumor_sample_name.ins.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testDELMaf2Vcf(self):
-        creator = MafliteInputMutationCreator('testdata/maflite/example.normal_tumor_sample_name.del.maf')
+        inputFilename = "testdata/maflite/example.normal_tumor_sample_name.del.maf"
+        outputFilename = "out/maf2vcf.example.normal_tumor_sample_name.del.vcf"
+        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_tumor_sample_name.del.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/maf2vcf.example.normal_tumor_sample_name.del.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/maf2vcf.example.normal_tumor_sample_name.del.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/maf2vcf.example.normal_tumor_sample_name.del.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testINSVcf2Vcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.normal_tumor_sample_name.ins.vcf')
+        inputFilename = "testdata/vcf/example.normal_tumor_sample_name.ins.vcf"
+        outputFilename = "out/vcf2vcf.example.normal_tumor_sample_name.ins.vcf"
+        expectedOutputFilename = "testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.ins.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/vcf2vcf.example.normal_tumor_sample_name.ins.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.ins.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/vcf2vcf.example.normal_tumor_sample_name.ins.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testDELVcf2Vcf(self):
-        creator = VcfInputMutationCreator('testdata/vcf/example.normal_tumor_sample_name.del.vcf')
+        inputFilename = "testdata/vcf/example.normal_tumor_sample_name.del.vcf"
+        outputFilename = "out/vcf2vcf.example.normal_tumor_sample_name.del.vcf"
+        expectedOutputFilename = "testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.del.vcf"
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/vcf2vcf.example.normal_tumor_sample_name.del.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
         annotator.annotate()
 
-        expectedVcfReader = vcf.Reader(filename='testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.del.vcf',
-                                       strict_whitespace=True)
-        currentVcfReader = vcf.Reader(filename='out/vcf2vcf.example.normal_tumor_sample_name.del.vcf',
-                                      strict_whitespace=True)
+        expectedVcfReader = vcf.Reader(filename=expectedOutputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testWhitespaceInAnnotationName(self):
-        creator = MafliteInputMutationCreator('testdata/vcf/example.with_space.tsv')
+        inputFilename = "testdata/vcf/example.with_space.tsv"
+        outputFilename = "out/example.with_space.out.vcf"
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.with_space.out.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
         annotator.annotate()
 
-        vcfReader = vcf.Reader(filename='out/example.with_space.out.vcf', strict_whitespace=True)
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         chars = ["=", ";", " ", ":"]
         for record in vcfReader:
             for key in record.INFO.keys():
@@ -600,23 +663,47 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        vcfReader = vcf.Reader(filename='out/example.duplicate_annotation.out.vcf', strict_whitespace=True)
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self.assertTrue("SS" in vcfReader.infos, "SS is missing in INFO.")
         self.assertTrue("SS" in vcfReader.formats, "SS is missing in FORMAT.")
 
     def testMaf2VcfMissingFilterAnnotations(self):
-        creator = MafliteInputMutationCreator('testdata/vcf/example.expected.out.tsv')
+        inputFilename = 'testdata/vcf/example.expected.out.tsv'
+        outputFilename = 'out/example.expected.out.vcf'
+
+        creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer('out/example.expected.out.vcf')
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
         annotator.annotate()
 
-        vcfReader = vcf.Reader(filename='out/example.expected.out.vcf', strict_whitespace=True)
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self.assertTrue("s50" in vcfReader.filters, "s50 is missing in FILTER.")
         self.assertTrue("q10" in vcfReader.filters, "q10 is missing in FILTER.")
+
+    def testMissingFilters(self):
+        inputFilename = 'testdata/vcf/example.missing_filters.vcf'
+        outputFilename = 'out/example.missing_filters.out.vcf'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        for record in vcfReader:
+
+            if record.CHROM == "20" and record.POS == 14370:
+                self.assertEqual(record.FILTER, None, "")
+
+            if record.CHROM == "20" and record.POS == 14370:
+                self.assertEqual(record.FILTER, None, "")
 
 if __name__ == "__main__":
     unittest.main()

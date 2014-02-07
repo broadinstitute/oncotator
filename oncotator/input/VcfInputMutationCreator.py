@@ -304,11 +304,13 @@ class VcfInputMutationCreator(InputMutationCreator):
     def _addFilterData2Mutation(self, mut, record):
         for flt in self.vcf_reader.filters:  # for each filter in the header
             description = self.vcf_reader.filters[flt].desc  # parse the description
-            if (len(record.FILTER) != 0) and \
-                    (flt in record.FILTER):  # if the filter is mentioned for this variant, then it failed
+            if record.FILTER is None:  # information is missing
+                mut.createAnnotation(flt, "", "INPUT", annotationDescription=description,
+                                     tags=[TagConstants.FILTER])
+            elif flt in record.FILTER:  # filters the site failed are listed
                 mut.createAnnotation(flt, "FAIL", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
-            else:
+            else:  # site passed all filters
                 mut.createAnnotation(flt, "PASS", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
         return mut
