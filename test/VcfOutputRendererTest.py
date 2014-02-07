@@ -684,5 +684,26 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue("s50" in vcfReader.filters, "s50 is missing in FILTER.")
         self.assertTrue("q10" in vcfReader.filters, "q10 is missing in FILTER.")
 
+    def testMissingFilters(self):
+        inputFilename = 'testdata/vcf/example.missing_filters.vcf'
+        outputFilename = 'out/example.missing_filters.out.vcf'
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        for record in vcfReader:
+
+            if record.CHROM == "20" and record.POS == 14370:
+                self.assertEqual(record.FILTER, None, "")
+
+            if record.CHROM == "20" and record.POS == 14370:
+                self.assertEqual(record.FILTER, None, "")
+
 if __name__ == "__main__":
     unittest.main()

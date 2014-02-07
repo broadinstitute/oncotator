@@ -310,9 +310,11 @@ class RecordBuilder:
             self._alts += [alt]
 
     def addFilter(self, filt, val):
-        if val not in ("PASS", ".",):
+        if val == "FAIL":
             if filt not in self._filt:
                 self._filt += [filt]
+        elif val == "":
+            self._filt = None
 
     def setChrom(self, chrom):
         self._chrom = chrom
