@@ -32,8 +32,9 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
             index_columns += [column_names.index(index_column_name)]
 
         column_names = set(column_names)
-        annotation_column_names  = set(annotation_column_names)
+        annotation_column_names = set(annotation_column_names)
 
+        # Read the column names and determine whether they exist or not in the file
         data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=1)
         for chunk in data:
             index = chunk.columns
@@ -51,6 +52,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
                 raise InputMismatchException(msg)
             break
 
+        # Iterate through the file and determine column's data type
         data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=10000,
                                usecols=annotation_column_names, na_values=["", ".", "-"])
         for chunk in data:

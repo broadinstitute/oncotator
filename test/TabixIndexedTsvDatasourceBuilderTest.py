@@ -251,6 +251,5 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
                                                dataSourceType, dataSourceName, dataSourceVersion, dataSourceMatchMode,
                                                annotationColumnNames,
                                                DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
-        except InputMismatchException as e:
-            print e
+        except InputMismatchException:
             pass

@@ -62,7 +62,7 @@ from oncotator.utils.TsvFileSorter import TsvFileSorter
 import os
 import tempfile
 import string
-
+from oncotator.index.TabixIndexerFileMissingError import TabixIndexerFileMissingError
 
 class TabixIndexer(object):
     """
@@ -103,9 +103,25 @@ class TabixIndexer(object):
         """
         fileColumnNumList = [] if fileColumnNumList is None else fileColumnNumList
         inputFilename = os.path.abspath(inputFilename)
+        fileDir = os.path.dirname(inputFilename)
         fileName, fileExtension = os.path.splitext(os.path.basename(inputFilename))
-        outputFilename = string.join([destDir, os.sep, fileName, ".tabix_indexed", fileExtension], "")
 
+        if fileExtension in (".gz",):
+            # Ensure .gz.tbi file is there as well
+            inputIndexFilename = os.path.join(fileDir, string.join([inputFilename, "tbi"], "."))
+            if not os.path.exists(inputIndexFilename):
+                msg = "Missing tabix index file %s." % inputIndexFilename
+                raise TabixIndexerFileMissingError(msg)
+
+            outputFilename = os.path.join(destDir, string.join([fileName, "gz"], "."))
+            shutil.copyfile(inputFilename, outputFilename)
+
+            outputIndexFilename = os.path.join(destDir, string.join([fileName, "gz", "tbi"], "."))
+            shutil.copyfile(inputIndexFilename, outputIndexFilename)
+
+            return outputFilename
+
+        outputFilename = os.path.join(destDir, string.join([fileName, ".tabix_indexed", fileExtension], ""))
         # Copy the input file to output file.
         shutil.copyfile(inputFilename, outputFilename)
 
