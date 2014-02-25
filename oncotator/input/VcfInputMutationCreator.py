@@ -56,7 +56,6 @@ import vcf
 from oncotator.Metadata import Metadata
 from oncotator.utils.TagConstants import TagConstants
 from InputMutationCreator import InputMutationCreator
-from oncotator.MutationData import MutationData
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.Annotation import Annotation
 from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
@@ -100,7 +99,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         genotypeData = None
 
         if len(IDs) != 0:
-            sampleName = mutation.getAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME).getValue()
+            sampleNameAnnotation = mutation.getAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME)
+            sampleName = sampleNameAnnotation.getValue()
             genotypeData = record.genotype(sampleName)
 
         if record.FORMAT is not None:

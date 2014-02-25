@@ -82,7 +82,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testBasicCreationWithExampleVcf(self):
-        inputFilename = 'testdata/vcf/example.vcf'
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
         muts = creator.createMutations()
@@ -103,7 +103,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue(ctr == 27, "Should have seen 27 called mutations, but saw: " + str(ctr))
 
     def testSimpleAnnotationWithExampleVcf(self):
-        ''' Tests the ability to do a simple Gaf 3.0 annotation. '''
+        """
+        Tests the ability to do a simple Gaf 3.0 annotation.
+        """
         inputFilename = 'testdata/vcf/example.vcf'
         outputFilename = 'out/simpleVCF.Gaf.annotated.out.tsv'
 
@@ -117,7 +119,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.annotate()
 
     def testSimpleAnnotationWithAComplexVcf(self):
-        ''' Tests the ability to parse vcf. '''
+        """
+        Tests the ability to parse vcf.
+        """
         inputFilename = 'testdata/vcf/random.vcf'
         outputFilename = 'out/random.tsv'
 
@@ -303,8 +307,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                                                                                                      row["end"]))
 
     def testSplitByNumberOfAltsWithFile(self):
-        """ Test whether we properly determine that a field is split ... using an actual file"""
-        inputFilename = 'testdata/vcf/example.split.tags.vcf'
+        """
+        Tests whether we properly determine that a field is split using an actual file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.split.tags.vcf"])
         creator = VcfInputMutationCreator(inputFilename)
         isSplit = dict()
         isSplit['read_depth'] = False
@@ -339,7 +345,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testGenotypeFieldIsHonored(self):
         """Test that Oncotator does not have issues with genotype values >1 when multiple variants appear on one line"""
-        inputFilename = 'testdata/vcf/example.severalGTs.vcf'
+        inputFilename = os.path.join(*["testdata", "vcf", "example.severalGTs.vcf"])
         creator = VcfInputMutationCreator(inputFilename)
         muts = creator.createMutations()
         ctr = 0
@@ -352,8 +358,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                         str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
 
     def testDuplicateAnnotation(self):
-        inputFilename = 'testdata/vcf/example.duplicate_annotation.vcf'
-        outputFilename = 'out/example.duplicate_annotation.out.tsv'
+        inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_annotation.vcf"])
+        outputFilename = os.path.join("out", "example.duplicate_annotation.out.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -376,7 +382,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertEqual("0", row["SS__FORMAT__"], "Incorrect value of SS__FORMAT__")
 
     def testDuplicateAnnotationMetaData(self):
-        inputFilename = 'testdata/vcf/example.duplicate_annotation.vcf'
+        inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_annotation.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
         md = creator.getMetadata()
@@ -385,9 +391,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue("SS__FORMAT__" in md, "SS__FORMAT__ is missing in metadata.")
 
     def testMissingFilter(self):
-        inputFilename = 'testdata/vcf/example.missing_filters.vcf'
-        outputFilename = 'out/example.missing_filters.out.tsv'
-        expectedOutputFilename = 'testdata/vcf/example.expected.missing_filters.out.tsv'
+
+        inputFilename = os.path.join(*["testdata", "vcf", "example.missing_filters.vcf"])
+        outputFilename = os.path.join("out", "example.missing_filters.out.tsv")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "example.expected.missing_filters.out.tsv"])
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()

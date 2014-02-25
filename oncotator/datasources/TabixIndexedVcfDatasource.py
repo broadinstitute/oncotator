@@ -220,13 +220,8 @@ class IndexedVcfDatasource(Datasource):
                   "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
             self.logger.warn(msg)
 
-
         tags = self._determine_tags()
         for ID in self.vcf_info_headers:
-
-            if ID == "H2":
-                pass
-
             # multiple values are delimited by "|"
             if len(vals) != 0:
                 if self.match_mode == "exact":
