@@ -32,3 +32,5 @@
 /oncotator/.DS_Store
 /scripts/create_PIK3CA_testdata.py
 /profile_stats.*
+/scripts/uniprot_utils/pickles/*
+!/scripts/uniprot_utils/pickles/README

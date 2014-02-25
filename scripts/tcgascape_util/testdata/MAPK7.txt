@@ -1,0 +1,45 @@
+Result:	MAPK7 (chr17:19222399-19227445)
+
+Amplification Summary:	MAPK7 is not significantly focally amplified across the entire dataset of 1955 tumors and is not located within a focal peak region of amplification. MAPK7 is not significantly focally amplified in any of the 15 individual subtypes analyzed in our dataset.
+
+
+					Amplifications
+								Frequency Amplified
+	Tumor subset		In a focal driver peak?	Nearest focal driver peak	Number of genes in peak	q-value	Overall	Focal	High-level
+	UCEC - Uterine corpus endometrioid carcinoma 		No	chr17:34905642-35234314	11	1	0.0588	0.0294	0.0000
+	Kidney		No	chr17:31271331-37669626	155	1	0.0926	0.0000	0.0074
+	LUSC - Lung squamous cell carcinoma		No	chr17:34833966-35343070	15	1	0.1453	0.0513	0.0085
+	READ - Rectum adenocarcinoma		No	chr17:22084026-22294644	 0	1	0.0800	0.0200	0.0000
+	all cancers		No	chr17:24101458-24477325	11	1	0.0997	0.0215	0.0051
+	Colorectal		No	chr17:22084026-22294644	 0	1	0.1444	0.0214	0.0053
+	Epithelial		No	chr17:24106837-24446287	11	1	0.0990	0.0243	0.0059
+	Lung		No	chr17:34833966-35338324	15	1	0.1676	0.0405	0.0116
+	BRCA - Breast invasive adenocarcinoma		No	chr17:22428788-23043495	 3	1	0.1547	0.0755	0.0151
+	COAD - Colon adenocarcinoma		No	chr17:24365560-24746263	 6	1	0.1679	0.0219	0.0073
+	GBM - Glioblastoma multiforme		No	No peak on chromosome	NaN	1	0.1023	0.0116	0.0023
+	KIRC - Kidney renal clear cell carcinoma		No	No peak on chromosome	NaN	1	0.0591	0.0000	0.0079
+	LUAD - Lung adenocarcinoma		No	chr17:34618519-35276078	14	1	0.2143	0.0179	0.0179
+	OV - Ovarian serous cystadenocarcinoma		No	chr17:24079567-24402884	11	1	0.0291	0.0083	0.0000
+	STAD - Stomach adenocarcinoma		No	chr17:33108478-33188583	 1	1	0.1358	0.0000	0.0000
+
+Deletion Summary:	MAPK7 is not significantly focally deleted across the entire dataset of 1955 tumors and is not located within a focal peak region of deletion. MAPK7 is not significantly focally deleted in any of the 15 individual subtypes analyzed in our dataset.
+
+
+					Deletions
+								Frequency Deleted
+	Tumor subset		In a focal driver peak?	Nearest focal driver peak	Number of genes in peak	q-value	Overall	Focal	High-level
+	UCEC - Uterine corpus endometrioid carcinoma 		Yes	chr17:18257906-23929876	53	0.405	0.2059	0.0294	0.0000
+	LUAD - Lung adenocarcinoma		Yes	chr17:526-78620706	1115	0.834	0.3929	0.0714	0.0000
+	READ - Rectum adenocarcinoma		Yes	chr17:526-78620706	1115	1	0.5800	0.0000	0.0000
+	COAD - Colon adenocarcinoma		No	chr17:21062297-21375153	 3	0.523	0.4672	0.0292	0.0000
+	Colorectal		No	chr17:17342039-17524073	 2	0.838	0.4973	0.0214	0.0000
+	all cancers		No	chr17:15450589-15529909	 1	1	0.4363	0.0297	0.0056
+	Epithelial		No	chr17:15450589-15529909	 1	1	0.5174	0.0334	0.0072
+	Kidney		No	chr17:19714174-20089242	 2	1	0.1185	0.0000	0.0000
+	Lung		No	chr17:3698262-3853275	 3	1	0.5434	0.0462	0.0000
+	BRCA - Breast invasive adenocarcinoma		No	chr17:21398519-22637761	 1	1	0.4717	0.0340	0.0000
+	GBM - Glioblastoma multiforme		No	chr17:26351254-26735537	 4	1	0.1488	0.0163	0.0000
+	KIRC - Kidney renal clear cell carcinoma		No	chr17:19714174-20089242	 2	1	0.1181	0.0000	0.0000
+	LUSC - Lung squamous cell carcinoma		No	No peak on chromosome	NaN	1	0.6154	0.0342	0.0000
+	OV - Ovarian serous cystadenocarcinoma		No	chr17:15450589-15529909	 1	1	0.8545	0.0582	0.0229
+	STAD - Stomach adenocarcinoma		No	No peak on chromosome	NaN	1	0.2469	0.0000	0.0000

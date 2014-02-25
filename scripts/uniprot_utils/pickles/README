@@ -1,0 +1,3 @@
+This folder simply holds pickle files that are created during the 
+	createUniProtTSVs run.  Nothing in this directory (other than this README file)
+	should be committed to SVN/git.
