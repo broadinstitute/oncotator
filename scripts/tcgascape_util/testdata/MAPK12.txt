@@ -1,0 +1,45 @@
+Result:	MAPK12 (chr22:49033457-49042216)
+
+Amplification Summary:	MAPK12 is not significantly focally amplified across the entire dataset of 1955 tumors and is not located within a focal peak region of amplification. MAPK12 is not significantly focally amplified in any of the 15 individual subtypes analyzed in our dataset.
+
+
+					Amplifications
+								Frequency Amplified
+	Tumor subset		In a focal driver peak?	Nearest focal driver peak	Number of genes in peak	q-value	Overall	Focal	High-level
+	UCEC - Uterine corpus endometrioid carcinoma 		No	No peak on chromosome	NaN	1	0.0294	0.0147	0.0000
+	Kidney		No	No peak on chromosome	NaN	1	0.1556	0.0037	0.0074
+	LUSC - Lung squamous cell carcinoma		No	chr22:18690622-19738976	15	1	0.4359	0.0256	0.0427
+	READ - Rectum adenocarcinoma		No	No peak on chromosome	NaN	1	0.0400	0.0000	0.0000
+	all cancers		No	chr22:28443960-28645855	 5	1	0.1049	0.0179	0.0082
+	Colorectal		No	No peak on chromosome	NaN	1	0.0535	0.0000	0.0000
+	Epithelial		No	chr22:28433065-29022353	10	1	0.1161	0.0210	0.0098
+	Lung		No	chr22:18690622-19738976	15	1	0.3295	0.0289	0.0289
+	BRCA - Breast invasive adenocarcinoma		No	No peak on chromosome	NaN	1	0.1396	0.0528	0.0189
+	COAD - Colon adenocarcinoma		No	No peak on chromosome	NaN	1	0.0584	0.0000	0.0000
+	GBM - Glioblastoma multiforme		No	No peak on chromosome	NaN	1	0.0651	0.0070	0.0023
+	KIRC - Kidney renal clear cell carcinoma		No	No peak on chromosome	NaN	1	0.1654	0.0039	0.0079
+	LUAD - Lung adenocarcinoma		No	No peak on chromosome	NaN	1	0.1071	0.0357	0.0000
+	OV - Ovarian serous cystadenocarcinoma		No	chr22:28443960-28627390	 5	1	0.0353	0.0166	0.0062
+	STAD - Stomach adenocarcinoma		No	No peak on chromosome	NaN	1	0.1481	0.0370	0.0000
+
+Deletion Summary:	MAPK12 is not significantly focally deleted across the entire dataset of 1955 tumors and is not located within a focal peak region of deletion.  MAPK12 is significantly focally deleted in 6 of 15 independent subtypes analyzed in our dataset. Among these, it is located within a focal peak region of deletion in 1 subtypes. For reference, 3.583% of all genes are significantly focally deleted in at least 6 subtypes and 32.929% of all genes are present in focal deletion peaks in at least 1 subtypes.
+
+
+					Deletions
+								Frequency Deleted
+	Tumor subset		In a focal driver peak?	Nearest focal driver peak	Number of genes in peak	q-value	Overall	Focal	High-level
+	UCEC - Uterine corpus endometrioid carcinoma 		No	chr22:43475368-48674349	28	0.168	0.2500	0.0588	0.0000
+	BRCA - Breast invasive adenocarcinoma		Yes	chr22:39916046-49565872	115	0.205	0.4604	0.0566	0.0038
+	LUAD - Lung adenocarcinoma		Yes	chr22:43117070-49565872	64	0.247	0.5714	0.1429	0.0179
+	OV - Ovarian serous cystadenocarcinoma		No	chr22:49337354-49383812	 4	7.99e-69	0.8919	0.2723	0.1705
+	all cancers		No	chr22:49337354-49364219	 3	3.48e-64	0.5043	0.1182	0.0471
+	Epithelial		No	chr22:49337354-49383812	 4	1.65e-62	0.5049	0.1344	0.0564
+	GBM - Glioblastoma multiforme		No	chr22:49337354-49383812	 4	0.000867	0.5023	0.0605	0.0140
+	READ - Rectum adenocarcinoma		No	chr22:48789381-48870314	 2	0.0689	0.7600	0.5000	0.0200
+	Colorectal		No	chr22:48789381-48870314	 2	0.245	0.5187	0.1818	0.0107
+	Lung		No	chr22:49337354-49383812	 4	0.277	0.3295	0.0983	0.0058
+	STAD - Stomach adenocarcinoma		No	No peak on chromosome	NaN	0.712	0.3457	0.0494	0.0000
+	Kidney		No	chr22:14870976-15448236	 3	1	0.0741	0.0000	0.0000
+	COAD - Colon adenocarcinoma		No	chr22:14870976-15448236	 3	1	0.4307	0.0657	0.0073
+	KIRC - Kidney renal clear cell carcinoma		No	chr22:14870976-15448236	 3	1	0.0551	0.0000	0.0000
+	LUSC - Lung squamous cell carcinoma		No	No peak on chromosome	NaN	1	0.2137	0.0769	0.0000

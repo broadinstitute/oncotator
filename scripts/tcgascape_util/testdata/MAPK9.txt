@@ -1,0 +1,45 @@
+Result:	MAPK9 (chr5:179595389-179640216)
+
+Amplification Summary:	MAPK9 is not significantly focally amplified across the entire dataset of 1955 tumors and is not located within a focal peak region of amplification.  MAPK9 is significantly focally amplified in 1 of 15 independent subtypes analyzed in our dataset. Among these, it is located within a focal peak region of amplification in 1 subtypes. For reference, 28.045% of all genes are significantly focally amplified in at least 1 subtypes and 17.595% of all genes are present in focal amplification peaks in at least 1 subtypes.
+
+
+					Amplifications
+								Frequency Amplified
+	Tumor subset		In a focal driver peak?	Nearest focal driver peak	Number of genes in peak	q-value	Overall	Focal	High-level
+	UCEC - Uterine corpus endometrioid carcinoma 		No	No peak on chromosome	NaN	1	0.0441	0.0441	0.0000
+	Kidney		Yes	chr5:155382669-180627494	164	2.23e-05	0.5926	0.1667	0.0407
+	KIRC - Kidney renal clear cell carcinoma		Yes	chr5:155382669-180627494	164	0.000178	0.6181	0.1732	0.0394
+	Epithelial		Yes	chr5:147182309-180627494	233	1	0.2754	0.1023	0.0164
+	COAD - Colon adenocarcinoma		No	chr5:33469181-44977449	61	0.944	0.1679	0.0803	0.0000
+	LUSC - Lung squamous cell carcinoma		No	chr5:53858239-55739184	15	1	0.0684	0.0513	0.0000
+	READ - Rectum adenocarcinoma		No	No peak on chromosome	NaN	1	0.1200	0.0200	0.0000
+	all cancers		No	chr5:33110035-49495292	62	1	0.2394	0.0875	0.0128
+	Colorectal		No	chr5:33469181-49608882	62	1	0.1551	0.0642	0.0000
+	Lung		No	chr5:53858239-55739184	15	1	0.1272	0.0520	0.0116
+	BRCA - Breast invasive adenocarcinoma		No	No peak on chromosome	NaN	1	0.3358	0.0868	0.0075
+	GBM - Glioblastoma multiforme		No	No peak on chromosome	NaN	1	0.1116	0.0349	0.0000
+	LUAD - Lung adenocarcinoma		No	No peak on chromosome	NaN	1	0.2500	0.0536	0.0357
+	OV - Ovarian serous cystadenocarcinoma		No	chr5:33668860-49495292	61	1	0.2308	0.1268	0.0208
+	STAD - Stomach adenocarcinoma		No	No peak on chromosome	NaN	1	0.0741	0.0370	0.0000
+
+Deletion Summary:	MAPK9 is not significantly focally deleted across the entire dataset of 1955 tumors and is not located within a focal peak region of deletion. MAPK9 is not significantly focally deleted in any of the 15 individual subtypes analyzed in our dataset.
+
+
+					Deletions
+								Frequency Deleted
+	Tumor subset		In a focal driver peak?	Nearest focal driver peak	Number of genes in peak	q-value	Overall	Focal	High-level
+	UCEC - Uterine corpus endometrioid carcinoma 		No	chr5:90700156-93982693	 5	1	0.1618	0.0147	0.0000
+	all cancers		Yes	chr5:154329253-180627494	165	0.696	0.2547	0.0460	0.0036
+	OV - Ovarian serous cystadenocarcinoma		Yes	chr5:150119749-180627494	192	0.706	0.4137	0.0873	0.0125
+	Epithelial		Yes	chr5:153840205-180627494	171	0.985	0.2833	0.0466	0.0039
+	Kidney		Yes	chr5:158673604-180627494	146	1	0.0222	0.0111	0.0000
+	GBM - Glioblastoma multiforme		Yes	chr5:118628302-180627494	465	1	0.1535	0.0442	0.0023
+	KIRC - Kidney renal clear cell carcinoma		No	chr5:1296427-1851312	 5	0.968	0.0157	0.0079	0.0000
+	Colorectal		No	chr5:174888352-175154594	 1	1	0.2460	0.0374	0.0000
+	Lung		No	chr5:106744039-134767194	113	1	0.6012	0.0578	0.0000
+	BRCA - Breast invasive adenocarcinoma		No	chr5:96524354-124109208	61	1	0.1547	0.0226	0.0000
+	COAD - Colon adenocarcinoma		No	chr5:174888352-175154594	 1	1	0.2044	0.0292	0.0000
+	LUAD - Lung adenocarcinoma		No	chr5:95007096-135236807	142	1	0.3571	0.0357	0.0000
+	LUSC - Lung squamous cell carcinoma		No	chr5:58183213-59927061	 2	1	0.7179	0.0684	0.0000
+	READ - Rectum adenocarcinoma		No	chr5:134326669-134693699	 2	1	0.3600	0.0600	0.0000
+	STAD - Stomach adenocarcinoma		No	chr5:58297286-59035633	 2	1	0.3086	0.0247	0.0000

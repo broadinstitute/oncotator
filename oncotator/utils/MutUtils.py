@@ -260,6 +260,8 @@ class MutUtils(object):
             result = result.replace('chr', '')
         if chrom == "MT":
             result = "M"
+        if chrom == "'M_rCRS'":
+            result = "M"
 
         if build.startswith("hg") and (chrom == "23" or chrom == "24"):
             if chrom == "23":

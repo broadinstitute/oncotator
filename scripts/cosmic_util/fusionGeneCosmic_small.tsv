@@ -1,0 +1,6 @@
+Gene name	HGNC ID	Sample name	Primary site	Site subtype	Primary histology	Histology subtype	Mutation ID	Mutation CDS	Mutation AA	Mutation Description	Mutation zygosity	Mutation NCBI36 genome position	Mutation GRCh37 genome position	Pubmed_PMID
+ACBD6/RRP15	23339/24255	HCC38	breast	NS	carcinoma	ductal_carcinoma	687	ACBD6{NM_032360.3}:r.1_1194_RRP15{NM_016052.3}:r.736_7782		Observed mRNA			
+ACBD6/RRP15	23339/24255	HCC38	breast	NS	carcinoma	ductal_carcinoma	688	ACBD6{NM_032360.3}:r.1_1194_RRP15{NM_016052.3}:r.736_7782		Inferred Breakpoint			
+AGPAT5/MCPH1	20886/6954	HCC1187	breast	NS	carcinoma	ductal_carcinoma	695	AGPAT5{NM_018361.3}:r.1_898_MCPH1{NM_024596.2}:r.2521_8032		Observed mRNA			
+AGPAT5/MCPH1	20886/6954	HCC1187	breast	NS	carcinoma	ductal_carcinoma	696	AGPAT5{NM_018361.3}:r.1_898_MCPH1{NM_024596.2}:r.2521_8032		Inferred Breakpoint			
+AGTRAP/BRAF	13539/1097	GCT15	stomach	NS	carcinoma	adenocarcinoma	828	AGTRAP{ENST00000314340}:r.1_598_BRAF{NM_004333}:r.1043_2513		Observed mRNA			20526349

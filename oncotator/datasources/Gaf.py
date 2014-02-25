@@ -59,6 +59,7 @@ from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
 from oncotator.utils import gaf_annotation
 from oncotator.utils.Hasher import Hasher
+from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.datasources.GafDatasourceException import GafDatasourceException
 
@@ -159,8 +160,9 @@ class Gaf(Datasource, TranscriptProvider):
         if geneTuple is None:
             return result
         ctr = 0
-        for b in self.Transcripts[geneTuple[0]]:
-            for i in self.Transcripts[geneTuple[0]][b]:
+        contig = MutUtils.convertChromosomeStringToMutationDataFormat(geneTuple[0])
+        for b in self.Transcripts.get(contig, []):
+            for i in self.Transcripts[contig][b]:
                 if i['gene'] == gene:
                     if isCodingOnly and gaf_annotation.is_non_coding_transcript(i, self):
                         ctr += 1
