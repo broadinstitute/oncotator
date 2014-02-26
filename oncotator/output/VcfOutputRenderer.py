@@ -74,18 +74,16 @@ class VcfOutputRenderer(OutputRenderer):
     """
     _vcfAnnotation = collections.namedtuple(typename="Annotation", field_names=["field", "ID", "num", "type"])
 
-    def __init__(self, filename, datasources=None, configFile='vcf.out.config'):
+    def __init__(self, filename, configFile='vcf.out.config'):
         """
 
 
-        :param filename:
-        :param datasources:
+        :param filename: output filename
         :param configFile: output config file
         """
         self._filename = filename
         self.configFilename = configFile
         self.logger = logging.getLogger(__name__)
-        self._datasources = [] if datasources is None else datasources
         self.config = oncotator.utils.ConfigUtils.ConfigUtils.createConfigParser(configFile, ignoreCase=False)
         self.chromHashCodeTable = None  # maps every chromosome in the mutations to a sortable integer
         self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("output_vcf")
@@ -95,19 +93,22 @@ class VcfOutputRenderer(OutputRenderer):
         self.chroms = []  # all chromosomes in the mutations
 
     def renderMutations(self, mutations, metadata=None, comments=None):
-        """ Generate a simple tsv file based on the incoming mutations.
+        """
+        Generate a simple tsv file based on the incoming mutations.
         Assumes that all mutations have the same annotations, even if some are not populated.
-        :param mutations:
+
+        :param mutations: generator of mutations to render
         :param metadata:
         :param comments:
-        Returns a file name. """
+        :return: returns a file name.
+        """
 
         metadata = [] if metadata is None else metadata
         comments = [] if comments is None else comments
 
         self.logger.info("Rendering VCF output file: %s" % self._filename)
 
-        # Initialize config table
+        # Initialize the config table
         self.configTable = self.configTableBuilder.getConfigTable(configFilename=self.configFilename)
 
         path = os.getcwd()
@@ -122,6 +123,7 @@ class VcfOutputRenderer(OutputRenderer):
         filePointer.write(header)
         filePointer.close()
 
+        # Sort the given TSV file
         sortedTempTsvFileName = dataManager.getSortedTsvFilename(path)
 
         self.logger.info("Render starting...")
@@ -140,12 +142,13 @@ class VcfOutputRenderer(OutputRenderer):
 
     def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos):
         """
+        Determines whether the current chromosome and position is the same as the previous chromosome and position.
 
-        :param curChrom:
-        :param prevChrom:
-        :param curPos:
-        :param prevPos:
-        :return:
+        :param curChrom: current chromosome
+        :param prevChrom: previous chromosome
+        :param curPos: current position
+        :param prevPos: previous position
+        :return: true or false
         """
         isNew = False
         if curChrom != prevChrom:
@@ -157,6 +160,8 @@ class VcfOutputRenderer(OutputRenderer):
     def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager):
         """
 
+
+        :param templateFilename:
         :param vcfFilename:
         :param tsvFilename:
         :param sampleNames:

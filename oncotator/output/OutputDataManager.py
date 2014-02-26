@@ -38,14 +38,20 @@ class OutputDataManager:
         self.configTable = configTable
         self.metadata = md
         self.sampleNames = []
-        self.mutation, self.mutations = self._getFirstMutation(muts)
+        self.mutation, self.mutations = self._fetchFirstMutation(muts)
         self.annotationTable, self.reverseAnnotationTable = self._createTables(self.metadata, self.mutation)
         self.chroms, self.sampleNames, self.filename = self._writeMuts2Tsv(self.mutations, path)
 
     def getSampleNames(self):
         return self.sampleNames
 
-    def _getFirstMutation(self, muts):
+    def _fetchFirstMutation(self, muts):
+        """
+        Get the first mutation from the generator of mutations.
+
+        :param muts: generator of mutations
+        :return: first mutation
+        """
         mut = None
         for mutation in muts:
             mut = copy.deepcopy(mutation)

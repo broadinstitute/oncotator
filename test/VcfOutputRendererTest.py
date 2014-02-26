@@ -59,8 +59,6 @@ import logging
 import vcf
 import os
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
-from oncotator.output.OutputDataManager import OutputDataManager
-from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -79,8 +77,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testRemoveAnnotationsThatBeginWithUnderscore(self):
-        inputFilename = "testdata/vcf/example.vcf"
-        outputFilename = "out/example.out.vcf"
+        """
+        Tests that any annotation that begins with "_" does not appear in the output.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.out.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -101,9 +102,12 @@ class VcfOutputRendererTest(unittest.TestCase):
             self.assertTrue(not key.startswith("_"), "FILTER tag %s begins with _." % key)
 
     def testHeaderWithExampleVcf(self):
-        headerFilename = "testdata/vcf/example.header.txt"
-        inputFilename = "testdata/vcf/example.vcf"
-        outputFilename = "out/example.header.vcf"
+        """
+        Tests that the output header is rendered correctly when the input is a VCF file.
+        """
+        headerFilename = os.path.join(*["testdata", "vcf", "example.header.txt"])
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.header.vcf")
 
         ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
@@ -135,9 +139,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamples(self):
-        headerFilename = "testdata/vcf/example.sampleName.removed.header.txt"
-        inputFilename = "testdata/vcf/example.sampleName.removed.vcf"
-        outputFilename = "out/example.sampleName.removed.header.vcf"
+        """
+        Tests that the output header is rendered correctly when no samples exist in the input VCF file.
+        """
+        headerFilename = os.path.join(*["testdata", "vcf", "example.sampleName.removed.header.txt"])
+        inputFilename = os.path.join(*["testdata", "vcf", "example.sampleName.removed.vcf"])
+        outputFilename = os.path.join("out", "example.sampleName.removed.header.vcf")
 
         ver_str = string.join(["##oncotator_version", string.replace(VERSION, " ", "_")], "=")
         expected = set()
@@ -168,9 +175,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Headers do not match.")
 
     def testHeaderWithExampleVcfWithoutAnySamplesOrVariants(self):
-        headerFilename = "testdata/vcf/example.sampleName.variants.removed.header.txt"
-        inputFilename = "testdata/vcf/example.sampleName.variants.removed.vcf"
-        outputFilename = "out/example.sampleName.variants.removed.header.vcf"
+        """
+        Tests that the output header is rendered correctly when no variants exist in the input VCF file.
+        """
+        headerFilename = os.path.join(*["testdata", "vcf", "example.sampleName.variants.removed.header.txt"])
+        inputFilename = os.path.join(*["testdata", "vcf", "example.sampleName.variants.removed.vcf"])
+        outputFilename = os.path.join("out", "example.sampleName.variants.removed.header.vcf")
 
         expected = set()
         with open(headerFilename, 'r') as fp:
@@ -192,8 +202,11 @@ class VcfOutputRendererTest(unittest.TestCase):
                     current.add(line.rstrip('\n'))
 
     def testContentofExampleVcfwith1Variant(self):
-        inputFilename = "testdata/vcf/example.1row.vcf"
-        outputFilename = "out/example.variants.1row.vcf"
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file with only one variant.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.1row.vcf"])
+        outputFilename = os.path.join("out", "example.variants.1row.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -231,9 +244,13 @@ class VcfOutputRendererTest(unittest.TestCase):
                             val = [val]
                         self.assertEqual(filter(None, val), [], "Format field %s values do not match." % field)
 
-    def testInfoContentofExampleVcf(self):
-        inputFilename = "testdata/vcf/example.vcf"
-        outputFilename = "out/example.variants.vcf"
+    def testMetaDataofExampleVcf(self):
+        """
+        Tests that the meta-data (sample names, INFO and FORMAT sections, etc.) of the output VCF file is rendered
+        correctly when the input is a VCF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.variants.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -256,8 +273,11 @@ class VcfOutputRendererTest(unittest.TestCase):
             self.assertEqual(dict(expectedRecord.INFO), dict(currentRecord.INFO))
 
     def testContentofExampleVcf(self):
-        inputFilename = "testdata/vcf/example.vcf"
-        outputFilename = "out/example.variants.vcf"
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.variants.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -272,8 +292,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testContentofExampleWithESP_MAFVcf(self):
-        inputFilename = "testdata/vcf/example.withESP_MAF.vcf"
-        outputFilename = "out/example.variants.withESP_MAF.vcf"
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file with ESP MAF annotations.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.withESP_MAF.vcf"])
+        outputFilename = os.path.join("out", "example.variants.withESP_MAF.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -288,8 +311,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testContentofExampleWithVcfThatHasNoFormat(self):
-        inputFilename = "testdata/vcf/example.no.format.vcf"
-        outputFilename = "out/example.no.format.vcf"
+        """
+        Tests that the output VCF file is rendered correctly when the input is a vcf that is missing a FORMAT section.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.no.format.vcf"])
+        outputFilename = os.path.join("out", "example.no.format.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -304,8 +330,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
-        inputFilename = "testdata/vcf/example.withESP_MAF.vcf"
-        outputFilename = "out/example.variants.gaf_annotated.withESP_MAF.vcf"
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file with ESP MAF and Gaf
+        annotations.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.withESP_MAF.vcf"])
+        outputFilename = os.path.join("out", "example.variants.gaf_annotated.withESP_MAF.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -317,6 +347,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.annotate()
 
     def _compareGenotypeFields(self, currentSampleFields, expectedSampleFields):
+        """
+        Tests the equality of rendered and expected genotype fields.
+
+        :param currentSampleFields: current genotype fields
+        :param expectedSampleFields: expected genotype fields
+        """
         self.assertTrue("GT" in currentSampleFields, "Rendered vcf should have the field, GT.")
         self.assertTrue("GT" in expectedSampleFields, "Input vcf should have the field, GT")
         self.assertTrue("GT" == currentSampleFields[0], "Rendered vcf should have the GT field in the front of FORMAT.")
@@ -325,6 +361,12 @@ class VcfOutputRendererTest(unittest.TestCase):
                         "Should at least have all common fields")
 
     def _compareVcfs(self, expectedVcfReader, currentVcfReader):
+        """
+        Tests the equality of rendered and expected VCF files.
+
+        :param expectedVcfReader: expected vcf
+        :param currentVcfReader: rendered vcf
+        """
         for expectedRecord in expectedVcfReader:
             currentRecord = currentVcfReader.next()
             self.assertTrue(expectedRecord.CHROM == currentRecord.CHROM, "Should have the same chromosome")
@@ -409,8 +451,11 @@ class VcfOutputRendererTest(unittest.TestCase):
                 self._compareGenotypeFields(currentSampleFields, expectedSampleFields)
 
     def testMissingGenotypeTag(self):
-        inputFilename = "testdata/maflite/example.pair_name.maf"
-        outputFilename = "out/maf2vcf.example.pair_name.vcf"
+        """
+        Tests that the VCF file created from a MAF file contains missing genotype information in the FORMAT fields.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "example.pair_name.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.pair_name.vcf")
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -422,14 +467,18 @@ class VcfOutputRendererTest(unittest.TestCase):
 
         vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self.assertTrue("GT" in vcfReader.formats, "Vcf is missing FORMAT the following field: GT")
+        for record in vcfReader:
+            for sampleName in vcfReader.samples:
+                genotypeData = record.genotype(sampleName)
+                self.assertTrue(genotypeData["GT"] is None, "%s must have a missing genotype." % sampleName)
 
     def testMaf2Vcf_PairNameAnnnotationExist(self):
         """
-        Test maf to vcf conversion when "PairName" annotation exists in the input Maf file.
+        Tests MAF to VCF file conversion when "PairName" annotation exists in the input MAF file.
         """
-        inputFilename = "testdata/maflite/example.pair_name.maf"
-        outputFilename = "out/maf2vcf.example.pair_name.vcf"
-        expectedOutputFilename = "testdata/vcf/maf2vcf.example.pair_name.vcf"
+        inputFilename = os.path.join(*["testdata", "maflite", "example.pair_name.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.pair_name.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "maf2vcf.example.pair_name.vcf"])
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -445,11 +494,12 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_OnlyNormalAndTumorSampleBarcodeExist(self):
         """
-        Test maf to vcf conversion when "PairName" annotation is missing but only normal and tumor sample names exist.
+        Tests MAF to VCF file conversion when "PairName" annotation is missing but only normal and tumor sample names
+        exist.
         """
-        inputFilename = "testdata/maflite/example.normal_tumor_sample_name.maf"
-        outputFilename = "out/maf2vcf.example.normal_tumor_sample_name.vcf"
-        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_tumor_sample_name.vcf"
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_tumor_sample_name.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_tumor_sample_name.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "maf2vcf.example.normal_tumor_sample_name.vcf"])
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -465,11 +515,11 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_OnlyNormalSampleBarcodeExist(self):
         """
-        Test maf to vcf conversion when "PairName" annotation is missing but only normal sample names exist.
+        Tests MAF to VCF file conversion when "PairName" annotation is missing but only normal sample names exist.
         """
-        inputFilename = "testdata/maflite/example.normal_sample_name.maf"
-        outputFilename = "out/maf2vcf.example.normal_sample_name.vcf"
-        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_sample_name.vcf"
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_sample_name.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_sample_name.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "maf2vcf.example.normal_sample_name.vcf"])
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -485,11 +535,11 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def testMaf2Vcf_OnlyTumorSampleBarcodeExist(self):
         """
-        Test maf to vcf conversion when "PairName" annotation is missing but only tumor sample names exist.
+        Tests MAF to VCF file conversion when "PairName" annotation is missing but only tumor sample names exist.
         """
-        inputFilename = "testdata/maflite/example.tumor_sample_name.maf"
-        outputFilename = "out/maf2vcf.example.tumor_sample_name.vcf"
-        expectedOutputFilename = "testdata/vcf/maf2vcf.example.tumor_sample_name.vcf"
+        inputFilename = os.path.join(*["testdata", "maflite", "example.tumor_sample_name.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.tumor_sample_name.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "maf2vcf.example.tumor_sample_name.vcf"])
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -504,8 +554,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testContigsInVcf2Vcf(self):
-        inputFilename = "testdata/vcf/example.contigs.vcf"
-        outputFilename = "out/example.contigs.variants.vcf"
+        """
+        Tests contig information in the header is rendered correctly.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.contigs.vcf"])
+        outputFilename = os.path.join("out", "example.contigs.variants.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -531,8 +584,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of contig information do not match.")
 
     def testAltsInVcf2Vcf(self):
-        inputFilename = "testdata/vcf/example.contigs.alts.vcf"
-        outputFilename = "out/example.contigs.alts.variants.vcf"
+        """
+        Tests alts information in the header is rendered correctly.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.contigs.alts.vcf"])
+        outputFilename = os.path.join("out", "example.contigs.alts.variants.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -558,9 +614,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of alts information do not match.")
 
     def testINSMaf2Vcf(self):
-        inputFilename = "testdata/maflite/example.normal_tumor_sample_name.ins.maf"
-        outputFilename = "out/maf2vcf.example.normal_tumor_sample_name.ins.vcf"
-        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_tumor_sample_name.ins.vcf"
+        """
+        Tests that the insertions are rendered correctly when the input is a MAF file.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_tumor_sample_name.ins.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_tumor_sample_name.ins.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "maf2vcf.example.normal_tumor_sample_name.ins.vcf"])
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -576,9 +635,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testDELMaf2Vcf(self):
-        inputFilename = "testdata/maflite/example.normal_tumor_sample_name.del.maf"
-        outputFilename = "out/maf2vcf.example.normal_tumor_sample_name.del.vcf"
-        expectedOutputFilename = "testdata/vcf/maf2vcf.example.normal_tumor_sample_name.del.vcf"
+        """
+        Tests that the deletions are rendered correctly when the input is a MAF file.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_tumor_sample_name.del.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_tumor_sample_name.del.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "maf2vcf.example.normal_tumor_sample_name.del.vcf"])
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -594,9 +656,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testINSVcf2Vcf(self):
-        inputFilename = "testdata/vcf/example.normal_tumor_sample_name.ins.vcf"
-        outputFilename = "out/vcf2vcf.example.normal_tumor_sample_name.ins.vcf"
-        expectedOutputFilename = "testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.ins.vcf"
+        """
+        Tests that the insertions are rendered correctly when the input is a VCF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.normal_tumor_sample_name.ins.vcf"])
+        outputFilename = os.path.join("out", "vcf2vcf.example.normal_tumor_sample_name.ins.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "vcf2vcf.example.normal_tumor_sample_name.ins.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -612,9 +677,12 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testDELVcf2Vcf(self):
-        inputFilename = "testdata/vcf/example.normal_tumor_sample_name.del.vcf"
-        outputFilename = "out/vcf2vcf.example.normal_tumor_sample_name.del.vcf"
-        expectedOutputFilename = "testdata/vcf/vcf2vcf.example.normal_tumor_sample_name.del.vcf"
+        """
+        Tests that the deletions are rendered correctly when the input is a VCF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.normal_tumor_sample_name.del.vcf"])
+        outputFilename = os.path.join("out", "vcf2vcf.example.normal_tumor_sample_name.del.vcf")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "vcf2vcf.example.normal_tumor_sample_name.del.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -630,8 +698,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
     def testWhitespaceInAnnotationName(self):
-        inputFilename = "testdata/vcf/example.with_space.tsv"
-        outputFilename = "out/example.with_space.out.vcf"
+        """
+        Tests that the INFO keys contain no white-space, semi-colons, or equals-signs.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.with_space.tsv"])
+        outputFilename = os.path.join("out", "example.with_space.out.vcf")
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -652,8 +723,11 @@ class VcfOutputRendererTest(unittest.TestCase):
                     self.assertTrue(key.find(char) == -1, msg)
 
     def testDuplicateAnnotationException(self):
-        inputFilename = 'testdata/vcf/example.duplicate_annotation.vcf'
-        outputFilename = 'out/example.duplicate_annotation.out.vcf'
+        """
+        Tests that the DuplicateAnnotationException is not thrown when INFO and FORMAT sections have the same key.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_annotation.vcf"])
+        outputFilename = os.path.join("out", "example.duplicate_annotation.out.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -668,8 +742,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue("SS" in vcfReader.formats, "SS is missing in FORMAT.")
 
     def testMaf2VcfMissingFilterAnnotations(self):
-        inputFilename = 'testdata/vcf/example.expected.out.tsv'
-        outputFilename = 'out/example.expected.out.vcf'
+        """
+        Tests that the missing FILTER fields are rendered correctly when the input is a MAF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.expected.out.tsv"])
+        outputFilename = os.path.join("out", "example.expected.out.vcf")
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -685,8 +762,11 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue("q10" in vcfReader.filters, "q10 is missing in FILTER.")
 
     def testMissingFilters(self):
-        inputFilename = 'testdata/vcf/example.missing_filters.vcf'
-        outputFilename = 'out/example.missing_filters.out.vcf'
+        """
+        Tests that the missing FILTER fields are rendered correctly when the input is a VCF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.missing_filters.vcf"])
+        outputFilename = os.path.join("out", "example.missing_filters.out.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()

@@ -71,8 +71,6 @@ supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_
 def parseOptions():
     # Setup argument parser
     epilog = """
-    IMPORTANT NOTE: Tabix not yet supported, though described below.
-    
    Detailed parameter information:
        
    datasource type  -- 
@@ -87,7 +85,7 @@ def parseOptions():
                1) have the column names on the first line.  
                    TODO: Support prefix comment lines starting with '#'
                2) have three distinct columns for chromosome, start position, and end position.  Note that the names of these columns are specified in the 
-                   genomic position columns (see below)
+                   genomic position columns (see the command line example below)
                3) tsv --> tab separated values, so the file must be a table of tab-separated values with the same number of values on every row.
 
        "gpp_tsv" -- tsv file referenced by gene and protein position.
@@ -95,17 +93,22 @@ def parseOptions():
                1) have the column names on the first line.
                    TODO: Support prefix comment lines starting with '#'
                2) have three distinct columns for gene, start AA position, and end AA position.  Note that the names of these columns are specified in the
-                   gene Protein Position columns (see below)
+                   gene protein position columns (see the command line example below)
                3) tsv --> tab separated values, so the file must be a table of tab-separated values with the same number of values on every row.
-
 
        "transcript_tsv" -- tsv file referenced by transcript_id
             TSV has the same requirements as gene_tsv, except that the single column must be for transcript_id.
              Note:  This is inherently coupled with the transcript providing datasource used.
 
-       "indexed_vcf" -- vcf file referenced by chromosome and position
-
        "indexed_tsv" -- tsv file referenced by chromosome, start position and end position
+           TSVs must:
+               1) have the column names on the first line.
+                   TODO: Support prefix comment lines starting with '#'
+               2) have three distinct columns for chromosome, start position, and end position.  Note that the names of these columns are specified in the
+                   chromosome, start and end positions columns (see the command line example below)
+               3) tsv --> tab separated values, so the file must be a table of tab-separated values with the same number of values on every row.
+
+       "indexed_vcf" -- vcf or tabix indexed vcf file referenced by chromosome and position.
 
    datasource filename -- input data file.  In the case of tabix_gp_tsv, it would be the source tsv file.
    name -- arbitrary name for the datasource.  This will be the folder moved into the the destination db dir.  Must be unique from other datasources.  
@@ -118,21 +121,31 @@ def parseOptions():
    index columns -- the columns that are indexed.
        For gene_tsv, this would be a single column name for the Hugo_Symbol, e.g. "Symbol"
        For gpp_tsv, this MUST be a triplet specifying gene, AA start, and AA end.  For a single amino acid, start should equal end.
-   
+   match mode -- The type of annotation mode for indels when annotating with indexed tsvs and vcfs. Select either exact, overlap or avg.
+       For exact, annotations are only added when the database record is an exact match for the input indel.
+       For overlap, annotations from all the database records that span the length of the indel are added. The annotated values are pipe delimited.
+       For average, annotations from all the database records that span the length of the indel are averaged. In cases where the annotation is not of type float or int, average switches to overlap mode.
+   columns -- comma separated list of column names (used for indexed_tsv, only)
+   annotation columns -- comma separated list of column names that are a subset of columns (used for indexed_tsv, only)
+
    Example usages:
    # Create the abridged cancer gene census datasource as a generic tsv, using the Symbol column as the gene column 
-   python initializeDataSource.py gene_tsv CancerGeneCensus_Table_1_full_2012-03-15_trim.txt CGC full_2012_03_15 ~/oncotest cgc hg19 Symbol
+   python initializeDataSource.py --ds_type gene_tsv --ds_file CancerGeneCensus_Table_1_full_2012-03-15_trim.txt --name CGC --version full_2012_03_15 --dbDir ~/oncotest cgc --genome_build hg19 --index_columns Symbol
 
    # Create a datasource for ORegAnno (a generic genome position tsv)
-   python initializeDataSource.py gp_tsv oreganno_trim.hg19.txt ORegAnno "UCSC Track" ~/oncotest oreganno hg19 hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd
+   python initializeDataSource.py --ds_type gp_tsv --ds_file oreganno_trim.hg19.txt --name ORegAnno --version "UCSC Track" --dbDir ~/oncotest oreganno --genome_build hg19 --index_columns hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd
    
    # Create a MutSig Published Results datasource (a gene tsv) and put it into ~/oncotest/mutsig.  
-   python initializeDataSource.py gene_tsv mutsig_results.import.20110905.txt "MutSig Published Results" "20110905" ~/oncotest mutsig hg19 gene
+   python initializeDataSource.py --ds_type gene_tsv --ds_file mutsig_results.import.20110905.txt --name "MutSig Published Results" --version "20110905" --dbDir ~/oncotest mutsig --genome_build hg19 --index_columns gene
 
    # Create a protein position lookup datasource
-   initializeDatasource gpp_tsv /bulk/uniprot_protein_seq_tsv.out UniProt_AA 2011_09 ~/oncotest uniprot_AA_annotations hg19 gene,startAA,endAA
+   initializeDatasource --ds_type gpp_tsv --ds_file uniprot_protein_seq_tsv.out --name UniProt_AA --version 2011_09 --dbDir ~/oncotest uniprot_AA_annotations --genome_build hg19 --index_columns gene,startAA,endAA
 
+   # Create a datasource using Exome Seq. Project (ESP) coverage data that is in tsv format
+   initializeDatasource --ds_type indexed_tsv --ds_file ESP6500SI-V2.coverage.txt --name ESP --version 6500SI-V2 --dbDir ~/oncotest_ESP6500SI-V2_coverage --genome_build hg19 --match_mode avg --ds_foldername ESP6500SI-V2_coverage_avg --columns Chromosome,Position,TotalSamplesCovered,AvgSampleReadDepth,TotalEAsamplesCovered,AvgEAsampleReadDepth,TotalAAsamplesCovered,AvgAAsampleReadDepth,TotalChromosomesCovered,TotalEAchromosomesCovered,TotalAAchromosomesCovered --annotation_columns Chromosome,Position,TotalSamplesCovered,AvgSampleReadDepth,TotalEAsamplesCovered,AvgEAsampleReadDepth,TotalAAsamplesCovered,AvgAAsampleReadDepth,TotalChromosomesCovered,TotalEAchromosomesCovered,TotalAAchromosomesCovered --index_columns Chromosome,Position,Position
 
+   # Create a datasource using Exome Seq. Project (ESP) data that is in variant call format (VCF)
+   initializeDatasource --ds_type indexed_vcf --ds_file ESP6500SI-V2.vcf --name ESP --version 6500SI-V2 --dbDir ~/oncotest_ESP6500SI-V2 --genome_build hg19 --match_mode exact --ds_foldername ~/ESP6500SI-V2_exact
     """
 
     desc = """
@@ -173,7 +186,7 @@ def parseOptions():
                         help="Comma separated list of annotation columns. MUST be the name of the columns.  This (optional) parameter is specified for indexed_tsv only.")
     parser.add_argument("--match_mode", action="store", dest="match_mode", type=str,
                         choices=["overlap", "exact", "avg"], default="exact",
-                        help="Comma separated list of annotation columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv and indexed_vcf only [default: exact].")
+                        help="Mode to use when annotating.  This parameter is specified for indexed_tsv and indexed_vcf only [default: exact].")
 
     # Process arguments
     args = parser.parse_args()
