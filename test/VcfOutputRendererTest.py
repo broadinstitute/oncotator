@@ -786,7 +786,26 @@ class VcfOutputRendererTest(unittest.TestCase):
                 self.assertEqual(record.FILTER, None, "")
 
     def testMaf2VcfCommentInHeader(self):
-        pass
+        """
+        Tests MAF file to VCF file conversion when the MAF header contains comments.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_sample_name.with_comments.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_sample_name.with_comments.vcf")
+
+        creator = MafliteInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        self.assertTrue("comment" in vcfReader.metadata, "comment section is missing in the meta-information lines.")
+        self.assertItemsEqual(["_muTector_v1.0.33440", "_Oncotator_v0.5.23.0|GAF_2.1_hg19_Jun2011|dbSNP_build_134"],
+                              vcfReader.metadata["comment"],
+                              "comment section in the meta-information lines is incorrect.")
+
 
 if __name__ == "__main__":
     unittest.main()

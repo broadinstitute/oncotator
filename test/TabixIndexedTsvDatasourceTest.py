@@ -66,6 +66,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         pass
 
     def testESPCoverageAnnotationWithSNPExactMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -93,6 +96,8 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithSNPAvgMatch(self):
+        """
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -120,6 +125,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithSNPOverlapMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -147,6 +155,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingSNPExactMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -174,6 +185,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingSNPAvgMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -201,6 +215,8 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingSNPOverlapMatch(self):
+        """
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -228,6 +244,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithIndelExactMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -255,6 +274,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithIndelAvgMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -282,6 +304,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithIndelOverlapMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
