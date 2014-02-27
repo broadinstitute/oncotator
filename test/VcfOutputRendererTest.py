@@ -785,5 +785,8 @@ class VcfOutputRendererTest(unittest.TestCase):
             if record.CHROM == "20" and record.POS == 14370:
                 self.assertEqual(record.FILTER, None, "")
 
+    def testMaf2VcfCommentInHeader(self):
+        pass
+
 if __name__ == "__main__":
     unittest.main()

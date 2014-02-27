@@ -406,6 +406,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def _addInfoFields2Metadata(self, metadata):
         """
+        Add INFO field meta-information to metadata.
 
         :param metadata:
         :return:
@@ -425,7 +426,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
 
         :param metadata:
-        :return:
+        :return: modified metadata
         """
         for filt in self.vcf_reader.filters:  # for each filter in the header
             metadata[filt] = Annotation("", "INPUT", "String", self.vcf_reader.filters[filt].desc,
@@ -436,7 +437,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
 
 
-        :return:
+        :return: metadata
         """
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)

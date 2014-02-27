@@ -57,13 +57,12 @@ import string
 from oncotator.utils.CallbackException import CallbackException
 from oncotator.utils.MutUtils import MutUtils
 
-__author__ = 'lichtens'
-
 
 class TsvFileSorter(object):
-    def __init__(self, filename, commentPrepend='#', delimiter='\t', lineterminator='\n'):
-        """
 
+    def __init__(self, filename, commentPrepend="#", delimiter="\t", lineterminator="\n"):
+        """
+        A class for sorting a delimited file. A merge sort procedure is used to sort the file.
 
         :type self: object
         :param filename: file that needs to be sorted
@@ -77,21 +76,25 @@ class TsvFileSorter(object):
         self.lineterminator = lineterminator
         self.commentPrepend = commentPrepend
 
-    def __merge(self, partitions):
+    def _merge(self, partitions):
         """
+        This method uses heap queue to merge sorted partitions of Pair tuples. For each Pair tuple in merged partitions,
+        it writes out the value.
 
-        :param partitions:
+        :param partitions: collection of Pair tuples
         """
         for pair in heapq.merge(*partitions):
             yield pair.value
 
     def _yieldPartitions(self, iterable, func, fieldnameIndexes, length):
         """
-
+        This method parses a set of lines for a partition, applies an anonymous function that converts each line of the
+        partition to a key-value pair where key is of type tuple, sorts the key-value pairs on the keys and then yields
+        the partition. Through this method, we obtain several sorted chunks.
 
         :param iterable: lines of text
         :param func: function that converts each row of the input file to an unique key
-        :param fieldnameIndexes:
+        :param fieldnameIndexes: dictionary of fieldnames and corresponding indexes
         :param length: determines the number of lines in the buffer
         """
         isKeyTuple = False
@@ -133,10 +136,10 @@ class TsvFileSorter(object):
 
     def sortFile(self, filename, func, length=50000):
         """
-
+        This method sorts the input file and writes out the sorted file to filename.
 
         :param filename: sorted filename
-        :param func: function that converts each row of the input file to an unique key
+        :param func: function that converts each row of the input file to an unique, sortable key
         :param length: maximum number of lines in a partition
         """
         reader = GenericTsvReader(filename=self.readfilename, commentPrepend=self.commentPrepend,
@@ -156,5 +159,5 @@ class TsvFileSorter(object):
 
         with open(name=filename, mode='wb', buffering=64 * 1024) as writer:
             writer.write(comments)
-            writer.write(string.join(fieldnames, self.delimiter) + '\n')
-            writer.writelines(self.__merge(partitions))  # generators are allowed as inputs to writelines function
+            writer.write(string.join(fieldnames, self.delimiter) + "\n")
+            writer.writelines(self._merge(partitions))  # generators are allowed as inputs to writelines function
