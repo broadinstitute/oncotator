@@ -93,6 +93,13 @@ Once Oncotator is installed, run it with the -V flag to get version information:
     $ oncotator -V
 
 
+Git Process Starting with v1.0.0.0 (Developers)
+-----------------------------------------------
+
+For an overview on the oncotator process for adding features, bugfixes, and general day-to-day branching, please see::
+http://nvie.com/posts/a-successful-git-branching-model/
+
+
 Help
 -------------------
 
