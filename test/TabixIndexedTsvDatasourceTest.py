@@ -415,6 +415,9 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingAnnotationValuesIndelAvgMatch(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
