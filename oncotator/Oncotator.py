@@ -231,7 +231,7 @@ USAGE
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
                                                       is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
                                                       other_opts=determineOtherOptions(args, logger))
-           
+
         annotator = Annotator()
         annotator.initialize(runConfig)
         annotator.annotate()

@@ -201,11 +201,11 @@ class RunSpecification(object):
     def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
-        self.manualAnnotations = manualAnnotations if not None else dict()
-        self.datasources = datasources if not None else []
+        self.manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
+        self.datasources = datasources if datasources is not None else []
         self.isMulticore = isMulticore
         self.numCores = numCores
-        self.defaultAnnotations = defaultAnnotations if not None else dict()
+        self.defaultAnnotations = defaultAnnotations if defaultAnnotations is not None else dict()
         self.cacheUrl = cacheUrl
         self.isReadOnlyCache = read_only_cache
         self.isSkipNoAlts = is_skip_no_alts
