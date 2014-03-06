@@ -70,7 +70,7 @@ class SimpleBedOutputRenderer(OutputRenderer):
         class to behave well.
     """
 
-    def __init__(self, filename, configFile=""):
+    def __init__(self, filename, configFile="", otherOptions=None):
         """
         Constructor
 

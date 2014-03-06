@@ -19,6 +19,7 @@ It defines classes_and_methods
 '''
 import sys
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
+from oncotator.utils.MutUtils import MutUtils
 
 if not (sys.version_info[0] == 2  and sys.version_info[1] in [ 7]):
     raise "Oncotator requires Python 2.7.x : " + str(sys.version_info)
@@ -30,7 +31,6 @@ from argparse import RawDescriptionHelpFormatter
 import logging
 from oncotator.utils.version import VERSION 
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
-from oncotator.Annotator import Annotator
 
 __version__ = VERSION
 __all__ = []
@@ -47,15 +47,20 @@ DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds_current/'
 DEFAULT_DEFAULT_ANNOTATIONS = '/xchip/cga/reference/annotation/db/tcgaMAFManualOverrides2.4.config'
 DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
+
 class CLIError(Exception):
-    '''Generic exception to raise and log different fatal errors.'''
+    """Generic exception to raise and log different fatal errors."""
+
     def __init__(self, msg):
         super(CLIError).__init__(type(self))
         self.msg = "E: %s" % msg
+
     def __str__(self):
         return self.msg
+
     def __unicode__(self):
         return self.msg
+
 
 def parseOptions(program_license, program_version_message):
     # Setup argument parser
@@ -93,35 +98,36 @@ def parseOptions(program_license, program_version_message):
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
-    parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(),help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
-    parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR, 
-        help='Main annotation database directory. [default: %s]' % DEFAULT_DB_DIR)
-    parser.add_argument('-o' ,'--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(),help='Output format. [default: %s]' % "TCGAMAF")
+    parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
+    parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR,
+                        help='Main annotation database directory. [default: %s]' % DEFAULT_DB_DIR)
+    parser.add_argument('-o', '--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(), help='Output format. [default: %s]' % "TCGAMAF")
     parser.add_argument('--override_config', type=str, 
                         help="File path to manual annotations in a config file format (section is 'manual_annotations' and annotation:value pairs).")
     parser.add_argument('--default_config', type=str,
                         help="File path to default annotation values in a config file format (section is 'manual_annotations' and annotation:value pairs).")
     parser.add_argument('--no-multicore', dest="noMulticore", action='store_true', default=False, help="Disables all multicore functionality.")
-    parser.add_argument('input_file', type=str,
-                   help='Input file to be annotated.  Type is specified through options.')
-    parser.add_argument('output_file', type=str, 
-                    help='Output file name of annotated file.')
+    parser.add_argument('input_file', type=str, help='Input file to be annotated.  Type is specified through options.')
+    parser.add_argument('output_file', type=str, help='Output file name of annotated file.')
     parser.add_argument('genome_build', metavar='genome_build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
-    parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
-    parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
+    parser.add_argument('-a', '--annotate-manual', dest="override_cli", type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
+    parser.add_argument('-d', '--annotate-default', dest="default_cli", type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
     parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
     parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
-    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
-    parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  Default: oncotator.log")
+    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help= "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
+    parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  [default: oncotator.log]")
+    parser.add_argument('--infer_genotypes', dest='infer_genotypes', default="false", choices=["yes", "true", "t", "1", "y", "no", "false", "f", "0", "n"],
+                        help="Forces the output renderer to populate the output genotypes as heterozygous.  This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.  [default: %s]" % "false")
 
     # Process arguments
     args = parser.parse_args()
     
     return args
 
-def main(argv=None): # IGNORE:C0111
-    '''Command line options.'''
+
+def main(argv=None):  # IGNORE:C0111
+    """Command line options."""
     from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
     from oncotator.Annotator import Annotator
 
@@ -130,7 +136,6 @@ def main(argv=None): # IGNORE:C0111
     else:
         sys.argv.extend(argv)
 
-    program_name = os.path.basename(sys.argv[0])
     program_version = "%s" % __version__
     program_build_date = str(__updated__)
     program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
@@ -155,7 +160,7 @@ USAGE
         if verbose > 0:
             print("Verbose mode on")
         
-        logFilename = args.log_name # 'oncotator.log'
+        logFilename = args.log_name  # 'oncotator.log'
 
         # Create a basic logger to a file
         loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
@@ -216,14 +221,17 @@ USAGE
             defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
+        # TODO: add another option in run_spec of dict, attribute on run_spec
+
         # Create a run configuration to pass to the Annotator class.
         runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
                                                       isMulticore=(not args.noMulticore),
                                                       defaultAnnotations=defaultValues, cacheUrl=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
-                                                      is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build)
-           
+                                                      is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
+                                                      other_opts=determineOtherOptions(args, logger))
+
         annotator = Annotator()
         annotator.initialize(runConfig)
         annotator.annotate()
@@ -232,6 +240,16 @@ USAGE
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
+
+
+def determineOtherOptions(args, logger):
+    opts = dict()
+    opts["infer_genotypes"] = MutUtils.str2bool(args.infer_genotypes)
+    if args.input_format == "VCF" and args.output_format == "VCF":
+        if opts["infer_genotypes"]:
+            logger.warn("Infer genotypes option has been set to true.  "
+                        "Because the input is a VCF file, infer genotypes will have no effect on the output.")
+    return opts
 
 
 def main_profile():
@@ -259,4 +277,3 @@ if __name__ == "__main__":
         main_profile()
     #sys.exit(main())
     main()
-    
