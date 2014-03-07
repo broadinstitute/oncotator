@@ -148,12 +148,13 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
     variant_codons_to_check = lambda: (
-        ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)gaadel", "p.E110del"),
+        ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)del", "p.E110del"),
         ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS","-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
-        ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)gagdel", "p.E978del"),
-        ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gag>G", "p.E978fs"),
+        ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)del", "p.E978del"),
+        ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gfs", "p.E978fs"),
         ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978_splice"),
-        ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)gaattt>t", "p.EF976fs"),
+        ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)tfs", "p.EF976fs"),
+        ("PIK3CA", "3", "178948154", "178948157", "Frame_Shift_Del", "DEL", "GAAT", "-", "g.chr3:178948154_178948158delGAAT", "c.2926_2929delGAAT", "c.(2926-2931)ttfs", "p.EF976fs"),
     )
     @data_provider_decorator(variant_codons_to_check)
     def test_pik3ca_change_codons(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
@@ -375,11 +376,11 @@ class VariantClassifierTest(unittest.TestCase):
     #TODO: Test Flank (if not already done in MUC16 test)
 
     mutating_exons = lambda: (
+        ("DEL", "GG", "-", 22221734, 22221734, "AGAA"),
+        ("DEL", "GGCT", "-", 22221734, 22221734, "GCAA"),
         ("SNP", "G", "T", 22221734, 22221734, "GCAAA"),
         ("SNP", "G", "C", 22221734, 22221734, "GCGAA"),
         ("DEL", "G", "-", 22221734, 22221734, "GCAA"),
-        ("DEL", "GG", "-", 22221734, 22221735, "AGAA"),
-        ("DEL", "GGCT", "-", 22221734, 22221737, "GCAA"),
         ("DEL", "GTTGGCT", "-", 22221731, 22221731, "GCAT"),
         ("INS", "-", "A", 22221733, 22221734, "CCTAA"),
         ("INS", "-", "GAG", 22221733, 22221734, "CCCTCAA"),
@@ -388,8 +389,8 @@ class VariantClassifierTest(unittest.TestCase):
     )
 
     @data_provider_decorator(mutating_exons)
-    def test_mutate_exon(self, vt, ref, alt, start, end, mutated_exon_gt):
-        """Test that we can get the proper obs allele when mutating. """
+    def test_mutate_exon_negative_stranded(self, vt, ref, alt, start, end, mutated_exon_gt):
+        """Test that we can get the proper obs allele when mutating (negative strand). """
         tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         exon_start, exon_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
