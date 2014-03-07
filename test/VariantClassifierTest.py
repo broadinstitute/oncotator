@@ -158,6 +158,7 @@ class VariantClassifierTest(unittest.TestCase):
     )
     @data_provider_decorator(variant_codons_to_check)
     def test_pik3ca_change_codons(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
+        """Verify the codon change on a positive transcript."""
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
         vcer = VariantClassifier()
         codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
