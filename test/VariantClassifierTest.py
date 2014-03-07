@@ -147,6 +147,20 @@ class VariantClassifierTest(unittest.TestCase):
         transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, int(start), int(end), ref, alt)
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
+    variant_codons_to_check = lambda: (
+        ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)gaadel", "p.E110del"),
+        ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS","-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
+        ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)gagdel", "p.E978del"),
+        ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gag>G", "p.E978fs"),
+        ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978_splice"),
+        ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)gaattt>t", "p.EF976fs"),
+    )
+    @data_provider_decorator(variant_codons_to_check)
+    def test_pik3ca_change_codons(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+        self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): %s" %(codon_change_gt, codon_change))
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) "-" strand) and test the entire 5'UTR"""
@@ -364,13 +378,13 @@ class VariantClassifierTest(unittest.TestCase):
         ("SNP", "G", "T", 22221734, 22221734, "GCAAA"),
         ("SNP", "G", "C", 22221734, 22221734, "GCGAA"),
         ("DEL", "G", "-", 22221734, 22221734, "GCAA"),
-        ("DEL", "GG", "-", 22221734, 22221734, "AGAA"),
-        ("DEL", "GGCT", "-", 22221734, 22221734, "GCAA"),
+        ("DEL", "GG", "-", 22221734, 22221735, "AGAA"),
+        ("DEL", "GGCT", "-", 22221734, 22221737, "GCAA"),
         ("DEL", "GTTGGCT", "-", 22221731, 22221731, "GCAT"),
-        ("INS", "-", "A", 22221734, 22221734, "CCTAA"),
-        ("INS", "-", "GAG", 22221734, 22221734, "CCCTCAA"),
-        ("INS", "-", "GAGA", 22221734, 22221734, "CCTCTCAA"),
-        ("INS", "-", "GAGAAA", 22221734, 22221734, "CCTTTCTCAA")
+        ("INS", "-", "A", 22221733, 22221734, "CCTAA"),
+        ("INS", "-", "GAG", 22221733, 22221734, "CCCTCAA"),
+        ("INS", "-", "GAGA", 22221733, 22221734, "CCTCTCAA"),
+        ("INS", "-", "GAGAAA", 22221733, 22221734, "CCTTTCTCAA")
     )
 
     @data_provider_decorator(mutating_exons)

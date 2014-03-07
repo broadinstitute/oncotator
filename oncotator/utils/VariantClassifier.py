@@ -224,7 +224,7 @@ class VariantClassifier(object):
         transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
             start, end, tx)
 
-        if tx.get_strand() == "+":
+        if tx.get_strand() == "+" and not variant_type == VariantClassification.VT_INS:
             transcript_position_start -= 1
             transcript_position_end -= 1
 
