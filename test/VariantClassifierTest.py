@@ -28,12 +28,16 @@ class VariantClassifierTest(unittest.TestCase):
     def _create_ensembl_ds_trimmed(self):
         return self.ds
 
-    def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
+    def _determine_test_transcript(self, chr, start, end, alt, ref, vt):
         ensembl_ds = self._create_ensembl_ds_trimmed()
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
         txs = ensembl_ds._filter_transcripts(recs)
         tx = ensembl_ds._choose_transcript(txs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
+        return tx
+
+    def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
+        tx = self._determine_test_transcript(chr, start, end, alt, ref, vt)
 
         vcer = VariantClassifier()
         variant_classification = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2)
@@ -148,21 +152,36 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
     variant_codons_to_check = lambda: (
+        ("PIK3CA", "3", "178916619", "178916620", "Frame_Shift_Ins", "INS", "-", "CG", "g.chr3:178916619_178916620insCG", "c.6_7insCG", "c.(7-9)ccafs", "p.P3fs"),
+        ("PIK3CA", "3", "178916619", "178916620", "In_Frame_Ins", "INS", "-", "CGA", "g.chr3:178916619_178916620insCGA", "c.6_7insCGA", "c.(7-9)cca>CGAcca", "p.2_3insR"),
+        ("PIK3CA", "3", "178948154", "178948155", "Frame_Shift_Ins", "INS", "-", "GAATT", "g.chr3:178948154_178948155insGAATT", "c.2926_2930insGAATT", "c.(2926-2928)gaafs", "p.E976fs"),
+        ("PIK3CA", "3", "178948155", "178948156", "Frame_Shift_Ins", "INS", "-", "GAATT", "g.chr3:178948155_178948156insGAATT", "c.2927_2931insGAATT", "c.(2926-2931)gaatttfs", "p.F977fs"),  # issue 109 is around this entry
+        ("PIK3CA", "3", "178948159", "178948160", "Frame_Shift_Ins", "INS", "-", "GA",  "g.chr3:178948159_178948160insGA", "c.2931_2932insGA",  "c.(2932-2934)gagfs","p.E978fs"),
         ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)del", "p.E110del"),
-        ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS","-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
+        ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS", "-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
         ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)del", "p.E978del"),
         ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gfs", "p.E978fs"),
         ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978_splice"),
         ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)tfs", "p.EF976fs"),
         ("PIK3CA", "3", "178948154", "178948157", "Frame_Shift_Del", "DEL", "GAAT", "-", "g.chr3:178948154_178948158delGAAT", "c.2926_2929delGAAT", "c.(2926-2931)ttfs", "p.EF976fs"),
     )
+    # chr3:178,916,611-178,916,632
     @data_provider_decorator(variant_codons_to_check)
-    def test_pik3ca_change_codons(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
-        """Verify the codon change on a positive transcript."""
+    def test_pik3ca_change_codons_indels(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
+        """Verify the codon change on a positive transcript for indels."""
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
         vcer = VariantClassifier()
         codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
         self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): %s" %(codon_change_gt, codon_change))
+
+    @data_provider_decorator(variant_codons_to_check)
+    def test_pik3ca_change_proteins_indels(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
+        """Verify the protein change on a positive transcript for indels (issue 107)."""
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        self.assertTrue(protein_change == protein_change_gt, "Protein change did not match gt (%s): (%s) for %s" % (protein_change_gt, protein_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
+
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) "-" strand) and test the entire 5'UTR"""
@@ -189,6 +208,10 @@ class VariantClassifierTest(unittest.TestCase):
 
     def _retrieve_test_transcript_MAPK1(self):
         tx_id = 'ENST00000215832.6'
+        return self._retrieve_test_transcript(tx_id)
+
+    def _retrieve_test_transcript_PIK3CA(self):
+        tx_id = 'ENST00000263967.3'
         return self._retrieve_test_transcript(tx_id)
 
     variants_snps_splice_sites = lambda: (
@@ -397,6 +420,41 @@ class VariantClassifierTest(unittest.TestCase):
         exon_start, exon_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
         mutated_exon = vcer._mutate_exon(tx, ref, alt, vt, exon_start, buffer=2)
         self.assertTrue(mutated_exon == mutated_exon_gt, "GT/Guess: %s/%s" % (mutated_exon_gt, mutated_exon))
+
+    # Essentially, the rendering of the
+    reference_seq_testdata = lambda: (
+        (3, 178948149, 178948150, "ACAAGA", [2], VariantClassification.VT_INS),
+        (3, 178948150, 178948151, "AGA", [3], VariantClassification.VT_INS),
+        (3, 178948148, 178948149, "ACA", [1], VariantClassification.VT_INS),
+        (3, 178948147, 178948148, "ACA", [0], VariantClassification.VT_INS),
+        (3, 178948146, 178948147, "AAGACA", [2], VariantClassification.VT_INS),
+        (3, 178948150, 178948150, "ACA", [2], VariantClassification.VT_SNP),
+        (3, 178948149, 178948150, "ACA", [1,2], VariantClassification.VT_SNP),
+        (3, 178948149, 178948151, "ACAAGA", [1,2,0], VariantClassification.VT_SNP),
+        (3, 178948149, 178948149, "ACA", [1], VariantClassification.VT_SNP),
+        (3, 178948145, 178948145, "AAG", [0], VariantClassification.VT_SNP),
+    )
+    @data_provider_decorator(reference_seq_testdata)
+    def test_reference_sequence_codon_construction_positive_strand(self, chr, start, end, ref_codon_sequence_gt, ref_codon_positions_gt, vt):
+        tx = self._retrieve_test_transcript_PIK3CA()
+        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
+            start, end, tx)
+        if tx.get_strand() == "+" and not vt == VariantClassification.VT_INS:
+            transcript_position_start -= 1
+            transcript_position_end -= 1
+        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+        protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(
+            transcript_position_start,
+            transcript_position_end, cds_start)
+
+        cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
+        reference_codon_seq = tx.get_seq()[cds_codon_start:cds_codon_end+1]
+        self.assertTrue(reference_codon_seq == ref_codon_sequence_gt, "Codon sequence did not match for reference (GT/Guess): %s/%s " % (ref_codon_sequence_gt, reference_codon_seq))
+
+
+        # reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(tx.get_seq()[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
+
+
 
 if __name__ == '__main__':
     unittest.main()

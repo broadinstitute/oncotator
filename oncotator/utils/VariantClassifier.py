@@ -235,7 +235,7 @@ class VariantClassifier(object):
             transcript_position_start,
             transcript_position_end, cds_start)
         new_ref_transcript_seq = transcript_seq
-        if transcript_seq[transcript_position_start:transcript_position_end+1] != reference_allele_stranded:
+        if (transcript_seq[transcript_position_start:transcript_position_end+1] != reference_allele_stranded) and variant_type != VariantClassification.VT_INS:
             new_ref_transcript_seq = list(transcript_seq)
             new_ref_transcript_seq[transcript_position_start:transcript_position_end+1] = reference_allele_stranded
             new_ref_transcript_seq = ''.join(new_ref_transcript_seq)
@@ -327,7 +327,7 @@ class VariantClassifier(object):
         if ref_allele == "-":
             ref_allele = ""
         if alt_allele == "-":
-            alt_allele == ""
+            alt_allele = ""
 
         s = int(start)
         e = int(end)
