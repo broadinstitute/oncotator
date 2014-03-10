@@ -59,6 +59,7 @@ import logging
 import vcf
 import os
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
+from oncotator.utils.OptionConstants import OptionConstants
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -817,7 +818,7 @@ class VcfOutputRendererTest(unittest.TestCase):
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = VcfOutputRenderer(outputFilename, otherOptions={"infer_genotypes": "true"})
+        renderer = VcfOutputRenderer(outputFilename, otherOptions={OptionConstants.VCF_OUT_INFER_GENOTYPES: "true"})
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)

@@ -60,6 +60,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordBuilder import RecordBuilder
 from oncotator.output.OutputDataManager import OutputDataManager
 from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
+from oncotator.utils.OptionConstants import OptionConstants
 import traceback
 
 
@@ -128,7 +129,7 @@ class VcfOutputRenderer(OutputRenderer):
         sortedTempTsvFileName = dataManager.getSortedTsvFilename(path)
 
         try:
-            inferGenotypes = self._otherOpts["infer_genotypes"]
+            inferGenotypes = self._otherOpts[OptionConstants.VCF_OUT_INFER_GENOTYPES]
         except (KeyError, TypeError):
             inferGenotypes = False
 

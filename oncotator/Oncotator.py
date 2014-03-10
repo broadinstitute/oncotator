@@ -31,6 +31,7 @@ from argparse import RawDescriptionHelpFormatter
 import logging
 from oncotator.utils.version import VERSION 
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
+from oncotator.utils.OptionConstants import OptionConstants
 
 __version__ = VERSION
 __all__ = []
@@ -221,8 +222,6 @@ USAGE
             defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
-        # TODO: add another option in run_spec of dict, attribute on run_spec
-
         # Create a run configuration to pass to the Annotator class.
         runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
@@ -244,9 +243,9 @@ USAGE
 
 def determineOtherOptions(args, logger):
     opts = dict()
-    opts["infer_genotypes"] = MutUtils.str2bool(args.infer_genotypes)
+    opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
     if args.input_format == "VCF" and args.output_format == "VCF":
-        if opts["infer_genotypes"]:
+        if opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:
             logger.warn("Infer genotypes option has been set to true.  "
                         "Because the input is a VCF file, infer genotypes will have no effect on the output.")
     return opts
