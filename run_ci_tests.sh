@@ -41,7 +41,7 @@ oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.in
 echo "== SNV maflite 2 tcga maf test ==="
 oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.txt hg19
 
-echo "== "
+echo "== maflite 2 vcf infer genotypes test"
 oncotator -v --no-multicore --db-dir=${DB_DIR} --infer_genotypes=true --input_format=MAFLITE --output_format=VCF test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.vcf hg19
 
 ########
