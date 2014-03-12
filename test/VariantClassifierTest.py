@@ -421,7 +421,7 @@ class VariantClassifierTest(unittest.TestCase):
         mutated_exon = vcer._mutate_exon(tx, ref, alt, vt, exon_start, buffer=2)
         self.assertTrue(mutated_exon == mutated_exon_gt, "GT/Guess: %s/%s" % (mutated_exon_gt, mutated_exon))
 
-    # Essentially, the rendering of the
+    # Essentially, the rendering of the reference sequence for inserts vs. non-insert
     reference_seq_testdata = lambda: (
         (3, 178948149, 178948150, "ACAAGA", [2], VariantClassification.VT_INS),
         (3, 178948150, 178948151, "AGA", [3], VariantClassification.VT_INS),
@@ -450,10 +450,63 @@ class VariantClassifierTest(unittest.TestCase):
         cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
         reference_codon_seq = tx.get_seq()[cds_codon_start:cds_codon_end+1]
         self.assertTrue(reference_codon_seq == ref_codon_sequence_gt, "Codon sequence did not match for reference (GT/Guess): %s/%s " % (ref_codon_sequence_gt, reference_codon_seq))
-
-
         # reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(tx.get_seq()[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
 
+    indel_testdata_for_change = lambda : (
+        # In Frame
+        ("3", "178916621","178916622", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-12)ccacga>ccTATacga", "p.3_4PR>PIR"),
+        ("3", "178916622","178916623", "In_Frame_Ins", "INS", "-", "TAT", "c.(10-12)cga>TATcga", "p.3_4insY"),
+        ("3", "178916619","178916620", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-9)cca>TATcca", "p.2_3insY"),
+        ("3", "178916620","178916621", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-9)cca>cTATca", "p.3_3P>LS"),
+        ("3", "178916622","178916623", "In_Frame_Ins", "INS", "-", "CTTGAAGAA", "c.(10-12)cga>CTTGAAGAAcga", "p.3_4insLEE"),
+        #fs
+        ("3", "178916621","178916622", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Ins", "INS", "-", "TA", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Ins", "INS", "-", "T", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)ccafs", "p.P3fs"), # 17
+
+        # DEL
+        # In Frame
+        ("3", "178916619", "178916621", "In_Frame_Del", "DEL", "TCC", "-", "c.(4-9)cctcca>cca", "p.2_3PP>P"),
+        ("3", "178916620", "178916622", "In_Frame_Del", "DEL", "CCA", "-", "c.(7-9)ccadel", "p.P3del"),
+        ("3", "178916621", "178916623", "In_Frame_Del", "DEL", "CAC", "-", "c.(7-12)ccacga>cga", "p.P3del"),
+        ("3", "178916622", "178916624", "In_Frame_Del", "DEL", "ACG", "-", "c.(7-12)ccacga>cca", "p.R4del"), #21
+
+        #fs
+        # TODO: Fix ground truth codon and protein changes from here down
+        ("3", "178916619","178916620", "Frame_Shift_Del", "DEL", "TC","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Del", "DEL", "CC","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Del", "DEL", "CA","-", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Del", "DEL", "AC","-", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916619", "Frame_Shift_Del", "DEL", "T","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916620", "Frame_Shift_Del", "DEL", "C","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916621", "Frame_Shift_Del", "DEL", "C","-", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916622", "Frame_Shift_Del", "DEL", "A","-", "c.(10-12)cgafs", "p.R4fs"), #29
+
+        ("3", "178916621","178916622", "Frame_Shift_Del", "DEL", "TATT","-", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Del", "DEL", "TATT","-", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Del", "DEL", "TATT","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Del", "DEL", "TATT","-", "c.(7-9)ccafs", "p.P3fs"),
+    )
+    @data_provider_decorator(indel_testdata_for_change)
+    def test_reference_change_construction_positive_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
+        tx = self._retrieve_test_transcript_PIK3CA()
+
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+        self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
+        self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
+        pass
 
 
 if __name__ == '__main__':

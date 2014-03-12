@@ -243,9 +243,11 @@ class VariantClassifier(object):
         else:
             ref_tx_seq_has_been_changed = False
         cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
-        # TODO: Can we just use (vt == INS and protein_position_start != protein_position_end) as a condition to determine whether ref codon seq should be passed in as "" ... I.e. we are inserting in between two codons.
-        # reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1]
-        reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
+
+        if variant_type == "DEL":
+            reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower()
+        else:
+            reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
         mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
 
