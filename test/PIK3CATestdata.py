@@ -1,5 +1,11 @@
 __author__ = 'lichtens'
 pik3ca_testdata = lambda: (
+("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "GAA", "-", "DEL",  "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "p.E110del"),
+("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "-", "GAG", "INS", "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG", "p.978_978E>EE"),
+("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "GAG", "-", "DEL", "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG", "p.E978del"),
+("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "GA", "-", "DEL", "g.chr3:178948160_178948161delGA", "c.2932_2933delGA", "p.E978fs"),
+("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "GAGAG", "-", "DEL", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice", "p.ER978_splice"),
+("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "GAATT", "-", "DEL", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "p.EF976fs"),
 ("PIK3CA", "3", "178916613", "178916613", "5'UTR", "A", "G", "SNP", "g.chr3:178916613A>G", "", ""),
 ("PIK3CA", "3", "178916610", "178916610", "5'UTR", "A", "G", "SNP", "g.chr3:178916610A>G", "", ""),
 ("PIK3CA", "3", "178916611", "178916611", "5'UTR", "A", "G", "SNP", "g.chr3:178916611A>G", "", ""),
