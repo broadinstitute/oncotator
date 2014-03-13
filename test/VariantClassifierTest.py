@@ -276,8 +276,6 @@ class VariantClassifierTest(unittest.TestCase):
         # ref is wrong here, but test should still pass
         ("22", "22123486", "22123486", "3'UTR", "DEL", "A", "-")
 
-        #TODO: Test RNA VCs
-        #TODO: Test "+" strand transcript, particularly for DeNovo
         #TODO: Fix in frame calculation when only partially overlapping an exon.  (No need until secondary vc is implemented)
     )
     @data_provider_decorator(variants_indels_splice_sites)
