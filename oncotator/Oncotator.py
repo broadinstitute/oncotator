@@ -87,8 +87,7 @@ def parseOptions(program_license, program_version_message):
     -u memcache://localhost:11211
 
     Please note that only VCF input will populate the alt_allele_seen annotation.  All other inputs assume that the alternate is present if it appears at all.
-        This feature is to allow users to exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
-        IMPORTANT:  Do not use with VCF output.
+        This feature is to allow users to include or exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
