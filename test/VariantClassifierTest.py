@@ -539,6 +539,25 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22221718", "22221720", "In_Frame_Del", "DEL", "CCG", "-", "c.(10-15)gcggcg>gcg", "p.4_5AA>A"),
         ("22", "22221717", "22221719", "In_Frame_Del", "DEL", "GCC", "-", "c.(10-15)gcggcg>gcg", "p.4_5AA>A"), #21
 
+        #fs
+        ("22", "22221700","22221701", "Frame_Shift_Del", "DEL", "GG","-", "c.(28-33)ggcccgfs", "p.P11fs"),
+        ("22", "22221699","22221700", "Frame_Shift_Del", "DEL", "GG","-", "c.(31-33)ccgfs", "p.P11fs"),
+        ("22", "22221698","22221699", "Frame_Shift_Del", "DEL", "CG","-", "c.(31-33)ccgfs", "p.P11fs"),
+        ("22", "22221697","22221698", "Frame_Shift_Del", "DEL", "CC","-", "c.(31-36)ccggagfs", "p.E12fs"),
+        ("22", "22221700","22221700", "Frame_Shift_Del", "DEL", "G","-", "c.(31-33)ccgfs", "p.P11fs"), #26
+        ("22", "22221699","22221699", "Frame_Shift_Del", "DEL", "G","-", "c.(31-33)ccgfs", "p.P11fs"),
+        ("22", "22221698","22221698", "Frame_Shift_Del", "DEL", "C","-", "c.(31-33)ccgfs", "p.P11fs"), #28
+        ("22", "22221697","22221697", "Frame_Shift_Del", "DEL", "C","-", "c.(34-36)gagfs", "p.E12fs"), #29
+
+        ("22", "22221694","22221697", "Frame_Shift_Del", "DEL", "TCTC","-", "c.(34-39)gagatgfs", "p.EM12fs"),
+        ("22", "22221693","22221696", "Frame_Shift_Del", "DEL", "ATCT","-", "c.(34-39)gagatgfs", "p.EM12fs"),
+        ("22", "22221692","22221695", "Frame_Shift_Del", "DEL", "CATC","-", "c.(34-39)gagatgfs", "p.EM12fs"),
+        ("22", "22221691","22221694", "Frame_Shift_Del", "DEL", "CCAT","-", "c.(37-42)atggtcfs", "p.MV13fs"),
+
+        ("22", "22221690","22221696", "Frame_Shift_Del", "DEL", "ACCATCT","-", "c.(34-42)gagatggtcfs", "p.EMV12fs"),
+        ("22", "22221689","22221695", "Frame_Shift_Del", "DEL", "GACCATC","-", "c.(34-42)gagatggtcfs", "p.EMV12fs"),
+        ("22", "22221688","22221694", "Frame_Shift_Del", "DEL", "GGACCAT","-", "c.(37-45)atggtccgcfs", "p.MVR13fs"), #36
+        ("22", "22221687","22221693", "Frame_Shift_Del", "DEL", "CGGACCA","-", "c.(37-45)atggtccgcfs", "p.MVR13fs"),
     )
     @data_provider_decorator(indel_testdata_for_change_mapk1)
     def test_reference_change_construction_negative_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
