@@ -450,7 +450,7 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(reference_codon_seq == ref_codon_sequence_gt, "Codon sequence did not match for reference (GT/Guess): %s/%s " % (ref_codon_sequence_gt, reference_codon_seq))
         # reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(tx.get_seq()[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
 
-    indel_testdata_for_change = lambda : (
+    indel_testdata_for_change_pik3ca = lambda : (
         # In Frame
         ("3", "178916621","178916622", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-12)ccacga>ccTATacga", "p.3_4PR>PIR"),
         ("3", "178916622","178916623", "In_Frame_Ins", "INS", "-", "TAT", "c.(10-12)cga>TATcga", "p.3_4insY"),
@@ -497,11 +497,10 @@ class VariantClassifierTest(unittest.TestCase):
         ("3", "178916620","178916626", "Frame_Shift_Del", "DEL", "CCACGAC","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"),
         ("3", "178916621","178916627", "Frame_Shift_Del", "DEL", "CACGACC","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"), #36
         ("3", "178916622","178916628", "Frame_Shift_Del", "DEL", "ACGACCA","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"),
-
-        # TODO: Repeat for negative strand
     )
-    @data_provider_decorator(indel_testdata_for_change)
+    @data_provider_decorator(indel_testdata_for_change_pik3ca)
     def test_reference_change_construction_positive_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
+        """Test that different indel configurations are rendered correctly on a positive stranded transcript."""
         tx = self._retrieve_test_transcript_PIK3CA()
 
         vcer = VariantClassifier()
@@ -510,8 +509,27 @@ class VariantClassifierTest(unittest.TestCase):
         codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
         self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
         self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
-        pass
 
+    indel_testdata_for_change_mapk1 = lambda : (
+        # In Frame
+        ("22", "22221703","22221704", "In_Frame_Ins", "INS", "-", "TAT", "c.(25-30)gcgggc>gcgATAggc", "p.9_10AG>AIG"),  # gcccgc
+        ("22", "22221702","22221703", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-30)ggc>gATAgc", "p.10_10G>DS"),
+        ("22", "22221701","22221702", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-30)ggc>ggATAc", "p.10_11insY"),  # gcccgc -- this is correct since G>GY, we are just inserting a Y
+        ("22", "22221700","22221701", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-33)ggcccg>ggcATAccg", "p.10_11GP>GIP"),
+        ("22", "22221700","22221701", "In_Frame_Ins", "INS", "-", "TTCTTCAAG", "c.(28-33)ggcccg>ggcCTTGAAGAAccg", "p.10_11GP>GLEEP"),
+
+    )
+    @data_provider_decorator(indel_testdata_for_change_mapk1)
+    def test_reference_change_construction_negative_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
+        """Test that different indel configurations are rendered correctly on a negative stranded transcript."""
+        tx = self._retrieve_test_transcript_MAPK1()
+
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+        self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
+        self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
 
 if __name__ == '__main__':
     unittest.main()

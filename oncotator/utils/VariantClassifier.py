@@ -248,7 +248,11 @@ class VariantClassifier(object):
             reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower()
         else:
             reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
-        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
+
+        if variant_type == "INS" and tx.get_strand() == "-":
+            mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start - 1, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
+        else:
+            mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
 
         observed_aa = Bio.Seq.translate(mutated_codon_seq)
