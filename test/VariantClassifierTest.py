@@ -157,13 +157,13 @@ class VariantClassifierTest(unittest.TestCase):
         ("PIK3CA", "3", "178948154", "178948155", "Frame_Shift_Ins", "INS", "-", "GAATT", "g.chr3:178948154_178948155insGAATT", "c.2926_2930insGAATT", "c.(2926-2928)gaafs", "p.E976fs"),
         ("PIK3CA", "3", "178948155", "178948156", "Frame_Shift_Ins", "INS", "-", "GAATT", "g.chr3:178948155_178948156insGAATT", "c.2927_2931insGAATT", "c.(2926-2931)gaatttfs", "p.F977fs"),  # issue 109 is around this entry
         ("PIK3CA", "3", "178948159", "178948160", "Frame_Shift_Ins", "INS", "-", "GA",  "g.chr3:178948159_178948160insGA", "c.2931_2932insGA",  "c.(2932-2934)gagfs","p.E978fs"),
-        ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)del", "p.E110del"),
+        ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)gaadel", "p.E110del"),
         ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS", "-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
-        ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)del", "p.E978del"),
-        ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gfs", "p.E978fs"),
+        ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)gagdel", "p.E978del"),
+        ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gagfs", "p.E978fs"),
         ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978_splice"),
-        ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)tfs", "p.EF976fs"),
-        ("PIK3CA", "3", "178948154", "178948157", "Frame_Shift_Del", "DEL", "GAAT", "-", "g.chr3:178948154_178948158delGAAT", "c.2926_2929delGAAT", "c.(2926-2931)ttfs", "p.EF976fs"),
+        ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)gaatttfs", "p.EF976fs"),
+        ("PIK3CA", "3", "178948154", "178948157", "Frame_Shift_Del", "DEL", "GAAT", "-", "g.chr3:178948154_178948158delGAAT", "c.2926_2929delGAAT", "c.(2926-2931)gaatttfs", "p.EF976fs"),
     )
     # chr3:178,916,611-178,916,632
     @data_provider_decorator(variant_codons_to_check)
@@ -481,20 +481,26 @@ class VariantClassifierTest(unittest.TestCase):
         ("3", "178916622", "178916624", "In_Frame_Del", "DEL", "ACG", "-", "c.(7-12)ccacga>cca", "p.R4del"), #21
 
         #fs
-        # TODO: Fix ground truth codon and protein changes from here down
-        ("3", "178916619","178916620", "Frame_Shift_Del", "DEL", "TC","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Del", "DEL", "TC","-", "c.(4-9)cctccafs", "p.PP2fs"),
         ("3", "178916620","178916621", "Frame_Shift_Del", "DEL", "CC","-", "c.(7-9)ccafs", "p.P3fs"),
-        ("3", "178916621","178916622", "Frame_Shift_Del", "DEL", "CA","-", "c.(7-12)ccacgafs", "p.R4fs"),
-        ("3", "178916622","178916623", "Frame_Shift_Del", "DEL", "AC","-", "c.(10-12)cgafs", "p.R4fs"),
-        ("3", "178916619","178916619", "Frame_Shift_Del", "DEL", "T","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Del", "DEL", "CA","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Del", "DEL", "AC","-", "c.(7-12)ccacgafs", "p.R4fs"), # This is correct, since the first amino acid remains the same
+        ("3", "178916619","178916619", "Frame_Shift_Del", "DEL", "T","-", "c.(4-6)cctfs", "p.P3fs"), #26 -- correct as written, since there are two P's in a row
         ("3", "178916620","178916620", "Frame_Shift_Del", "DEL", "C","-", "c.(7-9)ccafs", "p.P3fs"),
-        ("3", "178916621","178916621", "Frame_Shift_Del", "DEL", "C","-", "c.(7-12)ccacgafs", "p.R4fs"),
-        ("3", "178916622","178916622", "Frame_Shift_Del", "DEL", "A","-", "c.(10-12)cgafs", "p.R4fs"), #29
+        ("3", "178916621","178916621", "Frame_Shift_Del", "DEL", "C","-", "c.(7-9)ccafs", "p.P3fs"), #28
+        ("3", "178916622","178916622", "Frame_Shift_Del", "DEL", "A","-", "c.(7-9)ccafs", "p.P3fs"), #29
 
-        ("3", "178916621","178916622", "Frame_Shift_Del", "DEL", "TATT","-", "c.(7-12)ccacgafs", "p.R4fs"),
-        ("3", "178916622","178916623", "Frame_Shift_Del", "DEL", "TATT","-", "c.(10-12)cgafs", "p.R4fs"),
-        ("3", "178916619","178916620", "Frame_Shift_Del", "DEL", "TATT","-", "c.(7-9)ccafs", "p.P3fs"),
-        ("3", "178916620","178916621", "Frame_Shift_Del", "DEL", "TATT","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916619","178916622", "Frame_Shift_Del", "DEL", "TCCA","-", "c.(4-9)cctccafs", "p.PP2fs"),
+        ("3", "178916620","178916623", "Frame_Shift_Del", "DEL", "CCAC","-", "c.(7-12)ccacgafs", "p.PR3fs"),
+        ("3", "178916621","178916624", "Frame_Shift_Del", "DEL", "CACG","-", "c.(7-12)ccacgafs", "p.PR3fs"),
+        ("3", "178916622","178916625", "Frame_Shift_Del", "DEL", "ACGA","-", "c.(7-12)ccacgafs", "p.PR3fs"),
+
+        ("3", "178916619","178916625", "Frame_Shift_Del", "DEL", "TCCACGA","-", "c.(4-12)cctccacgafs", "p.PPR2fs"),
+        ("3", "178916620","178916626", "Frame_Shift_Del", "DEL", "CCACGAC","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"),
+        ("3", "178916621","178916627", "Frame_Shift_Del", "DEL", "CACGACC","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"), #36
+        ("3", "178916622","178916628", "Frame_Shift_Del", "DEL", "ACGACCA","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"),
+
+        # TODO: Repeat for negative strand
     )
     @data_provider_decorator(indel_testdata_for_change)
     def test_reference_change_construction_positive_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
