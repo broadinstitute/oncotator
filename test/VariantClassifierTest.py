@@ -518,6 +518,27 @@ class VariantClassifierTest(unittest.TestCase):
         ("22", "22221700","22221701", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-33)ggcccg>ggcATAccg", "p.10_11GP>GIP"),
         ("22", "22221700","22221701", "In_Frame_Ins", "INS", "-", "TTCTTCAAG", "c.(28-33)ggcccg>ggcCTTGAAGAAccg", "p.10_11GP>GLEEP"),
 
+        #fs
+        ("22", "22221724","22221725", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(4-9)gcggcgfs", "p.A3fs"),
+        ("22", "22221723","22221724", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221722","22221723", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)gcgfs", "p.-3fs"), # This is correct, since the protein does not change, but is fs # CGC > CTATTGC  gcg>gATAAcg
+        ("22", "22221721","22221722", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-12)gcggcgfs", "p.A4fs"),
+        ("22", "22221724","22221725", "Frame_Shift_Ins", "INS", "-", "TA", "c.(4-9)gcggcgfs", "p.A3fs"),
+        ("22", "22221723","22221724", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221722","22221723", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221721","22221722", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-12)gcggcgfs", "p.A4fs"),
+        ("22", "22221724","22221725", "Frame_Shift_Ins", "INS", "-", "T", "c.(4-9)gcggcgfs", "p.A3fs"), #14
+        ("22", "22221723","22221724", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221722","22221723", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221721","22221722", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-12)gcggcgfs", "p.A4fs"),
+
+        # DEL
+        # In Frame
+        ("22", "22221720", "22221722", "In_Frame_Del", "DEL", "GCC", "-", "c.(7-12)gcggcg>gcg", "p.3_4AA>A"), #18
+        ("22", "22221719", "22221721", "In_Frame_Del", "DEL", "CGC", "-", "c.(10-12)gcgdel", "p.A7del"),  # This is technically correct, since there are A's upstream.
+        ("22", "22221718", "22221720", "In_Frame_Del", "DEL", "CCG", "-", "c.(10-15)gcggcg>gcg", "p.4_5AA>A"),
+        ("22", "22221717", "22221719", "In_Frame_Del", "DEL", "GCC", "-", "c.(10-15)gcggcg>gcg", "p.4_5AA>A"), #21
+
     )
     @data_provider_decorator(indel_testdata_for_change_mapk1)
     def test_reference_change_construction_negative_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
