@@ -49,7 +49,7 @@ oncotator -v --no-multicore --db-dir=${DB_DIR} --infer_genotypes=true --input_fo
 set +e
 # Do not use multiprocess mode with profiling or coverage.  Bug in nosetests also disallows --processes and --with-xunit
 #  --processes=4 --process-timeout=480  --process-restartworker
-nosetests --all-modules --exe --with-xunit --xunit-file=nosetests.xml -w test -v
+nosetests --all-modules --exe --with-xunit --xunit-file=test/nosetests.xml -w test -v
 set -e
 
 echo "Deactivating and deleting test python virtual environment"

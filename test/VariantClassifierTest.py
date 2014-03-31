@@ -28,12 +28,16 @@ class VariantClassifierTest(unittest.TestCase):
     def _create_ensembl_ds_trimmed(self):
         return self.ds
 
-    def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
+    def _determine_test_transcript(self, chr, start, end, alt, ref, vt):
         ensembl_ds = self._create_ensembl_ds_trimmed()
         recs = ensembl_ds.get_overlapping_transcripts(chr, start, end)
         txs = ensembl_ds._filter_transcripts(recs)
         tx = ensembl_ds._choose_transcript(txs, EnsemblTranscriptDatasource.TX_MODE_CANONICAL, vt, ref, alt, start, end)
         self.assertTrue(len(recs) != 0, "Issue with test...No transcripts found for: " + str([chr, start, end]))
+        return tx
+
+    def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
+        tx = self._determine_test_transcript(chr, start, end, alt, ref, vt)
 
         vcer = VariantClassifier()
         variant_classification = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2)
@@ -147,6 +151,37 @@ class VariantClassifierTest(unittest.TestCase):
         transcript_change = vcer.generate_transcript_change_from_tx(tx, vt, vc, int(start), int(end), ref, alt)
         self.assertTrue(transcript_change == transcript_change_gt, "Transcript change did not match gt (%s): %s  for %s" % (transcript_change_gt, transcript_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
 
+    variant_codons_to_check = lambda: (
+        ("PIK3CA", "3", "178916619", "178916620", "Frame_Shift_Ins", "INS", "-", "CG", "g.chr3:178916619_178916620insCG", "c.6_7insCG", "c.(7-9)ccafs", "p.P3fs"),
+        ("PIK3CA", "3", "178916619", "178916620", "In_Frame_Ins", "INS", "-", "CGA", "g.chr3:178916619_178916620insCGA", "c.6_7insCGA", "c.(7-9)cca>CGAcca", "p.2_3insR"),
+        ("PIK3CA", "3", "178948154", "178948155", "Frame_Shift_Ins", "INS", "-", "GAATT", "g.chr3:178948154_178948155insGAATT", "c.2926_2930insGAATT", "c.(2926-2928)gaafs", "p.E976fs"),
+        ("PIK3CA", "3", "178948155", "178948156", "Frame_Shift_Ins", "INS", "-", "GAATT", "g.chr3:178948155_178948156insGAATT", "c.2927_2931insGAATT", "c.(2926-2931)gaatttfs", "p.F977fs"),  # issue 109 is around this entry
+        ("PIK3CA", "3", "178948159", "178948160", "Frame_Shift_Ins", "INS", "-", "GA",  "g.chr3:178948159_178948160insGA", "c.2931_2932insGA",  "c.(2932-2934)gagfs","p.E978fs"),
+        ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "DEL", "GAA", "-", "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "c.(325-327)gaadel", "p.E110del"),
+        ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS", "-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
+        ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)gagdel", "p.E978del"),
+        ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gagfs", "p.E978fs"),
+        ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978_splice"),
+        ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)gaatttfs", "p.EF976fs"),
+        ("PIK3CA", "3", "178948154", "178948157", "Frame_Shift_Del", "DEL", "GAAT", "-", "g.chr3:178948154_178948158delGAAT", "c.2926_2929delGAAT", "c.(2926-2931)gaatttfs", "p.EF976fs"),
+    )
+    # chr3:178,916,611-178,916,632
+    @data_provider_decorator(variant_codons_to_check)
+    def test_pik3ca_change_codons_indels(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
+        """Verify the codon change on a positive transcript for indels."""
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+        self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): %s" %(codon_change_gt, codon_change))
+
+    @data_provider_decorator(variant_codons_to_check)
+    def test_pik3ca_change_proteins_indels(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, transcript_change_gt, codon_change_gt, protein_change_gt):
+        """Verify the protein change on a positive transcript for indels (issue 107)."""
+        vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        vcer = VariantClassifier()
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        self.assertTrue(protein_change == protein_change_gt, "Protein change did not match gt (%s): (%s) for %s" % (protein_change_gt, protein_change, str([chr, start, end, gt_vc, vt, ref, alt, vc.get_secondary_vc()])))
+
 
     def test_snp_vc_on_one_transcript_5UTR(self):
         """Take test transcript (ENST00000215832.6 (chr 22: 22108789:22221919) "-" strand) and test the entire 5'UTR"""
@@ -173,6 +208,10 @@ class VariantClassifierTest(unittest.TestCase):
 
     def _retrieve_test_transcript_MAPK1(self):
         tx_id = 'ENST00000215832.6'
+        return self._retrieve_test_transcript(tx_id)
+
+    def _retrieve_test_transcript_PIK3CA(self):
+        tx_id = 'ENST00000263967.3'
         return self._retrieve_test_transcript(tx_id)
 
     variants_snps_splice_sites = lambda: (
@@ -237,8 +276,6 @@ class VariantClassifierTest(unittest.TestCase):
         # ref is wrong here, but test should still pass
         ("22", "22123486", "22123486", "3'UTR", "DEL", "A", "-")
 
-        #TODO: Test RNA VCs
-        #TODO: Test "+" strand transcript, particularly for DeNovo
         #TODO: Fix in frame calculation when only partially overlapping an exon.  (No need until secondary vc is implemented)
     )
     @data_provider_decorator(variants_indels_splice_sites)
@@ -361,26 +398,178 @@ class VariantClassifierTest(unittest.TestCase):
     #TODO: Test Flank (if not already done in MUC16 test)
 
     mutating_exons = lambda: (
+        ("DEL", "GG", "-", 22221734, 22221734, "AGAA"),
+        ("DEL", "GGCT", "-", 22221734, 22221734, "GCAA"),
         ("SNP", "G", "T", 22221734, 22221734, "GCAAA"),
         ("SNP", "G", "C", 22221734, 22221734, "GCGAA"),
         ("DEL", "G", "-", 22221734, 22221734, "GCAA"),
-        ("DEL", "GG", "-", 22221734, 22221734, "AGAA"),
-        ("DEL", "GGCT", "-", 22221734, 22221734, "GCAA"),
         ("DEL", "GTTGGCT", "-", 22221731, 22221731, "GCAT"),
-        ("INS", "-", "A", 22221734, 22221734, "CCTAA"),
-        ("INS", "-", "GAG", 22221734, 22221734, "CCCTCAA"),
-        ("INS", "-", "GAGA", 22221734, 22221734, "CCTCTCAA"),
-        ("INS", "-", "GAGAAA", 22221734, 22221734, "CCTTTCTCAA")
+        ("INS", "-", "A", 22221733, 22221734, "CCTAA"),
+        ("INS", "-", "GAG", 22221733, 22221734, "CCCTCAA"),
+        ("INS", "-", "GAGA", 22221733, 22221734, "CCTCTCAA"),
+        ("INS", "-", "GAGAAA", 22221733, 22221734, "CCTTTCTCAA")
     )
 
     @data_provider_decorator(mutating_exons)
-    def test_mutate_exon(self, vt, ref, alt, start, end, mutated_exon_gt):
-        """Test that we can get the proper obs allele when mutating. """
+    def test_mutate_exon_negative_stranded(self, vt, ref, alt, start, end, mutated_exon_gt):
+        """Test that we can get the proper obs allele when mutating (negative strand). """
         tx = self._retrieve_test_transcript_MAPK1()
         vcer = VariantClassifier()
         exon_start, exon_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(start, end, tx)
         mutated_exon = vcer._mutate_exon(tx, ref, alt, vt, exon_start, buffer=2)
         self.assertTrue(mutated_exon == mutated_exon_gt, "GT/Guess: %s/%s" % (mutated_exon_gt, mutated_exon))
+
+    # Essentially, the rendering of the reference sequence for inserts vs. non-insert
+    reference_seq_testdata = lambda: (
+        (3, 178948149, 178948150, "ACAAGA", [2], VariantClassification.VT_INS),
+        (3, 178948150, 178948151, "AGA", [3], VariantClassification.VT_INS),
+        (3, 178948148, 178948149, "ACA", [1], VariantClassification.VT_INS),
+        (3, 178948147, 178948148, "ACA", [0], VariantClassification.VT_INS),
+        (3, 178948146, 178948147, "AAGACA", [2], VariantClassification.VT_INS),
+        (3, 178948150, 178948150, "ACA", [2], VariantClassification.VT_SNP),
+        (3, 178948149, 178948150, "ACA", [1,2], VariantClassification.VT_SNP),
+        (3, 178948149, 178948151, "ACAAGA", [1,2,0], VariantClassification.VT_SNP),
+        (3, 178948149, 178948149, "ACA", [1], VariantClassification.VT_SNP),
+        (3, 178948145, 178948145, "AAG", [0], VariantClassification.VT_SNP),
+    )
+    @data_provider_decorator(reference_seq_testdata)
+    def test_reference_sequence_codon_construction_positive_strand(self, chr, start, end, ref_codon_sequence_gt, ref_codon_positions_gt, vt):
+        tx = self._retrieve_test_transcript_PIK3CA()
+        transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
+            start, end, tx)
+        if tx.get_strand() == "+" and not vt == VariantClassification.VT_INS:
+            transcript_position_start -= 1
+            transcript_position_end -= 1
+        cds_start, cds_stop = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
+        protein_position_start, protein_position_end = TranscriptProviderUtils.get_protein_positions(
+            transcript_position_start,
+            transcript_position_end, cds_start)
+
+        cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
+        reference_codon_seq = tx.get_seq()[cds_codon_start:cds_codon_end+1]
+        self.assertTrue(reference_codon_seq == ref_codon_sequence_gt, "Codon sequence did not match for reference (GT/Guess): %s/%s " % (ref_codon_sequence_gt, reference_codon_seq))
+        # reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(tx.get_seq()[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
+
+    indel_testdata_for_change_pik3ca = lambda : (
+        # In Frame
+        ("3", "178916621","178916622", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-12)ccacga>ccTATacga", "p.3_4PR>PIR"),
+        ("3", "178916622","178916623", "In_Frame_Ins", "INS", "-", "TAT", "c.(10-12)cga>TATcga", "p.3_4insY"),
+        ("3", "178916619","178916620", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-9)cca>TATcca", "p.2_3insY"),
+        ("3", "178916620","178916621", "In_Frame_Ins", "INS", "-", "TAT", "c.(7-9)cca>cTATca", "p.3_3P>LS"),
+        ("3", "178916622","178916623", "In_Frame_Ins", "INS", "-", "CTTGAAGAA", "c.(10-12)cga>CTTGAAGAAcga", "p.3_4insLEE"),
+        #fs
+        ("3", "178916621","178916622", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Ins", "INS", "-", "TA", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Ins", "INS", "-", "T", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-12)ccacgafs", "p.R4fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(10-12)cgafs", "p.R4fs"),
+        ("3", "178916619","178916620", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)ccafs", "p.P3fs"), # 17
+
+        # DEL
+        # In Frame
+        ("3", "178916619", "178916621", "In_Frame_Del", "DEL", "TCC", "-", "c.(4-9)cctcca>cca", "p.2_3PP>P"),
+        ("3", "178916620", "178916622", "In_Frame_Del", "DEL", "CCA", "-", "c.(7-9)ccadel", "p.P3del"),
+        ("3", "178916621", "178916623", "In_Frame_Del", "DEL", "CAC", "-", "c.(7-12)ccacga>cga", "p.P3del"),
+        ("3", "178916622", "178916624", "In_Frame_Del", "DEL", "ACG", "-", "c.(7-12)ccacga>cca", "p.R4del"), #21
+
+        #fs
+        ("3", "178916619","178916620", "Frame_Shift_Del", "DEL", "TC","-", "c.(4-9)cctccafs", "p.PP2fs"),
+        ("3", "178916620","178916621", "Frame_Shift_Del", "DEL", "CC","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916622", "Frame_Shift_Del", "DEL", "CA","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916622","178916623", "Frame_Shift_Del", "DEL", "AC","-", "c.(7-12)ccacgafs", "p.R4fs"), # This is correct, since the first amino acid remains the same
+        ("3", "178916619","178916619", "Frame_Shift_Del", "DEL", "T","-", "c.(4-6)cctfs", "p.P3fs"), #26 -- correct as written, since there are two P's in a row
+        ("3", "178916620","178916620", "Frame_Shift_Del", "DEL", "C","-", "c.(7-9)ccafs", "p.P3fs"),
+        ("3", "178916621","178916621", "Frame_Shift_Del", "DEL", "C","-", "c.(7-9)ccafs", "p.P3fs"), #28
+        ("3", "178916622","178916622", "Frame_Shift_Del", "DEL", "A","-", "c.(7-9)ccafs", "p.P3fs"), #29
+
+        ("3", "178916619","178916622", "Frame_Shift_Del", "DEL", "TCCA","-", "c.(4-9)cctccafs", "p.PP2fs"),
+        ("3", "178916620","178916623", "Frame_Shift_Del", "DEL", "CCAC","-", "c.(7-12)ccacgafs", "p.PR3fs"),
+        ("3", "178916621","178916624", "Frame_Shift_Del", "DEL", "CACG","-", "c.(7-12)ccacgafs", "p.PR3fs"),
+        ("3", "178916622","178916625", "Frame_Shift_Del", "DEL", "ACGA","-", "c.(7-12)ccacgafs", "p.PR3fs"),
+
+        ("3", "178916619","178916625", "Frame_Shift_Del", "DEL", "TCCACGA","-", "c.(4-12)cctccacgafs", "p.PPR2fs"),
+        ("3", "178916620","178916626", "Frame_Shift_Del", "DEL", "CCACGAC","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"),
+        ("3", "178916621","178916627", "Frame_Shift_Del", "DEL", "CACGACC","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"), #36
+        ("3", "178916622","178916628", "Frame_Shift_Del", "DEL", "ACGACCA","-", "c.(7-15)ccacgaccafs", "p.PRP3fs"),
+    )
+    @data_provider_decorator(indel_testdata_for_change_pik3ca)
+    def test_reference_change_construction_positive_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
+        """Test that different indel configurations are rendered correctly on a positive stranded transcript."""
+        tx = self._retrieve_test_transcript_PIK3CA()
+
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+        self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
+        self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
+
+    indel_testdata_for_change_mapk1 = lambda : (
+        # In Frame
+        ("22", "22221703","22221704", "In_Frame_Ins", "INS", "-", "TAT", "c.(25-30)gcgggc>gcgATAggc", "p.9_10AG>AIG"),  # gcccgc
+        ("22", "22221702","22221703", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-30)ggc>gATAgc", "p.10_10G>DS"),
+        ("22", "22221701","22221702", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-30)ggc>ggATAc", "p.10_11insY"),  # gcccgc -- this is correct since G>GY, we are just inserting a Y
+        ("22", "22221700","22221701", "In_Frame_Ins", "INS", "-", "TAT", "c.(28-33)ggcccg>ggcATAccg", "p.10_11GP>GIP"),
+        ("22", "22221700","22221701", "In_Frame_Ins", "INS", "-", "TTCTTCAAG", "c.(28-33)ggcccg>ggcCTTGAAGAAccg", "p.10_11GP>GLEEP"),
+
+        #fs
+        ("22", "22221724","22221725", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(4-9)gcggcgfs", "p.A3fs"),
+        ("22", "22221723","22221724", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221722","22221723", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-9)gcgfs", "p.-3fs"), # This is correct, since the protein does not change, but is fs # CGC > CTATTGC  gcg>gATAAcg
+        ("22", "22221721","22221722", "Frame_Shift_Ins", "INS", "-", "TATT", "c.(7-12)gcggcgfs", "p.A4fs"),
+        ("22", "22221724","22221725", "Frame_Shift_Ins", "INS", "-", "TA", "c.(4-9)gcggcgfs", "p.A3fs"),
+        ("22", "22221723","22221724", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221722","22221723", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221721","22221722", "Frame_Shift_Ins", "INS", "-", "TA", "c.(7-12)gcggcgfs", "p.A4fs"),
+        ("22", "22221724","22221725", "Frame_Shift_Ins", "INS", "-", "T", "c.(4-9)gcggcgfs", "p.A3fs"), #14
+        ("22", "22221723","22221724", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221722","22221723", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-9)gcgfs", "p.A3fs"),
+        ("22", "22221721","22221722", "Frame_Shift_Ins", "INS", "-", "T", "c.(7-12)gcggcgfs", "p.A4fs"),
+
+        # DEL
+        # In Frame
+        ("22", "22221720", "22221722", "In_Frame_Del", "DEL", "GCC", "-", "c.(7-12)gcggcg>gcg", "p.3_4AA>A"), #18
+        ("22", "22221719", "22221721", "In_Frame_Del", "DEL", "CGC", "-", "c.(10-12)gcgdel", "p.A7del"),  # This is technically correct, since there are A's upstream.
+        ("22", "22221718", "22221720", "In_Frame_Del", "DEL", "CCG", "-", "c.(10-15)gcggcg>gcg", "p.4_5AA>A"),
+        ("22", "22221717", "22221719", "In_Frame_Del", "DEL", "GCC", "-", "c.(10-15)gcggcg>gcg", "p.4_5AA>A"), #21
+
+        #fs
+        ("22", "22221700","22221701", "Frame_Shift_Del", "DEL", "GG","-", "c.(28-33)ggcccgfs", "p.P11fs"),
+        ("22", "22221699","22221700", "Frame_Shift_Del", "DEL", "GG","-", "c.(31-33)ccgfs", "p.P11fs"),
+        ("22", "22221698","22221699", "Frame_Shift_Del", "DEL", "CG","-", "c.(31-33)ccgfs", "p.P11fs"),
+        ("22", "22221697","22221698", "Frame_Shift_Del", "DEL", "CC","-", "c.(31-36)ccggagfs", "p.E12fs"),
+        ("22", "22221700","22221700", "Frame_Shift_Del", "DEL", "G","-", "c.(31-33)ccgfs", "p.P11fs"), #26
+        ("22", "22221699","22221699", "Frame_Shift_Del", "DEL", "G","-", "c.(31-33)ccgfs", "p.P11fs"),
+        ("22", "22221698","22221698", "Frame_Shift_Del", "DEL", "C","-", "c.(31-33)ccgfs", "p.P11fs"), #28
+        ("22", "22221697","22221697", "Frame_Shift_Del", "DEL", "C","-", "c.(34-36)gagfs", "p.E12fs"), #29
+
+        ("22", "22221694","22221697", "Frame_Shift_Del", "DEL", "TCTC","-", "c.(34-39)gagatgfs", "p.EM12fs"),
+        ("22", "22221693","22221696", "Frame_Shift_Del", "DEL", "ATCT","-", "c.(34-39)gagatgfs", "p.EM12fs"),
+        ("22", "22221692","22221695", "Frame_Shift_Del", "DEL", "CATC","-", "c.(34-39)gagatgfs", "p.EM12fs"),
+        ("22", "22221691","22221694", "Frame_Shift_Del", "DEL", "CCAT","-", "c.(37-42)atggtcfs", "p.MV13fs"),
+
+        ("22", "22221690","22221696", "Frame_Shift_Del", "DEL", "ACCATCT","-", "c.(34-42)gagatggtcfs", "p.EMV12fs"),
+        ("22", "22221689","22221695", "Frame_Shift_Del", "DEL", "GACCATC","-", "c.(34-42)gagatggtcfs", "p.EMV12fs"),
+        ("22", "22221688","22221694", "Frame_Shift_Del", "DEL", "GGACCAT","-", "c.(37-45)atggtccgcfs", "p.MVR13fs"), #36
+        ("22", "22221687","22221693", "Frame_Shift_Del", "DEL", "CGGACCA","-", "c.(37-45)atggtccgcfs", "p.MVR13fs"),
+    )
+    @data_provider_decorator(indel_testdata_for_change_mapk1)
+    def test_reference_change_construction_negative_strand(self, chr, start, end, vc_gt, vt, ref_allele, alt_allele, codon_change_gt, protein_change_gt):
+        """Test that different indel configurations are rendered correctly on a negative stranded transcript."""
+        tx = self._retrieve_test_transcript_MAPK1()
+
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+        self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
+        self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
 
 if __name__ == '__main__':
     unittest.main()

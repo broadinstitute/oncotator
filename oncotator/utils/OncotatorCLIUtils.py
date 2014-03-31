@@ -333,6 +333,7 @@ class OncotatorCLIUtils(object):
         #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
         for ds in datasourceList:
             if isinstance(ds, TranscriptProvider):
+                logging.getLogger(__name__).info("Setting %s %s to tx-mode of %s..." % (ds.title, ds.version, tx_mode))
                 ds.set_tx_mode(tx_mode)
 
         result = RunSpecification()

@@ -224,7 +224,7 @@ class VariantClassifier(object):
         transcript_position_start, transcript_position_end = TranscriptProviderUtils.convert_genomic_space_to_exon_space(
             start, end, tx)
 
-        if tx.get_strand() == "+":
+        if tx.get_strand() == "+" and not variant_type == VariantClassification.VT_INS:
             transcript_position_start -= 1
             transcript_position_end -= 1
 
@@ -235,7 +235,7 @@ class VariantClassifier(object):
             transcript_position_start,
             transcript_position_end, cds_start)
         new_ref_transcript_seq = transcript_seq
-        if transcript_seq[transcript_position_start:transcript_position_end+1] != reference_allele_stranded:
+        if (transcript_seq[transcript_position_start:transcript_position_end+1] != reference_allele_stranded) and variant_type != VariantClassification.VT_INS:
             new_ref_transcript_seq = list(transcript_seq)
             new_ref_transcript_seq[transcript_position_start:transcript_position_end+1] = reference_allele_stranded
             new_ref_transcript_seq = ''.join(new_ref_transcript_seq)
@@ -243,9 +243,16 @@ class VariantClassifier(object):
         else:
             ref_tx_seq_has_been_changed = False
         cds_codon_start, cds_codon_end = TranscriptProviderUtils.get_cds_codon_positions(protein_position_start, protein_position_end, cds_start)
-        # reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1]
-        reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
-        mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
+
+        if variant_type == "DEL":
+            reference_codon_seq = new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower()
+        else:
+            reference_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(new_ref_transcript_seq[cds_codon_start:cds_codon_end+1].lower(), cds_codon_start, transcript_position_start, transcript_position_end, reference_allele_stranded, variant_type)
+
+        if variant_type == "INS" and tx.get_strand() == "-":
+            mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start - 1, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
+        else:
+            mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
 
         observed_aa = Bio.Seq.translate(mutated_codon_seq)
@@ -327,7 +334,7 @@ class VariantClassifier(object):
         if ref_allele == "-":
             ref_allele = ""
         if alt_allele == "-":
-            alt_allele == ""
+            alt_allele = ""
 
         s = int(start)
         e = int(end)
