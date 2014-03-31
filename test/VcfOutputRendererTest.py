@@ -59,6 +59,7 @@ import logging
 import vcf
 import os
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
+from oncotator.utils.OptionConstants import OptionConstants
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -438,7 +439,9 @@ class VcfOutputRendererTest(unittest.TestCase):
                         if not isinstance(expectedGenotypeVal, list):
                             expectedGenotypeVal = [expectedGenotypeVal]
                         self.assertTrue(len(set(expectedGenotypeVal).symmetric_difference(currentGenotypeVal)) == 0,
-                                        "Should have the same value for genotype field, %s." % currentSampleField)
+                                        "Should have the same value for genotype field, %s. Should be %s but was %s." %
+                                        (currentSampleField, string.join(map(str, expectedGenotypeVal), ","),
+                                        string.join(map(str, currentGenotypeVal), ",")))
                     else:
                         self.assertTrue(len(filter(None, currentGenotypeVal)) == 0,
                                         "Rendered vcf should have missing value for genotype field, %s."
@@ -784,6 +787,81 @@ class VcfOutputRendererTest(unittest.TestCase):
 
             if record.CHROM == "20" and record.POS == 14370:
                 self.assertEqual(record.FILTER, None, "")
+
+    def testMaf2VcfCommentInHeader(self):
+        """
+        Tests MAF file to VCF file conversion when the MAF header contains comments.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_sample_name.with_comments.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_sample_name.with_comments.vcf")
+
+        creator = MafliteInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        self.assertTrue("comment" in vcfReader.metadata, "comment section is missing in the meta-information lines.")
+        self.assertItemsEqual(["_muTector_v1.0.33440", "_Oncotator_v0.5.23.0|GAF_2.1_hg19_Jun2011|dbSNP_build_134"],
+                              vcfReader.metadata["comment"],
+                              "comment section in the meta-information lines is incorrect.")
+
+    def testMaf2VcfInferGenotypes(self):
+        """
+        Tests that the output VCF file has correctly inferred genotypes when the input is a MAF file.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "example.normal_sample_name.maf"])
+        outputFilename = os.path.join("out", "maf2vcf.example.normal_sample_name.infer_genotypes.vcf")
+
+        creator = MafliteInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename, otherOptions={OptionConstants.VCF_OUT_INFER_GENOTYPES: "true"})
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        vcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        for rec in vcfReader:
+            for sample in rec.samples:
+                if sample.sample == "NA0001-NT":
+                    genotypeData = rec.genotype(sample.sample)
+                    if rec.CHROM == "20" and rec.POS == 14370:
+                        msg = "Genotype for %s at chrom:%s and pos:%s was %s but should have beeen %s." % \
+                              ("NA0001-NT", rec.CHROM, str(rec.POS), genotypeData["GT"], "0/2")
+                        self.assertEqual(genotypeData["GT"], "0/2", msg)
+
+                    if rec.CHROM == "21" and rec.POS == 123090:
+                        msg = "Genotype for %s at chrom:%s and pos:%s was %s but should have beeen %s." % \
+                              ("NA0001-NT", rec.CHROM, str(rec.POS), genotypeData["GT"], "0/1")
+                        self.assertEqual(genotypeData["GT"], "0/1", msg)
+
+                    if rec.CHROM == "22" and rec.POS == 3239880:
+                        msg = "Genotype for %s at chrom:%s and pos:%s was %s but should have beeen %s." % \
+                              ("NA0001-NT", rec.CHROM, str(rec.POS), genotypeData["GT"], "None")
+                        self.assertEqual(genotypeData["GT"], None, msg)
+
+    def testVcf2VcfInferGenotypes(self):
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file and infer genotypes is true.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.variants.vcf")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename, otherOptions={"infer_genotypes": True})
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
 
 if __name__ == "__main__":
     unittest.main()

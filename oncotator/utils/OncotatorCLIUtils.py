@@ -129,54 +129,41 @@ class RunSpecification(object):
     def get_is_multicore(self):
         return self.__isMulticore
 
-
     def get_num_cores(self):
         return self.__numCores
-
 
     def set_is_multicore(self, value):
         self.__isMulticore = value
 
-
     def set_num_cores(self, value):
         self.__numCores = value
-
 
     def del_is_multicore(self):
         del self.__isMulticore
 
-
     def del_num_cores(self):
         del self.__numCores
-
 
     def get_datasources(self):
         return self.__datasources
 
-
     def set_datasources(self, value):
         self.__datasources = value
-
 
     def del_datasources(self):
         del self.__datasources
 
-
     def get_input_creator(self):
         return self.__inputCreator
-
 
     def get_output_renderer(self):
         return self.__outputRenderer
 
-
     def get_manual_annotations(self):
         return self.__manualAnnotations
 
-
     def set_input_creator(self, value):
         self.__inputCreator = value
-
 
     def set_output_renderer(self, value):
         self.__outputRenderer = value
@@ -211,14 +198,14 @@ class RunSpecification(object):
     def del_is_skip_no_alts(self):
         del self.__is_skip_no_alts
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
-        self.manualAnnotations = manualAnnotations
-        self.datasources = datasources
+        self.manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
+        self.datasources = datasources if datasources is not None else []
         self.isMulticore = isMulticore
         self.numCores = numCores
-        self.defaultAnnotations = defaultAnnotations
+        self.defaultAnnotations = defaultAnnotations if defaultAnnotations is not None else dict()
         self.cacheUrl = cacheUrl
         self.isReadOnlyCache = read_only_cache
         self.isSkipNoAlts = is_skip_no_alts
@@ -234,6 +221,7 @@ class RunSpecification(object):
     cacheUrl = property(get_cache_url, set_cache_url, del_cache_url, "cacheUrl's docstring")
     isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
     isSkipNoAlts = property(get_is_skip_no_alts, set_is_skip_no_alts, del_is_skip_no_alts, "isSkipNoAlts's docstring")
+
 
 class OncotatorCLIUtils(object):
     """
@@ -265,13 +253,18 @@ class OncotatorCLIUtils(object):
     def createInputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
         more input formats."""
-        return {'MAFLITE':(MafliteInputMutationCreator, 'maflite_input.config'), "VCF":(VcfInputMutationCreator, 'vcf.in.config')}
+        return {'MAFLITE': (MafliteInputMutationCreator, 'maflite_input.config'),
+                "VCF": (VcfInputMutationCreator, 'vcf.in.config')}
 
     @staticmethod
     def createOutputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
         more output formats."""
-        return {'TCGAMAF':(TcgaMafOutputRenderer, 'tcgaMAF2.4_output.config'),"SIMPLE_TSV":(SimpleOutputRenderer, ''),'SIMPLE_BED':(SimpleBedOutputRenderer, ""),'TCGAVCF':(TcgaVcfOutputRenderer, 'tcgaVCF1.1_output.config'), 'VCF':(VcfOutputRenderer, 'vcf.out.config')}
+        return {'TCGAMAF': (TcgaMafOutputRenderer, "tcgaMAF2.4_output.config"),
+                "SIMPLE_TSV": (SimpleOutputRenderer, ""),
+                'SIMPLE_BED': (SimpleBedOutputRenderer, ""),
+                'TCGAVCF': (TcgaVcfOutputRenderer, "tcgaVCF1.1_output.config"),
+                'VCF': (VcfOutputRenderer, "vcf.out.config")}
 
     @staticmethod
     def getSupportedOutputFormats():
@@ -297,18 +290,20 @@ class OncotatorCLIUtils(object):
         return inputCreator
 
     @staticmethod
-    def create_output_renderer(outputFilename, outputFormat):
-        outputRenderer = None
+    def create_output_renderer(outputFilename, outputFormat, otherOptions):
         outputRendererDict = OncotatorCLIUtils.createOutputFormatNameToClassDict()
         if outputFormat not in outputRendererDict.keys():
             raise NotImplementedError("The outputFormat specified: " + outputFormat + " is not supported.")
         else:
             outputConfig = outputRendererDict[outputFormat][1]
-            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
+            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig, otherOptions)
         return outputRenderer
 
     @staticmethod
-    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False):
+    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=None,
+                        datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4,
+                        defaultAnnotations=None, cacheUrl=None, read_only_cache=True,
+                        tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False, other_opts=None):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -324,9 +319,13 @@ class OncotatorCLIUtils(object):
         # TODO: On error, list the supported formats (both input and output) 
         # TODO: Make sure that we can pass in both a class and a config file, not just a class.
 
+        globalAnnotations = dict() if globalAnnotations is None else globalAnnotations
+        defaultAnnotations = dict() if defaultAnnotations is None else defaultAnnotations
+        other_opts = dict() if other_opts is None else other_opts
+
         # Step 1 Initialize input and output
         inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild)
-        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
+        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat, other_opts)
 
         # Step 2 Datasources
         datasourceList = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
@@ -338,7 +337,9 @@ class OncotatorCLIUtils(object):
                 ds.set_tx_mode(tx_mode)
 
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList,
+                          isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations,
+                          cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts)
         return result
     
     @staticmethod

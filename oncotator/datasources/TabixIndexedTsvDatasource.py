@@ -92,11 +92,9 @@ class IndexedTsvDatasource(Datasource):
         mut_end = int(mutation.end)
         try:
             tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start, mut_end, parser=pysam.asTuple())
-
             for tsv_record in tsv_records:
                 if not tsv_record:
                     continue
-
                 for colName in self.output_tsv_headers:
                     val = tsv_record[self.tsv_headers[colName]]
 
@@ -110,7 +108,6 @@ class IndexedTsvDatasource(Datasource):
                             vals[colName] = [val]
                         else:
                             vals[colName] += [val]
-
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
             self.logger.warn(msg)

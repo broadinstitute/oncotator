@@ -157,6 +157,12 @@ class IndexedVcfDatasource(Datasource):
         return [""]*num
 
     def _determine_matching_alt_index(self, mut, record):
+        """
+
+        :param mut:
+        :param record:
+        :return:
+        """
         index = None
         ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
         if record.is_monomorphic and mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele:
@@ -179,8 +185,7 @@ class IndexedVcfDatasource(Datasource):
         :return: annotated mutation
         """
 
-        # Get all the records corresponding to the given mutation object
-
+        # Get all the records corresponding to the given mutation
         mut_start = int(mutation.start)
         mut_end = int(mutation.end)
         vals = dict()
@@ -188,8 +193,9 @@ class IndexedVcfDatasource(Datasource):
 
         if mutation.ref_allele == "-":  # adjust for cases where there is an insertion
             mut_start -= 1
+
         try:
-            vcf_records = self.vcf_reader.fetch(mutation.chr, mut_start, mut_end)
+            vcf_records = self.vcf_reader.fetch(mutation.chr, mut_start, mut_end)  # query database for records
         except ValueError as ve:
             self.logger.warn("Exception when looking for vcf records. Empty set of records being returned: " + repr(ve))
         else:
