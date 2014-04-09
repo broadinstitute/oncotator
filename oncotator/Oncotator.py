@@ -43,7 +43,7 @@ TESTRUN = 0
 PROFILE = 1
 
 #TODO: These need to be dynamic from a config file.
-DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds_current/'
+DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds_gencode_current/'
 DEFAULT_DEFAULT_ANNOTATIONS = '/xchip/cga/reference/annotation/db/tcgaMAFManualOverrides2.4.config'
 DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
