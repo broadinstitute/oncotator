@@ -120,7 +120,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                     else:
                         isTagSplit = self.isTagSplit[name]
 
-                    if isTagSplit:
+                    if isTagSplit and isinstance(genotypeData[ID], list):
                         val = genotypeData[ID][index]
                     else:
                         val = genotypeData[ID]
@@ -172,7 +172,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                 else:
                     isTagSplit = self.isTagSplit[name]
 
-                if isTagSplit:
+                if isTagSplit and isinstance(record.INFO[ID], list):
                     val = record.INFO[ID][index]
                 else:
                     val = record.INFO[ID]
