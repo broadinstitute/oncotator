@@ -424,6 +424,7 @@ class VcfInputMutationCreator(InputMutationCreator):
     def _addFilterFields2Metadata(self, metadata):
         """
 
+
         :param metadata:
         :return:
         """
