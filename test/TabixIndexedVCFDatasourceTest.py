@@ -71,6 +71,16 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         pass
 
     def _createMut(self, chrom, startPos, endPos, ref, alt, build):
+        """
+
+        :param chrom:
+        :param startPos:
+        :param endPos:
+        :param ref:
+        :param alt:
+        :param build:
+        :return:
+        """
         mut = MutationData(chrom, int(startPos), int(endPos), ref, alt, build)
 
         varType = MutUtils.determineVariantType(mut)
@@ -98,6 +108,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         return mut
 
     def testTags(self):
+        """
+
+        """
         self.logger.info("Initializing ESP6500SI-V2")
         tabixIndexedVcfDirName = os.path.join(*["testdata", "small_esp_ds"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
@@ -111,6 +124,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
             self.assertTrue(TagConstants.NOT_SPLIT in tags, "NOT_SPLIT tag is missing for %s." % ID)
 
     def testExampleVcfDBAnnotationWithSNPExactMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_exact", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_exact.config"), tabixIndexedVcfDirName)
@@ -167,6 +183,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithIndelExactMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_exact", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_exact.config"), tabixIndexedVcfDirName)
@@ -212,6 +231,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingSNPExactMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_exact", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_exact.config"), tabixIndexedVcfDirName)
@@ -291,6 +313,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingIndelExactMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_exact", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_exact.config"), tabixIndexedVcfDirName)
@@ -336,6 +361,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithSNPOverlapMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_overlap", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_overlap.config"), tabixIndexedVcfDirName)
@@ -421,6 +449,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithIndelOverlapMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_overlap", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_overlap.config"), tabixIndexedVcfDirName)
@@ -466,6 +497,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingSNPOverlapMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_overlap", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_overlap.config"), tabixIndexedVcfDirName)
@@ -539,6 +573,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingIndelOverlapMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_overlap", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_overlap.config"), tabixIndexedVcfDirName)
@@ -578,6 +615,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithSNPAvgMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_avg", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_avg.config"), tabixIndexedVcfDirName)
@@ -663,6 +703,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithIndelAvgMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_avg", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_avg.config"), tabixIndexedVcfDirName)
@@ -708,6 +751,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingSNPAvgMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_avg", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_avg.config"), tabixIndexedVcfDirName)
@@ -781,6 +827,9 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testExampleVcfDBAnnotationWithMissingIndelAvgMatch(self):
+        """
+
+        """
         tabixIndexedVcfDirName = os.path.join(*["testdata", "vcf_db_avg", "hg19"])
         tabixIndexedVcfDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedVcfDirName, "vcf_db_avg.config"), tabixIndexedVcfDirName)

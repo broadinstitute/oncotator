@@ -168,6 +168,7 @@ class RecordBuilder:
         fmt = string.join(self._fmtIDs, ":")
         record = vcf.model._Record(chrom, pos, ID, refAllele, alts, qual, filt, info, fmt, self._sampleNameIndexes)
         record.samples = self._resolveSamples(record)
+
         return record
 
     def _correct(self, iterable, bad=(".", "",)):
@@ -198,7 +199,7 @@ class RecordBuilder:
 
         return val
 
-    def _appendVal2FixedNumField(self, data, ID, num, isSplit, val):
+    def _determineVal2FixedNumField(self, data, ID, num, isSplit, val):
         """
 
         :param data:
@@ -215,7 +216,7 @@ class RecordBuilder:
                 vals += self._fixVal(val, isSplit)
                 data[ID] = vals
 
-    def addInfo(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
+    def addInfo(self, sampleName, ID, num=None, dataType="String", val=None, isSplit=True):
         """
 
         :param sampleName:
@@ -235,21 +236,26 @@ class RecordBuilder:
                 self._info[ID][sampleNameIndex] = val[0]
         elif num == -1:  # num is the number of alternate alleles
             nalts = len(self._alts)
-            self._appendVal2FixedNumField(self._info, ID, nalts, isSplit, val)
+            self._determineVal2FixedNumField(self._info, ID, nalts, isSplit, val)
         elif num == 0:  # num is either true or false
             if ID not in self._info:
                 val = self._map(MutUtils.str2bool, self._fixVal(val, isSplit))  # convert the value to boolean
                 self._info[ID] = val[0]
         elif num is None:  # num is unknown
             nalts = len(self._alts)
-            self._appendVal2FixedNumField(self._info, ID, nalts, isSplit, val)
+            self._determineVal2FixedNumField(self._info, ID, nalts, isSplit, val)
         else:
-            self._appendVal2FixedNumField(self._info, ID, num, isSplit, val)
+            self._determineVal2FixedNumField(self._info, ID, num, isSplit, val)
 
         if ID not in self._infoFieldProperty:
             self._infoFieldProperty[ID] = self.fieldProperty(num, dataType, isSplit)
 
-    def addFormat(self, sampleName, ID, num=".", dataType="String", val=None, isSplit=True):
+    def _determineGenotype(self):
+        nalts = len(self._alts)
+        genotype = string.join(map(str, [0, nalts]), "/")  # unphased genotype
+        return genotype
+
+    def addFormat(self, sampleName, ID, num=None, dataType="String", val=None, isSplit=True, inferGenotype=False):
         """
 
         :param sampleName:
@@ -259,26 +265,34 @@ class RecordBuilder:
         :param val:
         :param isSplit:
         """
-        if sampleName in self._sampleNames and num != 0:
+        if sampleName in self._sampleNames and num != 0:  # FORMAT fields can never have a value of type flag
             sampleNameIndex = self._sampleNameIndexes[sampleName]
-            if self._fmt[sampleNameIndex] is None:
+            if self._fmt[sampleNameIndex] is None:  # GT is always the first field
                 self._fmt[sampleNameIndex] = collections.OrderedDict()
                 self._fmtIDs = ["GT"]
                 self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
+                if inferGenotype:
+                    self._fmt[sampleNameIndex]["GT"] = [self._determineGenotype()]
+
+            if ID == "GT":
+                try:
+                    del self._fmt[sampleNameIndex][ID]
+                except KeyError:
+                    pass
 
             if num == -2:  # num is the number of samples
                 nalts = len(self._alts)
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
+                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
             elif num == -1:  # num is the number of alternate alleles
                 nalts = len(self._alts)
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
+                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
             elif num == 0:  # num is either true or false
                 pass
             elif num is None:  # num is unknown
                 nalts = len(self._alts)
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
-            else:
-                self._appendVal2FixedNumField(self._fmt[sampleNameIndex], ID, num, isSplit, val)
+                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
+            else:  # num is fixed
+                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, num, isSplit, val)
 
             if ID not in self._fmtIDs:
                 self._fmtIDs += [ID]

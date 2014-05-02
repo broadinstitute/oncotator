@@ -40,12 +40,16 @@ oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.in
 
 echo "== SNV maflite 2 tcga maf test ==="
 oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.txt hg19
+
+echo "== maflite 2 vcf infer genotypes test"
+oncotator -v --no-multicore --db-dir=${DB_DIR} --infer_genotypes=true --input_format=MAFLITE --output_format=VCF test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.vcf hg19
+
 ########
 
 set +e
 # Do not use multiprocess mode with profiling or coverage.  Bug in nosetests also disallows --processes and --with-xunit
 #  --processes=4 --process-timeout=480  --process-restartworker
-nosetests --all-modules --exe --with-xunit --xunit-file=test/nosetests.xml -w test -v
+nosetests --all-modules --exe --with-xunit --xunit-file=${PWD}/nosetests.xml -w test -v
 set -e
 
 echo "Deactivating and deleting test python virtual environment"

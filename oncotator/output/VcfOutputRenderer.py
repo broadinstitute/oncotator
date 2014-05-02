@@ -60,6 +60,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.output.RecordBuilder import RecordBuilder
 from oncotator.output.OutputDataManager import OutputDataManager
 from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
+from oncotator.utils.OptionConstants import OptionConstants
 import traceback
 
 
@@ -74,7 +75,7 @@ class VcfOutputRenderer(OutputRenderer):
     """
     _vcfAnnotation = collections.namedtuple(typename="Annotation", field_names=["field", "ID", "num", "type"])
 
-    def __init__(self, filename, configFile='vcf.out.config'):
+    def __init__(self, filename, configFile="vcf.out.config", otherOptions=None):
         """
 
 
@@ -82,6 +83,7 @@ class VcfOutputRenderer(OutputRenderer):
         :param configFile: output config file
         """
         self._filename = filename
+        self._otherOpts = dict() if otherOptions is None else otherOptions
         self.configFilename = configFile
         self.logger = logging.getLogger(__name__)
         self.config = oncotator.utils.ConfigUtils.ConfigUtils.createConfigParser(configFile, ignoreCase=False)
@@ -126,9 +128,14 @@ class VcfOutputRenderer(OutputRenderer):
         # Sort the given TSV file
         sortedTempTsvFileName = dataManager.getSortedTsvFilename(path)
 
+        try:
+            inferGenotypes = self._otherOpts[OptionConstants.VCF_OUT_INFER_GENOTYPES]
+        except (KeyError, TypeError):
+            inferGenotypes = False
+
         self.logger.info("Render starting...")
         self._renderSortedTsv(tempTemplateFile.name, self._filename, sortedTempTsvFileName, self.sampleNames,
-                              dataManager)
+                              dataManager, inferGenotypes)
 
         # Remove template filename
         os.remove(tempTemplateFile.name)
@@ -157,7 +164,7 @@ class VcfOutputRenderer(OutputRenderer):
             isNew = True
         return isNew
 
-    def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager):
+    def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager, inferGenotypes):
         """
 
 
@@ -200,7 +207,7 @@ class VcfOutputRenderer(OutputRenderer):
 
                     recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
 
-                recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager)
+                recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager, inferGenotypes)
 
             if recordBuilder is not None:
                 record = recordBuilder.createRecord()
@@ -209,11 +216,11 @@ class VcfOutputRenderer(OutputRenderer):
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.logger.error("Error at mutation " + str(ctr) + " " + str([m.chr, m.start, m.end]) + ": ")
+            self.logger.error("Error at mutation " + str(ctr) + " " + str([m["chr"], m["start"], m["end"]]) + ": ")
 
         self.logger.info("Rendered all " + str(index) + " vcf records.")
 
-    def _parseRecordBuilder(self, m, recordBuilder, dataManager):
+    def _parseRecordBuilder(self, m, recordBuilder, dataManager, inferGenotype):
         """
         Parse the input mutation object.
         First, this method
@@ -223,7 +230,6 @@ class VcfOutputRenderer(OutputRenderer):
         :param dataManager:
         :return:
         """
-
         idAnnotationNames = dataManager.getAnnotationNames("ID")
         qualAnnotationNames = dataManager.getAnnotationNames("QUAL")
         filterAnnotationNames = dataManager.getAnnotationNames("FILTER")
@@ -277,6 +283,6 @@ class VcfOutputRenderer(OutputRenderer):
                       " in the Format field." % name
                 logging.warn(msg)
             else:
-                recordBuilder.addFormat(sampleName, ID, num, dataType, val, isSplit)
+                recordBuilder.addFormat(sampleName, ID, num, dataType, val, isSplit, inferGenotype)
 
         return recordBuilder

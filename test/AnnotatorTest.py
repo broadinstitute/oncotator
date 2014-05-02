@@ -65,6 +65,8 @@ import os
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 
 TestUtils.setupLogging(__file__, __name__)
+
+
 class AnnotatorTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -187,10 +189,11 @@ class AnnotatorTest(unittest.TestCase):
         self.assertTrue(muts_final[2]['test3'] == "foo3")
 
     def testAnnotateListOfMutations(self):
-        """Test that we can initialize an Annotator, without an input or output and then feed mutations, one at a time... using a runspec"""
+        """Test that we can initialize an Annotator, without an input or output and then feed mutations,
+        one at a time... using a runspec"""
 
         # Locate the datasource directory and create a runspec
-        dbDir = self.config.get('DEFAULT', "dbDir")
+        dbDir = self.config.get("DEFAULT", "dbDir")
         ds = DatasourceFactory.createDatasources(dbDir)
         runSpec = RunSpecification()
         runSpec.initialize(None, None, datasources=ds)

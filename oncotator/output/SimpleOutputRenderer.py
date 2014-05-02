@@ -69,7 +69,7 @@ class SimpleOutputRenderer(OutputRenderer):
     There is no config file needed for initialization of this class.  If specified, it is ignored.
     """
 
-    def __init__(self, filename, configFile=""):
+    def __init__(self, filename, configFile="", otherOptions=None):
         """
         Constructor
 
