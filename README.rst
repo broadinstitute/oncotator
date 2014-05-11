@@ -90,7 +90,7 @@ Version Information
 
 Once Oncotator is installed, run it with the -V flag to get version information::
 
-    $ oncotator -V
+    $ Oncotator -V
 
 
 Git Process Starting with v1.0.0.0 (Developers)

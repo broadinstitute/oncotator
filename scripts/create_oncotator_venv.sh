@@ -55,7 +55,8 @@ echo "bcbio-gff ========================="
 pip install bcbio-gff
 echo " "
 echo "pysam ========================="
-pip install -I pysam==0.7.5
+#pip install -I pysam==0.7.5
+pip install -I --allow-unverified pysam pysam==0.7.5
 echo " "
 echo "pandas ========================="
 pip install pandas
