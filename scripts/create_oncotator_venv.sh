@@ -65,7 +65,7 @@ for PACKAGE in bcbio-gff nose shove python-memcached
 do 
 	echo " "
 	echo "$PACKAGE =========================="
-	pip install $PACKAGE
+	pip install -U $PACKAGE
 	echo "OK"
 done
 
