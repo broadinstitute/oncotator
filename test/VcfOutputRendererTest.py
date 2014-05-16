@@ -863,5 +863,25 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    def testVcf2VcfWithMultipleRecordsWithSamePosition(self):
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file that has multiple records
+        with the same position.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.multiple_records_same_position.vcf"])
+        outputFilename = os.path.join("out", "example.multiple_records_same_position.vcf")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
 if __name__ == "__main__":
     unittest.main()
