@@ -18,7 +18,7 @@ echo "This script must be run from the same directory as setup.py"
 
 VENV=oncotator_nosetest_env_auto
 rm -Rf $VENV
-bash ./scripts/create_oncotator_venv.sh $VENV
+bash ./scripts/create_oncotator_venv.sh -e $VENV
 source $VENV/bin/activate
 
 # nosetests will return a non-zero error code if any unit test fails, so we do not want to stop this script

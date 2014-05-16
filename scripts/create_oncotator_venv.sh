@@ -65,7 +65,7 @@ for PACKAGE in bcbio-gff nose shove python-memcached
 do 
 	echo " "
 	echo "$PACKAGE =========================="
-	pip install $PACKAGE
+	pip install -U $PACKAGE
 	echo "OK"
 done
 
@@ -96,7 +96,7 @@ else
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else 
-		pip install -I --allow-unverified pysam pysam==0.7.5
+		pip install --allow-unverified pysam pysam==0.7.5
 	fi
 	echo "OK"
 fi
