@@ -8,6 +8,10 @@ from oncotator.utils.gaf_annotation import chop
 
 class VariantClassifier(object):
 
+    # TODO: Make these configurable
+    FLANK_PADDING_5PRIME = 3000
+    FLANK_PADDING_3PRIME = 0
+
     def __init__(self):
         pass
 
@@ -391,7 +395,7 @@ class VariantClassifier(object):
 
         raise ValueError("Could not determine variant classification:  " + tx.get_trancript_id() + " " + str([ref_allele, alt_allele, start, end]))
 
-    def _determine_beyond_exon_info(self, start, end, tx, flank_padding_5prime=3000, flank_padding_3prime=0):
+    def _determine_beyond_exon_info(self, start, end, tx, flank_padding_5prime=None, flank_padding_3prime=None):
         """
         start and end must be completely non-overlapping of the tx exons.  Reminder that tx exons include UTRs.
         Also, this will return False, closest side (3' or 5'), False if Intron.
@@ -401,8 +405,17 @@ class VariantClassifier(object):
         :param tx: Transcript
         :return: triplet of is_beyond_exons, side (always a str of 3' or 5' or "" if not is_beyond_exons), is_flank
         """
+        if flank_padding_5prime is None:
+            flank_padding_5prime = VariantClassifier.FLANK_PADDING_5PRIME
+        if flank_padding_3prime is None:
+            flank_padding_3prime = VariantClassifier.FLANK_PADDING_3PRIME
+
         tx_start = tx.get_start()
         tx_end = tx.get_end()
+
+        # TODO: This correction is needed here, but not sure if this is an issue with bcbio gff parsing (issue #140)
+        if tx.get_strand() == "+":
+            tx_start += 1
 
         is_beyond_exons_left = (start < tx_start and end < tx_start)
         is_beyond_exons_right = (start > tx_end and end > tx_end)
@@ -416,9 +429,9 @@ class VariantClassifier(object):
             d = min(abs(start - tx_end), abs(end - tx_end))
 
         if side == "5'":
-            is_flank = (d < flank_padding_5prime)
+            is_flank = ((d <= flank_padding_5prime) and (flank_padding_5prime != 0))
         else:
-            is_flank = (d < flank_padding_3prime)
+            is_flank = ((d <= flank_padding_3prime) and (flank_padding_3prime != 0))
         return is_beyond_exons, side, is_flank
 
     def _determine_strand_side(self, start, end, tx):

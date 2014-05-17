@@ -55,7 +55,7 @@ class VariantClassification(object):
         self._exon_i = exon_i
 
     def get_vc(self):
-        """Returns primary variant classification """
+        """Returns primary variant classification as string """
         return self._vc_primary
 
     def get_secondary_vc(self):
