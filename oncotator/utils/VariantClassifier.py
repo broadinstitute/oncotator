@@ -429,9 +429,9 @@ class VariantClassifier(object):
             d = min(abs(start - tx_end), abs(end - tx_end))
 
         if side == "5'":
-            is_flank = ((d <= flank_padding_5prime) and (flank_padding_5prime != 0))
+            is_flank = ((d <= flank_padding_5prime) and (flank_padding_5prime > 0))
         else:
-            is_flank = ((d <= flank_padding_3prime) and (flank_padding_3prime != 0))
+            is_flank = ((d <= flank_padding_3prime) and (flank_padding_3prime > 0))
         return is_beyond_exons, side, is_flank
 
     def _determine_strand_side(self, start, end, tx):
