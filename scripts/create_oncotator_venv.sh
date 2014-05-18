@@ -22,7 +22,7 @@ source $1/bin/activate
 echo "Attempting to install packages that cannot be installed properly from pypi.  Any other oncotator dependencies can be installed through installing oncotator or manually"
 echo " "
 echo "nose =========================="
-pip install nose
+pip install -U nose
 
 echo " "
 echo "numpy ========================="
