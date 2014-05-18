@@ -579,6 +579,7 @@ class VariantClassifierTest(unittest.TestCase):
     ("22", "22224914","22224921", "5'Flank", "DEL", "GGGGGGGG", "-"),
     ("22", "22224920","22224923", "IGR", "DEL", "GGGG", "-"),
     ("22", "22224918","22224918", "5'Flank", "SNP", "G", "T"),
+    ("22", "22108700","22108700", "IGR", "SNP", "G", "T")
     )
 
     @data_provider_decorator(flank_test_mapk1)
@@ -595,6 +596,7 @@ class VariantClassifierTest(unittest.TestCase):
         ("3", "178866311","178866311", "5'UTR", "SNP", "T", "G"),
         ("3", "178863310","178863310", "IGR", "SNP", "C", "T"),
         ("3", "178863309","178863309", "IGR", "SNP", "C", "T"),
+        ("3", "178957900","178957900", "IGR", "SNP", "C", "T")
     )
 
     @data_provider_decorator(flank_test_pik3ca)
