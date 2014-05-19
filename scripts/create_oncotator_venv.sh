@@ -59,9 +59,9 @@ echo "Now attempting to install packages into the virtual environment."
 #################################################
 
 echo " "
-#echo "Updating pip version"
+echo "Updating pip version"
 
-#pip install -U pip
+pip install -U pip
 
 #################################################
 # Easy installations
