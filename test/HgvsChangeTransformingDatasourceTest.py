@@ -222,7 +222,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         # "p.*1211Trpext?" would describe a variant in the stop codon at position 1211 changing it to a codon for Tryptophan (Trp, W) and adding a tail of new amino acids of unknown length since the shifted frame does not contain a new stop codon.
 
     def test_annotate_SNP_splice_site(self):
-        #splice site mutation occuring in intron prior coding start position
+        #splice site mutation occuring in intron prior to coding start position
         #rs61191258
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
@@ -246,20 +246,28 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
 
         #splice site mutation occuring in intron after coding start position
         # TODO
-#
-#    def test_annotate_SNP_de_novo_start(self):
-#        m = MutationData()
-#        m.createAnnotation('variant_type', 'SNP')
-#        m.createAnnotation('variant_classification', 'De_novo_Start_OutOfFrame')
-#        m.createAnnotation('annotation_transcript', 'ENST00000372237.3')
-#        m.createAnnotation('genome_change', 'g.chr1:45140082G>T')
-#        m.createAnnotation('transcript_change', '')
-#        m.createAnnotation('protein_change', '')
-#        m = self.hgvs_datasource.annotate_mutation(m)
-#
-#        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.45140082G>T')
-#        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000372237.3:c.-121-1G>C')
-#        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
+
+    def test_annotate_SNP_de_novo_start(self):
+        #rs114472931
+        m = MutationData()
+        m.createAnnotation('variant_type', 'SNP')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '1')
+        m.createAnnotation('start', 45140082)
+        m.createAnnotation('end', 45140082)
+        m.createAnnotation('ref_allele', 'G')
+        m.createAnnotation('alt_allele', 'T')
+        m.createAnnotation('transcript_strand', '-')
+        m.createAnnotation('variant_classification', 'De_novo_Start_OutOfFrame')
+        m.createAnnotation('annotation_transcript', 'ENST00000372237.3')
+        m.createAnnotation('genome_change', 'g.chr1:45140082G>T')
+        m.createAnnotation('transcript_change', '')
+        m.createAnnotation('protein_change', '')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.45140082G>T')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000372237.3:c.-19C>A')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
 #
 #    def test_annotate_ONP_missense(self):
 #        m = MutationData()

@@ -86,7 +86,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         vc = mutation['variant_classification']
         if vc in ['Intron', 'Splice_Site']:
             return self._get_cdna_change_for_intron(mutation)
-        elif vc == "5'UTR":
+        elif vc in ["5'UTR", 'De_novo_Start_OutOfFrame']:
             return self._get_cdna_change_for_5_utr(mutation)
         elif vc == "3'UTR":
             return self._get_cdna_change_for_3_utr(mutation)
@@ -97,7 +97,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
     def _adjust_protein_change(self, mutation):
         if mutation['variant_classification'] in ['Intron', 'IGR', "3'UTR", "5'UTR", 'RNA',
-            'lincRNA', 'Silent', 'Splice_Site']:
+            'lincRNA', 'Silent', 'Splice_Site', 'De_novo_Start_OutOfFrame']:
             return ''
         else:
             regx_res = PROT_REGEXP.match(mutation['protein_change'])
@@ -124,12 +124,25 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         if mutation['transcript_strand'] == '+':
             cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
                 tx_exons[nearest_exon][0], tx_exons[nearest_exon][0], tx)
-            #dist_to_exon = dist_to_exon - 1 #why substract 1? why only for positive strand transcript
+            if mutation['variant_classification'] == 'Intron':
+                #do not do for splice sites
+                dist_to_exon = dist_to_exon - 1 #why substract 1? why only for positive strand transcript
         else:
             cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
                 tx_exons[nearest_exon][1], tx_exons[nearest_exon][1], tx)
 
-        cds_position_of_nearest_exon = cds_position_of_nearest_exon[0] + 1 #why add 1?
+        if cds_position_of_nearest_exon[0] == 0:
+            #this means intron occurs before start codon and thus cds position needs to be adjusted to a negative number
+            exon_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'],
+                tx.determine_cds_start() + 1, tx)
+            cds_position_of_nearest_exon = exon_coords[0] - exon_coords[1]
+        else:
+            cds_position_of_nearest_exon = cds_position_of_nearest_exon[0]
+
+        cds_position_of_nearest_exon += 1 #why add 1?
+
+#        if mutation['start'] == 52994576:
+#            from IPython import embed; embed()
         
         sign = '-' if dist_to_exon < 0 else '+'
         dist_to_exon = abs(dist_to_exon)
@@ -138,6 +151,9 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         adjusted_tx_change = 'c.%d%s%d%s>%s' % (cds_position_of_nearest_exon, sign, dist_to_exon,
             tx_ref_allele, tx_alt_allele)
+
+
+        TranscriptProviderUtils.convert_genomic_space_to_exon_space(52994576, 53005099, tx)
 
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
