@@ -174,6 +174,17 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         genes = ds.get_overlapping_genes("22", 22115000, 22120000)
         self.assertTrue(len(set(["MAPK1"]) - genes) == 0)
 
+    def test_overlapping_gene_5flank(self):
+        """Test that we can collect an overlapping gene on its 5' Flank """
+        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_flank")
+        txs = ds.get_overlapping_transcripts("22", 22222050, 22222050, padding=100)
+        self.assertTrue( len(txs) == 1)
+        self.assertTrue(txs[0].get_transcript_id() == "ENST00000398822.3")
+
+        txs = ds.get_overlapping_transcripts("22", 22224920, 22224920)
+        self.assertTrue(len(txs) == 0)
+
+
     def test_small_positive_strand_transcript_change(self):
         """Test one location on a transcript and make sure that the transcript change rendered properly """
         ds = TestUtils._create_test_gencode_ds("out/small_positive_strand_")
