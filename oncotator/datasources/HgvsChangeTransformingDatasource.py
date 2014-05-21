@@ -1,6 +1,8 @@
 import re
 import logging
 
+from Bio import Seq
+
 from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.utils.VariantClassifier import VariantClassifier
@@ -30,9 +32,10 @@ AA_NAME_MAPPING = {
     '*': '*',
 }
 
-COMPLEMENTARY_BASE_MAPPING = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-
 PROT_REGEXP = re.compile('p\.([A-Z*])(\d+)([A-Z*])')
+PROT_FRAMESHIFT_REGEXP = re.compile('p\.([A-Z*])(\d+)fs')
+PROT_INFRAME_DEL_REGEXP = re.compile('p\.([A-Z*])(\d+)del')
+PROT_INFRAME_INS_REGEXP = re.compile('p\.(\d+)_(\d+)[A-Z*]>([A-Z*])')
 
 class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
@@ -73,39 +76,70 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         return mutation
 
     def _adjust_genome_change(self, mutation):
-        chrn = 'chr' + mutation['chr'] if not mutation['chr'].startswith('chr') else mutation['chr']
-        change = '%d%s>%s' % (mutation['start'], mutation['ref_allele'], mutation['alt_allele'])
+        if mutation['variant_type'] == 'DNP':
+            #from IPython import embed; embed()
+            change = '%d_%ddelins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
+        elif mutation['variant_type'] == 'INS':
+            change = '%d_%dins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
+        elif mutation['variant_type'] == 'DEL':
+            if mutation['start'] == mutation['end']:
+                change = str(mutation['start']) if mutation['start'] == mutation['end'] else '%d_%d' % (mutation['start'], mutation['end'])
+                change = '%sdel%s' % (change, mutation['ref_allele'])
+            else:
+                change = '%d_%ddel%s' % (mutation['start'], mutation['end'], mutation['ref_allele'])
+        else:
+            change = '%d%s>%s' % (mutation['start'], mutation['ref_allele'], mutation['alt_allele'])
+
+        chrn = mutation['chr']
         if mutation['build'] == '':
             adjusted_genome_change = '%s:g.%s' % (chrn, change)
         else:
+            if mutation['build'] == 'hg19' and not chrn.startswith('chr'):
+                chrn = 'chr' + chrn
             adjusted_genome_change = '%s.%s:g.%s' % (chrn, mutation['build'], change)
 
         return adjusted_genome_change
 
     def _adjust_coding_DNA_change(self, mutation):
-        vc = mutation['variant_classification']
-        if vc in ['Intron', 'Splice_Site']:
-            return self._get_cdna_change_for_intron(mutation)
-        elif vc in ["5'UTR", 'De_novo_Start_OutOfFrame']:
-            return self._get_cdna_change_for_5_utr(mutation)
-        elif vc == "3'UTR":
-            return self._get_cdna_change_for_3_utr(mutation)
-        elif vc == 'IGR':
-            return ''
+        if mutation['variant_type'] == 'DNP':
+            return self._get_cdna_change_for_ONP(mutation)
         else:
-            return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
+            vc = mutation['variant_classification']
+            if vc in ['Intron', 'Splice_Site']:
+                return self._get_cdna_change_for_intron(mutation)
+            elif vc in ["5'UTR", 'De_novo_Start_OutOfFrame']:
+                return self._get_cdna_change_for_5_utr(mutation)
+            elif vc == "3'UTR":
+                return self._get_cdna_change_for_3_utr(mutation)
+            elif vc == 'IGR':
+                return ''
+            else:
+                return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
 
     def _adjust_protein_change(self, mutation):
         if mutation['variant_classification'] in ['Intron', 'IGR', "3'UTR", "5'UTR", 'RNA',
             'lincRNA', 'Silent', 'Splice_Site', 'De_novo_Start_OutOfFrame']:
             return ''
+        elif mutation['variant_classification'] in ['Frame_Shift_Ins', 'Frame_Shift_Del']:
+            regx_res = PROT_FRAMESHIFT_REGEXP.match(mutation['protein_change'])
+            ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
+            adjusted_prot_change = 'p.%s%sfs' % (AA_NAME_MAPPING[ref_aa], aa_pos)
+        elif mutation['variant_classification'] == 'In_Frame_Del':
+            regx_res = PROT_INFRAME_DEL_REGEXP.match(mutation['protein_change'])
+            ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
+            adjusted_prot_change = 'p.%s%sdel' % (AA_NAME_MAPPING[ref_aa], aa_pos)
+        elif mutation['variant_classification'] == 'In_Frame_Ins':
+            regx_res = PROT_INFRAME_INS_REGEXP.match(mutation['protein_change'])
+            aa_pos_1, aa_pos_2, alt_allele = [regx_res.group(i) for i in range(1, 4)]
+            adjusted_prot_change = 'p.%s_%sins%s' % (aa_pos_1, aa_pos_2, alt_allele)
         else:
             regx_res = PROT_REGEXP.match(mutation['protein_change'])
             ref_aa, aa_pos, alt_aa = [regx_res.group(i) for i in range(1, 4)]
             adjusted_prot_change = 'p.%s%s%s' % (AA_NAME_MAPPING[ref_aa], aa_pos, AA_NAME_MAPPING[alt_aa])
-            prot_id = self._get_ensembl_prot_id_from_tx_id(mutation['annotation_transcript'])
-            adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change)
-            return adjusted_prot_change
+
+        prot_id = self._get_ensembl_prot_id_from_tx_id(mutation['annotation_transcript'])
+        adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change)
+        return adjusted_prot_change
 
     def _get_ensembl_prot_id_from_tx_id(self, tx_id):
         if '.' in tx_id:
@@ -186,6 +220,13 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
     def _get_tx_alleles(self, mutation):
         tx_ref_allele, tx_alt_allele = mutation['ref_allele'], mutation['alt_allele']
         if mutation['transcript_strand'] == '-':
-            tx_ref_allele, tx_alt_allele = COMPLEMENTARY_BASE_MAPPING[tx_ref_allele], COMPLEMENTARY_BASE_MAPPING[tx_alt_allele]
+            tx_ref_allele, tx_alt_allele = Seq.reverse_complement(tx_ref_allele), Seq.reverse_complement(tx_alt_allele)
         return tx_ref_allele, tx_alt_allele
 
+    def _get_cdna_change_for_ONP(self, mutation):
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
+        tx_pos = tuple(t + 1 for t in tx_pos)
+        adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
+        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
