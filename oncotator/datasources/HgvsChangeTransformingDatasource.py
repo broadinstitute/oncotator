@@ -80,7 +80,13 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             #from IPython import embed; embed()
             change = '%d_%ddelins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
         elif mutation['variant_type'] == 'INS':
-            change = '%d_%dins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
+            genome_pos_adjust = self._genome_pos_adjust_if_duplication(mutation['alt_allele'], mutation['ref_context'])
+            if genome_pos_adjust > 0:
+                start_pos = mutation['end'] + genome_pos_adjust
+                end_pos = start_pos + len(mutation['alt_allele']) - 1
+                change = '%d_%ddup%s' % (start_pos, end_pos, mutation['alt_allele'])
+            else:
+                change = '%d_%dins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
         elif mutation['variant_type'] == 'DEL':
             if mutation['start'] == mutation['end']:
                 change = str(mutation['start']) if mutation['start'] == mutation['end'] else '%d_%d' % (mutation['start'], mutation['end'])
@@ -113,6 +119,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 return self._get_cdna_change_for_3_utr(mutation)
             elif vc == 'IGR':
                 return ''
+            elif vc.endswith('Ins'):
+                return self._get_cdna_change_for_ins(mutation)
             else:
                 return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
 
@@ -230,3 +238,42 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         tx_pos = tuple(t + 1 for t in tx_pos)
         adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
+
+    def _genome_pos_adjust_if_duplication(self, alt_allele, ref_context):
+        half_len = len(ref_context) / 2
+        downstream_seq = ref_context[half_len:]
+        return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
+
+    def _get_cdna_change_for_ins(self, mutation):
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
+        downstream_seq = tx.get_seq()[tx_pos[0]:]
+        coding_pos_adjust = self._adjust_pos_if_repeated_in_seq(tx_alt_allele, downstream_seq)
+        coding_pos_adjust = coding_pos_adjust - len(mutation['alt_allele'])
+
+        coding_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
+        if coding_pos_adjust > 0:
+            coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
+            start_pos = coding_tx_pos[0] + coding_pos_adjust
+            end_pos = start_pos + len(mutation['alt_allele']) - 1
+            change = 'c.%d_%ddup%s' % (start_pos, end_pos, mutation['alt_allele'])
+        else:
+            change = 'c.%d_%dins%s' % (coding_tx_pos[0], coding_tx_pos[1], mutation['alt_allele'])
+            #from IPython import embed; embed()
+
+        return '%s:%s' % (mutation['annotation_transcript'], change)
+
+    def _adjust_pos_if_repeated_in_seq(self, allele, downstream_seq):
+        allele_len = len(allele)
+        adjust_amt = 0
+        for i in range(0, len(downstream_seq), allele_len):
+            if allele == downstream_seq[i:i + allele_len]:
+                adjust_amt += allele_len
+            else:
+                break
+
+        #from IPython import embed; embed()
+        return adjust_amt
+
+

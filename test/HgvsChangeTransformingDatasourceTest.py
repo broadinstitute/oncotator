@@ -327,17 +327,18 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('end', 113698632)
         m.createAnnotation('ref_allele', '-')
         m.createAnnotation('alt_allele', 'GCC')
-        m.createAnnotation('transcript_strand', '-')
+        m.createAnnotation('transcript_strand', '+')
         m.createAnnotation('variant_classification', 'In_Frame_Ins')
         m.createAnnotation('annotation_transcript', 'ENST00000512097.3')
         m.createAnnotation('genome_change', 'g.chr5:113698631_113698632insGCC')
         m.createAnnotation('transcript_change', 'c.159_160insGCC')
         m.createAnnotation('protein_change', 'p.54_54A>AA')
+        m.createAnnotation('ref_context', 'CTGCAGCCGCTGCCGCCGCCGC')
         m = self.hgvs_datasource.annotate_mutation(m)
 
         #this ins of GCC occurs in a GCC-repeat region and thus need to 3' adjust position for HGVS compliance
         # it is technically a duplication
-        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr5.hg19:g.113698631_113698632dupGCC')
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr5.hg19:g.113698641_113698643dupGCC')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000512097.3:c.169_171dupGCC')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000215939:p.Ala58dup')
 
@@ -350,11 +351,13 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('end', 1388442)
         m.createAnnotation('ref_allele', '-')
         m.createAnnotation('alt_allele', 'CG')
+        m.createAnnotation('transcript_strand', '+')
         m.createAnnotation('variant_classification', 'Frame_Shift_Ins')
         m.createAnnotation('annotation_transcript', 'ENST00000324803.4')
         m.createAnnotation('genome_change', 'g.chr4:1388441_1388442insCG')
         m.createAnnotation('transcript_change', 'c.142_143insCG')
         m.createAnnotation('protein_change', 'p.M48fs')
+        m.createAnnotation('ref_context', 'CTGCTCACACATGCCCATGTGG')
         m = self.hgvs_datasource.annotate_mutation(m)
 
         #this ins of CG does NOT occurs next to a CG and does not need to be position adjusted
