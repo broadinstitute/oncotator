@@ -292,7 +292,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                         yield sampleMut
 
     def _createMutation(self, record, alt_index):
-        mut = MutUtils.initializeMutAttributesFromRecord(self.build, record, alt_index)
+        mut = MutUtils.initializeMutFromRecord(self.build, record, alt_index)
         ID = "" if record.ID is None else record.ID
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])

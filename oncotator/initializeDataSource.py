@@ -120,7 +120,8 @@ def parseOptions():
    genome_build -- The genome build.  E.g. hg19        
    index columns -- the columns that are indexed.
        For gene_tsv, this would be a single column name for the Hugo_Symbol, e.g. "Symbol"
-       For gpp_tsv, this MUST be a triplet specifying gene, AA start, and AA end.  For a single amino acid, start should equal end.
+       For gpp_tsv, this MUST be a triple specifying gene, AA start, and AA end.  For a single amino acid, start should equal end.
+       For indexed_tsv, this MUST be either a triple, specifying chromosome, start and end, or a quintuple, sepcifying chromosome, start, end, reference and alternate.
    match mode -- The type of annotation mode for indels when annotating with indexed tsvs and vcfs. Select either exact, overlap or avg.
        For exact, annotations are only added when the database record is an exact match for the input indel.
        For overlap, annotations from all the database records that span the length of the indel are added. The annotated values are pipe delimited.
@@ -177,16 +178,16 @@ def parseOptions():
     parser.add_argument("--genome_build", action="store", dest="genome_build", required=True, type=str,
                         choices=['hg19'], help="Genome build.  For example, hg19.")
     parser.add_argument("--index_columns", action="store", dest="index_columns", type=str,
-                        help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.  For gp_tsv, this parameter MUST be three entries corresponding to chr, start, and end.  gene_tsv and transcipt_tsv have only one entry.")
+                        help="Comma separated list of index columns.  MUST be the name of the columns and each row must have unique values across all index columns.")
 
     # parameters specified for indexed tsv only
     parser.add_argument("--columns", action="store", dest="columns", type=str,
                         help="Comma separated list of columns. MUST be the name of the columns.  This parameter is specified for indexed_tsv only.")
     parser.add_argument("--annotation_columns", action="store", dest="annotation_columns", type=str,
-                        help="Comma separated list of annotation columns. MUST be the name of the columns.  This (optional) parameter is specified for indexed_tsv only.")
+                        help="Comma separated list of annotation columns. MUST be the subset of the columns.  This (optional) parameter is specified for indexed_tsv only.")
     parser.add_argument("--match_mode", action="store", dest="match_mode", type=str,
                         choices=["overlap", "exact", "avg"], default="exact",
-                        help="Mode to use when annotating.  This parameter is specified for indexed_tsv and indexed_vcf only [default: exact].")
+                        help="Mode to use when annotating.  This parameter ought to be specified for indexed_tsv and indexed_vcf only [default: exact].")
 
     # Process arguments
     args = parser.parse_args()
@@ -203,11 +204,18 @@ def validateArgs(args):
     if os.path.exists(os.path.join(args.dbDir, args.ds_foldername)):
         raise ValueError("Destination path already exists.  Please remove or choose a different location: " +
                          os.path.join(args.dbDir, args.ds_foldername))
-    if args.ds_type in ("indexed_tsv",):
+    if args.ds_type.endswith("indexed_tsv"):
         if not args.columns:
             raise ValueError("columns field was not specified.  Must be a comma separated list.")
         if not args.index_columns:
             raise ValueError("index_columns field was not specified.  Must be a comma separated list.")
+        if len(args.index_columns.split(',')) != 3 and len(args.index_columns.split(',')) != 5:
+            raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3 or 5.")
+        if not all([index_column in args.columns.split(",") for index_column in args.index_columns.split(",")]):
+            raise ValueError("index_column values must be a subset of column values.")
+        if not all([annotation_column in args.columns.split(",") for annotation_column in
+                    args.annotation_columns.split(",")]):
+            raise ValueError("annotation_column values must be a subset of column values.")
 
 
 def createDatasource(tmpDir):
@@ -233,7 +241,7 @@ def createDatasource(tmpDir):
     # Parameters for indexed_tsv only.
     ds_columns = args.columns
     ds_annotation_columns = args.annotation_columns
-    if ds_type in ("indexed_tsv",):
+    if ds_type.endswith("indexed_tsv"):
         if ds_annotation_columns is None:  # Default: annotate with all columns
             ds_annotation_columns = ds_columns
 

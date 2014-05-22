@@ -252,9 +252,9 @@ class DatasourceFactory(object):
         # Note that the genome version is not in the dsDirs variable.
         for ds in dsDirs:
             tmpDs = ds
-            if tmpDs.endswith('/'):
+            if tmpDs.endswith(os.sep):
                 tmpDs = tmpDs[:-1]
-            configFilename = tmpDs + "/" + genomeBuild + "/" + os.path.basename(tmpDs) + ".config"
+            configFilename = os.path.join(*[tmpDs, genomeBuild, os.path.basename(tmpDs) + ".config"])
             if not os.path.exists(configFilename):
                 logging.getLogger(__name__).warn("Could not find config file for datasource: " + configFilename)
             else:
@@ -262,7 +262,7 @@ class DatasourceFactory(object):
                 
                 # Queue the datasource for instantiation
                 logging.getLogger(__name__).info("Queuing datasource creation for " + configFilename)
-                dsQueueList.append((configFilename, tmpDs + "/" + genomeBuild + "/")) 
+                dsQueueList.append((configFilename, os.path.join(*[tmpDs, genomeBuild, ""])))
 
         result = []        
         if not isMulticore:

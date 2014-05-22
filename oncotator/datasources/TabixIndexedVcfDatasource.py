@@ -92,7 +92,6 @@ class IndexedVcfDatasource(Datasource):
         # Descriptions
         self.output_vcf_descs = dict([(ID, self.vcf_reader.infos[ID].desc) for ID in self.vcf_info_headers])
         self.match_mode = match_mode
-        self.logger = logging.getLogger(__name__)
 
     def _determine_tags(self):
         """
@@ -164,13 +163,13 @@ class IndexedVcfDatasource(Datasource):
         :return:
         """
         index = None
-        ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
+        ds_mut = MutUtils.initializeMutFromRecord("hg19", record, index)
         if record.is_monomorphic and mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele:
             return -1
 
-        # Iterate over all records
+        # Iterate over all alternates in the record
         for index in xrange(0, len(record.ALT)):
-            ds_mut = MutUtils.initializeMutAttributesFromRecord("hg19", record, index)
+            ds_mut = MutUtils.initializeMutFromRecord("hg19", record, index)
             if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
                 and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
                 return index
@@ -197,7 +196,8 @@ class IndexedVcfDatasource(Datasource):
         try:
             vcf_records = self.vcf_reader.fetch(mutation.chr, mut_start, mut_end)  # query database for records
         except ValueError as ve:
-            self.logger.warn("Exception when looking for vcf records. Empty set of records being returned: " + repr(ve))
+            logging.getLogger(__name__).debug("Exception when looking for vcf records. Empty set of records being "
+                                              "returned: " + repr(ve))
         else:
             # Process values.
             for record in vcf_records:
@@ -211,8 +211,8 @@ class IndexedVcfDatasource(Datasource):
                         else:  # match found
                             val = self._determine_info_annotation_value(record, ID, alt_index)
                         vals[ID] = val
-                    break
-                else:
+                    break  # for each header, only one value needs to be found
+                else:  # avg and overlap
                     alt_index = None
                     for ID in self.vcf_info_headers:
                         val = self._determine_info_annotation_value(record, ID, alt_index)
@@ -220,11 +220,10 @@ class IndexedVcfDatasource(Datasource):
                             vals[ID] = [val]
                         else:
                             vals[ID] += [val]
-
         if record is None:
             msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                   "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
-            self.logger.warn(msg)
+            logging.getLogger(__name__).debug(msg)
 
         tags = self._determine_tags()
         for ID in self.vcf_info_headers:

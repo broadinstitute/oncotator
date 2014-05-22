@@ -28,8 +28,11 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
         annotation_column_names = annotation_column_names.split(",")
         column_names = column_names.split(",")
         index_columns = []
-        for index_column_name in index_column_names:
+        for index_column_name in index_column_names:  # ensures that all index columns are in the column names list
             index_columns += [column_names.index(index_column_name)]
+
+        if len(index_columns) != 3 and len(index_columns) != 5:
+            raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3 or 5.")
 
         column_names = set(column_names)
         annotation_column_names = set(annotation_column_names)

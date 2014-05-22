@@ -108,18 +108,8 @@ class MutUtils(object):
         return "unknown"
 
     @staticmethod
-    def initializeMutAttributesFromRecord(build, record, alt_index):
-        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
-        ref = record.REF
-        ref = "" if ref == "." else ref
-
-        alt = ref
-        if not record.is_monomorphic and alt_index is not None:
-            alt = str(record.ALT[alt_index])
-        startPos = record.POS
-        endPos = int(record.POS)
+    def initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build):
         mut = MutationData(chrom, startPos, endPos, ref, alt, build)
-
         varType = MutUtils.determineVariantType(mut)
 
         if varType == "snp":  # Snps
@@ -146,6 +136,28 @@ class MutUtils(object):
         return mut
 
     @staticmethod
+    def initializeMutFromRecord(build, record, alt_index):
+        """
+
+        :param build:
+        :param record:
+        :param alt_index:
+        :return:
+        """
+        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+        ref = record.REF
+        ref = "" if ref == "." else ref
+        alt = ref
+        if not record.is_monomorphic and alt_index is not None:
+            alt = str(record.ALT[alt_index])
+        startPos = record.POS
+        endPos = int(record.POS)
+
+        mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+
+        return mut
+
+    @staticmethod
     def retrievePrecedingBasesForInsertions(m):
         ref_allele = m.ref_allele
         alt_allele = m.alt_allele
@@ -153,8 +165,8 @@ class MutUtils(object):
 
         preceding_bases = ref_allele
         updated_alt_allele = alt_allele[len(preceding_bases):]
-        updated_start = start + len(preceding_bases)
-        updated_end = updated_start + len(updated_alt_allele) - 1
+        updated_start = start + len(preceding_bases) - 1
+        updated_end = start + len(preceding_bases)
 
         return preceding_bases, updated_alt_allele, updated_start, updated_end
 
@@ -381,8 +393,8 @@ class MutUtils(object):
         return MutUtils.create_variant_key(m.chr, m.start, m.end, m.ref_allele, m.alt_allele, other_info)
 
     @staticmethod
-    def create_variant_key(chr, start, end, ref_allele, alt_allele, other_info=""):
-        return ("%s_%s_%s_%s_%s_%s" % (chr, start, end, ref_allele, alt_allele, other_info))
+    def create_variant_key(chrom, start, end, ref_allele, alt_allele, other_info=""):
+        return "%s_%s_%s_%s_%s_%s" % (chrom, start, end, ref_allele, alt_allele, other_info)
 
     @staticmethod
     def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
@@ -460,7 +472,7 @@ class MutUtils(object):
         preceding_bases = mut[MutUtils.PRECEDING_BASES_ANNOTATION_NAME]
         alt_allele = preceding_bases + mut.alt_allele
         ref_allele = preceding_bases
-        updated_start = mut.start - len(preceding_bases)
+        updated_start = mut.start - len(preceding_bases) + 1
 
         return ref_allele, alt_allele, updated_start
 
@@ -478,12 +490,14 @@ class MutUtils(object):
         if "ref_context" in m:
             ref_context = m['ref_context']
         else:
-            raise MissingRequiredAnnotationException("Missing ref_context annotation in mutation. Please add ref_[genome_build] to your dbDir.")
+            raise MissingRequiredAnnotationException("Missing ref_context annotation in mutation. "
+                                                     "Please add ref_[genome_build] to your dbDir.")
 
         # Insert only
         if ref_allele == ".":
             if ref_context == "" or (len(ref_context) < 11):
-                logging.getLogger(__name__).warn("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
+                logging.getLogger(__name__).warn("WARNING: Could not find ref_context when required.  "
+                                                 "Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
                 return None
             ref_allele = ref_context[10].upper()
             alt_allele = ref_allele + alt_allele
@@ -491,7 +505,8 @@ class MutUtils(object):
         # Deletion only
         if alt_allele == ".":
             if ref_context == "" or (len(ref_context) < 11):
-                logging.getLogger(__name__).warn("WARNING: Could not find ref_context when required.  Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
+                logging.getLogger(__name__).warn("WARNING: Could not find ref_context when required.  "
+                                                 "Unable to render: " + m.chr + ":" + m.start + "-" + m.end)
                 return None
             ref_allele = ref_context[9].upper() + ref_allele
             alt_allele = ref_context[9].upper()

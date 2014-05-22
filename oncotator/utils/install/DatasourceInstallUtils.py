@@ -59,15 +59,15 @@ class DatasourceInstallUtils(object):
 
     @staticmethod
     def getIndexCols(dsType, index_columns):
-        if dsType == "gp_tsv":
+        if dsType.endswith("gp_tsv"):
             return DatasourceInstallUtils.indexCols("genomic_position_cols", index_columns)
-        elif dsType == "gene_tsv":
+        elif dsType.endswith("gene_tsv"):
             return DatasourceInstallUtils.indexCols("gene_col", index_columns)
-        elif dsType == "transcript_tsv":
+        elif dsType.endswith("transcript_tsv"):
             return DatasourceInstallUtils.indexCols("transcript_col", index_columns)
-        elif dsType == "gpp_tsv":
+        elif dsType.endswith("gpp_tsv"):
             return DatasourceInstallUtils.indexCols("gene_protein_position_cols", index_columns)
-        elif dsType == "indexed_tsv":
+        elif dsType.endswith("indexed_tsv"):
             return DatasourceInstallUtils.indexCols("index_column_names", index_columns)
         return None
 
@@ -83,12 +83,12 @@ class DatasourceInstallUtils(object):
         print("md5 being written to: " + os.path.abspath(md5_filename))
         hasher = Hasher()
         hashcode = hasher.create_hashcode_for_dir(datasource_dir)
-        fp = file(md5_filename, 'w')
+        fp = file(md5_filename, "w")
         fp.write(hashcode)
         fp.close()
 
     @staticmethod
-    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns=[],
+    def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns=None,
                           ds_columns=None, ds_annotation_columns=None, ds_match_mode="exact"):
         """
 
@@ -103,7 +103,7 @@ class DatasourceInstallUtils(object):
         :param ds_columns: if data source is of type indexed tsv,
         :param ds_annotation_columns: if data source is of type indexed tsv,
         """
-
+        index_columns = [] if index_columns is None else index_columns
         datasourceBuilder = DatasourceBuilderFactory.getDatasourceCreatorInstance(ds_type)
         configFilename = os.path.join(*[destDir, string.join([ds_foldername, "config"], ".")])
         datasourceBuilder.createDatasource(destDir=destDir, ds_file=ds_file, index_column_names=index_columns,

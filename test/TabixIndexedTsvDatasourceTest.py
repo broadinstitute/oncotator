@@ -433,3 +433,67 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         cur_annotation = Annotation(value="91.25", datasourceName="ESP", dataType="Float",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithExactMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_6vars_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_6vars_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35138"
+        m1.end = "35138"
+        m1.ref_allele = "T"
+        m1.alt_allele = "G"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="3", datasourceName="dbNSFP", dataType="Integer",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="TAA", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="-", datasourceName="dbNSFP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithMissingExactMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_6vars_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_6vars_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35138"
+        m1.end = "35138"
+        m1.ref_allele = "T"
+        m1.alt_allele = "C"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="Integer",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")

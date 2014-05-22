@@ -52,6 +52,7 @@ import pysam
 from oncotator.datasources.Datasource import Datasource
 from oncotator.utils.TagConstants import TagConstants
 import string
+from oncotator.utils.MutUtils import MutUtils
 
 
 class IndexedTsvDatasource(Datasource):
@@ -73,12 +74,37 @@ class IndexedTsvDatasource(Datasource):
         self.tsv_headers = dict([(colName, index) for (index, colName) in enumerate(colNames)])  # index the column names in tsv header
         # Annotation column names are the only columns that are used for annotating a mutation object.
         self.output_tsv_headers = dict([(colName, '_'.join([self.title, colName])) for colName in annotationColNames])
-        self.tsv_index = {"chrom": self.tsv_headers[indexColNames[0]],
-                          "start": self.tsv_headers[indexColNames[1]],
-                          "end": self.tsv_headers[indexColNames[2]]}
+        self.tsv_index = {}
+        self.tsv_index["chrom"] = self.tsv_headers[indexColNames[0]]
+        self.tsv_index["start"] = self.tsv_headers[indexColNames[1]]
+        self.tsv_index["end"] = self.tsv_headers[indexColNames[2]]
+        if len(indexColNames) == 5:
+            self.tsv_index["ref"] = self.tsv_headers[indexColNames[3]]
+            self.tsv_index["alt"] = self.tsv_headers[indexColNames[4]]
+
         self.dataTypes = colDataTypes
         self.match_mode = match_mode
-        self.logger = logging.getLogger(__name__)
+
+    def _is_matching(self, mut, tsv_record):
+
+        chrom = tsv_record[self.tsv_index["chrom"]]
+        startPos = tsv_record[self.tsv_index["start"]]
+        endPos = tsv_record[self.tsv_index["end"]]
+
+        if "ref" in self.tsv_index and "alt" in self.tsv_index:
+            ref = tsv_record[self.tsv_index["ref"]]
+            alt = tsv_record[self.tsv_index["alt"]]
+            build = "hg19"
+            ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+
+            if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
+                and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
+                return True
+        else:
+            if mut.chr == chrom and int(mut.start) == int(startPos) and int(mut.end) == int(endPos):
+                return True
+
+        return False
 
     def annotate_mutation(self, mutation):
         """
@@ -88,29 +114,30 @@ class IndexedTsvDatasource(Datasource):
         :return: annotated mutation
         """
         vals = dict()
-        mut_start = int(mutation.start) - 1  # tabix needs position - 1
+        mut_start = int(mutation.start)
         mut_end = int(mutation.end)
         try:
-            tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start, mut_end, parser=pysam.asTuple())
+            # tabix needs position - 1
+            tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start - 1, mut_end, parser=pysam.asTuple())
             for tsv_record in tsv_records:
                 if not tsv_record:
                     continue
-                for colName in self.output_tsv_headers:
-                    val = tsv_record[self.tsv_headers[colName]]
-
-                    if self.match_mode == "exact":
-                        rec_start = int(tsv_record[self.tsv_index["start"]]) - 1
-                        rec_end = int(tsv_record[self.tsv_index["end"]])
-                        if mut_start == rec_start and mut_end == rec_end:
-                            vals[colName] = val
-                    else:
+                if self.match_mode == "exact":  # currently, only comparing using start and end positions; also include,
+                #  ref and alt alleles
+                    for colName in self.output_tsv_headers:
+                        if self._is_matching(mutation, tsv_record):
+                            vals[colName] = tsv_record[self.tsv_headers[colName]]
+                else:  # avg and overlap
+                    for colName in self.output_tsv_headers:
+                        val = tsv_record[self.tsv_headers[colName]]
                         if colName not in vals:
                             vals[colName] = [val]
                         else:
                             vals[colName] += [val]
+
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
-            self.logger.warn(msg)
+            logging.getLogger(__name__).debug(msg)
 
         for colName in self.output_tsv_headers:
             val = ""
@@ -130,9 +157,9 @@ class IndexedTsvDatasource(Datasource):
                             val_sum += float(v)  # attempt to convert the
                             val_num += 1
                             ds_type = "Float"
-                        except ValueError:  # in cases where it's unsuccessful, default of overlap behavior
+                        except ValueError:  # in cases where it's unsuccessful, default to overlap behavior
                             msg = "Exception when trying to cast %s value to float." % colName
-                            self.logger.warn(msg)
+                            logging.getLogger(__name__).warn(msg)
                             val = string.join(map(str, vals[colName]), "|")
                             ds_type = "String"
                             break
@@ -144,7 +171,7 @@ class IndexedTsvDatasource(Datasource):
             else:
                 msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                       "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
-                self.logger.warn(msg)
+                logging.getLogger(__name__).debug(msg)
 
             mutation.createAnnotation(self.output_tsv_headers[colName], val, self.title, annotationDataType=ds_type,
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])

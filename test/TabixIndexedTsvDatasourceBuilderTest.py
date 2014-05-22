@@ -167,7 +167,7 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
         destDir = "out"
         datasourceFilename = "ESP6500SI-V2.chr1.snps_indels.head.25.tabix_indexed.txt.gz"
-        indexColumnNames = "CHROM,POS,POS"
+        indexColumnNames = "CHROM,POS,POS,REF,ALT"
         columnNames = "CHROM,POS,REF,ALT,DBSNP,EA_AC,AA_AC,TAC,MAF,GTS,EA_GTC,AA_GTC,GTC,DP,FG,GM,AA,AAC,PP,CDP,PH,CP,CG,GL,GS,CA,EXOME_CHIP,GWAS_PUBMED"
         configFilename = "out/esp_coverage.config"
         dataSourceType = "indexed_tsv"
