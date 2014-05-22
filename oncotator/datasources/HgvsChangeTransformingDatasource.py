@@ -35,7 +35,8 @@ AA_NAME_MAPPING = {
 PROT_REGEXP = re.compile('p\.([A-Z*])(\d+)([A-Z*])')
 PROT_FRAMESHIFT_REGEXP = re.compile('p\.([A-Z*])(\d+)fs')
 PROT_INFRAME_DEL_REGEXP = re.compile('p\.([A-Z*])(\d+)del')
-PROT_INFRAME_INS_REGEXP = re.compile('p\.(\d+)_(\d+)[A-Z*]>([A-Z*])')
+PROT_INFRAME_INS_REGEXP_1 = re.compile('p\.(\d+)_(\d+)ins([A-Z*]+)')
+PROT_INFRAME_INS_REGEXP_2 = re.compile('p\.(\d+)_(\d+)([A-Z*]+)>([A-Z*]+)')
 
 class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
@@ -81,7 +82,11 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             change = '%d_%ddelins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
         elif mutation['variant_type'] == 'INS':
             genome_pos_adjust = self._genome_pos_adjust_if_duplication(mutation['alt_allele'], mutation['ref_context'])
+            genome_pos_adjust = genome_pos_adjust - len(mutation['alt_allele'])
+
+            #BUG: duplications are only rendered if position needs to be adjusted!
             if genome_pos_adjust > 0:
+
                 start_pos = mutation['end'] + genome_pos_adjust
                 end_pos = start_pos + len(mutation['alt_allele']) - 1
                 change = '%d_%ddup%s' % (start_pos, end_pos, mutation['alt_allele'])
@@ -137,9 +142,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
             adjusted_prot_change = 'p.%s%sdel' % (AA_NAME_MAPPING[ref_aa], aa_pos)
         elif mutation['variant_classification'] == 'In_Frame_Ins':
-            regx_res = PROT_INFRAME_INS_REGEXP.match(mutation['protein_change'])
-            aa_pos_1, aa_pos_2, alt_allele = [regx_res.group(i) for i in range(1, 4)]
-            adjusted_prot_change = 'p.%s_%sins%s' % (aa_pos_1, aa_pos_2, alt_allele)
+            adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation)
         else:
             regx_res = PROT_REGEXP.match(mutation['protein_change'])
             ref_aa, aa_pos, alt_aa = [regx_res.group(i) for i in range(1, 4)]
@@ -189,9 +192,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         if dist_to_exon < 0:   
             cds_position_of_nearest_exon += 1 #why add 1?
-
-#        if mutation['start'] == 80529551:
-#            from IPython import embed; embed()
         
         sign = '-' if dist_to_exon < 0 else '+'
         dist_to_exon = abs(dist_to_exon)
@@ -241,26 +241,61 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
     def _genome_pos_adjust_if_duplication(self, alt_allele, ref_context):
         half_len = len(ref_context) / 2
-        downstream_seq = ref_context[half_len:]
+        downstream_seq = ref_context[half_len:].upper()
+        return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
+
+    def _determine_if_prot_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq):
+        allele_len = len(alt_allele)
+        aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
+
+        #from IPython import embed; embed()
+        return prot_seq[aa_pos_2:aa_pos_2 + allele_len] == alt_allele or \
+            prot_seq[aa_pos_2 - allele_len:aa_pos_2] == alt_allele
+
+    def _determine_if_cdna_duplication(self, tx_pos_1, tx_pos_2, alt_allele, tx_seq, tx_strand):
+        allele_len = len(alt_allele)
+        tx_pos_1, tx_pos_2 = int(tx_pos_1) - 1, int(tx_pos_2) - 1 #convert to 0-based indexing
+
+        #from IPython import embed; embed()
+        if tx_strand == '+':
+            return tx_seq[tx_pos_2:tx_pos_2 + allele_len] == alt_allele or \
+                tx_seq[tx_pos_1 - allele_len + 1:tx_pos_1 + 1] == alt_allele
+        elif tx_strand == '-':
+            return tx_seq[tx_pos_2 + 1:tx_pos_2 + allele_len + 1] == alt_allele or \
+                tx_seq[tx_pos_2 - allele_len + 1:tx_pos_2 + 1] == alt_allele
+
+    def _prot_pos_adjust_if_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq):
+        aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
+        downstream_seq = prot_seq[aa_pos_2 + 1:]
         return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
 
     def _get_cdna_change_for_ins(self, mutation):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        len_alt_allele = len(tx_alt_allele)
         tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
         tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
         downstream_seq = tx.get_seq()[tx_pos[0]:]
         coding_pos_adjust = self._adjust_pos_if_repeated_in_seq(tx_alt_allele, downstream_seq)
-        coding_pos_adjust = coding_pos_adjust - len(mutation['alt_allele'])
+        coding_pos_adjust = coding_pos_adjust - len_alt_allele
 
         coding_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
-        if coding_pos_adjust > 0:
+        is_duplication = self._determine_if_cdna_duplication(tx_pos[0], tx_pos[1], tx_alt_allele, tx.get_seq(), mutation['transcript_strand'])
+
+        #if mutation['start'] == 11871469: from IPython import embed; embed()
+
+        if is_duplication:
             coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
             start_pos = coding_tx_pos[0] + coding_pos_adjust
-            end_pos = start_pos + len(mutation['alt_allele']) - 1
-            change = 'c.%d_%ddup%s' % (start_pos, end_pos, mutation['alt_allele'])
+            start_pos = start_pos + 1 if mutation['transcript_strand'] == '-' else start_pos
+            if len_alt_allele > 1:
+                end_pos = start_pos + len_alt_allele - 1
+                change = 'c.%d_%ddup%s' % (start_pos, end_pos, tx_alt_allele)
+            else:
+                change = 'c.%ddup%s' % (start_pos, tx_alt_allele)
         else:
-            change = 'c.%d_%dins%s' % (coding_tx_pos[0], coding_tx_pos[1], mutation['alt_allele'])
-            #from IPython import embed; embed()
+            if mutation['transcript_strand'] == '-':
+                coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
+            change = 'c.%d_%dins%s' % (coding_tx_pos[0], coding_tx_pos[1], tx_alt_allele)
 
         return '%s:%s' % (mutation['annotation_transcript'], change)
 
@@ -273,7 +308,58 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             else:
                 break
 
-        #from IPython import embed; embed()
         return adjust_amt
 
+    def _get_prot_change_for_in_frame_ins(self, mutation):
+        is_insdel = False
+        prot_change = mutation['protein_change']
+        if 'ins' in prot_change:
+            regx_res = PROT_INFRAME_INS_REGEXP_1.match(mutation['protein_change'])
+            aa_pos_1, aa_pos_2, alt_allele = [regx_res.group(i) for i in range(1, 4)]
+        elif '>' in prot_change:
+            regx_res = PROT_INFRAME_INS_REGEXP_2.match(mutation['protein_change'])
+            aa_pos_1, aa_pos_2, ref_allele, alt_allele = [regx_res.group(i) for i in range(1, 5)]
+            if aa_pos_1 == aa_pos_2 and alt_allele.startswith(ref_allele): #e.g. p.54_54A>AA
+                alt_allele = alt_allele[1:]
+            elif int(aa_pos_2) == int(aa_pos_1) + 1 and ref_allele[0] == alt_allele[0] and ref_allele[1] == alt_allele[-1]:
+                #e.g. p.1326_1327KT>KET
+                ref_allele_1 = ref_allele[0]
+                ref_allele_2 = ref_allele[1]
+                alt_allele = alt_allele[1:-1]
+            else:
+                #e.g. p.1327_1327T>RA
+                is_insdel = True
 
+        else:
+            raise Exception('Unexpected protein_change str for in-frame insertion: %s' % prot_change)
+
+        #from IPython import embed; embed()
+        len_alt_allele = len(alt_allele)
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        prot_seq = tx.get_protein_seq()
+        is_duplication = self._determine_if_prot_duplication(aa_pos_1, aa_pos_2, alt_allele, prot_seq)
+        prot_pos_adjust_amnt =  self._prot_pos_adjust_if_duplication(aa_pos_1, aa_pos_2, alt_allele, prot_seq)
+
+        alt_allele = ''.join(AA_NAME_MAPPING[aa] for aa in alt_allele)
+
+        aa_pos_1, aa_pos_2 = int(aa_pos_1), int(aa_pos_2)
+        if is_duplication:
+            #aa_pos_1, aa_pos_2 = int(aa_pos_1) + prot_pos_adjust_amnt, int(aa_pos_2) + prot_pos_adjust_amnt
+            if aa_pos_1 == aa_pos_2:
+                aa_pos_1 = aa_pos_1 + prot_pos_adjust_amnt
+                adjusted_prot_change = 'p.%s%ddup' % (alt_allele, aa_pos_1)
+            else: #means that prot positions describe residues that alt allele gets inserted between
+                if prot_pos_adjust_amnt == 0: #duplication is already at 3'-most position
+                    aa_pos_2 = aa_pos_1
+                    aa_pos_1 = aa_pos_1 - len_alt_allele + 1
+                else:
+                    raise Exception('Need to implement this!!')
+
+                adjusted_prot_change = 'p.%s%d_%s%ddup' % (alt_allele[:3], aa_pos_1, alt_allele[-3:], aa_pos_2)
+        elif is_insdel:
+            adjusted_prot_change = 'p.%s%ddelins%s' % (AA_NAME_MAPPING[ref_allele], aa_pos_1, alt_allele)
+        else:
+            ref_allele_1, ref_allele_2 = AA_NAME_MAPPING[ref_allele_1], AA_NAME_MAPPING[ref_allele_2]
+            adjusted_prot_change = 'p.%s%d_%s%dins%s' % (ref_allele_1, aa_pos_1, ref_allele_2, aa_pos_2, alt_allele)
+
+        return adjusted_prot_change

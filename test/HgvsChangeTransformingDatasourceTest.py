@@ -16,6 +16,8 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         genecode_ds_path = op.join(self.config.get('DEFAULT', 'dbDir'), 'gencode_out2/hg19/gencode.v18.annotation.gtf')
         self.hgvs_datasource = HgvsChangeTransformingDatasource(genecode_ds_path)
 
+    ### TODO need test to assert that all necessary fields are present
+
     def test_annotate_SNP_missense(self):
         #rs80358866
         m = MutationData()
@@ -318,7 +320,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000215939.2:c.371_372delinsAT')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000215939:p.Trp124Tyr')
 
-    def test_annotate_INS_inframe(self):
+    def test_annotate_INS_inframe_1(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
@@ -333,20 +335,95 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('genome_change', 'g.chr5:113698631_113698632insGCC')
         m.createAnnotation('transcript_change', 'c.159_160insGCC')
         m.createAnnotation('protein_change', 'p.54_54A>AA')
-        m.createAnnotation('ref_context', 'CTGCAGCCGCTGCCGCCGCCGC')
+        #m.createAnnotation('ref_context', 'CTGCAGCCGCTGCCGCCGCCGC')
+        m.createAnnotation('ref_context', 'TCCTCCCCGTCTGCAGCCGCTGCCGCCGCCGCCGCTGTTTCG') # need a larger ref_context size to get the correct mapping
+        
         m = self.hgvs_datasource.annotate_mutation(m)
 
         #this ins of GCC occurs in a GCC-repeat region and thus need to 3' adjust position for HGVS compliance
         # it is technically a duplication
         self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr5.hg19:g.113698641_113698643dupGCC')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000512097.3:c.169_171dupGCC')
-        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000215939:p.Ala58dup')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000427120:p.Ala58dup')
+
+    def test_annotate_INS_inframe_2(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '7')
+        m.createAnnotation('start', 11871469)
+        m.createAnnotation('end', 11871470)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'GCAGCG')
+        m.createAnnotation('transcript_strand', '-')
+        m.createAnnotation('variant_classification', 'In_Frame_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000423059.3')
+        m.createAnnotation('genome_change', 'g.chr7:11871469_11871470insGCAGCG')
+        m.createAnnotation('transcript_change', 'c.103_104insCGCTGC')
+        m.createAnnotation('protein_change', 'p.34_35insPL')
+        #m.createAnnotation('ref_context', 'cagcagcaggagcagcggcagc')
+        m.createAnnotation('ref_context', 'CGCAGCCCTGCCGGCGCCCGGGCGTAGCAGCAGCAGCAGGAGCAGCGGCAGCGGCAGCGGCAGCGGCAGCAGCTGCAGGACG') # need a larger ref_context size to get the correct mapping
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+#CAGCAGCAGGAGCAGCGGCAGC - 118714659, 11871480
+#CGCAGCCCTGCCGGCGCCCGGGCGTAGCAGCAGCAGCAGGAGCAGCGGCAGCGGCAGCGGCAGCGGCAGCAGCTGCAGGACG - 118714629, 11871510
+#CGCCCTGCGCCGCAGCCCTGCCGGCGCCCGGGCGTAGCAGCAGCAGCAGGAGCAGCGGCAGCGGCAGCGGCAGCGGCAGCAGCTGCAGGACGCCCCGGCGCG - 118714619, 11871520
+
+        #this ins of CG does NOT occurs next to a CG and does not need to be position adjusted
+        # it is technically an insertion
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr7.hg19:g.11871488_11871493dupGCAGCG')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000423059.3:c.98_103dupCGCTGC')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000406482:p.Pro33_Leu34dup')
+
+    def test_annotate_INS_inframe_3(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '8')
+        m.createAnnotation('start', 10467629)
+        m.createAnnotation('end', 10467630)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'TTC')
+        m.createAnnotation('transcript_strand', '-')
+        m.createAnnotation('variant_classification', 'In_Frame_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000382483.3')
+        m.createAnnotation('genome_change', 'g.chr8:10467629_10467630insTTC')
+        m.createAnnotation('transcript_change', 'c.3978_3979insGAA')
+        m.createAnnotation('protein_change', 'p.1326_1327KT>KET')
+        m.createAnnotation('ref_context', 'ccttcttctgttttagtttcct')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr8.hg19:g.10467629_10467630insTTC')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000382483.3:c.3978_3979insGAA')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000371923:p.Lys1326_Thr1327insGlu')
+
+    def test_annotate_INS_inframe_4(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '8')
+        m.createAnnotation('start', 10467628)
+        m.createAnnotation('end', 10467629)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'CCC')
+        m.createAnnotation('transcript_strand', '-')
+        m.createAnnotation('variant_classification', 'In_Frame_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000382483.3')
+        m.createAnnotation('genome_change', 'g.chr8:10467628_10467629insCCC')
+        m.createAnnotation('transcript_change', 'c.3979_3980insGGG')
+        m.createAnnotation('protein_change', 'p.1327_1327T>RA')
+        m.createAnnotation('ref_context', 'cccttcttctgttttagtttcc')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr8.hg19:g.10467628_10467629insCCC')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000382483.3:c.3979_3980insGGG')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000371923:p.Thr1327delinsArgAla')
 
     def test_annotate_INS_frameshift(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
-        m.createAnnotation('chr', '5')
+        m.createAnnotation('chr', '4')
         m.createAnnotation('start', 1388441)
         m.createAnnotation('end', 1388442)
         m.createAnnotation('ref_allele', '-')
@@ -362,7 +439,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
 
         #this ins of CG does NOT occurs next to a CG and does not need to be position adjusted
         # it is technically an insertion
-        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr5.hg19:g.1388441_1388442insCG')
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr4.hg19:g.1388441_1388442insCG')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000324803.4:c.142_143insCG')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000323978:p.Met48fs')
 
