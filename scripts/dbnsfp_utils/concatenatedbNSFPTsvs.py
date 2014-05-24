@@ -5,8 +5,8 @@ import string
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Given a directory, this script creates a concatenated file that "
-                                                 "consists . Consistent column ordering, commenting and header location are assumed.")
+    parser = argparse.ArgumentParser(description="Concatenate TSVs in a given directory. Consistent column ordering, "
+                                                 "commenting and header location are assumed.")
 
     parser.add_argument("--dir", action="store", type=str, dest="dir", required=True,
                         help="Directory where the tsv files are located")
