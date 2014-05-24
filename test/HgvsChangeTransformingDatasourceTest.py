@@ -277,7 +277,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000264938.3:c.932+1G>A')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
 
-    def test_annotate_SNP_de_novo_start(self):
+    def test_annotate_SNP_de_novo_start_OutOfFrame(self):
         #rs114472931
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
@@ -365,12 +365,6 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('ref_context', 'CGCAGCCCTGCCGGCGCCCGGGCGTAGCAGCAGCAGCAGGAGCAGCGGCAGCGGCAGCGGCAGCGGCAGCAGCTGCAGGACG') # need a larger ref_context size to get the correct mapping
         m = self.hgvs_datasource.annotate_mutation(m)
 
-#CAGCAGCAGGAGCAGCGGCAGC - 118714659, 11871480
-#CGCAGCCCTGCCGGCGCCCGGGCGTAGCAGCAGCAGCAGGAGCAGCGGCAGCGGCAGCGGCAGCGGCAGCAGCTGCAGGACG - 118714629, 11871510
-#CGCCCTGCGCCGCAGCCCTGCCGGCGCCCGGGCGTAGCAGCAGCAGCAGGAGCAGCGGCAGCGGCAGCGGCAGCGGCAGCAGCTGCAGGACGCCCCGGCGCG - 118714619, 11871520
-
-        #this ins of CG does NOT occurs next to a CG and does not need to be position adjusted
-        # it is technically an insertion
         self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr7.hg19:g.11871488_11871493dupGCAGCG')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000423059.3:c.98_103dupCGCTGC')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000406482:p.Pro33_Leu34dup')
@@ -419,6 +413,28 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000382483.3:c.3979_3980insGGG')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000371923:p.Thr1327delinsArgAla')
 
+    def test_annotate_INS_inframe_5(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '2')
+        m.createAnnotation('start', 3197914)
+        m.createAnnotation('end', 3197915)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'CAT')
+        m.createAnnotation('transcript_strand', '-')
+        m.createAnnotation('variant_classification', 'In_Frame_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000398659.4')
+        m.createAnnotation('genome_change', 'g.chr2:3197914_3197915insCAT')
+        m.createAnnotation('transcript_change', 'c.757_758insATG')
+        m.createAnnotation('protein_change', 'p.252_253insD')
+        m.createAnnotation('ref_context', 'CTGTCCGTGGGCATTCTCTATG')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr2.hg19:g.3197914_3197915insCAT')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000398659.4:c.755_757dupATG')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000381652:p.Asn252_Ala253insAsp')
+
     def test_annotate_INS_frameshift(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -458,12 +474,58 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('genome_change', 'g.chr14:70924869_70924871delATG')
         m.createAnnotation('transcript_change', 'c.653_655delATG')
         m.createAnnotation('protein_change', 'p.D219del')
+        m.createAnnotation('ref_context', 'GTGGTGAACCATGATTTCTTCAT')
         m = self.hgvs_datasource.annotate_mutation(m)
 
         #this deletion is straightforward, no position adjustments necessary
         self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr14.hg19:g.70924869_70924871delATG')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000603540.1:c.653_655delATG')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000474385:p.Asp219del')
+
+    def test_annotate_DEL_inframe_2(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'DEL')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '12')
+        m.createAnnotation('start', 50156659)
+        m.createAnnotation('end', 50156667)
+        m.createAnnotation('ref_allele', 'AAGAAGAAA')
+        m.createAnnotation('alt_allele', '-')
+        m.createAnnotation('variant_classification', 'In_Frame_Del')
+        m.createAnnotation('annotation_transcript', 'ENST00000552699.1')
+        m.createAnnotation('genome_change', 'g.chr12:50156659_50156667delAAGAAGAAA')
+        m.createAnnotation('transcript_change', 'c.868_876delAAGAAGAAA')
+        m.createAnnotation('protein_change', 'p.KKK290del')
+        m.createAnnotation('ref_context', 'TTTCTAGGATAAGAAGAAAGAGAAGAAAT')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        #this deletion is straightforward, no position adjustments necessary
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr12.hg19:g.50156659_50156667delAAGAAGAAA')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000552699.1:c.868_876delAAGAAGAAA')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000446734:p.Lys290_Lys292del')
+
+    def test_annotate_DEL_inframe_3(self):
+        #rs141326765
+        m = MutationData()
+        m.createAnnotation('variant_type', 'DEL')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '19')
+        m.createAnnotation('start', 40900180)
+        m.createAnnotation('end', 40900182)
+        m.createAnnotation('ref_allele', 'TCC')
+        m.createAnnotation('alt_allele', '-')
+        m.createAnnotation('variant_classification', 'In_Frame_Del')
+        m.createAnnotation('annotation_transcript', 'ENST00000324001.7')
+        m.createAnnotation('genome_change', 'g.chr19:40900180_40900182delTCC')
+        m.createAnnotation('transcript_change', 'c.4077_4079delGGA')
+        m.createAnnotation('protein_change', 'p.1359_1360EE>E')
+        m.createAnnotation('ref_context', 'ACTGCcctcttcctcctcctcct')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        #this deletion is straightforward, no position adjustments necessary
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr19.hg19:g.40900189_40900191delTCC')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000324001.7:c.4077_4079delGGA')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000326018:p.Glu1361del')
 
     def test_annotate_DEL_frameshift(self):
         m = MutationData()
@@ -479,6 +541,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('genome_change', 'g.chr19:11348960delG')
         m.createAnnotation('transcript_change', 'c.1664delC')
         m.createAnnotation('protein_change', 'p.P555fs')
+        m.createAnnotation('ref_context', 'GAGGCTGTGCGGGTACACGTA')
         m = self.hgvs_datasource.annotate_mutation(m)
 
         #Here only the genomic change needs to get '3 shifted because the transcript is negative strand 
