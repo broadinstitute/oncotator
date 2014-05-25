@@ -33,7 +33,7 @@ AA_NAME_MAPPING = {
 }
 
 PROT_REGEXP = re.compile('p\.([A-Z*])(\d+)([A-Z*])')
-PROT_FRAMESHIFT_REGEXP = re.compile('p\.([A-Z*]+)(\d+)fs')
+PROT_FRAMESHIFT_REGEXP = re.compile('p\.([A-Z*-]+)(\d+)fs')
 PROT_INFRAME_DEL_REGEXP = re.compile('p\.([A-Z*]+)(\d+)del')
 PROT_INFRAME_DEL_REGEXP_2 = re.compile('p\.(\d+)_(\d+)([A-Z*]+)>([A-Z*]+)')
 PROT_INFRAME_INS_REGEXP_1 = re.compile('p\.(\d+)_(\d+)ins([A-Z*]+)')
@@ -130,21 +130,45 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 return ''
             elif vc.endswith('Ins'):
                 return self._get_cdna_change_for_ins(mutation)
+            elif vc in ['Stop_Codon_Del']:
+                #need to make cdna str from scratch
+                tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+                tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+                tx_stop_codon_genomic_coords = tx.get_stop_codon()
+                tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
+
+                tx_stop_start_pos += 1
+                genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
+                tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
+                tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
+
+                tx_variant_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
+                tx_variant_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
+
+                if tx_variant_pos_2 > tx_stop_start_pos + 2:
+                    tx_variant_pos_2 = '*%d' % (tx_variant_pos_2 - (tx_stop_start_pos + 2))
+                else:
+                    tx_variant_pos_2 = str(tx_variant_pos_2)
+
+                if mutation['start'] == mutation['end']:
+                    change_str = 'c.%ddel%s' % (tx_variant_pos_1, tx_ref_allele)
+                else:
+                    change_str = 'c.%d_%sdel%s' % (tx_variant_pos_1, tx_variant_pos_2, tx_ref_allele)
+                return '%s:%s' % (mutation['annotation_transcript'], change_str)
             else:
                 return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
 
     def _adjust_protein_change(self, mutation):
-        if mutation['variant_classification'] in ['Intron', 'IGR', "3'UTR", "5'UTR", 'RNA',
-            'lincRNA', 'Silent', 'Splice_Site', 'De_novo_Start_OutOfFrame', 'De_novo_Start_InFrame']:
+        vc = mutation['variant_classification']
+        if vc in ['Intron', 'IGR', "3'UTR", "5'UTR", 'RNA',
+            'lincRNA', 'Silent', 'Splice_Site', 'De_novo_Start_OutOfFrame', 'De_novo_Start_InFrame',
+            'Start_Codon_Ins', 'Start_Codon_Del']:
             return ''
-        elif mutation['variant_classification'] in ['Frame_Shift_Ins', 'Frame_Shift_Del']:
-            regx_res = PROT_FRAMESHIFT_REGEXP.match(mutation['protein_change'])
-            ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
-            ref_aa = ref_aa[0] #only need first residue
-            adjusted_prot_change = 'p.%s%sfs' % (AA_NAME_MAPPING[ref_aa], aa_pos)
-        elif mutation['variant_classification'] == 'In_Frame_Del':
+        elif vc in ['Frame_Shift_Ins', 'Frame_Shift_Del']:
+            adjusted_prot_change = self._get_prot_change_for_frame_shift(mutation)
+        elif vc == 'In_Frame_Del':
             adjusted_prot_change = self._get_prot_change_for_in_frame_del(mutation)
-        elif mutation['variant_classification'] == 'In_Frame_Ins':
+        elif vc == 'In_Frame_Ins':
             adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation)
         elif mutation['variant_type'] in ['DNP', 'TNP', 'ONP'] and '_' in mutation['protein_change']:
             #e.g. p.3589_3590QI>HV NEED TO MAKE TEST FOR THIS VARIANT!!!
@@ -152,14 +176,175 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             aa_pos_1, aa_pos_2, ref_aa, alt_aa = [regx_res.group(i) for i in range(1, 5)]
             aa_pos_1, aa_pos_2 = int(aa_pos_1), int(aa_pos_2)
             adjusted_prot_change = 'p.%s%d_%s%dinsdel%s' % (ref_aa[0], aa_pos_1, ref_aa[-1], aa_pos_2, alt_aa)
+        elif vc == 'Nonstop_Mutation' or vc.startswith('Stop_Codon'):
+            adjusted_prot_change = self._get_prot_change_for_stop_codon_variant(mutation)
         else:
             regx_res = PROT_REGEXP.match(mutation['protein_change'])
+            #try:
             ref_aa, aa_pos, alt_aa = [regx_res.group(i) for i in range(1, 4)]
+            #except AttributeError:
+            #    from IPython import embed; embed()
             adjusted_prot_change = 'p.%s%s%s' % (AA_NAME_MAPPING[ref_aa], aa_pos, AA_NAME_MAPPING[alt_aa])
 
         prot_id = self._get_ensembl_prot_id_from_tx_id(mutation['annotation_transcript'])
-        adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change)
+        adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change) if adjusted_prot_change else ''
         return adjusted_prot_change
+
+    def _get_prot_change_for_stop_codon_variant(self, mutation):
+        #from IPython import embed; embed()
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        tx_seq = tx.get_seq()
+        tx_stop_codon_genomic_coords = tx.get_stop_codon()
+        tx_stop_codon_tx_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx_stop_codon_genomic_coords[0],
+            tx_stop_codon_genomic_coords[1], tx)
+        prot_seq = tx.get_protein_seq()
+
+        stop_codon_seq = tx_seq[tx_stop_codon_tx_coords[0]:tx_stop_codon_tx_coords[1]]
+        utr_seq = tx_seq[tx_stop_codon_tx_coords[1]:]
+
+        variant_tx_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
+        variant_tx_pos_1 = variant_tx_coords[0] - 1 #do we only need to -1 for positive strands txs??
+        variant_codon_pos = variant_tx_pos_1 - tx_stop_codon_tx_coords[0]
+
+        prot_stop_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[0], tx)[0]
+        prot_stop_pos = (prot_stop_pos / 3) + 1
+
+        if mutation['variant_type'] == 'SNP':
+            new_stop_codon_seq = list(stop_codon_seq)
+            new_stop_codon_seq[variant_codon_pos] = mutation['alt_allele']
+            new_stop_codon_seq = ''.join(new_stop_codon_seq)
+            new_tx_seq = new_stop_codon_seq + utr_seq
+            new_prot_seq = Seq.translate(new_tx_seq)
+        elif mutation['variant_type'] == 'DEL':
+            tx_stop_codon_genomic_coords
+            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
+                #del_in_just_stop_codon
+                new_stop_codon_seq = list(stop_codon_seq)
+                del new_stop_codon_seq[variant_codon_pos]
+                new_stop_codon_seq = ''.join(new_stop_codon_seq)
+                new_tx_seq = new_stop_codon_seq + utr_seq
+                new_stop_codon_seq = new_tx_seq[:3]
+                new_prot_seq = Seq.translate(new_tx_seq)
+            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1: #del extends into cds 
+                n_bases_into_cds = (tx_stop_codon_genomic_coords[0] + 1) - mutation['start']
+                n_codons_into_cds = 0
+                for i in range(1, n_bases_into_cds + 1):
+                    if i % 3 == 0:
+                        n_codons_into_cds += 1
+
+                n_codons_into_cds = 1 if n_codons_into_cds == 0 else n_codons_into_cds
+                if i > 3 and i % 3 != 0:
+                    n_codons_into_cds += 1 #to get num of codons correct
+                
+                bases_into_cds_deleted = n_bases_into_cds
+                bases_into_stop_deleted = len(mutation['ref_allele']) - n_bases_into_cds
+
+                new_ref_codon_seq = tx_seq[tx_stop_codon_tx_coords[0] - (3 * n_codons_into_cds): tx_stop_codon_tx_coords[0]]
+                new_alt_codon_seq = new_ref_codon_seq[:-bases_into_cds_deleted]
+
+                if bases_into_stop_deleted > 3:
+                    #del extends into UTR
+                    bases_into_utr = bases_into_stop_deleted - 3
+                    bases_into_stop_deleted = 3
+                else:
+                    bases_into_utr = 0
+
+                new_cds_seq = new_alt_codon_seq
+                new_alt_codon_seq = new_cds_seq + stop_codon_seq[bases_into_stop_deleted:]
+                new_ref_codon_seq = new_ref_codon_seq + stop_codon_seq
+                #if mutation['start'] == 248637602: from IPython import embed; embed()
+
+                ref_aa = Seq.translate(new_ref_codon_seq)
+                alt_aa = Seq.translate(new_alt_codon_seq)
+
+                aa_pos_2 = prot_stop_pos
+                aa_pos_1 = aa_pos_2 - n_codons_into_cds
+
+                if '*' in alt_aa:
+                    #no extension
+                    alt_aa = ''.join(AA_NAME_MAPPING[aa] for aa in alt_aa)
+                    return 'p.%s%d_%s%ddelins%s' % (aa_pos_1, AA_NAME_MAPPING[ref_aa[1]], aa_pos_2,
+                        AA_NAME_MAPPING[ref_aa[-1]], alt_aa)
+                else:
+                    new_tx_seq = new_cds_seq + stop_codon_seq[bases_into_stop_deleted:] + utr_seq[bases_into_utr:]
+                    new_prot_seq = Seq.translate(new_tx_seq)
+                    #new_tx_seq = stop_codon_seq[bases_into_stop_deleted:] + utr_seq[bases_into_utr:]
+                    #new_prot_seq = Seq.translate(new_tx_seq[n_bases_into_cds:])
+                    if new_prot_seq[0] == '*': #no change to stop codon seq
+                        if ref_aa == alt_aa + '*':
+                            return '' #no change on protein sequence
+                        else:
+                            alt_aa = alt_aa + '*'
+                            alt_aa = ''.join(AA_NAME_MAPPING[aa] for aa in alt_aa)
+                            'p.%s%d_%s%ddelins%s' % (AA_NAME_MAPPING[ref_aa[1]], aa_pos_1,
+                                AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa)
+                    
+                    elif ref_aa == alt_aa + '*': #means that protein seq upstream of stop is not being affected
+                        if '*' not in new_prot_seq: # is extension with no new stop codon:
+                            return 'p.*%d%sext*?' % (prot_stop_pos, AA_NAME_MAPPING[new_prot_seq[len(alt_aa)]])
+                        else:
+                            extension_amt = self._get_extension_amt(new_prot_seq)
+                            return 'p.*%d%sext*%d' % (prot_stop_pos, AA_NAME_MAPPING[new_prot_seq[len(alt_aa)]], extension_amt)
+                    else:
+                        alt_aa = ''.join(AA_NAME_MAPPING[aa] for aa in alt_aa)
+                        if alt_aa == '':
+                            alt_aa = AA_NAME_MAPPING[new_prot_seq[0]]
+                        if '*' not in new_prot_seq: # is extension with no new stop codon:
+                            return 'p.%s%d_%s%ddelins%sext*?' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
+                                AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa)
+                        else:
+                            extension_amt = self._get_extension_amt(new_prot_seq)
+                            return 'p.%s%d_%s%ddelins%sext*%d' % (AA_NAME_MAPPING[ref_aa[1]], aa_pos_1,
+                                AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa, extension_amt)
+            elif mutation['end'] > tx_stop_codon_genomic_coords[1]: #del extends into utr
+                #from IPython import embed; embed()
+                for i in range(3):
+                    if mutation['ref_allele'].startswith(stop_codon_seq[i:]):
+                        break
+                n_bases_into_stop_deleted = 3 - i
+                n_bases_into_utr_deleted = len(mutation['ref_allele']) - n_bases_into_stop_deleted
+                new_tx_seq = stop_codon_seq[:-n_bases_into_stop_deleted] + utr_seq[n_bases_into_utr_deleted:]
+                new_prot_seq = Seq.translate(new_tx_seq)
+                if new_prot_seq[0] == '*':
+                    return '' #no change on protein sequence
+                elif '*' not in new_prot_seq: # is extension with no new stop codon
+                    return 'p.*%d%sext*?' % (prot_stop_pos, AA_NAME_MAPPING[new_prot_seq[0]])
+                else:
+                    extension_amt = self._get_extension_amt(new_prot_seq)
+                    return 'p.*%d%sext*%d' % (prot_stop_pos, AA_NAME_MAPPING[new_prot_seq[0]], extension_amt)
+            else:
+                raise Exception('NOT EXPECTED!')
+        elif mutation['variant_type'] == 'INS':
+            raise Exception('NOT IMPLEMENTED YET!')
+        else: # ONPs
+            raise Exception('NOT IMPLEMENTED YET!')
+
+        alt_aa = Seq.translate(new_stop_codon_seq)
+        if new_prot_seq[0] == '*': #no change to stop codon seq
+            return ''
+        elif '*' not in new_prot_seq: # is extension with no new stop codon
+            return 'p.*%d%sext*?' % (prot_stop_pos, AA_NAME_MAPPING[alt_aa])
+        else: # is extension with downstream stop codon
+            extension_amt = self._get_extension_amt(new_prot_seq)
+            return 'p.*%d%sext*%d' % (prot_stop_pos, AA_NAME_MAPPING[alt_aa], extension_amt)
+ 
+    def _get_extension_amt(self, new_prot_seq):
+        for i, extension_residue in enumerate(new_prot_seq):
+            if extension_residue == '*':
+                break
+        return i
+
+    def _get_prot_change_for_frame_shift(self, mutation):
+        regx_res = PROT_FRAMESHIFT_REGEXP.match(mutation['protein_change'])
+        ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
+        aa_pos = int(aa_pos)
+        if ref_aa == '-':
+            #will need to retrieve actual ref_aa if current ref_aa is "-"
+            tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+            prot_seq = tx.get_protein_seq()
+            ref_aa = prot_seq[aa_pos-1]
+        ref_aa = ref_aa[0] #only need first residue
+        return 'p.%s%dfs' % (AA_NAME_MAPPING[ref_aa], aa_pos)
 
     def _get_ensembl_prot_id_from_tx_id(self, tx_id):
         if '.' in tx_id:
