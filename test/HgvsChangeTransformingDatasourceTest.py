@@ -413,6 +413,48 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000398659.4:c.755_757dupATG')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000381652:p.Asn252_Ala253insAsp')
 
+    def test_annotate_INS_inframe_6(self):
+        #This is an insertion of a STOP in between two amino acids
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '1')
+        m.createAnnotation('start', 248637602)
+        m.createAnnotation('end', 248637603)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'TGA')
+        m.createAnnotation('variant_classification', 'In_Frame_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000359594.2')
+        m.createAnnotation('transcript_strand', '+')
+        m.createAnnotation('ref_context', 'AAGAAAAGTAGTAAAGGGCAAGC')
+        m.createAnnotation('protein_change', 'p.317_318ins*')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.248637602_248637603insTGA')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000359594.2:c.951_952insTGA')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000352604:p.Lys318*')
+
+    def test_annotate_INS_inframe_7(self):
+        #This is an insertion of a STOP right before a stop
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '1')
+        m.createAnnotation('start', 248637605)
+        m.createAnnotation('end', 248637606)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'TGA')
+        m.createAnnotation('variant_classification', 'In_Frame_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000359594.2')
+        m.createAnnotation('transcript_strand', '+')
+        m.createAnnotation('ref_context', 'AAGAAAAGTAGTAAAGGGCAAGC')
+        m.createAnnotation('protein_change', 'p.319_319*>**')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.248637605_248637606insTGA')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000359594.2:c.954_955insTGA')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
+
     def test_annotate_INS_frameshift(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -653,10 +695,47 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('ref_context', 'AAGAAAAGTAGTAAAGGGCAAGC')
         m = self.hgvs_datasource.annotate_mutation(m)
 
-
         self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.248637602_248637610delAAAGTAGTA')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000359594.2:c.951_*2delAAAGTAGTA')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000352604:p.Glu317_*319delinsGluext*?')
 
+    def test_annotate_stop_codon_INS(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'INS')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '1')
+        m.createAnnotation('start', 248637606)
+        m.createAnnotation('end', 248637607)
+        m.createAnnotation('ref_allele', '-')
+        m.createAnnotation('alt_allele', 'CAT')
+        m.createAnnotation('variant_classification', 'Stop_Codon_Ins')
+        m.createAnnotation('annotation_transcript', 'ENST00000359594.2')
+        m.createAnnotation('transcript_strand', '+')
+        m.createAnnotation('ref_context', 'AAGAAAAGTAGTAAAGGGCAAGC')
+        m = self.hgvs_datasource.annotate_mutation(m)
 
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.248637606_248637607insCAT')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000359594.2:c.955_956insCAT')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000352604:p.*319Serext*1')
+
+    def test_annotate_stop_codon_ONP(self):
+        m = MutationData()
+        m.createAnnotation('variant_type', 'DNP')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '1')
+        m.createAnnotation('start', 248637605)
+        m.createAnnotation('end', 248637606)
+        m.createAnnotation('ref_allele', 'GT')
+        m.createAnnotation('alt_allele', 'CC')
+        m.createAnnotation('variant_classification', 'Nonstop_Mutation')
+        m.createAnnotation('annotation_transcript', 'ENST00000359594.2')
+        m.createAnnotation('transcript_strand', '+')
+        m.createAnnotation('ref_context', 'ACCAAGAAAAGTAGTAAAGGGC')
+        m.createAnnotation('protein_change', 'p.318_319K*>NQ')
+        
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr1.hg19:g.248637605_248637606delinsCC')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000359594.2:c.954_955delinsCC')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000352604:p.Lys318_*319delinsAsnGlnext*1')
 

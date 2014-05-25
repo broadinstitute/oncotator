@@ -170,14 +170,14 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             adjusted_prot_change = self._get_prot_change_for_in_frame_del(mutation)
         elif vc == 'In_Frame_Ins':
             adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation)
+        elif vc == 'Nonstop_Mutation' or vc.startswith('Stop_Codon'):
+            adjusted_prot_change = self._get_prot_change_for_stop_codon_variant(mutation)
         elif mutation['variant_type'] in ['DNP', 'TNP', 'ONP'] and '_' in mutation['protein_change']:
             #e.g. p.3589_3590QI>HV NEED TO MAKE TEST FOR THIS VARIANT!!!
             regx_res = PROT_ONP_REGEXP.match(mutation['protein_change'])
             aa_pos_1, aa_pos_2, ref_aa, alt_aa = [regx_res.group(i) for i in range(1, 5)]
             aa_pos_1, aa_pos_2 = int(aa_pos_1), int(aa_pos_2)
-            adjusted_prot_change = 'p.%s%d_%s%dinsdel%s' % (ref_aa[0], aa_pos_1, ref_aa[-1], aa_pos_2, alt_aa)
-        elif vc == 'Nonstop_Mutation' or vc.startswith('Stop_Codon'):
-            adjusted_prot_change = self._get_prot_change_for_stop_codon_variant(mutation)
+            adjusted_prot_change = 'p.%s%d_%s%ddelins%s' % (ref_aa[0], aa_pos_1, ref_aa[-1], aa_pos_2, alt_aa)
         else:
             regx_res = PROT_REGEXP.match(mutation['protein_change'])
             #try:
@@ -315,9 +315,44 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             else:
                 raise Exception('NOT EXPECTED!')
         elif mutation['variant_type'] == 'INS':
-            raise Exception('NOT IMPLEMENTED YET!')
+            alt_allele = self._get_tx_alleles(mutation)[1]
+            if variant_codon_pos == 2:
+                return '' # we don't care about insertions after stop codon, no change in protein
+            else:
+                new_tx_seq = stop_codon_seq[:variant_codon_pos-2] + alt_allele + stop_codon_seq[variant_codon_pos+1:] + utr_seq
+                new_prot_seq = Seq.translate(new_tx_seq)
+                alt_aa = new_prot_seq[0]
+
+                if alt_aa == '*':
+                    return '' #no change in protein
+                elif '*' not in new_prot_seq: # is extension with no new stop codon
+                    return 'p.*%d%sext*?' % (prot_stop_pos, AA_NAME_MAPPING[alt_aa])
+                else:
+                    extension_amt = self._get_extension_amt(new_prot_seq)
+                    return 'p.*%d%sext*%d' % (prot_stop_pos, AA_NAME_MAPPING[alt_aa], extension_amt)
+
         else: # ONPs
-            raise Exception('NOT IMPLEMENTED YET!')
+            regx_res = PROT_ONP_REGEXP.match(mutation['protein_change'])
+            aa_pos_1, aa_pos_2, ref_aa, alt_aa = [regx_res.group(i) for i in range(1, 5)]
+            aa_pos_1, aa_pos_2 = int(aa_pos_1), int(aa_pos_2)
+
+            new_prot_seq = Seq.translate(utr_seq)
+            alt_aa = [AA_NAME_MAPPING[aa] for aa in alt_aa]
+            alt_aa = ''.join(alt_aa)
+            if alt_aa[0] == '*':
+                return 'p.%s%d_%s%ddelins%s' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
+                    AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, '*')
+            elif '*' in alt_aa:
+                return 'p.%s%d_%s%ddelins%s' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
+                    AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa)
+            elif '*' not in new_prot_seq:
+                return 'p.%s%d_%s%ddelins%sext*?' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
+                    AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa)
+            else:
+                extension_amt = self._get_extension_amt(new_prot_seq)
+                extension_amt += 1 #to account for aa in stop codon
+                return 'p.%s%d_%s%ddelins%sext*%d' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
+                    AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa, extension_amt)
 
         alt_aa = Seq.translate(new_stop_codon_seq)
         if new_prot_seq[0] == '*': #no change to stop codon seq
@@ -426,6 +461,22 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
         tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
         tx_pos = tuple(t + 1 for t in tx_pos)
+
+        tx_stop_codon_genomic_coords = tx.get_stop_codon()
+        genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
+        if mutation['transcript_strand'] == '+' and mutation['end'] >= genome_stop_start_pos: # bumping up against stop codon, need to determine tx coords this way
+            tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+            tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
+                
+            tx_stop_start_pos += 1
+                
+            tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
+            tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
+                
+            tx_variant_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
+            tx_variant_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
+            tx_pos = (tx_variant_pos_1, tx_variant_pos_2)
+
         adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
@@ -485,7 +536,26 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         else:
             if mutation['transcript_strand'] == '-':
                 coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
+
+            tx_stop_codon_genomic_coords = tx.get_stop_codon()
+            genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
+            if mutation['transcript_strand'] == '+' and mutation['end'] >= genome_stop_start_pos: # bumping up against stop codon, need to determine tx coords this way
+                tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+                tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
+                
+                tx_stop_start_pos += 1
+                
+                tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
+                tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
+                
+                tx_variant_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
+                tx_variant_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
+                coding_tx_pos = (tx_variant_pos_1, tx_variant_pos_2)
+
+            ###NEED TO ADD FUNCTIONALITY FOR BUMPING UP AGAINST STOP ON NEGATIVE STRAND TRANSCRIPTS
+
             change = 'c.%d_%dins%s' % (coding_tx_pos[0], coding_tx_pos[1], tx_alt_allele)
+            
 
         return '%s:%s' % (mutation['annotation_transcript'], change)
 
@@ -537,7 +607,9 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         if is_duplication:
             #aa_pos_1, aa_pos_2 = int(aa_pos_1) + prot_pos_adjust_amnt, int(aa_pos_2) + prot_pos_adjust_amnt
-            if aa_pos_1 == aa_pos_2:
+            if alt_allele == '*':
+                return '' # duplication of stop does not change protein
+            elif aa_pos_1 == aa_pos_2:
                 aa_pos_1 = aa_pos_1 + prot_pos_adjust_amnt
                 adjusted_prot_change = 'p.%s%ddup' % (alt_allele, aa_pos_1)
             else: #means that prot positions describe residues that alt allele gets inserted between
@@ -552,7 +624,10 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             adjusted_prot_change = 'p.%s%ddelins%s' % (AA_NAME_MAPPING[ref_allele], aa_pos_1, alt_allele)
         else:
             ref_allele_1, ref_allele_2 = AA_NAME_MAPPING[ref_allele_1], AA_NAME_MAPPING[ref_allele_2]
-            adjusted_prot_change = 'p.%s%d_%s%dins%s' % (ref_allele_1, aa_pos_1, ref_allele_2, aa_pos_2, alt_allele)
+            if alt_allele == '*':
+                adjusted_prot_change = 'p.%s%d*' % (ref_allele_2, aa_pos_2)
+            else:
+                adjusted_prot_change = 'p.%s%d_%s%dins%s' % (ref_allele_1, aa_pos_1, ref_allele_2, aa_pos_2, alt_allele)
 
         return adjusted_prot_change
 
