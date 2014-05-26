@@ -138,9 +138,14 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
 
                 tx_stop_start_pos += 1
-                genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
-                tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
-                tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
+                if mutation['transcript_strand'] == '+':
+                    genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
+                    tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
+                    tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
+                else:
+                    genome_stop_start_pos = tx_stop_codon_genomic_coords[1]
+                    tx_variant_pos_1_offset = genome_stop_start_pos - mutation['end']
+                    tx_variant_pos_2_offset = genome_stop_start_pos - mutation['start']
 
                 tx_variant_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
                 tx_variant_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
@@ -154,8 +159,10 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                     change_str = 'c.%ddel%s' % (tx_variant_pos_1, tx_ref_allele)
                 else:
                     change_str = 'c.%d_%sdel%s' % (tx_variant_pos_1, tx_variant_pos_2, tx_ref_allele)
+                    
                 return '%s:%s' % (mutation['annotation_transcript'], change_str)
             else:
+                # just use the transcript change from the TranscriptProvider
                 return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
 
     def _adjust_protein_change(self, mutation):
@@ -190,8 +197,29 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change) if adjusted_prot_change else ''
         return adjusted_prot_change
 
+    def _determine_overlap_type(self, mutation, tx_stop_codon_genomic_coords):
+        """For determining the overlap betwen a deletion and the stop codon."""
+
+        if mutation['transcript_strand'] == '+':
+            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
+                return 'del_within_stop_codon'
+            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1:
+                return 'del_extends_into_cds'
+            elif mutation['end'] > tx_stop_codon_genomic_coords[1]: #del extends into utr
+                return 'del_extends_into_utr'
+            else:
+                raise Exception('Unexpected!!')
+        else:
+            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
+                return 'del_within_stop_codon'
+            elif mutation['end'] > tx_stop_codon_genomic_coords[1]:
+                return 'del_extends_into_cds'
+            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1:
+                return 'del_extends_into_utr'
+            else:
+                raise Exception('Unexpected!!')
+
     def _get_prot_change_for_stop_codon_variant(self, mutation):
-        #from IPython import embed; embed()
         tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
         tx_seq = tx.get_seq()
         tx_stop_codon_genomic_coords = tx.get_stop_codon()
@@ -203,7 +231,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         utr_seq = tx_seq[tx_stop_codon_tx_coords[1]:]
 
         variant_tx_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
-        variant_tx_pos_1 = variant_tx_coords[0] - 1 #do we only need to -1 for positive strands txs??
+        variant_tx_pos_1 = variant_tx_coords[0]
+        variant_tx_pos_1 = variant_tx_pos_1 - 1 if mutation['transcript_strand'] == '+' else variant_tx_pos_1
         variant_codon_pos = variant_tx_pos_1 - tx_stop_codon_tx_coords[0]
 
         prot_stop_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[0], tx)[0]
@@ -216,17 +245,32 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             new_tx_seq = new_stop_codon_seq + utr_seq
             new_prot_seq = Seq.translate(new_tx_seq)
         elif mutation['variant_type'] == 'DEL':
-            tx_stop_codon_genomic_coords
-            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
+            overlap_type = self._determine_overlap_type(mutation, tx_stop_codon_genomic_coords)
+
+            if overlap_type == 'del_within_stop_codon':
                 #del_in_just_stop_codon
+                #if mutation['start'] == 29416090: from IPython import embed; embed()
+
                 new_stop_codon_seq = list(stop_codon_seq)
-                del new_stop_codon_seq[variant_codon_pos]
+                n_bases_to_del = len(mutation['ref_allele'])
+                codon_positions_to_del = list()
+                for i in range(n_bases_to_del):
+                    codon_positions_to_del.append(variant_codon_pos + i)
+                
+                for i in codon_positions_to_del[::-1]:
+                    del new_stop_codon_seq[i]
+
                 new_stop_codon_seq = ''.join(new_stop_codon_seq)
                 new_tx_seq = new_stop_codon_seq + utr_seq
                 new_stop_codon_seq = new_tx_seq[:3]
                 new_prot_seq = Seq.translate(new_tx_seq)
-            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1: #del extends into cds 
-                n_bases_into_cds = (tx_stop_codon_genomic_coords[0] + 1) - mutation['start']
+
+            elif overlap_type == 'del_extends_into_cds':
+                if mutation['transcript_strand'] == '+':
+                    n_bases_into_cds = (tx_stop_codon_genomic_coords[0] + 1) - mutation['start']
+                else:
+                    n_bases_into_cds = mutation['end'] - tx_stop_codon_genomic_coords[1]
+
                 n_codons_into_cds = 0
                 for i in range(1, n_bases_into_cds + 1):
                     if i % 3 == 0:
@@ -252,7 +296,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 new_cds_seq = new_alt_codon_seq
                 new_alt_codon_seq = new_cds_seq + stop_codon_seq[bases_into_stop_deleted:]
                 new_ref_codon_seq = new_ref_codon_seq + stop_codon_seq
-                #if mutation['start'] == 248637602: from IPython import embed; embed()
 
                 ref_aa = Seq.translate(new_ref_codon_seq)
                 alt_aa = Seq.translate(new_alt_codon_seq)
@@ -270,6 +313,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                     new_prot_seq = Seq.translate(new_tx_seq)
                     #new_tx_seq = stop_codon_seq[bases_into_stop_deleted:] + utr_seq[bases_into_utr:]
                     #new_prot_seq = Seq.translate(new_tx_seq[n_bases_into_cds:])
+
                     if new_prot_seq[0] == '*': #no change to stop codon seq
                         if ref_aa == alt_aa + '*':
                             return '' #no change on protein sequence
@@ -294,15 +338,18 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                                 AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa)
                         else:
                             extension_amt = self._get_extension_amt(new_prot_seq)
-                            return 'p.%s%d_%s%ddelins%sext*%d' % (AA_NAME_MAPPING[ref_aa[1]], aa_pos_1,
+                            return 'p.%s%d_%s%ddelins%sext*%d' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
                                 AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa, extension_amt)
-            elif mutation['end'] > tx_stop_codon_genomic_coords[1]: #del extends into utr
-                #from IPython import embed; embed()
+
+
+            elif overlap_type == 'del_extends_into_utr':
+                del_ref_allele = self._get_tx_alleles(mutation)[0]
+
                 for i in range(3):
-                    if mutation['ref_allele'].startswith(stop_codon_seq[i:]):
+                    if del_ref_allele.startswith(stop_codon_seq[i:]):
                         break
                 n_bases_into_stop_deleted = 3 - i
-                n_bases_into_utr_deleted = len(mutation['ref_allele']) - n_bases_into_stop_deleted
+                n_bases_into_utr_deleted = len(del_ref_allele) - n_bases_into_stop_deleted
                 new_tx_seq = stop_codon_seq[:-n_bases_into_stop_deleted] + utr_seq[n_bases_into_utr_deleted:]
                 new_prot_seq = Seq.translate(new_tx_seq)
                 if new_prot_seq[0] == '*':
@@ -312,8 +359,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 else:
                     extension_amt = self._get_extension_amt(new_prot_seq)
                     return 'p.*%d%sext*%d' % (prot_stop_pos, AA_NAME_MAPPING[new_prot_seq[0]], extension_amt)
-            else:
-                raise Exception('NOT EXPECTED!')
+
+
         elif mutation['variant_type'] == 'INS':
             alt_allele = self._get_tx_alleles(mutation)[1]
             if variant_codon_pos == 2:
@@ -353,6 +400,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 extension_amt += 1 #to account for aa in stop codon
                 return 'p.%s%d_%s%ddelins%sext*%d' % (AA_NAME_MAPPING[ref_aa[0]], aa_pos_1,
                     AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa, extension_amt)
+
 
         alt_aa = Seq.translate(new_stop_codon_seq)
         if new_prot_seq[0] == '*': #no change to stop codon seq
@@ -476,6 +524,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             tx_variant_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
             tx_variant_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
             tx_pos = (tx_variant_pos_1, tx_variant_pos_2)
+
+        ###NEED TO ADD FUNCTIONALITY FOR BUMPING UP AGAINST STOP ON NEGATIVE STRAND TRANSCRIPTS
 
         adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
