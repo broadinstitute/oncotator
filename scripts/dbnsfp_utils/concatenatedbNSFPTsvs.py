@@ -34,7 +34,7 @@ def main():
                 index = 1
                 for rowdict in reader:
                     rowdicts += [rowdict]
-                    if index % 10000 == 0:
+                    if index % 1000 == 0:
                         writer.writerows(rowdicts)
                         rowdicts = []
                         index += 1

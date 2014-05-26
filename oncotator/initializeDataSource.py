@@ -199,7 +199,8 @@ def validateArgs(args):
     """ Throw an exception if poor arguments were chosen."""
     if args.ds_type not in supportedDSTypes:
         raise ValueError("Unsupported datasource type: " + args.ds_type + ".  Must be one of: " + str(supportedDSTypes))
-    if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and len(args.index_columns.split(',')) != 3:
+    if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and \
+                    len(args.index_columns.split(',')) != 3:
         raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3")
     if os.path.exists(os.path.join(args.dbDir, args.ds_foldername)):
         raise ValueError("Destination path already exists.  Please remove or choose a different location: " +
@@ -216,6 +217,10 @@ def validateArgs(args):
         if not all([annotation_column in args.columns.split(",") for annotation_column in
                     args.annotation_columns.split(",")]):
             raise ValueError("annotation_column values must be a subset of column values.")
+        if (args.match_mode.endswith("avg") or args.match_mode.endswith("overlap")) and \
+                        len(args.index_columns.split(',')) != 3:
+            raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3 when the "
+                             "match mode is %s." % args.match_mode)
 
 
 def createDatasource(tmpDir):

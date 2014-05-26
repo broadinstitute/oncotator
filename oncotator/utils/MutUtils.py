@@ -118,18 +118,26 @@ class MutUtils(object):
             preceding_bases, updated_ref_allele, updated_start, updated_end =\
                 MutUtils.retrievePrecedingBasesForDeletions(mut)
             mut.ref_allele = updated_ref_allele
+            mut["ref_allele"] = updated_ref_allele
             mut.alt_allele = "-"
+            mut["alt_allele"] = "-"
             mut.start = updated_start
+            mut["start"] = updated_start
             mut.end = updated_end
+            mut["end"] = updated_end
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
                                  annotationValue=preceding_bases)
         elif varType == "ins":  # insertion
             preceding_bases, updated_alt_allele, updated_start, updated_end = \
                 MutUtils.retrievePrecedingBasesForInsertions(mut)
             mut.ref_allele = "-"
+            mut["ref_allele"] = "-"
             mut.alt_allele = updated_alt_allele
+            mut["alt_allele"] = updated_alt_allele
             mut.start = updated_start
+            mut["start"] = updated_start
             mut.end = updated_end
+            mut["end"] = updated_end
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
                                  annotationValue=preceding_bases)
 

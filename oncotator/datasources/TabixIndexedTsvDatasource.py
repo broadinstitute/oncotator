@@ -53,6 +53,7 @@ from oncotator.datasources.Datasource import Datasource
 from oncotator.utils.TagConstants import TagConstants
 import string
 from oncotator.utils.MutUtils import MutUtils
+from oncotator.MutationData import MutationData
 
 
 class IndexedTsvDatasource(Datasource):
@@ -71,10 +72,11 @@ class IndexedTsvDatasource(Datasource):
     def __init__(self, src_file, title, version, colNames, indexColNames, annotationColNames, match_mode, colDataTypes):
         super(IndexedTsvDatasource, self).__init__(src_file, title=title, version=version)
         self.tsv_reader = pysam.Tabixfile(filename=src_file)  # initialize the tsv reader
-        self.tsv_headers = dict([(colName, index) for (index, colName) in enumerate(colNames)])  # index the column names in tsv header
+        # Index the column names in tsv header
+        self.tsv_headers = dict([(colName, index) for (index, colName) in enumerate(colNames)])
         # Annotation column names are the only columns that are used for annotating a mutation object.
         self.output_tsv_headers = dict([(colName, '_'.join([self.title, colName])) for colName in annotationColNames])
-        self.tsv_index = {}
+        self.tsv_index = dict()
         self.tsv_index["chrom"] = self.tsv_headers[indexColNames[0]]
         self.tsv_index["start"] = self.tsv_headers[indexColNames[1]]
         self.tsv_index["end"] = self.tsv_headers[indexColNames[2]]
@@ -95,7 +97,11 @@ class IndexedTsvDatasource(Datasource):
             ref = tsv_record[self.tsv_index["ref"]]
             alt = tsv_record[self.tsv_index["alt"]]
             build = "hg19"
-            ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+
+            if ref == "-" or alt == "-":  # Addresses MAF based tsv record
+                ds_mut = MutationData(chrom, startPos, endPos, ref, alt, build)
+            else:  # Addresses tsv records where the input isn't a MAF
+                ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
 
             if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
                 and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
@@ -120,12 +126,12 @@ class IndexedTsvDatasource(Datasource):
             # tabix needs position - 1
             tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start - 1, mut_end, parser=pysam.asTuple())
             for tsv_record in tsv_records:
-                if not tsv_record:
+                if not tsv_record:  # skip in case no records are found
                     continue
-                if self.match_mode == "exact":  # currently, only comparing using start and end positions; also include,
-                #  ref and alt alleles
-                    for colName in self.output_tsv_headers:
-                        if self._is_matching(mutation, tsv_record):
+                if self.match_mode == "exact":  # determines an exact match using start and end positions, and ref and
+                # alt alleles
+                    if self._is_matching(mutation, tsv_record):
+                        for colName in self.output_tsv_headers:
                             vals[colName] = tsv_record[self.tsv_headers[colName]]
                 else:  # avg and overlap
                     for colName in self.output_tsv_headers:
@@ -142,11 +148,15 @@ class IndexedTsvDatasource(Datasource):
         for colName in self.output_tsv_headers:
             val = ""
             ds_type = self.dataTypes[colName]
-            if len(vals) != 0:
-                if self.match_mode == "exact":
+            if self.match_mode == "exact":
+                # No need to change the data type as it is an exact match
+                if len(vals) != 0:
                     val = vals[colName]
-                elif self.match_mode == "avg" and ds_type in ("Integer", "Float",):
+            elif self.match_mode == "avg" and ds_type in ("Integer", "Float",):
+                # Data type should be forced to float
+                if ds_type == "Integer":
                     ds_type = "Float"
+                if len(vals) != 0:
                     val = vals[colName]
                     val_sum = 0
                     val_num = 0
@@ -165,10 +175,11 @@ class IndexedTsvDatasource(Datasource):
                             break
                     if val_num != 0:
                         val = str(val_sum/val_num)
-                else:
-                    ds_type = "String"
+            else:  # For all other cases (avg and overlap) the data type should be a string
+                ds_type = "String"
+                if len(vals) != 0:
                     val = string.join(vals[colName], "|")
-            else:
+            if len(vals) == 0:
                 msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                       "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
                 logging.getLogger(__name__).debug(msg)
@@ -177,3 +188,4 @@ class IndexedTsvDatasource(Datasource):
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])
 
         return mutation
+

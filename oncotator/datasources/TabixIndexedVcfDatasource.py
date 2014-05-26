@@ -124,7 +124,7 @@ class IndexedVcfDatasource(Datasource):
             num = self.output_vcf_nums[ID]
 
             if isinstance(vals, list):
-                if num == -1 and alt_index >= 0 and alt_index is not None:
+                if num == -1 and alt_index >= 0 and alt_index is not None:  # split by alternative allele
                     val = [vals[alt_index]]
                 else:
                     val = vals
@@ -155,7 +155,7 @@ class IndexedVcfDatasource(Datasource):
 
         return [""]*num
 
-    def _determine_matching_alt_index(self, mut, record):
+    def _determine_matching_alt_indices(self, mut, record):
         """
 
         :param mut:
@@ -164,17 +164,40 @@ class IndexedVcfDatasource(Datasource):
         """
         index = None
         ds_mut = MutUtils.initializeMutFromRecord("hg19", record, index)
-        if record.is_monomorphic and mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele:
-            return -1
+        if self.match_mode == "exact":
+            if record.is_monomorphic and mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele:
+                return -1
+        else:
+            # Variant is wedged is monomorphic or wedged in between
+            if record.is_monomorphic and mut.chr == ds_mut.chr and int(mut.start) <= int(ds_mut.start) and \
+                            int(mut.end) >= int(ds_mut.end):
+                return -1
 
         # Iterate over all alternates in the record
+        indices = []
         for index in xrange(0, len(record.ALT)):
             ds_mut = MutUtils.initializeMutFromRecord("hg19", record, index)
-            if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
-                and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
-                return index
+            if self.match_mode == "exact":
+                if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele \
+                    and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start) \
+                    and int(mut.end) == int(ds_mut.end):
+                    indices += [index]
+            else:  # cases whether the match mode isn't exact
+                if mut.chr == ds_mut.chr and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
+                    indices += [index]
+                elif mut.chr == ds_mut.chr and int(mut.start) >= int(ds_mut.start) \
+                    and int(mut.end) >= int(ds_mut.end) and int(mut.start) <= int(ds_mut.end):
+                    indices += [index]
+                elif mut.chr == ds_mut.chr and int(mut.start) <= int(ds_mut.start) and int(mut.end) >= int(ds_mut.end):
+                    indices += [index]
+                elif mut.chr == ds_mut.chr and int(mut.start) <= int(ds_mut.start) \
+                    and int(mut.end) <= int(ds_mut.end) and int(mut.end) >= int(ds_mut.start):
+                    indices += [index]
 
-        return None
+        if len(indices) == 0:
+            return None
+
+        return indices
 
     def annotate_mutation(self, mutation):
         """
@@ -190,36 +213,44 @@ class IndexedVcfDatasource(Datasource):
         vals = dict()
         record = None
 
-        if mutation.ref_allele == "-":  # adjust for cases where there is an insertion
-            mut_start -= 1
-
         try:
-            vcf_records = self.vcf_reader.fetch(mutation.chr, mut_start, mut_end)  # query database for records
+            vcf_records = self.vcf_reader.fetch(mutation.chr, mut_start - 1, mut_end)  # query database for records
         except ValueError as ve:
             logging.getLogger(__name__).debug("Exception when looking for vcf records. Empty set of records being "
                                               "returned: " + repr(ve))
         else:
             # Process values.
             for record in vcf_records:
+                alt_indices = self._determine_matching_alt_indices(mutation, record)
                 if self.match_mode == "exact":
-                    alt_index = self._determine_matching_alt_index(mutation, record)
                     for ID in self.vcf_info_headers:
-                        if alt_index is None:  # no match found
+                        if alt_indices is None:  # no variant in record matches
                             val = self._determine_missing_value(ID)
-                        elif alt_index == -1:  # monomorphic site
+                        elif alt_indices == -1:  # monomorphic site
+                            alt_index = -1
                             val = self._determine_info_annotation_value(record, ID, alt_index)
                         else:  # match found
+                            alt_index = alt_indices[0]  # enforce exact match criteria
                             val = self._determine_info_annotation_value(record, ID, alt_index)
                         vals[ID] = val
                     break  # for each header, only one value needs to be found
                 else:  # avg and overlap
-                    alt_index = None
                     for ID in self.vcf_info_headers:
-                        val = self._determine_info_annotation_value(record, ID, alt_index)
-                        if ID not in vals:
-                            vals[ID] = [val]
+                        if isinstance(alt_indices, list):
+                            for alt_index in alt_indices:
+                                val = self._determine_info_annotation_value(record, ID, alt_index)
+                                if ID not in vals:
+                                    vals[ID] = [val]
+                                else:
+                                    vals[ID] += [val]
                         else:
-                            vals[ID] += [val]
+                            alt_index = alt_indices
+                            val = self._determine_info_annotation_value(record, ID, alt_index)
+                            if ID not in vals:
+                                vals[ID] = [val]
+                            else:
+                                vals[ID] += [val]
+
         if record is None:
             msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                   "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
@@ -232,7 +263,7 @@ class IndexedVcfDatasource(Datasource):
                 if self.match_mode == "exact":
                     val = string.join(map(str, [val if val is not None else "" for val in vals[ID]]), ",")
                 elif self.match_mode == "avg":
-                    if self.output_vcf_types[ID] in ("Integer", "Float"):
+                    if self.output_vcf_types[ID] in ("Integer", "Float"):  # integers and floats
                         num = self.output_vcf_nums[ID]
                         if num in (None, -1, 0, 1,):
                             vals[ID] = reduce(operator.add, vals[ID])
