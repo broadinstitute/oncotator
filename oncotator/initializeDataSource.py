@@ -278,8 +278,6 @@ def main():
         createDatasource(tmpDir)
     finally:
         try:
-            print("Done...")
-            print("Removing ..." + tmpDir + '/')
             MutUtils.removeDir(tmpDir)
         except OSError as exc:
             if exc.errno != 2:  # code 2 - no such file or directory
