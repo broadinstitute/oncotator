@@ -78,44 +78,56 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         return mutation
 
     def _adjust_genome_change(self, mutation):
-        if mutation['variant_type'] == 'DNP':
-            change = '%d_%ddelins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
-        elif mutation['variant_type'] == 'INS':
-            genome_pos_adjust = self._genome_pos_adjust_if_duplication(mutation['alt_allele'], mutation['ref_context'], 'ins')
-            genome_pos_adjust = genome_pos_adjust - len(mutation['alt_allele'])
+        variant_type = mutation['variant_type']
+        mut_start, mut_end = mutation['start'], mutation['end']
+        chrn = mutation['chr']
+        alt_allele = mutation['alt_allele']
+        ref_allele = mutation['ref_allele']
+        build = mutation['build']
+        ref_context = mutation.get('ref_context')
+
+        if variant_type == 'DNP':
+            change = '%d_%ddelins%s' % (mut_start, mut_end, alt_allele)
+        elif variant_type == 'INS':
+            genome_pos_adjust = self._genome_pos_adjust_if_duplication(alt_allele, ref_context, variant_type)
+            genome_pos_adjust = genome_pos_adjust - len(alt_allele)
 
             #BUG: duplications are only rendered if position needs to be adjusted! Implement duplication test like done for coding and protein position
-            if genome_pos_adjust > 0:
-
-                start_pos = mutation['end'] + genome_pos_adjust
-                end_pos = start_pos + len(mutation['alt_allele']) - 1
-                change = '%d_%ddup%s' % (start_pos, end_pos, mutation['alt_allele'])
+            if self._determine_if_genomic_duplication(alt_allele, ref_context, variant_type, mutation):
+                start_pos = mut_end + genome_pos_adjust
+                end_pos = start_pos + len(alt_allele) - 1
+                change = '%d_%ddup%s' % (start_pos, end_pos, alt_allele)
             else:
-                change = '%d_%dins%s' % (mutation['start'], mutation['end'], mutation['alt_allele'])
-        elif mutation['variant_type'] == 'DEL':
-            genome_pos_adjust = self._genome_pos_adjust_if_duplication(mutation['ref_allele'], mutation['ref_context'], 'del')
-            genome_pos_adjust = genome_pos_adjust - len(mutation['ref_allele']) if genome_pos_adjust > 0 else genome_pos_adjust
+                change = '%d_%dins%s' % (mut_start, mut_end, alt_allele)
+        elif variant_type == 'DEL':
+            genome_pos_adjust = self._genome_pos_adjust_if_duplication(ref_allele, ref_context, variant_type)
+            genome_pos_adjust = genome_pos_adjust - len(ref_allele) if genome_pos_adjust > 0 else genome_pos_adjust
 
-            mut_start, mut_end = mutation['start'] + genome_pos_adjust, mutation['end'] + genome_pos_adjust
+            mut_start_changed = mut_start
+            mut_start, mut_end = mut_start + genome_pos_adjust, mut_end + genome_pos_adjust
             if mut_start == mut_end:
-                change = str(mutation['start']) if mut_start == mut_end else '%d_%d' % (mut_start, mut_end)
-                change = '%sdel%s' % (change, mutation['ref_allele'])
+                change = str(mut_start_changed) if mut_start == mut_end else '%d_%d' % (mut_start, mut_end)
+                change = '%sdel%s' % (change, ref_allele)
             else:
-                change = '%d_%ddel%s' % (mut_start, mut_end, mutation['ref_allele'])
+                change = '%d_%ddel%s' % (mut_start, mut_end, ref_allele)
         else:
-            change = '%d%s>%s' % (mutation['start'], mutation['ref_allele'], mutation['alt_allele'])
-
-        chrn = mutation['chr']
-        if mutation['build'] == '':
+            change = '%d%s>%s' % (mut_start, ref_allele, alt_allele)
+        
+        if build == '':
             adjusted_genome_change = '%s:g.%s' % (chrn, change)
         else:
-            if mutation['build'] == 'hg19' and not chrn.startswith('chr'):
+            if build == 'hg19' and not chrn.startswith('chr'):
                 chrn = 'chr' + chrn
-            adjusted_genome_change = '%s.%s:g.%s' % (chrn, mutation['build'], change)
+            adjusted_genome_change = '%s.%s:g.%s' % (chrn, build, change)
 
         return adjusted_genome_change
 
+    def _get_cdna_change_for_del(self, mutation):
+        from IPython import embed; embed()
+
+
     def _adjust_coding_DNA_change(self, mutation):
+        ### IF DELETION, THEN DUPLICATION CHECK AND POS ADJUSTMENT NOT BEING DONE!!
         if mutation['variant_type'] == 'DNP':
             return self._get_cdna_change_for_ONP(mutation)
         else:
@@ -130,6 +142,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 return ''
             elif vc.endswith('Ins'):
                 return self._get_cdna_change_for_ins(mutation)
+            elif vc.endswith('Del'):
+                return self._get_cdna_change_for_del(mutation)
             elif vc in ['Stop_Codon_Del']:
                 #need to make cdna str from scratch
                 tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
@@ -530,32 +544,68 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
-    def _genome_pos_adjust_if_duplication(self, alt_allele, ref_context, variant_type):
-        if variant_type == 'ins':
+    def _determine_if_genomic_duplication(self, alt_allele, ref_context, variant_type, mutation):
+        allele_len = len(alt_allele)
+        if variant_type == 'INS':
             half_len = len(ref_context) / 2
-            downstream_seq = ref_context[half_len:].upper()
-        elif variant_type == 'del':
+        elif variant_type == 'DEL':
             half_len = (len(ref_context) - len(alt_allele)) / 2
-            downstream_seq = ref_context[half_len:].upper()
+        
+        downstream_seq = ref_context[half_len:half_len + allele_len].upper()
+        upstream_seq = ref_context[half_len - allele_len:half_len].upper()
+
+        return alt_allele == downstream_seq or alt_allele == upstream_seq
+
+    def _genome_pos_adjust_if_duplication(self, alt_allele, ref_context, variant_type):
+        if variant_type == 'INS':
+            half_len = len(ref_context) / 2
+        elif variant_type == 'DEL':
+            half_len = (len(ref_context) - len(alt_allele)) / 2
+        
+        downstream_seq = ref_context[half_len:].upper()
         return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
 
-    def _determine_if_prot_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq):
+    def _determine_if_prot_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq, variant_type):
         allele_len = len(alt_allele)
         aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
 
-        return prot_seq[aa_pos_2:aa_pos_2 + allele_len] == alt_allele or \
-            prot_seq[aa_pos_2 - allele_len:aa_pos_2] == alt_allele
+        if variant_type == 'INS':
+            downstream_seq = prot_seq[aa_pos_2:aa_pos_2 + allele_len]
+            upstream_seq = prot_seq[aa_pos_1 - allele_len + 1:aa_pos_1 + 1]
+        elif variant_type == 'DEL':
+            downstream_seq = prot_seq[aa_pos_2 + 1:aa_pos_2 + 1 + allele_len]
+            upstream_seq = prot_seq[aa_pos_1 - allele_len:aa_pos_1]
 
-    def _determine_if_cdna_duplication(self, tx_pos_1, tx_pos_2, alt_allele, tx_seq, tx_strand):
+        return alt_allele == downstream_seq or alt_allele == upstream_seq
+
+    def _determine_if_cdna_duplication(self, tx_pos_1, tx_pos_2, alt_allele, tx_seq, tx_strand, variant_type):
         allele_len = len(alt_allele)
         tx_pos_1, tx_pos_2 = int(tx_pos_1) - 1, int(tx_pos_2) - 1 #convert to 0-based indexing
 
-        if tx_strand == '+':
-            return tx_seq[tx_pos_2:tx_pos_2 + allele_len] == alt_allele or \
-                tx_seq[tx_pos_1 - allele_len + 1:tx_pos_1 + 1] == alt_allele
-        elif tx_strand == '-':
-            return tx_seq[tx_pos_2 + 1:tx_pos_2 + allele_len + 1] == alt_allele or \
-                tx_seq[tx_pos_2 - allele_len + 1:tx_pos_2 + 1] == alt_allele
+        if variant_type == 'INS':
+            if tx_strand == '+':
+                wut = tx_seq[tx_pos_2:tx_pos_2 + allele_len] == alt_allele or \
+                    tx_seq[tx_pos_1 - allele_len + 1:tx_pos_1 + 1] == alt_allele
+
+                downstream_seq = tx_seq[tx_pos_2:tx_pos_2 + allele_len]
+                upstream_seq = tx_seq[tx_pos_1 - allele_len + 1:tx_pos_1 + 1]
+
+            elif tx_strand == '-':
+                wut = tx_seq[tx_pos_2 + 1:tx_pos_2 + allele_len + 1] == alt_allele or \
+                    tx_seq[tx_pos_2 - allele_len + 1:tx_pos_2 + 1] == alt_allele
+
+                downstream_seq = tx_seq[tx_pos_2 + 1:tx_pos_2 + allele_len + 1]
+                upstream_seq = tx_seq[tx_pos_2 - allele_len + 1:tx_pos_2 + 1]
+
+        elif variant_type == 'DEL':
+            if tx_strand == '+':
+                downstream_seq = tx_seq[tx_pos_2 + 1:tx_pos_2 + allele_len + 1]
+                upstream_seq = tx_seq[tx_pos_1 - allele_len:tx_pos_1]
+            elif tx_strand == 'INS':
+                downstream_seq = tx_seq[tx_pos_2 + 2:tx_pos_2 + allele_len + 2]
+                upstream_seq = tx_seq[tx_pos_2 - allele_len:tx_pos_2]
+
+        return alt_allele == downstream_seq or alt_allele == upstream_seq
 
     def _prot_pos_adjust_if_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq):
         aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
@@ -572,7 +622,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         coding_pos_adjust = coding_pos_adjust - len_alt_allele
 
         coding_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
-        is_duplication = self._determine_if_cdna_duplication(tx_pos[0], tx_pos[1], tx_alt_allele, tx.get_seq(), mutation['transcript_strand'])
+        is_duplication = self._determine_if_cdna_duplication(tx_pos[0], tx_pos[1], tx_alt_allele, tx.get_seq(), mutation['transcript_strand'], 'INS')
 
         if is_duplication:
             coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
@@ -650,7 +700,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             raise Exception('Unexpected protein_change str for in-frame insertion: %s' % prot_change)
 
         len_alt_allele = len(alt_allele)
-        is_duplication = self._determine_if_prot_duplication(aa_pos_1, aa_pos_2, alt_allele, prot_seq)
+        is_duplication = self._determine_if_prot_duplication(aa_pos_1, aa_pos_2, alt_allele, prot_seq, mutation['variant_type'])
         prot_pos_adjust_amnt =  self._prot_pos_adjust_if_duplication(aa_pos_1, aa_pos_2, alt_allele, prot_seq)
 
         alt_allele = ''.join(AA_NAME_MAPPING[aa] for aa in alt_allele)

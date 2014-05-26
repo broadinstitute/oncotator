@@ -409,7 +409,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('ref_context', 'CTGTCCGTGGGCATTCTCTATG')
         m = self.hgvs_datasource.annotate_mutation(m)
 
-        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr2.hg19:g.3197914_3197915insCAT')
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr2.hg19:g.3197915_3197917dupCAT')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000398659.4:c.755_757dupATG')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000381652:p.Asn252_Ala253insAsp')
 
@@ -497,7 +497,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         m.createAnnotation('ref_context', 'ACTCGCTCCAGCGCTTGACAAT')
         m = self.hgvs_datasource.annotate_mutation(m)
 
-        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr9.hg19:g.135977871_135977872insCGCT')
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr9.hg19:g.135977872_135977875dupCGCT')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000393160.3:c.1832_1835dupAGCG')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), 'ENSP00000376867:p.Arg612fs')
 
