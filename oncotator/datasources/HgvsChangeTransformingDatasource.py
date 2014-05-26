@@ -91,15 +91,27 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         return i
         
     def annotate_mutation(self, mutation):
-        # TODO
-        # TODO: When annotating, you should probably give the annotation a name like:  self.title + "_" + output_annotation_name
-        # You can assume that the annotations from the transript datasource have already been populated (such as protein_change and genome_change)
-
         mutation['start'], mutation['end'] = int(mutation['start']), int(mutation['end'])
 
-        hgvs_genomic_change = self._adjust_genome_change(mutation)
-        hgvs_coding_dna_change = self._adjust_coding_DNA_change(mutation)
-        hgvs_protein_change = self._adjust_protein_change(mutation)
+        try:
+            hgvs_genomic_change = self._adjust_genome_change(mutation)
+        except:
+            hgvs_genomic_change = 'Exception_encountered'
+
+        try:
+            hgvs_coding_dna_change = self._adjust_coding_DNA_change(mutation)
+        except:
+            hgvs_coding_dna_change = 'Exception_encountered'
+
+        try:
+            hgvs_protein_change = self._adjust_protein_change(mutation)
+        except:
+            hgvs_protein_change = 'Exception_encountered'
+
+        if hgvs_protein_change.startswith('None'):
+            hgvs_protein_change = hgvs_protein_change.replace('None', 'unknown_prot_seq')
+        elif hgvs_protein_change.startswith(':'):
+            hgvs_protein_change = 'unknown_prot_seq' + hgvs_protein_change
 
         mutation.createAnnotation('HGVS_genomic_change', hgvs_genomic_change, self.title)
         mutation.createAnnotation('HGVS_coding_DNA_change', hgvs_coding_dna_change, self.title)
@@ -227,10 +239,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             adjusted_prot_change = 'p.%s%d_%s%ddelins%s' % (ref_aa[0], aa_pos_1, ref_aa[-1], aa_pos_2, alt_aa)
         else:
             regx_res = PROT_REGEXP.match(mutation['protein_change'])
-            #try:
             ref_aa, aa_pos, alt_aa = [regx_res.group(i) for i in range(1, 4)]
-            #except AttributeError:
-            #    from IPython import embed; embed()
             adjusted_prot_change = 'p.%s%s%s' % (AA_NAME_MAPPING[ref_aa], aa_pos, AA_NAME_MAPPING[alt_aa])
 
         prot_id = self._get_ensembl_prot_id_from_tx_id(mutation['annotation_transcript'])
@@ -644,6 +653,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         tx_stop_codon_genomic_coords = tx.get_stop_codon()
         tx_stop_codon_tx_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx_stop_codon_genomic_coords[0],
             tx_stop_codon_genomic_coords[1], tx)
+
         prot_seq = tx.get_protein_seq()
 
         stop_codon_seq = tx_seq[tx_stop_codon_tx_coords[0]:tx_stop_codon_tx_coords[1]]
@@ -667,9 +677,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             overlap_type = self._determine_overlap_type(mutation, tx_stop_codon_genomic_coords)
 
             if overlap_type == 'del_within_stop_codon':
-                #del_in_just_stop_codon
-                #if mutation['start'] == 29416090: from IPython import embed; embed()
-
                 new_stop_codon_seq = list(stop_codon_seq)
                 n_bases_to_del = len(mutation['ref_allele'])
                 codon_positions_to_del = list()
