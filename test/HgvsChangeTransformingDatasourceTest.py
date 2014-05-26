@@ -128,6 +128,7 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
 
     def test_annotate_SNP_5_utr(self):
         #rs141173433
+        #negative strand
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
@@ -148,8 +149,30 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000316731.8:c.-34C>G')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
 
+        #positive strand
+        m = MutationData()
+        m.createAnnotation('variant_type', 'SNP')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '7')
+        m.createAnnotation('start', 55086964)
+        m.createAnnotation('end', 55086964)
+        m.createAnnotation('ref_allele', 'A')
+        m.createAnnotation('alt_allele', 'T')
+        m.createAnnotation('variant_classification', "5'UTR")
+        m.createAnnotation('annotation_transcript', 'ENST00000275493.2')
+        m.createAnnotation('transcript_strand', '+')
+        m.createAnnotation('genome_change', 'g.chr7:55086964A>T')
+        m.createAnnotation('transcript_change', '')
+        m.createAnnotation('protein_change', '')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr7.hg19:g.55086964A>T')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000275493.2:c.-7A>T')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
+
     def test_annotate_SNP_3_utr(self):
         #rs143436239
+        #negative strand
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
@@ -168,6 +191,27 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
 
         self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr8.hg19:g.27145409G>A')
         self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000521253.1:c.*220C>T')
+        self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
+
+        #positive strand
+        m = MutationData()
+        m.createAnnotation('variant_type', 'SNP')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('chr', '7')
+        m.createAnnotation('start', 55273314)
+        m.createAnnotation('end', 55273314)
+        m.createAnnotation('ref_allele', 'C')
+        m.createAnnotation('alt_allele', 'T')
+        m.createAnnotation('variant_classification', "3'UTR")
+        m.createAnnotation('annotation_transcript', 'ENST00000275493.2')
+        m.createAnnotation('transcript_strand', '+')
+        m.createAnnotation('genome_change', 'g.chr7:55273314C>T')
+        m.createAnnotation('transcript_change', '')
+        m.createAnnotation('protein_change', '')
+        m = self.hgvs_datasource.annotate_mutation(m)
+
+        self.assertEqual(m.annotations['HGVS_genomic_change'].getValue(), 'chr7.hg19:g.55273314C>T')
+        self.assertEqual(m.annotations['HGVS_coding_DNA_change'].getValue(), 'ENST00000275493.2:c.*4C>T')
         self.assertEqual(m.annotations['HGVS_protein_change'].getValue(), '')
 
     def test_annotate_SNP_igr(self):

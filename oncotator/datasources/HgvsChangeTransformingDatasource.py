@@ -476,19 +476,28 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
     def _get_cdna_change_for_5_utr(self, mutation):
-        #### HACK #####
-        ## Will not work correctly if variant is in exon that does not contain CDS start
         tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-        dist_from_cds_start = abs(mutation['start'] - tx.determine_cds_start())
+        variant_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
+        cds_start_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx.determine_cds_start(), tx.determine_cds_start(), tx)[0]
+        if mutation['transcript_strand'] == '-':
+            dist_from_cds_start = abs(variant_tx_pos[0] - cds_start_pos)
+        else:
+            dist_from_cds_start = abs(variant_tx_pos[1] - cds_start_pos - 1)
+        
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
         adjusted_tx_change = 'c.-%d%s>%s' % (dist_from_cds_start, tx_ref_allele, tx_alt_allele)
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
     def _get_cdna_change_for_3_utr(self, mutation):
-        #### HACK #####
-        ## Will not work correctly if variant is in exon that does not contain CDS stop
         tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-        dist_from_cds_stop = abs(mutation['start'] - tx.determine_cds_stop() + 2)
+
+        variant_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
+        cds_stop_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx.determine_cds_stop(), tx.determine_cds_stop(), tx)
+        if mutation['transcript_strand'] == '-':
+            dist_from_cds_stop = abs(variant_tx_pos[1] - cds_stop_pos[0] - 2)
+        else:
+            dist_from_cds_stop = abs(variant_tx_pos[1] - (cds_stop_pos[1] + 2)) - 1
+
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
         adjusted_tx_change = 'c.*%d%s>%s' % (dist_from_cds_stop, tx_ref_allele, tx_alt_allele)
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
@@ -563,7 +572,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                     aa_pos_2 = aa_pos_1
                     aa_pos_1 = aa_pos_1 - len_alt_allele + 1
                 else:
-                    raise Exception('Need to implement this!!')
+                    aa_pos_1, aa_pos_2 = aa_pos_1 + prot_pos_adjust_amnt, aa_pos_2 + prot_pos_adjust_amnt
 
                 adjusted_prot_change = 'p.%s%d_%s%ddup' % (alt_allele[:3], aa_pos_1, alt_allele[-3:], aa_pos_2)
         elif is_insdel:
