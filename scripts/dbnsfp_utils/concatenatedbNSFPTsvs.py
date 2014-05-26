@@ -31,15 +31,15 @@ def main():
                     writer = csv.DictWriter(outfile, delimiter="\t", fieldnames=reader.fieldnames)
                     writer.writeheader()
                 rowdicts = []
-                index = 1
+                num_rows = 1
                 for rowdict in reader:
                     rowdicts += [rowdict]
-                    if index % 1000 == 0:
+                    if num_rows % 1000 == 0:
                         writer.writerows(rowdicts)
                         rowdicts = []
-                        index += 1
+                    num_rows += 1
 
-                if index != 0:
+                if num_rows != 0:
                     writer.writerows(rowdicts)
 
 if __name__ == "__main__":
