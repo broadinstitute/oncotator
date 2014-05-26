@@ -1,3 +1,4 @@
+import os.path as op
 import re
 import logging
 
@@ -48,14 +49,13 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         self.vcer = VariantClassifier()
 
-        #### HACK #####
-        self.gencode_ds = EnsemblTranscriptDatasource(src_file)
+        #### HACK ##### All info used for HGVS should be in mutation instance, need to refactor out to TranscriptProvider
+        self.gencode_ds = EnsemblTranscriptDatasource(
+            op.join(op.dirname(src_file), '../../gencode_out2/hg19/gencode.v18.annotation.gtf'))
 
-        #### HACK #####
-        ensembl_id_mapping_fname = '/Users/aramos/Desktop/ot_hgvs/ensembl_id_mappingsGRCh37.p13.txt'
-        import pandas as pd
+        #### HACK #####  This needs to be in separate datasource
         self.ensembl_id_mapping = dict()
-        with open(ensembl_id_mapping_fname) as in_fh:
+        with open(src_file) as in_fh:
             for line in in_fh:
                 tx_id, prot_id = line.split('\t')[1:]
                 self.ensembl_id_mapping[tx_id] = prot_id.replace('\n', '')
@@ -419,7 +419,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         tx_stop_codon_genomic_coords = tx.get_stop_codon()
         if (mutation['transcript_strand'] == '+' and mutation['end'] >= tx_stop_codon_genomic_coords[0] + 1) or \
             (mutation['transcript_strand'] == '-' and mutation['start'] <= tx_stop_codon_genomic_coords[1]):
-        # bumping up against stop codon, need to determine tx coords this way
+            # bumping up against stop codon, need to determine tx coords this way
             tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
             tx_stop_start_pos += 1
             if mutation['transcript_strand'] == '+':

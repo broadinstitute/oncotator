@@ -13,8 +13,8 @@ class HgvsChangeTransformingDatasourceTest(unittest.TestCase):
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
-        genecode_ds_path = op.join(self.config.get('DEFAULT', 'dbDir'), 'gencode_out2/hg19/gencode.v18.annotation.gtf')
-        self.hgvs_datasource = HgvsChangeTransformingDatasource(genecode_ds_path)
+        ds_path = op.join(self.config.get('DEFAULT', 'dbDir'), 'hgvs/hg19/ensembl_id_mappingsGRCh37.p13.txt')
+        self.hgvs_datasource = HgvsChangeTransformingDatasource(ds_path)
 
     ### TODO need test to assert that all necessary fields are present
 
