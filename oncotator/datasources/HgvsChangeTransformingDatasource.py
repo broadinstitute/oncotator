@@ -59,6 +59,36 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             for line in in_fh:
                 tx_id, prot_id = line.split('\t')[1:]
                 self.ensembl_id_mapping[tx_id] = prot_id.replace('\n', '')
+
+    def _get_ensembl_prot_id_from_tx_id(self, tx_id):
+        if '.' in tx_id:
+            tx_id = tx_id[:tx_id.index('.')]
+        return self.ensembl_id_mapping.get(tx_id)
+
+    def _get_tx_alleles(self, mutation):
+        tx_ref_allele, tx_alt_allele = mutation['ref_allele'], mutation['alt_allele']
+        if mutation['transcript_strand'] == '-':
+            tx_ref_allele, tx_alt_allele = Seq.reverse_complement(tx_ref_allele), Seq.reverse_complement(tx_alt_allele)
+        return tx_ref_allele, tx_alt_allele
+
+    def _adjust_pos_if_repeated_in_seq(self, allele, downstream_seq):
+        """Given a seq, determines how many times repeated.  For determining amt a repeat needs to get shifted."""
+        allele_len = len(allele)
+        adjust_amt = 0
+        for i in range(0, len(downstream_seq), allele_len):
+            if allele == downstream_seq[i:i + allele_len]:
+                adjust_amt += allele_len
+            else:
+                break
+
+        return adjust_amt
+
+    def _get_extension_amt(self, new_prot_seq):
+        """For determining the amt of amino acids added after stop coding in extension scenarios"""
+        for i, extension_residue in enumerate(new_prot_seq):
+            if extension_residue == '*':
+                break
+        return i
         
     def annotate_mutation(self, mutation):
         # TODO
@@ -206,149 +236,18 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         prot_id = self._get_ensembl_prot_id_from_tx_id(mutation['annotation_transcript'])
         adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change) if adjusted_prot_change else ''
         return adjusted_prot_change
-
-    def _determine_overlap_type(self, mutation, tx_stop_codon_genomic_coords):
-        """For determining the overlap betwen a deletion and the stop codon."""
-
-        if mutation['transcript_strand'] == '+':
-            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
-                return 'del_within_stop_codon'
-            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1:
-                return 'del_extends_into_cds'
-            elif mutation['end'] > tx_stop_codon_genomic_coords[1]: #del extends into utr
-                return 'del_extends_into_utr'
-            else:
-                raise Exception('Unexpected!!')
-        else:
-            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
-                return 'del_within_stop_codon'
-            elif mutation['end'] > tx_stop_codon_genomic_coords[1]:
-                return 'del_extends_into_cds'
-            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1:
-                return 'del_extends_into_utr'
-            else:
-                raise Exception('Unexpected!!')
  
-    def _get_extension_amt(self, new_prot_seq):
-        for i, extension_residue in enumerate(new_prot_seq):
-            if extension_residue == '*':
-                break
-        return i
 
-    def _get_prot_change_for_frame_shift(self, mutation):
-        regx_res = PROT_FRAMESHIFT_REGEXP.match(mutation['protein_change'])
-        ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
-        aa_pos = int(aa_pos)
-        if ref_aa == '-':
-            #will need to retrieve actual ref_aa if current ref_aa is "-"
-            tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-            prot_seq = tx.get_protein_seq()
-            ref_aa = prot_seq[aa_pos-1]
-        ref_aa = ref_aa[0] #only need first residue
-        return 'p.%s%dfs' % (AA_NAME_MAPPING[ref_aa], aa_pos)
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+#######################
+#######################        Utility Methods for adjusting variant positioning if occurs in repetitive region
+#######################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
 
-    def _get_ensembl_prot_id_from_tx_id(self, tx_id):
-        if '.' in tx_id:
-            tx_id = tx_id[:tx_id.index('.')]
-        return self.ensembl_id_mapping.get(tx_id)
-
-    def _get_cdna_change_for_intron(self, mutation):
-        #### HACK #####
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-        nearest_exon = self.vcer._determine_closest_exon(tx, int(mutation['start']),
-            int(mutation['end']))
-        dist_to_exon = self.vcer._get_splice_site_coordinates(tx, int(mutation['start']),
-            int(mutation['end']), nearest_exon)
-        tx_exons = tx.get_exons()
-    
-        if dist_to_exon < 0 and mutation['transcript_strand'] == '+':
-            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
-                tx_exons[nearest_exon][0], tx_exons[nearest_exon][0], tx)
-            if mutation['variant_classification'] == 'Intron':
-                #do not do for splice sites
-                dist_to_exon = dist_to_exon - 1 #why substract 1? why only for positive strand transcript
-        elif dist_to_exon < 0 and mutation['transcript_strand'] == '-':
-            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
-                tx_exons[nearest_exon][1], tx_exons[nearest_exon][1], tx)
-        elif dist_to_exon > 0 and mutation['transcript_strand'] == '+':
-            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
-                tx_exons[nearest_exon][1], tx_exons[nearest_exon][1], tx)
-        elif dist_to_exon > 0 and mutation['transcript_strand'] == '-':
-            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
-                tx_exons[nearest_exon][0], tx_exons[nearest_exon][0], tx)
-
-        if cds_position_of_nearest_exon[0] == 0:
-            #this means intron occurs before start codon and thus cds position needs to be adjusted to a negative number
-            exon_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'],
-                tx.determine_cds_start() + 1, tx)
-            cds_position_of_nearest_exon = exon_coords[0] - exon_coords[1]
-        else:
-            cds_position_of_nearest_exon = cds_position_of_nearest_exon[0]
-
-        if dist_to_exon < 0:   
-            cds_position_of_nearest_exon += 1 #why add 1?
-        
-        sign = '-' if dist_to_exon < 0 else '+'
-        dist_to_exon = abs(dist_to_exon)
-
-        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
-
-        adjusted_tx_change = 'c.%d%s%d%s>%s' % (cds_position_of_nearest_exon, sign, dist_to_exon,
-            tx_ref_allele, tx_alt_allele)
-
-        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
-
-    def _get_cdna_change_for_5_utr(self, mutation):
-        #### HACK #####
-        ## Will not work correctly if variant is in exon that does not contain CDS start
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-        dist_from_cds_start = abs(mutation['start'] - tx.determine_cds_start())
-        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
-        adjusted_tx_change = 'c.-%d%s>%s' % (dist_from_cds_start, tx_ref_allele, tx_alt_allele)
-        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
-
-    def _get_cdna_change_for_3_utr(self, mutation):
-        #### HACK #####
-        ## Will not work correctly if variant is in exon that does not contain CDS stop
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-        dist_from_cds_stop = abs(mutation['start'] - tx.determine_cds_stop() + 2)
-        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
-        adjusted_tx_change = 'c.*%d%s>%s' % (dist_from_cds_stop, tx_ref_allele, tx_alt_allele)
-        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
-
-    def _get_tx_alleles(self, mutation):
-        tx_ref_allele, tx_alt_allele = mutation['ref_allele'], mutation['alt_allele']
-        if mutation['transcript_strand'] == '-':
-            tx_ref_allele, tx_alt_allele = Seq.reverse_complement(tx_ref_allele), Seq.reverse_complement(tx_alt_allele)
-        return tx_ref_allele, tx_alt_allele
-
-    def _get_cdna_change_for_ONP(self, mutation):
-        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
-        tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
-        tx_pos = tuple(t + 1 for t in tx_pos)
-
-        tx_stop_codon_genomic_coords = tx.get_stop_codon()
-        if (mutation['transcript_strand'] == '+' and mutation['end'] >= tx_stop_codon_genomic_coords[0] + 1) or \
-            (mutation['transcript_strand'] == '-' and mutation['start'] <= tx_stop_codon_genomic_coords[1]):
-        # bumping up against stop codon, need to determine tx coords this way
-            tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
-            tx_stop_start_pos += 1
-            if mutation['transcript_strand'] == '+':
-                genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
-                tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
-                tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
-            else:
-                genome_stop_start_pos = tx_stop_codon_genomic_coords[1]
-                tx_variant_pos_1_offset = genome_stop_start_pos - mutation['end']
-                tx_variant_pos_2_offset = genome_stop_start_pos - mutation['start']
-    
-            tx_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
-            tx_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
-            tx_pos = (tx_pos_1, tx_pos_2)
-
-        adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
-        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
     def _determine_if_genomic_duplication(self, alt_allele, ref_context, variant_type, mutation):
         allele_len = len(alt_allele)
@@ -359,28 +258,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         
         downstream_seq = ref_context[half_len:half_len + allele_len].upper()
         upstream_seq = ref_context[half_len - allele_len:half_len].upper()
-
-        return alt_allele == downstream_seq or alt_allele == upstream_seq
-
-    def _genome_pos_adjust_if_duplication(self, alt_allele, ref_context, variant_type):
-        if variant_type == 'INS':
-            half_len = len(ref_context) / 2
-        elif variant_type == 'DEL':
-            half_len = (len(ref_context) - len(alt_allele)) / 2
-        
-        downstream_seq = ref_context[half_len:].upper()
-        return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
-
-    def _determine_if_prot_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq, variant_type):
-        allele_len = len(alt_allele)
-        aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
-
-        if variant_type == 'INS':
-            downstream_seq = prot_seq[aa_pos_2:aa_pos_2 + allele_len]
-            upstream_seq = prot_seq[aa_pos_1 - allele_len + 1:aa_pos_1 + 1]
-        elif variant_type == 'DEL':
-            downstream_seq = prot_seq[aa_pos_2 + 1:aa_pos_2 + 1 + allele_len]
-            upstream_seq = prot_seq[aa_pos_1 - allele_len:aa_pos_1]
 
         return alt_allele == downstream_seq or alt_allele == upstream_seq
 
@@ -413,10 +290,43 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return alt_allele == downstream_seq or alt_allele == upstream_seq
 
+    def _determine_if_prot_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq, variant_type):
+        allele_len = len(alt_allele)
+        aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
+
+        if variant_type == 'INS':
+            downstream_seq = prot_seq[aa_pos_2:aa_pos_2 + allele_len]
+            upstream_seq = prot_seq[aa_pos_1 - allele_len + 1:aa_pos_1 + 1]
+        elif variant_type == 'DEL':
+            downstream_seq = prot_seq[aa_pos_2 + 1:aa_pos_2 + 1 + allele_len]
+            upstream_seq = prot_seq[aa_pos_1 - allele_len:aa_pos_1]
+
+        return alt_allele == downstream_seq or alt_allele == upstream_seq
+
+    def _genome_pos_adjust_if_duplication(self, alt_allele, ref_context, variant_type):
+        if variant_type == 'INS':
+            half_len = len(ref_context) / 2
+        elif variant_type == 'DEL':
+            half_len = (len(ref_context) - len(alt_allele)) / 2
+        
+        downstream_seq = ref_context[half_len:].upper()
+        return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
+
     def _prot_pos_adjust_if_duplication(self, aa_pos_1, aa_pos_2, alt_allele, prot_seq):
         aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
         downstream_seq = prot_seq[aa_pos_2 + 1:]
         return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
+
+
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+#######################
+#######################        Utility Methods for converting cDNA changes to be HGVS compliant
+#######################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
 
     def _get_cdna_change_for_del(self, mutation):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
@@ -491,16 +401,120 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return '%s:%s' % (mutation['annotation_transcript'], change)
 
-    def _adjust_pos_if_repeated_in_seq(self, allele, downstream_seq):
-        allele_len = len(allele)
-        adjust_amt = 0
-        for i in range(0, len(downstream_seq), allele_len):
-            if allele == downstream_seq[i:i + allele_len]:
-                adjust_amt += allele_len
-            else:
-                break
+    def _get_cdna_change_for_ONP(self, mutation):
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
+        tx_pos = tuple(t + 1 for t in tx_pos)
 
-        return adjust_amt
+        tx_stop_codon_genomic_coords = tx.get_stop_codon()
+        if (mutation['transcript_strand'] == '+' and mutation['end'] >= tx_stop_codon_genomic_coords[0] + 1) or \
+            (mutation['transcript_strand'] == '-' and mutation['start'] <= tx_stop_codon_genomic_coords[1]):
+        # bumping up against stop codon, need to determine tx coords this way
+            tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
+            tx_stop_start_pos += 1
+            if mutation['transcript_strand'] == '+':
+                genome_stop_start_pos = tx_stop_codon_genomic_coords[0] + 1
+                tx_variant_pos_1_offset = mutation['start'] - genome_stop_start_pos
+                tx_variant_pos_2_offset = mutation['end'] - genome_stop_start_pos
+            else:
+                genome_stop_start_pos = tx_stop_codon_genomic_coords[1]
+                tx_variant_pos_1_offset = genome_stop_start_pos - mutation['end']
+                tx_variant_pos_2_offset = genome_stop_start_pos - mutation['start']
+    
+            tx_pos_1 = tx_stop_start_pos + tx_variant_pos_1_offset
+            tx_pos_2 = tx_stop_start_pos + tx_variant_pos_2_offset
+            tx_pos = (tx_pos_1, tx_pos_2)
+
+        adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
+        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
+
+    def _get_cdna_change_for_intron(self, mutation):
+        #### HACK #####
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        nearest_exon = self.vcer._determine_closest_exon(tx, int(mutation['start']),
+            int(mutation['end']))
+        dist_to_exon = self.vcer._get_splice_site_coordinates(tx, int(mutation['start']),
+            int(mutation['end']), nearest_exon)
+        tx_exons = tx.get_exons()
+    
+        if dist_to_exon < 0 and mutation['transcript_strand'] == '+':
+            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
+                tx_exons[nearest_exon][0], tx_exons[nearest_exon][0], tx)
+            if mutation['variant_classification'] == 'Intron':
+                #do not do for splice sites
+                dist_to_exon = dist_to_exon - 1 #why substract 1? why only for positive strand transcript
+        elif dist_to_exon < 0 and mutation['transcript_strand'] == '-':
+            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
+                tx_exons[nearest_exon][1], tx_exons[nearest_exon][1], tx)
+        elif dist_to_exon > 0 and mutation['transcript_strand'] == '+':
+            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
+                tx_exons[nearest_exon][1], tx_exons[nearest_exon][1], tx)
+        elif dist_to_exon > 0 and mutation['transcript_strand'] == '-':
+            cds_position_of_nearest_exon = TranscriptProviderUtils.convert_genomic_space_to_cds_space(
+                tx_exons[nearest_exon][0], tx_exons[nearest_exon][0], tx)
+
+        if cds_position_of_nearest_exon[0] == 0:
+            #this means intron occurs before start codon and thus cds position needs to be adjusted to a negative number
+            exon_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'],
+                tx.determine_cds_start() + 1, tx)
+            cds_position_of_nearest_exon = exon_coords[0] - exon_coords[1]
+        else:
+            cds_position_of_nearest_exon = cds_position_of_nearest_exon[0]
+
+        if dist_to_exon < 0:   
+            cds_position_of_nearest_exon += 1 #why add 1?
+        
+        sign = '-' if dist_to_exon < 0 else '+'
+        dist_to_exon = abs(dist_to_exon)
+
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+
+        adjusted_tx_change = 'c.%d%s%d%s>%s' % (cds_position_of_nearest_exon, sign, dist_to_exon,
+            tx_ref_allele, tx_alt_allele)
+
+        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
+
+    def _get_cdna_change_for_5_utr(self, mutation):
+        #### HACK #####
+        ## Will not work correctly if variant is in exon that does not contain CDS start
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        dist_from_cds_start = abs(mutation['start'] - tx.determine_cds_start())
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        adjusted_tx_change = 'c.-%d%s>%s' % (dist_from_cds_start, tx_ref_allele, tx_alt_allele)
+        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
+
+    def _get_cdna_change_for_3_utr(self, mutation):
+        #### HACK #####
+        ## Will not work correctly if variant is in exon that does not contain CDS stop
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        dist_from_cds_stop = abs(mutation['start'] - tx.determine_cds_stop() + 2)
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        adjusted_tx_change = 'c.*%d%s>%s' % (dist_from_cds_stop, tx_ref_allele, tx_alt_allele)
+        return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
+
+
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+#######################
+#######################        Utility Methods for converting protein changes to be HGVS compliant
+#######################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+
+    def _get_prot_change_for_frame_shift(self, mutation):
+        regx_res = PROT_FRAMESHIFT_REGEXP.match(mutation['protein_change'])
+        ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
+        aa_pos = int(aa_pos)
+        if ref_aa == '-':
+            #will need to retrieve actual ref_aa if current ref_aa is "-"
+            tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+            prot_seq = tx.get_protein_seq()
+            ref_aa = prot_seq[aa_pos-1]
+        ref_aa = ref_aa[0] #only need first residue
+        return 'p.%s%dfs' % (AA_NAME_MAPPING[ref_aa], aa_pos)
 
     def _get_prot_change_for_in_frame_ins(self, mutation):
         is_insdel = False
@@ -806,3 +820,25 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         else: # is extension with downstream stop codon
             extension_amt = self._get_extension_amt(new_prot_seq)
             return 'p.*%d%sext*%d' % (prot_stop_pos, AA_NAME_MAPPING[alt_aa], extension_amt)
+
+    def _determine_overlap_type(self, mutation, tx_stop_codon_genomic_coords):
+        """For determining the overlap betwen a deletion and the stop codon."""
+
+        if mutation['transcript_strand'] == '+':
+            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
+                return 'del_within_stop_codon'
+            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1:
+                return 'del_extends_into_cds'
+            elif mutation['end'] > tx_stop_codon_genomic_coords[1]: #del extends into utr
+                return 'del_extends_into_utr'
+            else:
+                raise Exception('Unexpected!!')
+        else:
+            if mutation['start'] >= tx_stop_codon_genomic_coords[0] + 1 and mutation['end'] <= tx_stop_codon_genomic_coords[1]:
+                return 'del_within_stop_codon'
+            elif mutation['end'] > tx_stop_codon_genomic_coords[1]:
+                return 'del_extends_into_cds'
+            elif mutation['start'] < tx_stop_codon_genomic_coords[0] + 1:
+                return 'del_extends_into_utr'
+            else:
+                raise Exception('Unexpected!!')
