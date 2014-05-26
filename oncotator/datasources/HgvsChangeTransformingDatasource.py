@@ -122,10 +122,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return adjusted_genome_change
 
-    def _get_cdna_change_for_del(self, mutation):
-        from IPython import embed; embed()
-
-
     def _adjust_coding_DNA_change(self, mutation):
         ### IF DELETION, THEN DUPLICATION CHECK AND POS ADJUSTMENT NOT BEING DONE!!
         if mutation['variant_type'] == 'DNP':
@@ -142,8 +138,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 return ''
             elif vc.endswith('Ins'):
                 return self._get_cdna_change_for_ins(mutation)
-            elif vc.endswith('Del'):
-                return self._get_cdna_change_for_del(mutation)
             elif vc in ['Stop_Codon_Del']:
                 #need to make cdna str from scratch
                 tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
@@ -175,6 +169,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                     change_str = 'c.%d_%sdel%s' % (tx_variant_pos_1, tx_variant_pos_2, tx_ref_allele)
                     
                 return '%s:%s' % (mutation['annotation_transcript'], change_str)
+            elif vc.endswith('Del'):
+                return self._get_cdna_change_for_del(mutation)
             else:
                 # just use the transcript change from the TranscriptProvider
                 return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
@@ -611,6 +607,31 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         aa_pos_1, aa_pos_2 = int(aa_pos_1) - 1, int(aa_pos_2) - 1 #convert to 0-based indexing
         downstream_seq = prot_seq[aa_pos_2 + 1:]
         return self._adjust_pos_if_repeated_in_seq(alt_allele, downstream_seq)
+
+    def _get_cdna_change_for_del(self, mutation):
+        tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
+        len_alt_allele = len(tx_alt_allele)
+        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
+        downstream_seq = tx.get_seq()[tx_pos[0]:]
+        coding_pos_adjust = self._adjust_pos_if_repeated_in_seq(tx_alt_allele, downstream_seq)
+        coding_pos_adjust = coding_pos_adjust - len_alt_allele
+
+        coding_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
+        is_duplication = self._determine_if_cdna_duplication(tx_pos[0], tx_pos[1], tx_alt_allele, tx.get_seq(), mutation['transcript_strand'], 'INS')
+
+        if is_duplication:
+            coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
+            start_pos = coding_tx_pos[0] + coding_pos_adjust
+            start_pos = start_pos + 1 if mutation['transcript_strand'] == '-' else start_pos
+            if len_alt_allele == 1:
+                change_str = 'c.%ddel%s' % (start_pos, tx_ref_allele)
+            else:
+                change_str = 'c.%d_%ddel%s' % (start_pos, end_pos, tx_ref_allele)
+        else:
+            change_str = mutation['transcript_change']
+
+        return '%s:%s' % (mutation['annotation_transcript'], change_str)
 
     def _get_cdna_change_for_ins(self, mutation):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
