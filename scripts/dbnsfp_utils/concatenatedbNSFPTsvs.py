@@ -2,6 +2,7 @@ import argparse
 import os
 import csv
 import string
+import natsort
 
 
 def main():
@@ -19,8 +20,9 @@ def main():
 
     # Collect the names of all tsv files with the prefix
     filenames = [os.path.join(args.dir, entry) for entry in os.listdir(args.dir) if entry.startswith(args.prefix)]
-    filenames = [filename for filename in filenames if os.path.isfile(filename)]
+    filenames = natsort.natsorted([filename for filename in filenames if os.path.isfile(filename)])
 
+    chunk_size = 100000
     filename = args.out if args.out is not None else string.join([args.prefix, ".tsv"], ".")
     with open(filename, "w") as outfile:  # Iterate through files and concatenate them
         writer = None
@@ -34,7 +36,7 @@ def main():
                 num_rows = 1
                 for rowdict in reader:
                     rowdicts += [rowdict]
-                    if num_rows % 1000 == 0:
+                    if num_rows % chunk_size == 0:
                         writer.writerows(rowdicts)
                         rowdicts = []
                     num_rows += 1
