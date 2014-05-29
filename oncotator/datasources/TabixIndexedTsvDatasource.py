@@ -75,7 +75,7 @@ class IndexedTsvDatasource(Datasource):
         # Index the column names in tsv header
         self.tsv_headers = dict([(colName, index) for (index, colName) in enumerate(colNames)])
         # Annotation column names are the only columns that are used for annotating a mutation object.
-        self.output_tsv_headers = dict([(colName, '_'.join([self.title, colName])) for colName in annotationColNames])
+        self.output_tsv_headers = dict([(colName, "_".join([self.title, colName])) for colName in annotationColNames])
         self.tsv_index = dict()
         self.tsv_index["chrom"] = self.tsv_headers[indexColNames[0]]
         self.tsv_index["start"] = self.tsv_headers[indexColNames[1]]
@@ -92,22 +92,34 @@ class IndexedTsvDatasource(Datasource):
         chrom = tsv_record[self.tsv_index["chrom"]]
         startPos = tsv_record[self.tsv_index["start"]]
         endPos = tsv_record[self.tsv_index["end"]]
+        build = "hg19"
 
-        if "ref" in self.tsv_index and "alt" in self.tsv_index:
-            ref = tsv_record[self.tsv_index["ref"]]
-            alt = tsv_record[self.tsv_index["alt"]]
-            build = "hg19"
+        if self.match_mode == "exact":
+            if "ref" in self.tsv_index and "alt" in self.tsv_index:  # ref and alt information is present
+                ref = tsv_record[self.tsv_index["ref"]]
+                alt = tsv_record[self.tsv_index["alt"]]
+                if ref == "-" or alt == "-":  # addresses Mutation Annotation Format based tsv records
+                    ds_mut = MutationData(chrom, startPos, endPos, ref, alt, build)
+                else:  # addresses tsv records where the input isn't a Mutation Annotation Format file
+                    ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
 
-            if ref == "-" or alt == "-":  # Addresses MAF based tsv record
-                ds_mut = MutationData(chrom, startPos, endPos, ref, alt, build)
-            else:  # Addresses tsv records where the input isn't a MAF
-                ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
-
-            if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele and mut.alt_allele == ds_mut.alt_allele \
-                and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
-                return True
+                if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele \
+                    and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start) \
+                    and int(mut.end) == int(ds_mut.end):
+                    return True
+            else:  # do not use ref and alt information
+                if mut.chr == chrom and int(mut.start) == int(startPos) and int(mut.end) == int(endPos):
+                    return True
         else:
             if mut.chr == chrom and int(mut.start) == int(startPos) and int(mut.end) == int(endPos):
+                return True
+            elif mut.chr == chrom and int(mut.start) >= int(startPos) and int(mut.end) >= int(endPos) \
+                and int(mut.start) <= int(endPos):
+                return True
+            elif mut.chr == chrom and int(mut.start) <= int(startPos) and int(mut.end) >= int(endPos):
+                return True
+            elif mut.chr == chrom and int(mut.start) <= int(startPos) and int(mut.end) <= int(endPos) \
+                and int(mut.end) >= int(startPos):
                 return True
 
         return False
@@ -119,7 +131,7 @@ class IndexedTsvDatasource(Datasource):
         :param mutation: mutation to annotate
         :return: annotated mutation
         """
-        vals = dict()
+        vals = {}
         mut_start = int(mutation.start)
         mut_end = int(mutation.end)
         try:
@@ -128,12 +140,9 @@ class IndexedTsvDatasource(Datasource):
             for tsv_record in tsv_records:
                 if not tsv_record:  # skip in case no records are found
                     continue
-                if self.match_mode == "exact":  # determines an exact match using start and end positions, and ref and
-                # alt alleles
-                    if self._is_matching(mutation, tsv_record):
-                        for colName in self.output_tsv_headers:
-                            vals[colName] = tsv_record[self.tsv_headers[colName]]
-                else:  # avg and overlap
+
+                # Determine whether the new tsv record matches mutation or not
+                if self._is_matching(mutation, tsv_record):
                     for colName in self.output_tsv_headers:
                         val = tsv_record[self.tsv_headers[colName]]
                         if colName not in vals:
@@ -146,39 +155,35 @@ class IndexedTsvDatasource(Datasource):
             logging.getLogger(__name__).debug(msg)
 
         for colName in self.output_tsv_headers:
-            val = ""
+            if colName in vals:  # this case happens when there are no matching records to be found
+                val = string.join(vals[colName], "|")
+            else:
+                val = ""
+
             ds_type = self.dataTypes[colName]
             if self.match_mode == "exact":
-                # No need to change the data type as it is an exact match
-                if len(vals) != 0:
-                    val = vals[colName]
-            elif self.match_mode == "avg" and ds_type in ("Integer", "Float",):
-                # Data type should be forced to float
-                if ds_type == "Integer":
+                if "ref" not in self.tsv_index or "alt" not in self.tsv_index:
+                    ds_type = "String"
+            elif self.match_mode == "avg":
+                if ds_type == "Integer" or ds_type == "Float":
                     ds_type = "Float"
-                if len(vals) != 0:
-                    val = vals[colName]
-                    val_sum = 0
-                    val_num = 0
-                    for v in val:
-                        try:  # attempt to convert values to float
-                            if v in ("", ".", "-",):
-                                continue
-                            val_sum += float(v)  # attempt to convert the
-                            val_num += 1
-                            ds_type = "Float"
+                    if len(vals) != 0:
+                        try:
+                            v = [float(val) for val in vals[colName] if val not in ("", ".", "-",)]
+                            if len(v) != 0:
+                                val = str(sum(v)/len(v))
+                            else:
+                                val = ""
                         except ValueError:  # in cases where it's unsuccessful, default to overlap behavior
                             msg = "Exception when trying to cast %s value to float." % colName
                             logging.getLogger(__name__).warn(msg)
                             val = string.join(map(str, vals[colName]), "|")
                             ds_type = "String"
-                            break
-                    if val_num != 0:
-                        val = str(val_sum/val_num)
-            else:  # For all other cases (avg and overlap) the data type should be a string
+                else:
+                    ds_type = "String"
+            else:  # default: overlap
                 ds_type = "String"
-                if len(vals) != 0:
-                    val = string.join(vals[colName], "|")
+
             if len(vals) == 0:
                 msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                       "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
@@ -188,4 +193,3 @@ class IndexedTsvDatasource(Datasource):
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])
 
         return mutation
-

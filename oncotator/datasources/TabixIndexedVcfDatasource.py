@@ -119,6 +119,10 @@ class IndexedVcfDatasource(Datasource):
         :param ID: ID
         :return: value that corresponds to a given ID
         """
+        if alt_index is None:
+            val = self._determine_missing_value(ID)
+            return val
+
         if ID in vcf_record.INFO:
             vals = vcf_record.INFO[ID]
             num = self.output_vcf_nums[ID]
@@ -128,10 +132,11 @@ class IndexedVcfDatasource(Datasource):
                     val = [vals[alt_index]]
                 else:
                     val = vals
-            else:
+            else:  # force it to be a list
                 val = [vals]
         else:
             val = self._determine_missing_value(ID)
+
         return val
 
     def _determine_missing_value(self, ID):
@@ -155,28 +160,36 @@ class IndexedVcfDatasource(Datasource):
 
         return [""]*num
 
-    def _determine_matching_alt_indices(self, mut, record):
+    def _determine_matching_alt_indices(self, mut, record, build):
         """
 
         :param mut:
         :param record:
         :return:
         """
-        index = None
-        ds_mut = MutUtils.initializeMutFromRecord("hg19", record, index)
-        if self.match_mode == "exact":
-            if record.is_monomorphic and mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele:
-                return -1
-        else:
-            # Variant is wedged is monomorphic or wedged in between
-            if record.is_monomorphic and mut.chr == ds_mut.chr and int(mut.start) <= int(ds_mut.start) and \
-                            int(mut.end) >= int(ds_mut.end):
-                return -1
+        indices = []
+        if record.is_monomorphic:
+            chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+            startPos = record.POS
+            endPos = record.POS
+            ref_allele = record.REF
+
+            if self.match_mode == "exact":
+                if mut.chr == chrom and mut.ref_allele == ref_allele:
+                    indices = [-1]
+            else:
+                if mut.chr == chrom and int(mut.start) <= startPos and int(mut.end) >= endPos:
+                    indices = [-1]
 
         # Iterate over all alternates in the record
-        indices = []
         for index in xrange(0, len(record.ALT)):
-            ds_mut = MutUtils.initializeMutFromRecord("hg19", record, index)
+            chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+            startPos = record.POS
+            endPos = record.POS
+            ref = record.REF
+            alt = record.ALT[index]
+            ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+
             if self.match_mode == "exact":
                 if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele \
                     and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start) \
@@ -195,7 +208,7 @@ class IndexedVcfDatasource(Datasource):
                     indices += [index]
 
         if len(indices) == 0:
-            return None
+            indices = [None]
 
         return indices
 
@@ -220,119 +233,128 @@ class IndexedVcfDatasource(Datasource):
                                               "returned: " + repr(ve))
         else:
             # Process values.
+            build = "hg19"
             for record in vcf_records:
-                alt_indices = self._determine_matching_alt_indices(mutation, record)
-                if self.match_mode == "exact":
-                    for ID in self.vcf_info_headers:
-                        if alt_indices is None:  # no variant in record matches
-                            val = self._determine_missing_value(ID)
-                        elif alt_indices == -1:  # monomorphic site
-                            alt_index = -1
-                            val = self._determine_info_annotation_value(record, ID, alt_index)
-                        else:  # match found
-                            alt_index = alt_indices[0]  # enforce exact match criteria
-                            val = self._determine_info_annotation_value(record, ID, alt_index)
-                        vals[ID] = val
-                    break  # for each header, only one value needs to be found
-                else:  # avg and overlap
-                    for ID in self.vcf_info_headers:
-                        if isinstance(alt_indices, list):
-                            for alt_index in alt_indices:
-                                val = self._determine_info_annotation_value(record, ID, alt_index)
-                                if ID not in vals:
-                                    vals[ID] = [val]
-                                else:
-                                    vals[ID] += [val]
+                alt_indices = self._determine_matching_alt_indices(mutation, record, build)
+                for ID in self.vcf_info_headers:
+                    for alt_index in alt_indices:
+                        val = self._determine_info_annotation_value(record, ID, alt_index)
+                        if ID not in vals:  # dictionary of list of lists
+                            vals[ID] = [val]
                         else:
-                            alt_index = alt_indices
-                            val = self._determine_info_annotation_value(record, ID, alt_index)
-                            if ID not in vals:
-                                vals[ID] = [val]
-                            else:
-                                vals[ID] += [val]
+                            vals[ID] += [val]
 
         if record is None:
             msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                   "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
             logging.getLogger(__name__).debug(msg)
 
-        tags = self._determine_tags()
         for ID in self.vcf_info_headers:
-            # multiple values are delimited by "|"
-            if len(vals) != 0:
-                if self.match_mode == "exact":
-                    val = string.join(map(str, [val if val is not None else "" for val in vals[ID]]), ",")
-                elif self.match_mode == "avg":
-                    if self.output_vcf_types[ID] in ("Integer", "Float"):  # integers and floats
-                        num = self.output_vcf_nums[ID]
-                        if num in (None, -1, 0, 1,):
-                            vals[ID] = reduce(operator.add, vals[ID])
-                            val = [val for val in vals[ID] if val is not None and val != '']
-                            if len(val) > 1:
-                                val = str(float(sum(val))/len(val))
-                            elif len(val) == 1:
-                                val = str(float(val[0]))
-                            else:
-                                val = ""
-                        else:
-                            nvals = len(vals[ID])
-                            val = [[]]*num
-                            for i in xrange(num):
-                                for j in xrange(nvals):
-                                    v = vals[ID][j][i]
-                                    if v not in (None, "", "."):
-                                        val[i] += [v]
-                                if len(val[i]) >= 1:
-                                    val[i] = str(float(sum(val[i]))/len(val[i]))
-                                else:
-                                    val[i] = ""
-                            val = string.join(val, ",")
-                        self.output_vcf_types[ID] = "Float"
-                    elif self.output_vcf_types[ID] == "Character":
-                        val = []
-                        for v in vals[ID]:
-                            val += [map(str, [string.join([v if v is not None else "" for v in v], ",")])]
-                        val = string.join(val, "|")
-                        self.output_vcf_types[ID] = "String"
-                    else:
-                        val = []
-                        for v in vals[ID]:
-                            v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
-                            if v:
-                                val += [v]
-                        val = string.join(val, "|")
-                        self.output_vcf_types[ID] = "String"
-                        if self.output_vcf_nums[ID] == 0:
-                            self.output_vcf_nums[ID] = None
-                else:  # overlap
-                    # values are delimited by pipe, and thus, the type is forced to be a String
-                    val = []
-                    for v in vals[ID]:
-                        v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
-                        if v:
-                            val += [v]
-                    val = string.join(val, "|")
-                    self.output_vcf_types[ID] = "String"
-                    if self.output_vcf_nums[ID] == 0:
-                        self.output_vcf_nums[ID] = None
+            if ID not in vals:  # this happens in cases where no matching records are found
+                pass
             else:
-                if self.match_mode == "exact":
-                    pass
-                elif self.match_mode == "avg":
-                    if self.output_vcf_types[ID] == "Character":
-                        self.output_vcf_types[ID] = "String"
-                    elif self.output_vcf_types[ID] == "Integer":
-                        self.output_vcf_types[ID] = "Float"
-                    elif self.output_vcf_types[ID] == "Flag":
-                        self.output_vcf_types[ID] = "String"
-                        self.output_vcf_nums[ID] = None
-                elif self.match_mode == "overlap":
-                    self.output_vcf_types[ID] = "String"
-                    if self.output_vcf_nums[ID] == 0:
-                        self.output_vcf_nums[ID] = None
+                pass
 
-                val = self._determine_missing_value(ID)
-                val = string.join(map(str, val), ",")
+            if self.match_mode == "exact":
+                val = string.join(map(str, [val if val is not None else "" for val in vals[ID]]), ",")
+            elif self.match_mode == "avg":
+                pass
+            else:
+                self.output_vcf_types[ID] = "String"
+                if self.output_vcf_nums[ID] == 0:
+                    self.output_vcf_nums[ID] = None
+                # values are delimited by pipe, and thus, the type is forced to be a String
+                val = []
+                for v in vals[ID]:
+                    v = [v if v is not None else "" for v in v]
+                    v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
+                    if v:
+                        val += [v]
+                val = string.join(val, "|")
+                self.output_vcf_types[ID] = "String"
+                if self.output_vcf_nums[ID] == 0:
+                    self.output_vcf_nums[ID] = None
+            pass
+
+
+        # tags = self._determine_tags()
+        #
+        # for ID in self.vcf_info_headers:
+        #     # multiple values are delimited by "|"
+        #     if len(vals) != 0:
+        #         if self.match_mode == "exact":
+        #             val = string.join(map(str, [val if val is not None else "" for val in vals[ID]]), ",")
+        #         elif self.match_mode == "avg":
+        #             if self.output_vcf_types[ID] in ("Integer", "Float"):  # integers and floats
+        #                 num = self.output_vcf_nums[ID]
+        #                 if num in (None, -1, 0, 1,):
+        #                     vals[ID] = reduce(operator.add, vals[ID])
+        #                     val = [val for val in vals[ID] if val is not None and val != '']
+        #                     if len(val) > 1:
+        #                         val = str(float(sum(val))/len(val))
+        #                     elif len(val) == 1:
+        #                         val = str(float(val[0]))
+        #                     else:
+        #                         val = ""
+        #                 else:
+        #                     nvals = len(vals[ID])
+        #                     val = [[]]*num
+        #                     for i in xrange(num):
+        #                         for j in xrange(nvals):
+        #                             v = vals[ID][j][i]
+        #                             if v not in (None, "", "."):
+        #                                 val[i] += [v]
+        #                         if len(val[i]) >= 1:
+        #                             val[i] = str(float(sum(val[i]))/len(val[i]))
+        #                         else:
+        #                             val[i] = ""
+        #                     val = string.join(val, ",")
+        #                 self.output_vcf_types[ID] = "Float"
+        #             elif self.output_vcf_types[ID] == "Character":
+        #                 val = []
+        #                 for v in vals[ID]:
+        #                     val += [map(str, [string.join([v if v is not None else "" for v in v], ",")])]
+        #                 val = string.join(val, "|")
+        #                 self.output_vcf_types[ID] = "String"
+        #             else:
+        #                 val = []
+        #                 for v in vals[ID]:
+        #                     v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
+        #                     if v:
+        #                         val += [v]
+        #                 val = string.join(val, "|")
+        #                 self.output_vcf_types[ID] = "String"
+        #                 if self.output_vcf_nums[ID] == 0:
+        #                     self.output_vcf_nums[ID] = None
+        #         else:  # overlap
+        #             # values are delimited by pipe, and thus, the type is forced to be a String
+        #             val = []
+        #             for v in vals[ID]:
+        #                 v = string.join(map(str, [v if v is not None else "" for v in v]), ",")
+        #                 if v:
+        #                     val += [v]
+        #             val = string.join(val, "|")
+        #             self.output_vcf_types[ID] = "String"
+        #             if self.output_vcf_nums[ID] == 0:
+        #                 self.output_vcf_nums[ID] = None
+        #     else:
+        #         if self.match_mode == "exact":
+        #             pass
+        #         elif self.match_mode == "avg":
+        #             if self.output_vcf_types[ID] == "Character":
+        #                 self.output_vcf_types[ID] = "String"
+        #             elif self.output_vcf_types[ID] == "Integer":
+        #                 self.output_vcf_types[ID] = "Float"
+        #             elif self.output_vcf_types[ID] == "Flag":
+        #                 self.output_vcf_types[ID] = "String"
+        #                 self.output_vcf_nums[ID] = None
+        #         elif self.match_mode == "overlap":
+        #             self.output_vcf_types[ID] = "String"
+        #             if self.output_vcf_nums[ID] == 0:
+        #                 self.output_vcf_nums[ID] = None
+        #
+        #         val = self._determine_missing_value(ID)
+        #         val = string.join(map(str, val), ",")
 
             mutation.createAnnotation(self.output_vcf_headers[ID], val, self.title, self.output_vcf_types[ID],
                                       self.output_vcf_descs[ID], tags=copy.copy(tags[ID]),

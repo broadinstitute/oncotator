@@ -14,19 +14,39 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
     def __init__(self):
         self.columnDataTypes = {}
 
-    def createDatasource(self, destDir, ds_file, index_column_names, column_names, configFilename, ds_type, ds_name,
+    def _determine_column_names(self, ds_file):
+        column_names = []
+        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter=r"\s*", iterator=True, chunksize=1)
+        for chunk in data:
+            column_names = list(chunk.columns)
+            break
+        return column_names
+
+    def createDatasource(self, destDir, ds_file, index_column_names, configFilename, ds_type, ds_name,
                          ds_version, ds_match_mode, annotation_column_names, indexCols):
         # Create database
-        baseDSFile = self._createDatabase(destDir, ds_file, index_column_names, annotation_column_names,
+        column_names = self._determine_column_names(ds_file)
+        if not index_column_names:
+            index_column_names = column_names
+        else:
+            index_column_names = index_column_names.split(",")
+        annotation_column_names = annotation_column_names.split(",")
+
+        if not all([index_column_name in column_names for index_column_name in index_column_names]):
+            raise ValueError("index_column names must be a subset of column names.")
+        if not all([annotation_column_name in column_names for annotation_column_name in annotation_column_names]):
+            raise ValueError("annotation_columm names must be a subset of column names.")
+
+        baseDSFile = self._createDatabase(destDir, ds_file, ds_match_mode, index_column_names, annotation_column_names,
                                           column_names)
         # Create config file
+        column_names = string.join(column_names, ",")
+        annotation_column_names = string.join(annotation_column_names, ",")
         self._createConfigFile(configFilename, baseDSFile, ds_type, ds_name, ds_version, ds_match_mode, column_names,
                                annotation_column_names, indexCols)
 
-    def _createDatabase(self, destDir, ds_file, index_column_names, annotation_column_names, column_names):
-        index_column_names = index_column_names.split(",")
-        annotation_column_names = annotation_column_names.split(",")
-        column_names = column_names.split(",")
+    def _createDatabase(self, destDir, ds_file, ds_match_mode, index_column_names, annotation_column_names,
+                        column_names):
         index_columns = []
         for index_column_name in index_column_names:  # ensures that all index columns are in the column names list
             index_columns += [column_names.index(index_column_name)]
@@ -38,7 +58,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
         annotation_column_names = set(annotation_column_names)
 
         # Read the column names and determine whether they exist or not in the file
-        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=1)
+        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter=r"\s*", iterator=True, chunksize=1)
         for chunk in data:
             index = chunk.columns
             fieldNames = set(index)
@@ -56,27 +76,29 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
             break
 
         # Iterate through the file and determine column's data type
-        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=10000,
+        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter=r"\s*", iterator=True, chunksize=10000,
                                usecols=annotation_column_names, na_values=["", ".", "-"])
         for chunk in data:
             index = chunk.columns
 
             # Missing values default to float data type
             for idx in index:
-                if numpy.issubdtype(chunk[idx].dtype, numpy.inexact):
-                    if idx not in self.columnDataTypes or self.columnDataTypes[idx] not in ("String",):
-                        self.columnDataTypes[idx] = "Float"
-                elif numpy.issubdtype(chunk[idx].dtype, numpy.integer):
-                    if idx not in self.columnDataTypes or self.columnDataTypes[idx] not in ("Float", "String",):
-                        self.columnDataTypes[idx] = "Integer"
-                elif numpy.issubdtype(chunk[idx].dtype, numpy.character):
-                    self.columnDataTypes[idx] = "String"
-                elif numpy.issubdtype(chunk[idx].dtype, numpy.bool_):
-                    self.columnDataTypes[idx] = "Flag"
-                elif numpy.issubdtype(chunk[idx].dtype, numpy.object_):
-                    self.columnDataTypes[idx] = "String"
+                if ds_match_mode != "exact" or len(index_column_names) != 3:
+                    if numpy.issubdtype(chunk[idx].dtype, numpy.inexact):
+                        if idx not in self.columnDataTypes or self.columnDataTypes[idx] not in ("String",):
+                            self.columnDataTypes[idx] = "Float"
+                    elif numpy.issubdtype(chunk[idx].dtype, numpy.integer):
+                        if idx not in self.columnDataTypes or self.columnDataTypes[idx] not in ("Float", "String",):
+                            self.columnDataTypes[idx] = "Integer"
+                    elif numpy.issubdtype(chunk[idx].dtype, numpy.bool_):
+                        self.columnDataTypes[idx] = "Flag"
+                    else:
+                        self.columnDataTypes[idx] = "String"
                 else:
                     self.columnDataTypes[idx] = "String"
+
+            if ds_match_mode != "exact" or len(index_column_names) != 3:
+                break
 
         tabixIndexedFile = TabixIndexer.index(destDir=destDir, inputFilename=ds_file, fileColumnNumList=index_columns,
                                               preset="tsv")

@@ -89,7 +89,7 @@ class DatasourceInstallUtils(object):
 
     @staticmethod
     def create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version, index_columns=None,
-                          ds_columns=None, ds_annotation_columns=None, ds_match_mode="exact"):
+                          ds_annotation_columns=None, ds_match_mode="exact"):
         """
 
         :param ds_match_mode: describes how to annotate mutations from an indexed tsv or indexed vcf datasources
@@ -100,15 +100,14 @@ class DatasourceInstallUtils(object):
         :param ds_type: data source type (indexed_vcf, indexed_tsv, etc.)
         :param ds_version: data source version
         :param index_columns:
-        :param ds_columns: if data source is of type indexed tsv,
         :param ds_annotation_columns: if data source is of type indexed tsv,
         """
         index_columns = [] if index_columns is None else index_columns
         datasourceBuilder = DatasourceBuilderFactory.getDatasourceCreatorInstance(ds_type)
         configFilename = os.path.join(*[destDir, string.join([ds_foldername, "config"], ".")])
         datasourceBuilder.createDatasource(destDir=destDir, ds_file=ds_file, index_column_names=index_columns,
-                                           column_names=ds_columns, configFilename=configFilename, ds_type=ds_type,
-                                           ds_name=ds_name, ds_version=ds_version, ds_match_mode=ds_match_mode,
+                                           configFilename=configFilename, ds_type=ds_type, ds_name=ds_name,
+                                           ds_version=ds_version, ds_match_mode=ds_match_mode,
                                            annotation_column_names=ds_annotation_columns,
                                            indexCols=DatasourceInstallUtils.getIndexCols(ds_type, index_columns))
 
