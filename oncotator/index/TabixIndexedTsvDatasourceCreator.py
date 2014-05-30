@@ -16,7 +16,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
 
     def _determine_column_names(self, ds_file):
         column_names = []
-        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter=r"\s*", iterator=True, chunksize=1)
+        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=1)
         for chunk in data:
             column_names = list(chunk.columns)
             break
@@ -30,7 +30,12 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
             index_column_names = column_names
         else:
             index_column_names = index_column_names.split(",")
-        annotation_column_names = annotation_column_names.split(",")
+
+        if not annotation_column_names:  # no annotation column names were specified; default to index columns
+            annotation_column_names = [index_column_name for index_column_name in index_column_names
+                                       if index_column_name not in index_column_names]
+        else:
+            annotation_column_names = annotation_column_names.split(",")
 
         if not all([index_column_name in column_names for index_column_name in index_column_names]):
             raise ValueError("index_column names must be a subset of column names.")
@@ -58,7 +63,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
         annotation_column_names = set(annotation_column_names)
 
         # Read the column names and determine whether they exist or not in the file
-        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter=r"\s*", iterator=True, chunksize=1)
+        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=1)
         for chunk in data:
             index = chunk.columns
             fieldNames = set(index)
@@ -76,7 +81,7 @@ class TabixIndexedTsvDatasourceCreator(DatasourceCreator):
             break
 
         # Iterate through the file and determine column's data type
-        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter=r"\s*", iterator=True, chunksize=10000,
+        data = pandas.read_csv(filepath_or_buffer=ds_file, delimiter="\t", iterator=True, chunksize=10000,
                                usecols=annotation_column_names, na_values=["", ".", "-"])
         for chunk in data:
             index = chunk.columns
