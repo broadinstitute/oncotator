@@ -253,11 +253,11 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)
-
+        build = self.build
         is_tn_vcf_warning_delivered = False
         for record in self.vcf_reader:
             for index in range(len(record.ALT)):
-                mut = self._createMutation(record, index)
+                mut = self._createMutation(record, index, build)
 
                 if len(record.samples) <= 0:
                     yield mut
@@ -291,8 +291,18 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         yield sampleMut
 
-    def _createMutation(self, record, alt_index):
-        mut = MutUtils.initializeMutFromRecord(self.build, record, alt_index)
+    def _createMutation(self, record, alt_index, build):
+        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+        startPos = int(record.POS)
+        endPos = int(record.POS)
+        ref = record.REF
+        ref = "" if ref == "." else ref
+
+        alt = ref
+        if not record.is_monomorphic:
+            alt = str(record.ALT[alt_index])
+
+        mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
         ID = "" if record.ID is None else record.ID
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])
