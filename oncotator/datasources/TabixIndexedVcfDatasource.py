@@ -279,7 +279,7 @@ class IndexedVcfDatasource(Datasource):
                         elif len(v) == 1:
                             val = str(float(v[0]))
                     else:
-                        if len(vals[ID][0]) != num:
+                        if len(vals[ID][0]) != num:  # addresses cases where no records were found
                             val = [""]
                         else:
                             nvals = len(vals[ID])  # number of lists
