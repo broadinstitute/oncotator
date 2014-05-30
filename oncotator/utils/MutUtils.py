@@ -143,27 +143,6 @@ class MutUtils(object):
 
         return mut
 
-    # @staticmethod
-    # def initializeMutFromRecord(build, record, alt_index):
-    #     """
-    #
-    #     :param build:
-    #     :param record:
-    #     :param alt_index:
-    #     :return:
-    #     """
-    #     chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
-    #     ref = "" if record.REF == "." else record.REF
-    #     alt = ref
-    #     if not record.is_monomorphic and alt_index is not None:
-    #         alt = str(record.ALT[alt_index])
-    #     startPos = record.POS
-    #     endPos = int(record.POS)
-    #
-    #     mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
-    #
-    #     return mut
-
     @staticmethod
     def retrievePrecedingBasesForInsertions(m):
         ref_allele = m.ref_allele
