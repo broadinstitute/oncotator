@@ -218,7 +218,7 @@ class IndexedVcfDatasource(Datasource):
         if record is None:
             msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                   "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
-            self.logger.warn(msg)
+            self.logger.debug(msg)
 
         tags = self._determine_tags()
         for ID in self.vcf_info_headers:

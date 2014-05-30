@@ -113,7 +113,7 @@ class IndexedTsvDatasource(Datasource):
 
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
-            self.logger.warn(msg)
+            self.logger.debug(msg)
 
         for colName in self.output_tsv_headers:
             val = ""
@@ -147,7 +147,7 @@ class IndexedTsvDatasource(Datasource):
             else:
                 msg = "Exception when looking for tsv records for chr%s:%s-%s. " \
                       "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
-                self.logger.warn(msg)
+                self.logger.debug(msg)
 
             mutation.createAnnotation(self.output_tsv_headers[colName], val, self.title, annotationDataType=ds_type,
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])

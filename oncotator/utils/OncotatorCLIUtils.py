@@ -48,6 +48,7 @@
 #"""
 import os
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
+from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 import logging
@@ -211,14 +212,14 @@ class RunSpecification(object):
     def del_is_skip_no_alts(self):
         del self.__is_skip_no_alts
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=dict(), datasources=[], isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
-        self.manualAnnotations = manualAnnotations
-        self.datasources = datasources
+        self.manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
+        self.datasources = datasources if datasources is not None else []
         self.isMulticore = isMulticore
         self.numCores = numCores
-        self.defaultAnnotations = defaultAnnotations
+        self.defaultAnnotations = defaultAnnotations if defaultAnnotations is not None else dict()
         self.cacheUrl = cacheUrl
         self.isReadOnlyCache = read_only_cache
         self.isSkipNoAlts = is_skip_no_alts
@@ -286,14 +287,13 @@ class OncotatorCLIUtils(object):
         return tmp.keys()
 
     @staticmethod
-    def create_input_creator(inputFilename, inputFormat, genome_build="hg19"):
-        inputCreator = None
+    def create_input_creator(inputFilename, inputFormat, genome_build="hg19", input_creator_options=None):
         inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
         if inputFormat not in inputCreatorDict.keys():
             raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
         else:
             inputConfig = inputCreatorDict[inputFormat][1]
-            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig, genome_build)
+            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig, genome_build, input_creator_options)
         return inputCreator
 
     @staticmethod
@@ -308,7 +308,10 @@ class OncotatorCLIUtils(object):
         return outputRenderer
 
     @staticmethod
-    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=dict(), datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4, defaultAnnotations=dict(), cacheUrl=None, read_only_cache=True, tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False):
+    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=None,
+                        datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4,
+                        defaultAnnotations=None, cacheUrl=None, read_only_cache=True,
+                        tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False, other_opts=None):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.
@@ -324,8 +327,14 @@ class OncotatorCLIUtils(object):
         # TODO: On error, list the supported formats (both input and output) 
         # TODO: Make sure that we can pass in both a class and a config file, not just a class.
 
+        globalAnnotations = dict() if globalAnnotations is None else globalAnnotations
+        defaultAnnotations = dict() if defaultAnnotations is None else defaultAnnotations
+        other_opts = dict() if other_opts is None else other_opts
+
+        other_opts[InputMutationCreatorOptions.IS_SKIP_ALTS] = is_skip_no_alts
+
         # Step 1 Initialize input and output
-        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild)
+        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild, other_opts)
         outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
 
         # Step 2 Datasources
