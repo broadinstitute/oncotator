@@ -53,6 +53,8 @@ source $ENV/bin/activate
 echo " "
 echo "Virtual environment created and activated in $ENV."
 echo "Now attempting to install packages into the virtual environment."
+which python
+python --version
 
 #################################################
 # Make sure we're using the latest pip
