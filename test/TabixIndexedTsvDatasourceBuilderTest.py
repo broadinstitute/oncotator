@@ -67,14 +67,17 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         """
         dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
         destDir = "out"
-        indexColumnNames = "CHROM,POS,POS"
-        columnNames = "CHROM,POS,REF,ALT,DBSNP,EA_AC,AA_AC,TAC,MAF,GTS,EA_GTC,AA_GTC,GTC,DP,FG,GM,AA,AAC,PP,CDP,PH,CP,CG,GL,GS,CA,EXOME_CHIP,GWAS_PUBMED"
-        annotationColumnNames = "CHROM,POS,REF,ALT,DBSNP"
+        indexColumnNames = ["CHROM", "POS", "POS"]
+        columnNames = ["CHROM", "POS", "REF", "ALT", "DBSNP", "EA_AC", "AA_AC", "TAC", "MAF", "GTS", "EA_GTC", "AA_GTC",
+                       "GTC", "DP", "FG", "GM", "AA", "AAC", "PP", "CDP", "PH", "CP", "CG", "GL", "GS", "CA",
+                       "EXOME_CHIP", "GWAS_PUBMED"]
+        annotationColumnNames = ["CHROM", "POS", "REF", "ALT", "DBSNP"]
+        matchMode = "exact"
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         datasourceFilename = datasourceBuilder._createDatabase(destDir=destDir, ds_file=dsFile,
                                                                index_column_names=indexColumnNames,
-                                                               column_names=columnNames,
+                                                               column_names=columnNames, ds_match_mode=matchMode,
                                                                annotation_column_names=annotationColumnNames)
         tabixIndexedFilename = string.join([destDir, os.sep, datasourceFilename], "")
 
@@ -177,10 +180,10 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         annotationColumnNames = "DBSNP,EA_GTC,DP"
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
-        datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, columnNames, configFilename,
-                                           dataSourceType, dataSourceName, dataSourceVersion, dataSourceMatchMode,
-                                           annotationColumnNames,
-                                           DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
+        datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename, dataSourceType,
+                                           dataSourceName, dataSourceVersion, dataSourceMatchMode,
+                                           annotationColumnNames, DatasourceInstallUtils.getIndexCols(dataSourceType,
+                                                                                                      indexColumnNames))
 
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
@@ -239,7 +242,6 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         destDir = "out"
         datasourceFilename = "ESP6500SI-V2.chr1.snps_indels.head.25.missing.tabix_indexed.txt.gz"
         indexColumnNames = "CHROM,POS,POS"
-        columnNames = "CHROM,POS,REF,ALT,EA_GTC,DP"
         dataSourceType = "indexed_tsv"
         dataSourceName = "ESP"
         dataSourceVersion = "6500SI-V2"
@@ -248,9 +250,8 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         configFilename = os.path.join("out", "esp_coverage.missing.config")
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
-        datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, columnNames, configFilename,
-                                           dataSourceType, dataSourceName, dataSourceVersion, dataSourceMatchMode,
-                                           annotationColumnNames,
+        datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename, dataSourceType, dataSourceName,
+                                           dataSourceVersion, dataSourceMatchMode, annotationColumnNames,
                                            DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
 
         configParser = ConfigUtils.createConfigParser(configFilename)
@@ -272,7 +273,6 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
         destDir = "out"
         indexColumnNames = "CHROM,POS,POS"
-        columnNames = "CHROM,POS,REF,ALT,EA_GTC,DP,ESP_DBSNP"
         dataSourceType = "indexed_tsv"
         dataSourceName = "ESP"
         dataSourceVersion = "6500SI-V2"
@@ -282,7 +282,7 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         try:
-            datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, columnNames, configFilename,
+            datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename,
                                                dataSourceType, dataSourceName, dataSourceVersion, dataSourceMatchMode,
                                                annotationColumnNames,
                                                DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
@@ -296,7 +296,6 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
         dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
         destDir = "out"
         indexColumnNames = "CHROM,POS,POS"
-        columnNames = "CHROM,POS,REF,ALT,DBSNP,EA_AC,AA_AC,TAC,MAF,GTS,EA_GTC,AA_GTC,GTC,DP,FG,GM,AA,AAC,PP,CDP,PH,CP,CG,GL,GS,CA,EXOME_CHIP,GWAS_PUBMED"
         dataSourceType = "indexed_tsv"
         dataSourceName = "ESP"
         dataSourceVersion = "6500SI-V2"
@@ -306,9 +305,9 @@ class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         try:
-            datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, columnNames, configFilename,
-                                               dataSourceType, dataSourceName, dataSourceVersion, dataSourceMatchMode,
+            datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename, dataSourceType,
+                                               dataSourceName, dataSourceVersion, dataSourceMatchMode,
                                                annotationColumnNames,
                                                DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
-        except InputMismatchException:
+        except ValueError:
             pass
