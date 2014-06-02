@@ -79,7 +79,7 @@ then
 else
 	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-	for C_PACKAGE in biopython cython numpy pandas sqlalchemy pysam
+	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
 	do 
 		echo " "
 		echo "$C_PACKAGE =========================="
@@ -124,7 +124,7 @@ else
 	   echo "No master found, assuming master.zip"
 	fi
 
-	unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
+	unzip master.zip && cd PyVCF-master && cython vcf/cparse.pyx && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
 
 	echo "OK."
 fi

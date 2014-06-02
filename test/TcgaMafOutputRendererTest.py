@@ -65,7 +65,6 @@ from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
 import os
 from oncotator.utils.GenericTsvReader import GenericTsvReader
-from oncotator.DatasourceFactory import DatasourceFactory
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -76,10 +75,12 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
         These were taken from version 0.5.25.0 of Oncotator.
     """
-    TCGA_MAF_DEFAULTS = {'NCBI_Build':'37','Strand':"+",'Center':'broad.mit.edu','source':'Capture', 'status':'Somatic', 'phase':'Phase_I', 'sequencer':'Illumina GAIIx',
-                  'Tumor_Validation_Allele1': '', 'Tumor_Validation_Allele2': '', 'Match_Norm_Validation_Allele1': '', 'Match_Norm_Validation_Allele2': '',
-                  'Verification_Status': '','Validation_Status': '', 'Validation_Method': '', 'Score': '', 'BAM_file': '',
-                  'Match_Norm_Seq_Allele1':'', 'Match_Norm_Seq_Allele2':''}
+    TCGA_MAF_DEFAULTS = {'NCBI_Build': '37', 'Strand': "+", 'Center': 'broad.mit.edu', 'source': 'Capture',
+                         'status': 'Somatic', 'phase': 'Phase_I', 'sequencer': 'Illumina GAIIx',
+                         'Tumor_Validation_Allele1': '', 'Tumor_Validation_Allele2': '',
+                         'Match_Norm_Validation_Allele1': '', 'Match_Norm_Validation_Allele2': '',
+                         'Verification_Status': '', 'Validation_Status': '', 'Validation_Method': '', 'Score': '',
+                         'BAM_file': '', 'Match_Norm_Seq_Allele1': '', 'Match_Norm_Seq_Allele2': ''}
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)
@@ -95,10 +96,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testSimpleVersionString(self):
-        tmp = TcgaMafOutputRenderer('dummy', configFile='configs/tcgaMAF2.4_output.config')
+        tmp = TcgaMafOutputRenderer('dummy', configFile=os.path.join("configs", "tcgaMAF2.4_output.config"))
         tmp.getOncotatorHeaderVersionString()
         pass
-
 
     def _validateTcgaMafContents(self, filename):
         """ This is a utility, private method for unit tests to get a semblance that a valid maf file was created.  
@@ -106,7 +106,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         Note: This method has nothing to do with the TCGA validator.
         
         """
-        configFile = ConfigUtils.createConfigParser('configs/tcgaMAF2.4_output.config')
+        configFile = ConfigUtils.createConfigParser(os.path.join("configs", "tcgaMAF2.4_output.config"))
         statinfo = os.stat(filename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + filename + ") is empty.")
         
@@ -139,7 +139,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             ctr += 1
 
     def _determine_db_dir(self):
-        return self.config.get('DEFAULT',"dbDir")
+        return self.config.get('DEFAULT', "dbDir")
 
     def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations={}, is_skip_no_alts=False):
         self.logger.info("Initializing Annotator...")
@@ -152,7 +152,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testVersionString(self):
         """ Simple test of the Oncotator header string """   
         gafDatasource = TestUtils.createGafDatasource(self.config)
-        outputRenderer = TcgaMafOutputRenderer("out/testVersion.maf.tsv", configFile='configs/tcgaMAF2.4_output.config', datasources=[gafDatasource.title + gafDatasource.version])
+        outputRenderer = TcgaMafOutputRenderer(os.path.join("out", "testVersion.maf.tsv"),
+                                               configFile=os.path.join("configs", "tcgaMAF2.4_output.config"),
+                                               datasources=[gafDatasource.title + gafDatasource.version])
         tmp = outputRenderer.getOncotatorHeaderVersionString()
         print tmp
     
@@ -160,7 +162,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         """ Create a TCGA MAF from a SNP TSV file."""
         self.logger.info("Initializing Maflite SNP Test...")
         
-        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testSNP_v2.4.maf.tsv", self._determine_db_dir())
+        testOutputFilename = self._annotateTest(os.path.join(*["testdata", "maflite", "Patient0.snp.maf.txt"]),
+                                                os.path.join("out", "testSNP_v2.4.maf.tsv"), self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
@@ -169,7 +172,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
         
-        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.indel.maf.txt', "out/testIndel_v2.4.maf.tsv", self._determine_db_dir())
+        testOutputFilename = self._annotateTest(os.path.join(*["testdata", "maflite", "Patient0.indel.maf.txt"]),
+                                                os.path.join("out", "testIndel_v2.4.maf.tsv"), self._determine_db_dir())
         
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
@@ -177,24 +181,25 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testEmptyInput(self):
         """ Create a TCGA MAF from an empty maflite file."""
 
-        testOutputFilename = self._annotateTest('testdata/maflite/empty.maflite', "out/empty.maf.tsv", self._determine_db_dir())
+        testOutputFilename = self._annotateTest(os.path.join(*["testdata", "maflite", "empty.maflite"]),
+                                                os.path.join("out", "empty.maf.tsv"), self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
 
     def testInternalFields(self):
         """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
-        outputFilename = "out/testInternalFields_v2.4.maf.tsv"
+        outputFilename = os.path.join("out", "testInternalFields_v2.4.maf.tsv")
         m = MutationData()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
         
         # The next annotation is real and should not be considered internal.
         m.createAnnotation("gene", "EGFR")
         
-        outputRenderer = TcgaMafOutputRenderer(outputFilename, configFile='configs/tcgaMAF2.4_output.config')
+        outputRenderer = TcgaMafOutputRenderer(outputFilename, configFile=os.path.join('configs', 'tcgaMAF2.4_output.config'))
         outputRenderer.renderMutations(iter([m]), ['No comments'])
         
-        configFile = ConfigUtils.createConfigParser('configs/tcgaMAF2.4_output.config')
+        configFile = ConfigUtils.createConfigParser(os.path.join('configs', 'tcgaMAF2.4_output.config'))
         requiredColumns = configFile.get("general", "requiredColumns")
         self.assertTrue("Hugo_Symbol" in requiredColumns, " This test assumes that Hugo_Symbol is a required column in the TCGA MAF.  If not, the test must be modified.")
 
@@ -210,7 +215,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testMutationDatasources(self):
         """ Test that we can create a simple TSV output from all of the current datasources (specified in the config file).  Note that no validation is done.  Simply that the output file was created. 
         TODO: This unit test needs to be moved."""
-        testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testsimpleSNP.maf.tsv", self._determine_db_dir(), outputFormat="SIMPLE_TSV")
+        testOutputFilename = self._annotateTest(os.path.join(*["testdata", "maflite", "Patient0.snp.maf.txt"]),
+                                                os.path.join("out", "testsimpleSNP.maf.tsv"),
+                                                self._determine_db_dir(), outputFormat="SIMPLE_TSV")
         self.assertTrue(os.path.exists(testOutputFilename))
 
     def testExposedColumns(self):
@@ -233,9 +240,11 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         # For this conversion, you must specify the barcodes manually
         override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
-        override_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
+        override_annotations.update({'tumor_barcode': 'Patient0-Tumor', 'normal_barcode': 'Patient0-Normal'})
 
-        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.vcf', "out/testConversionFromVCF.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations, is_skip_no_alts=True)
+        outputFilename = self._annotateTest(os.path.join(*["testdata", "vcf", "Patient0.somatic.strelka.indels.vcf"]),
+                                            os.path.join("out", "testConversionFromVCF.maf.annotated"),
+                                            self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations, is_skip_no_alts=True)
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(outputFilename)
@@ -257,8 +266,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             if len(ref) > len(alt):
                 self.assertTrue(alt == "-", "Invalid deletion with " + ref + "  " + alt)
 
-            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301010", "64948170", "64948167",
-                                                            "64948168"])
+            self.assertTrue(line_dict['Start_position'] in ["10089935", "57493929", "155301009", "64948169", "64948166",
+                                                            "64948167", "64948168"])
             self.assertTrue(line_dict['Reference_Allele'] in ["-", "TC", "A", "TT", "TTT"])
             self.assertTrue(line_dict['Tumor_Seq_Allele2'] in ["-", "TC", "G", "T"])
             self.assertTrue(line_dict['Matched_Norm_Sample_Barcode'] == "Patient0-Normal")
@@ -274,9 +283,12 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         # For this conversion, you must specify the barcodes manually
         override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
-        override_annotations.update({'tumor_barcode':'NA'})
+        override_annotations.update({'tumor_barcode': 'NA'})
 
-        outputFilename = self._annotateTest('testdata/vcf/Patient0.somatic.strelka.indels.met.vcf', "out/testConversionFromVCFv2.maf.annotated", self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF", override_annotations=override_annotations)
+        outputFilename = self._annotateTest(os.path.join(*["testdata", "vcf", "Patient0.somatic.strelka.indels.met.vcf"]),
+                                            os.path.join("out", "testConversionFromVCFv2.maf.annotated"),
+                                            self._determine_db_dir(), inputFormat="VCF", outputFormat="TCGAMAF",
+                                            override_annotations=override_annotations)
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(outputFilename)
@@ -307,9 +319,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         m['Tumor_Validation_Allele2'] = ""
         m['Mutation_Status'] = "Somatic"
 
-        output_filename = "out/test_validation_correction1.maf.tsv"
+        output_filename = os.path.join("out", "test_validation_correction1.maf.tsv")
 
-        outputRenderer = TcgaMafOutputRenderer(output_filename, configFile='configs/tcgaMAF2.4_output.config')
+        outputRenderer = TcgaMafOutputRenderer(output_filename,
+                                               configFile=os.path.join("configs", "tcgaMAF2.4_output.config"))
         outputRenderer.renderMutations([m].__iter__())
 
         tsv_reader = GenericTsvReader(output_filename)
@@ -338,9 +351,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         m['Tumor_Validation_Allele2'] = ""
         m['Mutation_Status'] = "Somatic"
 
-        output_filename = "out/test_validation_correction2.maf.tsv"
+        output_filename = os.path.join("out", "test_validation_correction2.maf.tsv")
 
-        outputRenderer = TcgaMafOutputRenderer(output_filename, configFile='configs/tcgaMAF2.4_output.config')
+        outputRenderer = TcgaMafOutputRenderer(output_filename,
+                                               configFile=os.path.join("configs", "tcgaMAF2.4_output.config"))
         outputRenderer.renderMutations([m].__iter__())
 
         tsv_reader = GenericTsvReader(output_filename)
@@ -355,7 +369,5 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertTrue("A" == line_dict['Tumor_Seq_Allele2'], "Alt allele should have been A, but was " + line_dict['Tumor_Seq_Allele2'])
 
 
-
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testSimpleVersionString']
     unittest.main()
