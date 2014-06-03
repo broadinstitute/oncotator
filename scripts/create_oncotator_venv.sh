@@ -53,6 +53,17 @@ source $ENV/bin/activate
 echo " "
 echo "Virtual environment created and activated in $ENV."
 echo "Now attempting to install packages into the virtual environment."
+which python
+python --version
+
+##################################################
+## Make sure we're using the latest pip
+##################################################
+#
+#echo " "
+#echo "Pegging pip version"
+#
+#pip install pip==1.0.1
 
 #################################################
 # Easy installations
@@ -79,7 +90,7 @@ then
 else
 	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-	for C_PACKAGE in biopython cython numpy pandas sqlalchemy pysam
+	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
 	do 
 		echo " "
 		echo "$C_PACKAGE =========================="
@@ -96,7 +107,7 @@ else
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else 
-		pip install --allow-unverified pysam pysam==0.7.5
+		pip install -I pysam==0.7.5
 	fi
 	echo "OK"
 fi

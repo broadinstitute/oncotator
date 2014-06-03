@@ -10,8 +10,7 @@ class TabixIndexedVcfDatasourceCreator(DatasourceCreator):
         pass
 
     def createDatasource(self, destDir, ds_file, configFilename, ds_type, ds_name, ds_version,
-                         ds_match_mode, index_column_names=None, indexCols=None, column_names=None,
-                         annotation_column_names=None):
+                         ds_match_mode, index_column_names=None, indexCols=None, annotation_column_names=None):
         # Create database
         baseDSFile = self._createDatabase(destDir, ds_file)
 
