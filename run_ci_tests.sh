@@ -16,8 +16,8 @@ fi
 
 echo "This script must be run from the same directory as setup.py"
 
-echo "PATH=/xchip/tcga/Tools/oncotator/python_2.7.6_May192014/bin/:$PATH" > tmp_rc
-source tmp_rc
+#echo "PATH=/xchip/tcga/Tools/oncotator/python_2.7.6_May192014/bin/:$PATH" > tmp_rc
+#source tmp_rc
 which python
 python --version
 
