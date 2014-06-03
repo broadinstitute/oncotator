@@ -3,8 +3,9 @@ import logging
 import os.path as op
 
 from oncotator.MutationData import MutationData
-from oncotator.datasources.HgvsChangeTransformer import HgvsChangeTransformer
 from TestUtils import TestUtils
+from oncotator.utils import HgvsChangeTransformer
+
 
 TestUtils.setupLogging(__file__, __name__)
 
