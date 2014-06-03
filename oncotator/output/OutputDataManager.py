@@ -62,7 +62,12 @@ class OutputDataManager:
         return mut, muts
 
     def getSortedTsvFilename(self, path):
+        """
 
+
+        :param path:
+        :return:
+        """
         chrom2HashCode = MutUtils.createChrom2HashCodeTable(self.chroms)
         tsvFileSorter = TsvFileSorter(self.filename)
         sortedTempTsvFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
@@ -292,7 +297,7 @@ class OutputDataManager:
 
     def _createHeader(self, comments=None, delimiter="\t", lineterminator="\n"):
         """
-        Constructs correctly Vcf header (meta-information and header lines).
+        Constructs VCF file header (meta-information and header lines).
         First, this method adds all meta-information lines as key=value pairs.
         Second, this method adds information lines describing the INFO, FILTER and FORMAT entries.
         Lastly, this method constructs the header line depending upon whether "FORMAT" tags are available or not.
@@ -300,7 +305,7 @@ class OutputDataManager:
         :param comments: lines as key=value pairs
         :param delimiter: special character (for example, tab) that separators words
         :param lineterminator: special character (for example, newline) signifying the end of line
-        :return: correctly formatted Vcf header
+        :return: VCF file header
         """
         comments = [] if comments is None else comments
 
@@ -366,6 +371,13 @@ class OutputDataManager:
         return header
 
     def _getFieldnames(self, md, mut):
+        """
+        Given metadata and annotations from the first mutation, this function determines which fieldnames to render.
+
+        :param md: metadata
+        :param mut: first mutation
+        :return: fieldnames
+        """
         fieldnames = []
         if mut is not None:
             if md is not None and len(md) != 0:
@@ -382,6 +394,12 @@ class OutputDataManager:
         return fieldnames
 
     def _correctFieldName(self, fieldName):
+        """
+        Replaces unwanted characters in the field name
+
+        :param fieldName:
+        :return: corrected field name
+        """
         fieldName = MutUtils.replaceChrs(fieldName, "=; :", "~|_>")  # Replace whitespace and other characters
         if fieldName.endswith("__FORMAT__"):  # Drop "__FORMAT__" from the end
             fieldName = fieldName[0:len(fieldName)-len("__FORMAT__")]
