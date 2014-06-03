@@ -72,7 +72,7 @@ python --version
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in bcbio-gff nose shove python-memcached
+for PACKAGE in bcbio-gff nose shove python-memcached natsort
 do 
 	echo " "
 	echo "$PACKAGE =========================="
