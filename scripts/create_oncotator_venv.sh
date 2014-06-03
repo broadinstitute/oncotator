@@ -53,6 +53,17 @@ source $ENV/bin/activate
 echo " "
 echo "Virtual environment created and activated in $ENV."
 echo "Now attempting to install packages into the virtual environment."
+which python
+python --version
+
+##################################################
+## Make sure we're using the latest pip
+##################################################
+#
+#echo " "
+#echo "Pegging pip version"
+#
+#pip install pip==1.0.1
 
 #################################################
 # Easy installations
@@ -94,9 +105,9 @@ else
 	echo " "
 	echo "pysam ========================="
 	if [ "$FLAGS" == "archflags" ]; then
-		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam==0.7.5
+		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else 
-		pip install -I --allow-all-external pysam==0.7.5
+		pip install -I pysam==0.7.5
 	fi
 	echo "OK"
 fi
@@ -124,7 +135,7 @@ else
 	   echo "No master found, assuming master.zip"
 	fi
 
-	unzip master.zip && cd PyVCF-master && cython vcf/cparse.pyx && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
+	unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
 
 	echo "OK."
 fi
