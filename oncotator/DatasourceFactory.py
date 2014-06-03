@@ -56,7 +56,6 @@ from utils.ConfigUtils import ConfigUtils
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
 from oncotator.datasources.dbSNP import dbSNP
-from oncotator.datasources.dbNSFP import dbNSFP
 from oncotator.datasources.Cosmic import Cosmic
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
 from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
@@ -74,9 +73,11 @@ from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
 
+
 def createDatasource(t):
     """ Create a datasource given a tuple (configFilename, leafDir).  This method should not be used and is only for a workaround to enable multiprocessing. """
     return DatasourceFactory.createDatasourceGivenTuple(t)
+
 
 class DatasourceFactory(object):
     """
@@ -144,8 +145,6 @@ class DatasourceFactory(object):
             result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'), tx_filter=configParser.get('general', 'transcript_filter'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
-        elif dsType == "dbnsfp":
-            result = dbNSFP(filePrefix, title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == 'ref':
             if configParser.has_option('general', 'windowSizeRef'):
                 window_size = configParser.get('general', 'windowSizeRef')
@@ -181,29 +180,29 @@ class DatasourceFactory(object):
                                            version=configParser.get('general', 'version'),
                                            match_mode=configParser.get('general', 'match_mode'))
         elif dsType == "indexed_tsv":
-            colNames = configParser.get("general", "column_names")
-            colNames = colNames.split(",")
+            columnNames = configParser.get("general", "column_names")
+            columnNames = columnNames.split(",")
 
-            annotationColNames = configParser.get("general", "annotation_column_names")
-            annotationColNames = annotationColNames.split(",")
+            annotationColumnNames = configParser.get("general", "annotation_column_names")
+            annotationColumnNames = annotationColumnNames.split(",")
 
-            DatasourceFactory._log_missing_column_name_msg(colNames, annotationColNames)
+            indexColumnNames = configParser.get("general", "index_column_names")
+            indexColumnNames = indexColumnNames.split(",")
 
-            indexColNames = configParser.get("general", "index_column_names")
-            indexColNames = indexColNames.split(",")
+            DatasourceFactory._log_missing_column_name_msg(columnNames, annotationColumnNames)
 
-            colDataTypes = dict()
-            for colName in annotationColNames:
-                colDataTypes[colName] = configParser.get("data_types", colName)
+            columnDataTypes = dict()
+            for columnName in annotationColumnNames:
+                columnDataTypes[columnName] = configParser.get("data_types", columnName)
 
-            result = IndexedTsvDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),
+            result = IndexedTsvDatasource(src_file=filePrefix + configParser.get("general", "src_file"),
                                            title=configParser.get("general", "title"),
-                                           version=configParser.get('general', 'version'),
-                                           colNames=colNames,
-                                           annotationColNames=annotationColNames,
-                                           indexColNames=indexColNames,
-                                           match_mode=configParser.get('general', 'match_mode'),
-                                           colDataTypes=colDataTypes)
+                                           version=configParser.get("general", "version"),
+                                           colNames=columnNames,
+                                           annotationColNames=annotationColumnNames,
+                                           indexColNames=indexColumnNames,
+                                           match_mode=configParser.get("general", "match_mode"),
+                                           colDataTypes=columnDataTypes)
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)
@@ -250,15 +249,14 @@ class DatasourceFactory(object):
                 logging.getLogger(__name__).debug("Potential datasource directory: " + fullD)
             else:
                 logging.getLogger(__name__).warn("Potential datasource is not a directory: " + fullD)
-                
-                
+
         # Look for the config file.  This will have the same name as the the directory 
         # Note that the genome version is not in the dsDirs variable.
         for ds in dsDirs:
             tmpDs = ds
-            if tmpDs.endswith('/'):
+            if tmpDs.endswith(os.sep):
                 tmpDs = tmpDs[:-1]
-            configFilename = tmpDs + "/" + genomeBuild + "/" + os.path.basename(tmpDs) + ".config"
+            configFilename = os.path.join(*[tmpDs, genomeBuild, os.path.basename(tmpDs) + ".config"])
             if not os.path.exists(configFilename):
                 logging.getLogger(__name__).warn("Could not find config file for datasource: " + configFilename)
             else:
@@ -266,7 +264,7 @@ class DatasourceFactory(object):
                 
                 # Queue the datasource for instantiation
                 logging.getLogger(__name__).info("Queuing datasource creation for " + configFilename)
-                dsQueueList.append((configFilename, tmpDs + "/" + genomeBuild + "/")) 
+                dsQueueList.append((configFilename, os.path.join(*[tmpDs, genomeBuild, ""])))
 
         result = []        
         if not isMulticore:

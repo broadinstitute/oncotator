@@ -206,7 +206,7 @@ class MutUtilsTest(unittest.TestCase):
         mut.end = updated_end
         mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
-        self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
+        self.assertTrue(mut.start == 1234569, "Mut start should be 1234570 but was %s." % mut.start)
         self.assertTrue(mut.end == 1234570, "Mut end should be 1234570 but was %s." % mut.end)
         self.assertTrue(mut.ref_allele == "-", "Ref allele should be - but was %s." % mut.ref_allele)
         self.assertTrue(mut.alt_allele == "T", "Alt allele should be T but was %s." % mut.alt_allele)
@@ -226,8 +226,8 @@ class MutUtilsTest(unittest.TestCase):
         mut.end = updated_end
         mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue=preceding_bases)
         self.assertTrue("_preceding_bases" in mut, "_preceding_bases is missing in the mutation data.")
-        self.assertTrue(mut.start == 1234570, "Mut start should be 1234570 but was %s." % mut.start)
-        self.assertTrue(mut.end == 1234571, "Mut end should be 1234571 but was %s." % mut.end)
+        self.assertTrue(mut.start == 1234569, "Mut start should be 1234570 but was %s." % mut.start)
+        self.assertTrue(mut.end == 1234570, "Mut end should be 1234571 but was %s." % mut.end)
         self.assertTrue(mut.ref_allele == "-", "Ref allele should be - but was %s." % mut.ref_allele)
         self.assertTrue(mut.alt_allele == "TT", "Alt allele should be TT but was %s." % mut.alt_allele)
 

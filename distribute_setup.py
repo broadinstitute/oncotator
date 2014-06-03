@@ -167,6 +167,7 @@ def use_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
         if not no_fake:
             _create_fake_setuptools_pkg_info(to_dir)
 
+
 def download_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
                         to_dir=os.curdir, delay=15):
     """Download distribute from a specified location and return its filename
@@ -203,6 +204,7 @@ def download_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
                 dst.close()
     return os.path.realpath(saveto)
 
+
 def _no_sandbox(function):
     def __no_sandbox(*args, **kw):
         try:
@@ -227,6 +229,7 @@ def _no_sandbox(function):
 
     return __no_sandbox
 
+
 def _patch_file(path, content):
     """Will backup the file then patch it"""
     existing_content = open(path).read()
@@ -245,14 +248,17 @@ def _patch_file(path, content):
 
 _patch_file = _no_sandbox(_patch_file)
 
+
 def _same_content(path, content):
     return open(path).read() == content
+
 
 def _rename_path(path):
     new_name = path + '.OLD.%s' % time.time()
     log.warn('Renaming %s into %s', path, new_name)
     os.rename(path, new_name)
     return new_name
+
 
 def _remove_flat_installation(placeholder):
     if not os.path.isdir(placeholder):
@@ -289,10 +295,12 @@ def _remove_flat_installation(placeholder):
 
 _remove_flat_installation = _no_sandbox(_remove_flat_installation)
 
+
 def _after_install(dist):
     log.warn('After install bootstrap.')
     placeholder = dist.get_command_obj('install').install_purelib
     _create_fake_setuptools_pkg_info(placeholder)
+
 
 def _create_fake_setuptools_pkg_info(placeholder):
     if not placeholder or not os.path.exists(placeholder):
@@ -323,6 +331,7 @@ def _create_fake_setuptools_pkg_info(placeholder):
 
 _create_fake_setuptools_pkg_info = _no_sandbox(_create_fake_setuptools_pkg_info)
 
+
 def _patch_egg_dir(path):
     # let's check if it's already patched
     pkg_info = os.path.join(path, 'EGG-INFO', 'PKG-INFO')
@@ -342,6 +351,7 @@ def _patch_egg_dir(path):
     return True
 
 _patch_egg_dir = _no_sandbox(_patch_egg_dir)
+
 
 def _before_install():
     log.warn('Before install bootstrap.')

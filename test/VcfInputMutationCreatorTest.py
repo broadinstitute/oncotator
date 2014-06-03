@@ -95,7 +95,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for m in muts:
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
-        self.assertTrue((m.chr == "21") and (m.start == 1234570), "Last mutation was not correct: " + str(m))
+        self.assertTrue((m.chr == "21") and (m.start == 1234569), "Last mutation was not correct: " + str(m))
 
         # Reminder: muts is a generator, so it has to be reset
         creator.reset()
