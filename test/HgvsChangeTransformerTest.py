@@ -4,7 +4,7 @@ import os.path as op
 
 from oncotator.MutationData import MutationData
 from TestUtils import TestUtils
-from oncotator.utils import HgvsChangeTransformer
+from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
 
 
 TestUtils.setupLogging(__file__, __name__)
