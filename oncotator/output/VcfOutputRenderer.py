@@ -147,7 +147,7 @@ class VcfOutputRenderer(OutputRenderer):
 
         return self._filename
 
-    def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos):
+    def _isNewVcfRecordNeeded(self, curChrom, prevChrom, curPos, prevPos, curRefAllele, prevRefAllele):
         """
         Determines whether the current chromosome and position is the same as the previous chromosome and position.
 
@@ -155,14 +155,17 @@ class VcfOutputRenderer(OutputRenderer):
         :param prevChrom: previous chromosome
         :param curPos: current position
         :param prevPos: previous position
+        :param curRefAllele: current reference allele
+        :param prevRefAllele: previous reference allele
         :return: true or false
         """
-        isNew = False
         if curChrom != prevChrom:
-            isNew = True
+            return True
         if curPos != prevPos:
-            isNew = True
-        return isNew
+            return True
+        if curRefAllele != prevRefAllele:
+            return True
+        return False
 
     def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager, inferGenotypes):
         """
@@ -182,6 +185,7 @@ class VcfOutputRenderer(OutputRenderer):
         nrecords = 1000
         chrom = None
         pos = None
+        refAllele = None
         recordBuilder = None
 
         ctr = 0
@@ -189,7 +193,7 @@ class VcfOutputRenderer(OutputRenderer):
         try:
             for m in tsvReader:
                 ctr += 1
-                isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"])
+                isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"], refAllele, m["ref_allele"])
                 if isNewRecord:
                     if recordBuilder is not None:
                         record = recordBuilder.createRecord()
