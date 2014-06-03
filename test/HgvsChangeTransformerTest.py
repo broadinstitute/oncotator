@@ -249,7 +249,9 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         m.createAnnotation('transcript_change', '')
         m.createAnnotation('protein_change', '')
         transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
-        tx = transcript_ds.get_transcript(m['annotation_transcript'])
+
+        m = transcript_ds.annotate_mutation(m)
+        tx = transcript_ds.get_transcript(m.get('annotation_transcript', None))
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr15.hg19:g.30938316G>A')

@@ -382,6 +382,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         return self.transcript_db
 
     def get_transcript(self, tx_id):
+        if tx_id is None:
+            return None
         return self.transcript_db.get(tx_id, None)
 
     def get_tx_mode(self):

@@ -112,20 +112,25 @@ class HgvsChangeTransformer():
         except:
             hgvs_genomic_change = 'Exception_encountered'
 
-        try:
-            hgvs_coding_dna_change = self._adjust_coding_DNA_change(mutation, tx)
-        except:
-            hgvs_coding_dna_change = 'Exception_encountered'
 
-        try:
-            hgvs_protein_change = self._adjust_protein_change(mutation, tx)
-        except:
-            hgvs_protein_change = 'Exception_encountered'
+        if tx is None:
+            hgvs_coding_dna_change = ''
+            hgvs_protein_change = ''
+        else:
+            try:
+                hgvs_coding_dna_change = self._adjust_coding_DNA_change(mutation, tx)
+            except:
+                hgvs_coding_dna_change = 'Exception_encountered'
 
-        if hgvs_protein_change.startswith('None'):
-            hgvs_protein_change = hgvs_protein_change.replace('None', 'unknown_prot_seq')
-        elif hgvs_protein_change.startswith(':'):
-            hgvs_protein_change = 'unknown_prot_seq' + hgvs_protein_change
+            try:
+                hgvs_protein_change = self._adjust_protein_change(mutation, tx)
+            except:
+                hgvs_protein_change = 'Exception_encountered'
+
+            if hgvs_protein_change.startswith('None'):
+                hgvs_protein_change = hgvs_protein_change.replace('None', 'unknown_prot_seq')
+            elif hgvs_protein_change.startswith(':'):
+                hgvs_protein_change = 'unknown_prot_seq' + hgvs_protein_change
 
         result = dict()
         result[HgvsChangeTransformer.GENOMIC_CHANGE_OUTPUT_HEADER] = hgvs_genomic_change
@@ -238,7 +243,7 @@ class HgvsChangeTransformer():
         elif vc == 'In_Frame_Del':
             adjusted_prot_change = self._get_prot_change_for_in_frame_del(mutation, tx)
         elif vc == 'In_Frame_Ins':
-            adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation['protein_change'], tx)
+            adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation['protein_change'], mutation['variant_type'], tx)
         elif vc == 'Nonstop_Mutation' or vc.startswith('Stop_Codon'):
             adjusted_prot_change = self._get_prot_change_for_stop_codon_variant(mutation, tx)
         elif mutation['variant_type'] in ['DNP', 'TNP', 'ONP'] and '_' in mutation['protein_change']:
