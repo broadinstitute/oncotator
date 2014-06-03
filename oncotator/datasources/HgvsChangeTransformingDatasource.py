@@ -89,8 +89,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
             if extension_residue == '*':
                 break
         return i
-        
-    def annotate_mutation(self, mutation):
+
+    def hgvs_annotate_mutation_given_tx(self, mutation, tx):
         mutation['start'], mutation['end'] = int(mutation['start']), int(mutation['end'])
 
         try:
@@ -164,7 +164,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return adjusted_genome_change
 
-    def _adjust_coding_DNA_change(self, mutation):
+    def _adjust_coding_DNA_change(self, mutation, tx):
         ### IF DELETION, THEN DUPLICATION CHECK AND POS ADJUSTMENT NOT BEING DONE!!
         if mutation['variant_type'] == 'DNP':
             return self._get_cdna_change_for_ONP(mutation)
@@ -182,7 +182,6 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 return self._get_cdna_change_for_ins(mutation)
             elif vc in ['Stop_Codon_Del']:
                 #need to make cdna str from scratch
-                tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
                 tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
                 tx_stop_codon_genomic_coords = tx.get_stop_codon()
                 tx_stop_start_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(tx_stop_codon_genomic_coords[0], tx_stop_codon_genomic_coords[1], tx)[0]
@@ -337,10 +336,10 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 ##################################################################################################################
 ##################################################################################################################
 
-    def _get_cdna_change_for_del(self, mutation):
+    def _get_cdna_change_for_del(self, mutation, tx):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
         len_alt_allele = len(tx_alt_allele)
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+        
         tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
         downstream_seq = tx.get_seq()[tx_pos[0]:]
         coding_pos_adjust = self._adjust_pos_if_repeated_in_seq(tx_alt_allele, downstream_seq)
@@ -362,10 +361,10 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return '%s:%s' % (mutation['annotation_transcript'], change_str)
 
-    def _get_cdna_change_for_ins(self, mutation):
+    def _get_cdna_change_for_ins(self, mutation, tx):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
         len_alt_allele = len(tx_alt_allele)
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+
         tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
         downstream_seq = tx.get_seq()[tx_pos[0]:]
         coding_pos_adjust = self._adjust_pos_if_repeated_in_seq(tx_alt_allele, downstream_seq)
@@ -410,9 +409,9 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return '%s:%s' % (mutation['annotation_transcript'], change)
 
-    def _get_cdna_change_for_ONP(self, mutation):
+    def _get_cdna_change_for_ONP(self, mutation, tx):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+
         tx_pos = TranscriptProviderUtils.convert_genomic_space_to_cds_space(mutation['start'], mutation['end'], tx)
         tx_pos = tuple(t + 1 for t in tx_pos)
 
@@ -438,9 +437,9 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         adjusted_tx_change = 'c.%d_%ddelins%s' % (tx_pos[0], tx_pos[1], mutation['alt_allele'])
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
-    def _get_cdna_change_for_intron(self, mutation):
+    def _get_cdna_change_for_intron(self, mutation, tx):
         #### HACK #####
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+
         nearest_exon = self.vcer._determine_closest_exon(tx, int(mutation['start']),
             int(mutation['end']))
         dist_to_exon = self.vcer._get_splice_site_coordinates(tx, int(mutation['start']),
@@ -484,8 +483,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
-    def _get_cdna_change_for_5_utr(self, mutation):
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+    def _get_cdna_change_for_5_utr(self, mutation, tx):
+
         variant_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
         cds_start_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx.determine_cds_start(), tx.determine_cds_start(), tx)[0]
         if mutation['transcript_strand'] == '-':
@@ -497,8 +496,7 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
         adjusted_tx_change = 'c.-%d%s>%s' % (dist_from_cds_start, tx_ref_allele, tx_alt_allele)
         return '%s:%s' % (mutation['annotation_transcript'], adjusted_tx_change)
 
-    def _get_cdna_change_for_3_utr(self, mutation):
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+    def _get_cdna_change_for_3_utr(self, mutation, tx):
 
         variant_tx_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(mutation['start'], mutation['end'], tx)
         cds_stop_pos = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx.determine_cds_stop(), tx.determine_cds_stop(), tx)
@@ -522,22 +520,22 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 ##################################################################################################################
 ##################################################################################################################
 
-    def _get_prot_change_for_frame_shift(self, mutation):
+    def _get_prot_change_for_frame_shift(self, mutation,tx):
         regx_res = PROT_FRAMESHIFT_REGEXP.match(mutation['protein_change'])
         ref_aa, aa_pos = [regx_res.group(i) for i in range(1, 3)]
         aa_pos = int(aa_pos)
         if ref_aa == '-':
             #will need to retrieve actual ref_aa if current ref_aa is "-"
-            tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+
             prot_seq = tx.get_protein_seq()
             ref_aa = prot_seq[aa_pos-1]
         ref_aa = ref_aa[0] #only need first residue
         return 'p.%s%dfs' % (AA_NAME_MAPPING[ref_aa], aa_pos)
 
-    def _get_prot_change_for_in_frame_ins(self, mutation):
+    def _get_prot_change_for_in_frame_ins(self, mutation, tx):
         is_insdel = False
         prot_change = mutation['protein_change']
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+
         prot_seq = tx.get_protein_seq()
 
         if 'ins' in prot_change:
@@ -595,8 +593,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
 
         return adjusted_prot_change
 
-    def _get_prot_change_for_in_frame_del(self, mutation):
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+    def _get_prot_change_for_in_frame_del(self, mutation, tx):
+
         prot_seq = tx.get_protein_seq()
 
         if 'del' in mutation['protein_change']:
@@ -647,8 +645,8 @@ class HgvsChangeTransformingDatasource(ChangeTransformingDatasource):
                 new_alt_1, new_alt_2 = new_alt[0], new_alt[-1]
                 return 'p.%s%d_%s%ddel' % (AA_NAME_MAPPING[new_alt_1], aa_pos_1, AA_NAME_MAPPING[new_alt_2], aa_pos_2)
 
-    def _get_prot_change_for_stop_codon_variant(self, mutation):
-        tx = self.gencode_ds.transcript_db[mutation['annotation_transcript']]
+    def _get_prot_change_for_stop_codon_variant(self, mutation, tx):
+
         tx_seq = tx.get_seq()
         tx_stop_codon_genomic_coords = tx.get_stop_codon()
         tx_stop_codon_tx_coords = TranscriptProviderUtils.convert_genomic_space_to_exon_space(tx_stop_codon_genomic_coords[0],
