@@ -56,14 +56,6 @@ echo "Now attempting to install packages into the virtual environment."
 which python
 python --version
 
-##################################################
-## Make sure we're using the latest pip
-##################################################
-#
-#echo " "
-#echo "Pegging pip version"
-#
-#pip install pip==1.0.1
 
 #################################################
 # Easy installations
