@@ -124,7 +124,7 @@ class DatasourceFactoryTest(unittest.TestCase):
     def testBasicDatasourceSorting(self):
         """Test that the GAF datasource is sorted before a gene-based datasource"""
 
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         
         incorrectSortList = [geneDS, gafDatasource]

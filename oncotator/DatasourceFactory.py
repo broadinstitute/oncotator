@@ -70,7 +70,6 @@ from oncotator.datasources.GenericGenomicMutationDatasource import GenericGenomi
 from oncotator.datasources.TabixIndexedTsvDatasource import IndexedTsvDatasource
 from oncotator.datasources.TabixIndexedVcfDatasource import IndexedVcfDatasource
 from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
-from oncotator.datasources.HgvsChangeTransformingDatasource import HgvsChangeTransformingDatasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -174,8 +173,6 @@ class DatasourceFactory(object):
                                                                               inputPositionAnnotationName=configParser.get('general', 'inputPositionAnnotationName'),
                                                                               outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
         
-        elif dsType=="hgvs":
-            result = HgvsChangeTransformingDatasource(src_file=filePrefix + configParser.get('general', 'src_file'),title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == "indexed_vcf":

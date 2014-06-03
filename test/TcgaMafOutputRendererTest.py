@@ -89,10 +89,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _createGafDataSource(self):
-        
-        self.logger.info("Initializing gaf 3.0")
-        return TestUtils.createGafDatasource(self.config)
 
     def testSimpleVersionString(self):
         tmp = TcgaMafOutputRenderer('dummy', configFile='configs/tcgaMAF2.4_output.config')
@@ -141,8 +137,12 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def _determine_db_dir(self):
         return self.config.get('DEFAULT',"dbDir")
 
-    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations={}, is_skip_no_alts=False):
+    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations=None, is_skip_no_alts=False):
         self.logger.info("Initializing Annotator...")
+
+        if override_annotations is None:
+            override_annotations = dict()
+
         annotator = Annotator()
         runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts)
         annotator.initialize(runSpec)
@@ -151,7 +151,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
     def testVersionString(self):
         """ Simple test of the Oncotator header string """   
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         outputRenderer = TcgaMafOutputRenderer("out/testVersion.maf.tsv", configFile='configs/tcgaMAF2.4_output.config', datasources=[gafDatasource.title + gafDatasource.version])
         tmp = outputRenderer.getOncotatorHeaderVersionString()
         print tmp

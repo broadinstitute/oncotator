@@ -63,6 +63,18 @@ class TranscriptProvider(object):
         return
 
     @abc.abstractmethod
+    def get_transcript(self, tx_id):
+        """ Return a Transcript instance for the given transcript ID.
+        """
+        return
+
+    @abc.abstractmethod
+    def get_transcripts_by_pos(self, chr, start, end):
+        """ Return Transcript instances for the given chromosome start and end.
+        """
+        return
+
+    @abc.abstractmethod
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon in each transcript"""
         return

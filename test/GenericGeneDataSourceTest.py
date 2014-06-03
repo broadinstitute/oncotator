@@ -88,7 +88,7 @@ class GenericGeneDataSourceTest(unittest.TestCase):
         
         # We need a gaf data source to annotate gene
 
-        gafDatasource = TestUtils.createGafDatasource(config=self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(config=self.config)
         geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         outputFilename = 'out/genericGeneTest.out.tsv'
         

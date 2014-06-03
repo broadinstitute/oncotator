@@ -121,12 +121,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             return ""
         return str(attribute_dict.get(attribute_name, ""))
 
+    def get_transcripts_by_pos(self, chr, start, end):
+        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end)
+        txs = self._filter_transcripts(txs_unfiltered)
+        return txs
+
     def annotate_mutation(self, mutation):
         chr = mutation.chr
         start = int(mutation.start)
         end = int(mutation.end)
-        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end)
-        txs = self._filter_transcripts(txs_unfiltered)
+        txs = self.get_transcripts_by_pos(chr, start, end)
         final_annotation_dict = self._create_blank_set_of_annotations()
         final_annotation_dict['variant_type'] = Annotation(value=TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), datasourceName=self.title)
 
@@ -292,8 +296,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         for s in size_extensions:
             new_start = start - s
             if new_start < 0: new_start = 1
-            txs_unfiltered = self.get_overlapping_transcripts(chr, new_start, end)
-            txs = self._filter_transcripts(txs_unfiltered)
+            txs = self.get_transcripts_by_pos(chr, new_start, end)
             nearest_gene_border = 0
             for tx in txs:
                 if tx.get_strand() == "-":
@@ -311,8 +314,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         right_gene, right_dist = None, None
         for s in size_extensions:
             new_end = end + s
-            txs_unfiltered = self.get_overlapping_transcripts(chr, start, new_end)
-            txs = self._filter_transcripts(txs_unfiltered)
+            txs = self.get_transcripts_by_pos(chr, start, new_end)
             nearest_gene_border = int(1e9)
             for tx in txs:
                 if tx.get_strand() == "-":
@@ -378,6 +380,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def getTranscriptDict(self):
         return self.transcript_db
+
+    def get_transcript(self, tx_id):
+        return self.transcript_db.get(tx_id, None)
 
     def get_tx_mode(self):
         return self.tx_mode
