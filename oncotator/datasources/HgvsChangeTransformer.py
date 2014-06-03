@@ -118,7 +118,7 @@ class HgvsChangeTransformer():
             hgvs_coding_dna_change = 'Exception_encountered'
 
         try:
-            hgvs_protein_change = self._adjust_protein_change(mutation)
+            hgvs_protein_change = self._adjust_protein_change(mutation, tx)
         except:
             hgvs_protein_change = 'Exception_encountered'
 
@@ -174,20 +174,23 @@ class HgvsChangeTransformer():
 
     def _adjust_coding_DNA_change(self, mutation, tx):
         ### IF DELETION, THEN DUPLICATION CHECK AND POS ADJUSTMENT NOT BEING DONE!!
+        start_i = int(mutation.start)
+        end_i = int(mutation.end)
+        tx_id = tx.get_transcript_id()
         if mutation['variant_type'] == 'DNP':
-            return self._get_cdna_change_for_ONP(mutation)
+            return self._get_cdna_change_for_ONP(mutation, tx)
         else:
             vc = mutation['variant_classification']
             if vc in ['Intron', 'Splice_Site']:
-                return self._get_cdna_change_for_intron(mutation)
+                return self._get_cdna_change_for_intron(mutation, tx)
             elif vc in ["5'UTR", 'De_novo_Start_OutOfFrame']:
-                return self._get_cdna_change_for_5_utr(mutation)
+                return self._get_cdna_change_for_5_utr(mutation, tx)
             elif vc == "3'UTR":
-                return self._get_cdna_change_for_3_utr(mutation)
+                return self._get_cdna_change_for_3_utr(mutation, tx)
             elif vc == 'IGR':
                 return ''
             elif vc.endswith('Ins'):
-                return self._get_cdna_change_for_ins(mutation)
+                return self._get_cdna_change_for_ins(mutation, tx)
             elif vc in ['Stop_Codon_Del']:
                 #need to make cdna str from scratch
                 tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
@@ -212,32 +215,32 @@ class HgvsChangeTransformer():
                 else:
                     tx_variant_pos_2 = str(tx_variant_pos_2)
 
-                if mutation['start'] == mutation['end']:
+                if start_i == end_i:
                     change_str = 'c.%ddel%s' % (tx_variant_pos_1, tx_ref_allele)
                 else:
                     change_str = 'c.%d_%sdel%s' % (tx_variant_pos_1, tx_variant_pos_2, tx_ref_allele)
                     
-                return '%s:%s' % (mutation['annotation_transcript'], change_str)
+                return '%s:%s' % (tx_id, change_str)
             elif vc.endswith('Del'):
-                return self._get_cdna_change_for_del(mutation)
+                return self._get_cdna_change_for_del(mutation, tx)
             else:
                 # just use the transcript change from the TranscriptProvider
                 return '%s:%s' % (mutation['annotation_transcript'], mutation['transcript_change'])
 
-    def _adjust_protein_change(self, mutation):
+    def _adjust_protein_change(self, mutation, tx):
         vc = mutation['variant_classification']
         if vc in ['Intron', 'IGR', "3'UTR", "5'UTR", 'RNA',
             'lincRNA', 'Silent', 'Splice_Site', 'De_novo_Start_OutOfFrame', 'De_novo_Start_InFrame',
             'Start_Codon_Ins', 'Start_Codon_Del']:
             return ''
         elif vc in ['Frame_Shift_Ins', 'Frame_Shift_Del']:
-            adjusted_prot_change = self._get_prot_change_for_frame_shift(mutation)
+            adjusted_prot_change = self._get_prot_change_for_frame_shift(mutation['protein_change'], tx)
         elif vc == 'In_Frame_Del':
-            adjusted_prot_change = self._get_prot_change_for_in_frame_del(mutation)
+            adjusted_prot_change = self._get_prot_change_for_in_frame_del(mutation, tx)
         elif vc == 'In_Frame_Ins':
-            adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation)
+            adjusted_prot_change = self._get_prot_change_for_in_frame_ins(mutation['protein_change'], tx)
         elif vc == 'Nonstop_Mutation' or vc.startswith('Stop_Codon'):
-            adjusted_prot_change = self._get_prot_change_for_stop_codon_variant(mutation)
+            adjusted_prot_change = self._get_prot_change_for_stop_codon_variant(mutation, tx)
         elif mutation['variant_type'] in ['DNP', 'TNP', 'ONP'] and '_' in mutation['protein_change']:
             #e.g. p.3589_3590QI>HV NEED TO MAKE TEST FOR THIS VARIANT!!!
             regx_res = PROT_ONP_REGEXP.match(mutation['protein_change'])
@@ -359,7 +362,7 @@ class HgvsChangeTransformer():
         if is_duplication:
             coding_tx_pos = tuple(t + 1 for t in coding_tx_pos)
             start_pos = coding_tx_pos[0] + coding_pos_adjust
-            start_pos = start_pos + 1 if mutation['transcript_strand'] == '-' else start_pos
+            start_pos = start_pos + 1 if tx.get_strand() == '-' else start_pos
             if len_alt_allele == 1:
                 change_str = 'c.%ddel%s' % (start_pos, tx_ref_allele)
             else:
@@ -367,7 +370,7 @@ class HgvsChangeTransformer():
         else:
             change_str = mutation['transcript_change']
 
-        return '%s:%s' % (mutation['annotation_transcript'], change_str)
+        return '%s:%s' % (tx.get_transcript_id(), change_str)
 
     def _get_cdna_change_for_ins(self, mutation, tx):
         tx_ref_allele, tx_alt_allele = self._get_tx_alleles(mutation)
