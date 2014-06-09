@@ -264,7 +264,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         for record in self.vcf_reader:
             for index in range(len(record.ALT)):
                 if len(record.samples) <= 0:
-                    yield self._createMutation(record, index)
+                    yield self._createMutation(record, index, build)
                 else:
                     sampleRecList = record.samples
                     sample_names = [s.sample for s in sampleRecList]
@@ -292,7 +292,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                         if self._is_skipping_no_alts and not (is_alt_seen == "True"):
                             continue
 
-                        sampleMut = self._createMutation(record, index)
+                        sampleMut = self._createMutation(record, index, build)
 
                         if is_tumor_normal_vcf and sample_name != "NORMAL":
                             sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
