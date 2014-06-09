@@ -44,7 +44,7 @@ TESTRUN = 0
 PROFILE = 1
 
 #TODO: These need to be dynamic from a config file.
-DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds_current/'
+DEFAULT_DB_DIR = '/xchip/cga/reference/annotation/db/oncotator_v1_ds_gencode_current/'
 DEFAULT_DEFAULT_ANNOTATIONS = '/xchip/cga/reference/annotation/db/tcgaMAFManualOverrides2.4.config'
 DEFAULT_TX_MODE = TranscriptProvider.TX_MODE_CANONICAL
 
@@ -58,7 +58,6 @@ class CLIError(Exception):
 
     def __str__(self):
         return self.msg
-
     def __unicode__(self):
         return self.msg
 
@@ -94,6 +93,8 @@ def parseOptions(program_license, program_version_message):
 
     Please note that only VCF input will populate the alt_allele_seen annotation.  All other inputs assume that the alternate is present if it appears at all.
         This feature is to allow users to include or exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
+
+        If --skip-no-alt is specified, VCF input processing will remove mutations with alt_allele_seen of False entirely (the mutations will not even seen when output format is SIMPLE_TSV).
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
@@ -110,15 +111,15 @@ def parseOptions(program_license, program_version_message):
     parser.add_argument('input_file', type=str, help='Input file to be annotated.  Type is specified through options.')
     parser.add_argument('output_file', type=str, help='Output file name of annotated file.')
     parser.add_argument('genome_build', metavar='genome_build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
-    parser.add_argument('-a', '--annotate-manual', dest="override_cli", type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
-    parser.add_argument('-d', '--annotate-default', dest="default_cli", type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
-    parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" (Experimental -- use with caution) URL to use for cache.  See help for examples.")
-    parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="(Experimental -- use with caution) Makes the cache read-only")
+    parser.add_argument('-a', '--annotate-manual', dest="override_cli",type=str, action='append', default=[], help="Specify annotations to override.  Can be specified multiple times.  E.g. -a 'name1:value1' -a 'name2:value2' ")
+    parser.add_argument('-d', '--annotate-default', dest="default_cli",type=str, action='append', default=[], help="Specify default values for annotations.  Can be specified multiple times.  E.g. -d 'name1:value1' -d 'name2:value2' ")
+    parser.add_argument('-u', '--cache-url', dest="cache_url", type=str, default=None, help=" URL to use for cache.  See help for examples.")
+    parser.add_argument('-r', '--read_only_cache', action='store_true', dest="read_only_cache", default=False, help="Makes the cache read-only")
     parser.add_argument('--tx-mode', dest="tx_mode", default=DEFAULT_TX_MODE, choices=TranscriptProvider.TX_MODE_CHOICES, help="Specify transcript mode for transcript providing datasources that support multiple modes.  [default: %s]" % DEFAULT_TX_MODE)
-    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help= "If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If annotation is missing, render the mutation.")
-    parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  [default: oncotator.log]")
     parser.add_argument('--infer_genotypes', dest='infer_genotypes', default="false", choices=["yes", "true", "t", "1", "y", "no", "false", "f", "0", "n"],
                         help="Forces the output renderer to populate the output genotypes as heterozygous.  This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.  [default: %s]" % "false")
+    parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If alt_allele_seen annotation is missing, render the mutation.")
+    parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  Default: oncotator.log")
 
     # Process arguments
     args = parser.parse_args()
@@ -221,6 +222,11 @@ USAGE
             defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
+        if is_skip_no_alts and (outputFormat == "VCF"):
+            logging.getLogger(__name__).warn("--skip-no-alt specified when output is a VCF.  This is likely to generate errors.")
+        if is_skip_no_alts and (inputFormat != "VCF"):
+            logging.getLogger(__name__).info("--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything.")
+
         # Create a run configuration to pass to the Annotator class.
         runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
@@ -275,3 +281,4 @@ if __name__ == "__main__":
         main_profile()
     #sys.exit(main())
     main()
+    
