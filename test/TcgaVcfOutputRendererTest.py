@@ -277,6 +277,21 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         statinfo = os.stat(outputFilename)
         self.assertTrue(statinfo.st_size > 0, "Generated VCF file (" + outputFilename + ") is empty.")
 
+    def testMafInput(self):
+        """Make sure that we can render a TCGA VCF from a TCGA MAF -- using no datasources"""
+        inputFile = "testdata/maf/Patient1.snp.maf.annotated"
+        outputFilename = "out/maf2tcgavcf.vcf"
+        mafIn = MafliteInputMutationCreator(inputFile)
+        vcfOR = TcgaVcfOutputRenderer(outputFilename)
+
+        annotator = Annotator()
+        annotator.setInputCreator(mafIn)
+        annotator.setOutputRenderer(vcfOR)
+        annotator.setManualAnnotations(self._createManualAnnotations())
+        annotator.annotate()
+        self.assertTrue(os.path.exists(outputFilename))
+        statinfo = os.stat(outputFilename)
+        self.assertTrue(statinfo.st_size > 0, "Generated VCF file (" + outputFilename + ") is empty.")
 
 if __name__ == '__main__':
     unittest.main()

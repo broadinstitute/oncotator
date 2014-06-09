@@ -126,6 +126,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         self.config = ConfigUtils.createConfigParser(configFile)
         self.alternativeDictionary = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config)
         self.seenDbSNPs = dict()
+        self.fieldMap = {}
 
     def createVcfHeader(self, m, commentString=""):
         """Create the VCF Header using a simple template. """
@@ -149,7 +150,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
     def renderID(self, m):
         ID = '.'
-        dbRS_rs = m['dbSNP_RS']
+        dbRS_rs = self._get_annotation_value(m, 'dbSNP_RS')
         if dbRS_rs != '':
             if len(dbRS_rs.split('|'))>1:
                 dbRS_rs = sorted(dbRS_rs.split('|'))[0]
@@ -201,6 +202,15 @@ class TcgaVcfOutputRenderer(OutputRenderer):
             return None, None
         return ss, ssCode
 
+    def _retrieve_alias_key(self, key):
+        return self.fieldMap.get(key, key)
+
+    def _get_annotation_value(self, m, key, default=None, is_blank_default=False):
+        val = m.get(self._retrieve_alias_key(key), default)
+        if is_blank_default and val.strip() == "":
+            val = default
+        return val
+
     def _generateFormatFieldWithValues(self,n_gt, n_alt, n_ref, mq0, bq='30', ss='2', ssc='.'):
         """ GT:AD:DP:FA:MQ0:BQ:SS:SSC
         0/1:17,1:18:0.056:0:30:2:255
@@ -219,7 +229,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
     def _generateFilterField(self,m):
         judgement = "KEEP"
         if 'judgement' in m.keys():
-            judgement = m['judgement']
+            judgement = self._get_annotation_value(m, 'judgement')
 
         if judgement == 'KEEP':
             filter='PASS'
@@ -293,12 +303,12 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         isSomatic = (ss == "LOH") or (ss == "Somatic")
         isDbSnp = (m['dbSNP_RS'] != '')
         if filter == 'PASS':
-            gene = m['gene']
+            gene = self._get_annotation_value(m, 'gene')
             if gene == "Unknown":
                 gene = "."
-            info = self._generatePassInfoField(isDbSnp, dp, mq0, isSomatic, m['variant_type'], gene, m['variant_classification'], ss, m['transcript_id'])
+            info = self._generatePassInfoField(isDbSnp, dp, mq0, isSomatic, self._get_annotation_value(m, 'variant_type'), gene, self._get_annotation_value(m, 'variant_classification'), ss, self._get_annotation_value(m, 'transcript_id'))
         else:
-            info = self._generateRejectInfoField(isDbSnp, dp, mq0, isSomatic, m['variant_type'], ss)
+            info = self._generateRejectInfoField(isDbSnp, dp, mq0, isSomatic, self._get_annotation_value(m, 'variant_type'), ss)
         return info
 
     def _generateBQ(self,c, s):
@@ -316,7 +326,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
     def _extract_lod(self, m, lod_annotation_name):
         """Determine lod, defaulting to 50 if unable to get necessary values.
         """
-        rawLod = m.get(lod_annotation_name, '50')
+        rawLod = self._get_annotation_value(m, lod_annotation_name, '50')
         if rawLod == "." or rawLod == "":
             lod = 50
         else:
@@ -348,12 +358,12 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         if ss is None or ssCode is None:
             return
 
-        n_alt_count = m.get('n_alt_count', '0')
-        n_ref_count = m.get('n_ref_count', '0')
-        n_alt_sum = m.get('n_alt_sum', '0')
-        t_alt_count = m.get('t_alt_count', '0')
-        t_ref_count = m.get('t_ref_count', '0')
-        t_alt_sum = m.get('t_alt_sum', '0')
+        n_alt_count = self._get_annotation_value(m, 'n_alt_count', '0', is_blank_default=True)
+        n_ref_count = self._get_annotation_value(m, 'n_ref_count', '0', is_blank_default=True)
+        n_alt_sum = self._get_annotation_value(m, 'n_alt_sum', '0', is_blank_default=True)
+        t_alt_count = self._get_annotation_value(m, 't_alt_count', '0', is_blank_default=True)
+        t_ref_count = self._get_annotation_value(m, 't_ref_count', '0', is_blank_default=True)
+        t_alt_sum = self._get_annotation_value(m, 't_alt_sum', '0', is_blank_default=True)
         mq0=0
         normalFormat = self._generateFormatFieldWithValues(gtN, n_alt_count, n_ref_count, mq0,
                                                            self._generateBQ(n_alt_count, n_alt_sum), ssCode)
@@ -436,6 +446,12 @@ class TcgaVcfOutputRenderer(OutputRenderer):
             fp = self._createVcfHeaderFilePtr(comments, m)
         else:
             fp = self._createVcfHeaderFilePtr(comments, metadata.asDict())
+
+        if m is not None:
+            fieldsUsed = self.alternativeDictionary.keys()
+
+            annotations = MutUtils.getAllAttributeNames(m)
+            self.fieldMap = MutUtils.createFieldsMapping(fieldsUsed, annotations, self.alternativeDictionary, True)
 
         # Write each row:
         ctr = 0

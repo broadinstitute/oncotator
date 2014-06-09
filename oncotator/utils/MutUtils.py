@@ -384,7 +384,7 @@ class MutUtils(object):
 
     @staticmethod
     def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
-                            exposedFields=set()):
+                            exposedFields=None):
         """ Creates a dictionary of the output maf file headers to the annotations.
         Input:
             headers -- optional and required fields
@@ -397,6 +397,9 @@ class MutUtils(object):
         Output:
         Final headers that should be used
          """
+        if exposedFields is None:
+            exposedFields = set()
+
         result = dict()
         for h in headers:
             hdr = h.lower()
