@@ -56,6 +56,9 @@ Created on Oct 23, 2012
 from abc import ABCMeta
 from abc import abstractmethod
 
+class InputMutationCreatorOptions(object):
+    IS_SKIP_ALTS = "is_skip_alts"  # actual value here does not matter, since it is mostly being used as a enum
+
 class InputMutationCreator(object):
     """
     This is the base class for classes that take in a particular input file format and produce a set of mutation data objects.
@@ -63,7 +66,7 @@ class InputMutationCreator(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, sourceFilename, configFile="", genomeBuild="hg19"):
+    def __init__(self, sourceFilename, configFile="", genomeBuild="hg19", other_options=None):
         """
         Constructor
         """

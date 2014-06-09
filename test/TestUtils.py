@@ -167,7 +167,7 @@ class TestUtils(object):
 
     @staticmethod
     def _create_test_gencode_ds(base_output_filename):
-        genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1"]
+        genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1", "KRTAP4-7", "MAT2A"]
         gtf_list = []
         fasta_list = []
         for gene in genes:

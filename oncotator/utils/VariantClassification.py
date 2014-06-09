@@ -22,7 +22,7 @@ class VariantClassification(object):
     START_CODON_DEL = "Start_Codon_Del"
     STOP_CODON_INS = "Stop_Codon_Ins"
     STOP_CODON_DEL = "Stop_Codon_Del"
-    # Note: A STOP_CODON_SNP is a nonstop mutation
+    # Note: A STOP_CODON_SNP is a nonstop mutation (or Silent)
     DE_NOVO_START_IN_FRAME = "De_novo_Start_InFrame"
     DE_NOVO_START_OUT_FRAME = "De_novo_Start_OutOfFrame"
     RNA = "RNA"
@@ -59,7 +59,7 @@ class VariantClassification(object):
         self._exon_i = exon_i
 
     def get_vc(self):
-        """Returns primary variant classification """
+        """Returns primary variant classification as string """
         return self._vc_primary
 
     def get_secondary_vc(self):
