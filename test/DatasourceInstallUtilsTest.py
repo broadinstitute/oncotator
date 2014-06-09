@@ -141,9 +141,11 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
         destDir = os.path.join(*[tmpDir, datasourceFoldername, genomeBuild])
         os.makedirs(destDir)
 
-        DatasourceInstallUtils.create_datasource(destDir, datasourceFilename, datasourceFoldername, datasourceName,
-                                                 datasourceType, datasourceVersion, indexColumnNames, columnNames,
-                                                 annotationColumnNames)
+        DatasourceInstallUtils.create_datasource(destDir=destDir, ds_file=datasourceFilename,
+                                                 ds_foldername=datasourceFoldername, ds_name=datasourceName,
+                                                 ds_type=datasourceType, ds_version=datasourceVersion,
+                                                 index_columns=indexColumnNames,
+                                                 ds_annotation_columns=annotationColumnNames)
 
         datasourceFilename = "ESP6500SI-V2.chr1.snps_indels.head.25.tabix_indexed.txt.gz"
         configFilename = os.path.join(*[destDir, "1000Genomes.config"])

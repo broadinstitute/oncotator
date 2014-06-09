@@ -126,7 +126,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                     else:
                         isTagSplit = self.isTagSplit[name]
 
-                    if isTagSplit:
+                    if isTagSplit and isinstance(genotypeData[ID], list):
                         val = genotypeData[ID][index]
                     else:
                         val = genotypeData[ID]
@@ -178,7 +178,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                 else:
                     isTagSplit = self.isTagSplit[name]
 
-                if isTagSplit:
+                if isTagSplit and isinstance(record.INFO[ID], list):
                     val = record.INFO[ID][index]
                 else:
                     val = record.INFO[ID]
@@ -259,12 +259,12 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)
-
+        build = self.build
         is_tn_vcf_warning_delivered = False
         for record in self.vcf_reader:
             for index in range(len(record.ALT)):
                 if len(record.samples) <= 0:
-                    yield self._createMutation(record, index)
+                    yield self._createMutation(record, index, build)
                 else:
                     sampleRecList = record.samples
                     sample_names = [s.sample for s in sampleRecList]
@@ -292,7 +292,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                         if self._is_skipping_no_alts and not (is_alt_seen == "True"):
                             continue
 
-                        sampleMut = self._createMutation(record, index)
+                        sampleMut = self._createMutation(record, index, build)
 
                         if is_tumor_normal_vcf and sample_name != "NORMAL":
                             sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
@@ -303,8 +303,18 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         yield sampleMut
 
-    def _createMutation(self, record, alt_index):
-        mut = MutUtils.initializeMutAttributesFromRecord(self.build, record, alt_index)
+    def _createMutation(self, record, alt_index, build):
+        chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
+        startPos = int(record.POS)
+        endPos = int(record.POS)
+        ref = record.REF
+        ref = "" if ref == "." else ref
+
+        alt = ref
+        if not record.is_monomorphic:
+            alt = str(record.ALT[alt_index])
+
+        mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
         ID = "" if record.ID is None else record.ID
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])
@@ -418,6 +428,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def _addInfoFields2Metadata(self, metadata):
         """
+        Add INFO field meta-information to metadata.
 
         :param metadata:
         :return:
@@ -436,8 +447,9 @@ class VcfInputMutationCreator(InputMutationCreator):
     def _addFilterFields2Metadata(self, metadata):
         """
 
+
         :param metadata:
-        :return:
+        :return: modified metadata
         """
         for filt in self.vcf_reader.filters:  # for each filter in the header
             metadata[filt] = Annotation("", "INPUT", "String", self.vcf_reader.filters[filt].desc,
@@ -448,7 +460,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         """
 
 
-        :return:
+        :return: metadata
         """
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)

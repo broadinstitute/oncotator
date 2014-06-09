@@ -236,6 +236,7 @@ class RunSpecification(object):
     isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
     isSkipNoAlts = property(get_is_skip_no_alts, set_is_skip_no_alts, del_is_skip_no_alts, "isSkipNoAlts's docstring")
 
+
 class OncotatorCLIUtils(object):
     """
     Utility methods for implementing a command line interface (or any presentation layer class).
@@ -266,13 +267,18 @@ class OncotatorCLIUtils(object):
     def createInputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
         more input formats."""
-        return {'MAFLITE':(MafliteInputMutationCreator, 'maflite_input.config'), "VCF":(VcfInputMutationCreator, 'vcf.in.config')}
+        return {'MAFLITE': (MafliteInputMutationCreator, 'maflite_input.config'),
+                "VCF": (VcfInputMutationCreator, 'vcf.in.config')}
 
     @staticmethod
     def createOutputFormatNameToClassDict():
         """ Poor man's dependency injection. Change this method to support 
         more output formats."""
-        return {'TCGAMAF':(TcgaMafOutputRenderer, 'tcgaMAF2.4_output.config'),"SIMPLE_TSV":(SimpleOutputRenderer, ''),'SIMPLE_BED':(SimpleBedOutputRenderer, ""),'TCGAVCF':(TcgaVcfOutputRenderer, 'tcgaVCF1.1_output.config'), 'VCF':(VcfOutputRenderer, 'vcf.out.config')}
+        return {'TCGAMAF': (TcgaMafOutputRenderer, "tcgaMAF2.4_output.config"),
+                "SIMPLE_TSV": (SimpleOutputRenderer, ""),
+                'SIMPLE_BED': (SimpleBedOutputRenderer, ""),
+                'TCGAVCF': (TcgaVcfOutputRenderer, "tcgaVCF1.1_output.config"),
+                'VCF': (VcfOutputRenderer, "vcf.out.config")}
 
     @staticmethod
     def getSupportedOutputFormats():
@@ -297,14 +303,13 @@ class OncotatorCLIUtils(object):
         return inputCreator
 
     @staticmethod
-    def create_output_renderer(outputFilename, outputFormat):
-        outputRenderer = None
+    def create_output_renderer(outputFilename, outputFormat, otherOptions):
         outputRendererDict = OncotatorCLIUtils.createOutputFormatNameToClassDict()
         if outputFormat not in outputRendererDict.keys():
             raise NotImplementedError("The outputFormat specified: " + outputFormat + " is not supported.")
         else:
             outputConfig = outputRendererDict[outputFormat][1]
-            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig)
+            outputRenderer = outputRendererDict[outputFormat][0](outputFilename, outputConfig, otherOptions)
         return outputRenderer
 
     @staticmethod
@@ -335,7 +340,7 @@ class OncotatorCLIUtils(object):
 
         # Step 1 Initialize input and output
         inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild, other_opts)
-        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat)
+        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat, other_opts)
 
         # Step 2 Datasources
         datasourceList = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
@@ -347,7 +352,9 @@ class OncotatorCLIUtils(object):
                 ds.set_tx_mode(tx_mode)
 
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList, isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations, cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList,
+                          isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations,
+                          cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts)
         return result
     
     @staticmethod

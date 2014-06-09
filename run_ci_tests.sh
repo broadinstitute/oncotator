@@ -16,10 +16,18 @@ fi
 
 echo "This script must be run from the same directory as setup.py"
 
+#echo "PATH=/xchip/tcga/Tools/oncotator/python_2.7.6_May192014/bin/:$PATH" > tmp_rc
+#source tmp_rc
+which python
+python --version
+
 VENV=oncotator_nosetest_env_auto
 rm -Rf $VENV
-bash ./scripts/create_oncotator_venv.sh $VENV
+bash ./scripts/create_oncotator_venv.sh -e $VENV
 source $VENV/bin/activate
+echo "VENV python:"
+which python
+
 
 # nosetests will return a non-zero error code if any unit test fails, so we do not want to stop this script
 #   So we remove the error catching temporarily
@@ -40,6 +48,10 @@ oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.in
 
 echo "== SNV maflite 2 tcga maf test ==="
 oncotator -v --no-multicore --db-dir=${DB_DIR} test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.txt hg19
+
+echo "== maflite 2 vcf infer genotypes test"
+oncotator -v --no-multicore --db-dir=${DB_DIR} --infer_genotypes=true --input_format=MAFLITE --output_format=VCF test/testdata/maflite/Patient0.snp.maf.txt $VENV/test_Patient0.snp.maf.vcf hg19
+
 ########
 
 set +e

@@ -82,6 +82,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         return TestUtils.createGafDatasource(self.config)
 
     def testBasicCreationWithExampleVcf(self):
+        """
+        Tests the ability to parse an input VCF file can be parsed without any errors.
+        """
         inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
@@ -92,9 +95,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for m in muts:
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
-        self.assertTrue((m.chr == "21") and (m.start == 1234570), "Last mutation was not correct: " + str(m))
+        self.assertTrue((m.chr == "21") and (m.start == 1234569), "Last mutation was not correct: " + str(m))
 
-        # Reminder:  muts is a generator, so it has to be reset
+        # Reminder: muts is a generator, so it has to be reset
         creator.reset()
         muts = creator.createMutations()
         ctr = 0
@@ -106,8 +109,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         """
         Tests the ability to do a simple Gaf 3.0 annotation.
         """
-        inputFilename = 'testdata/vcf/example.vcf'
-        outputFilename = 'out/simpleVCF.Gaf.annotated.out.tsv'
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "simpleVCF.Gaf.annotated.out.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -120,10 +123,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testSimpleAnnotationWithAComplexVcf(self):
         """
-        Tests the ability to parse vcf.
+        Tests the ability to parse a rather complex VCF file without any errors.
         """
-        inputFilename = 'testdata/vcf/random.vcf'
-        outputFilename = 'out/random.tsv'
+        inputFilename = os.path.join(*["testdata", "vcf", "random.vcf"])
+        outputFilename = os.path.join("out", "random.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -134,7 +137,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.annotate()
 
     def _createTCGAMAFOverridesForVCF(self):
-        """ These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
+        """
+        These are the default overrides for generating a TCGA MAF file.  These will appear on all mutations, but are here for a test.
         These were taken from version 0.5.25.0 of Oncotator.
         """
         #TODO: Remove the 'Match_Norm_Seq_Allele1' and 'Match_Norm_Seq_Allele2' from this list and populate properly, if possible.
@@ -151,10 +155,15 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         return DatasourceFactory.createDatasources(dbDir, "hg19", isMulticore=False)
 
     def testTCGAMAFRendering(self):
-        ''' Test the ability to render a germline vcf as a TCGA MAF '''
-        creator = VcfInputMutationCreator('testdata/vcf/example.vcf')
+        """
+        Tests the ability to render a germline VCF file as a TCGA MAF file.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.vcf.maf.annotated")
+
+        creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
-        renderer = TcgaMafOutputRenderer('out/example.vcf.maf.annotated')
+        renderer = TcgaMafOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
@@ -167,15 +176,14 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self._validateTcgaMafContents(filename)
 
     def _validateTcgaMafContents(self, filename):
-        ''' This is a utility, private method for unit tests to get a semblance that a valid maf file was created.  
+        """
+        This is a utility, private method for unit tests to get a semblance that a valid maf file was created.
         
         Note: This method has nothing to do with the TCGA validator.
         
         TODO: This is code duplication from TCGA MAF Output RendererTest.  This should be refactored into a base class
         (to preserve self.assertTrue, etc).
-        
-        '''
-
+        """
         statinfo = os.stat(filename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + filename + ") is empty.")
 
@@ -207,12 +215,14 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                             "__UNKNOWN__ values (" + str(len(unknownKeys)) + ") seen on line " + str(
                                 ctr) + ", in fields: " + ", ".join(unknownKeys))
 
-            ctr = ctr + 1
+            ctr += 1
 
     def testSwitchedFieldsWithExampleVcf(self):
-        '''Test whether the switched tags are ignored.'''
-        inputFilename = 'testdata/vcf/example.bad.switched.fields.vcf'
-        outputFilename = 'out/example.out.tsv'
+        """
+        Tests whether the switched tags are ignored.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.bad.switched.fields.vcf"])
+        outputFilename = os.path.join("out", "example.out.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -222,10 +232,12 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.setOutputRenderer(renderer)
 
     def testAnnotationWithExampleVcf(self):
-        ''' Test whether parsed annotations match the actual annotations. '''
-        inputFilename = 'testdata/vcf/example.vcf'
-        outputFilename = 'out/example.out.tsv'
-        expectedOutputFilename = 'testdata/vcf/example.expected.out.tsv'
+        """
+        Tests whether parsed annotations match the actual annotations.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
+        outputFilename = os.path.join("out", "example.out.tsv")
+        expectedOutputFilename = os.path.join(*["testdata", "vcf", "example.expected.out.tsv"])
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -258,9 +270,11 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                             len(current.index), "Should have the same values in column " + colName)
 
     def testAnnotationWithNoSampleNameExampleVcf(self):
-        """ Test whether parsed annotations match the actual annotations. """
-        inputFilename = 'testdata/vcf/example.sampleName.removed.vcf'
-        outputFilename = 'out/example.sampleName.removed.out.tsv'
+        """
+        Tests whether parsed annotations match the actual annotations when the input is a VCF file that has no samples.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.sampleName.removed.vcf"])
+        outputFilename = os.path.join("out", "example.sampleName.removed.out.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         renderer = SimpleOutputRenderer(outputFilename)
@@ -270,8 +284,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.annotate()
 
     def testGetMetaDataWithNoSampleNameExampleVcf(self):
-        """ Make sure that we can retrieve metadata, even before createMutations has been called """
-        inputFilename = 'testdata/vcf/example.sampleName.removed.vcf'
+        """
+        Tests to ensure that the metadata can be retrieved even before createMutations has been called.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.sampleName.removed.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
         gtKeys = {'genotype', 'read_depth', 'genotype_quality', 'haplotype_quality', 'q10', 's50', 'samples_number',
@@ -282,9 +298,13 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         diff = gtKeys.symmetric_difference(ks)
         self.assertTrue(len(diff) == 0, "Missing keys that should have been seen in the metadata: " + str(diff))
 
-    def testSnpsAndIndelStartAndEndPos(self):
-        inputFilename = "testdata/vcf/example.snps.indels.vcf"
-        outputFilename = 'out/example.snps.indels.out.tsv'
+    def testSNPsAndIndelStartAndEndPos(self):
+        """
+        Tests that the start and end positions of SNPs and Indels are parsed as defined by the NCI's MAF specification
+        (https://wiki.nci.nih.gov/display/TCGA/Mutation+Annotation+Format+(MAF)+Specification).
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.snps.indels.vcf"])
+        outputFilename = os.path.join("out", "example.snps.indels.out.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -344,7 +364,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                                     str(TagConstants.SPLIT in a.getTags()))
 
     def testGenotypeFieldIsHonored(self):
-        """Test that Oncotator does not have issues with genotype values >1 when multiple variants appear on one line"""
+        """
+        Tests that no issues arise with genotype values >1 when multiple variants appear on one line.
+        """
         inputFilename = os.path.join(*["testdata", "vcf", "example.severalGTs.vcf"])
         creator = VcfInputMutationCreator(inputFilename)
         muts = creator.createMutations()
@@ -358,6 +380,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                         str(ctr) + " mutations with alt seen, but expected 7.  './.' should not show as a variant.")
 
     def testDuplicateAnnotation(self):
+        """
+        Tests that the duplicate annotations are parsed correctly.
+        """
         inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_annotation.vcf"])
         outputFilename = os.path.join("out", "example.duplicate_annotation.out.tsv")
 
@@ -382,6 +407,10 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertEqual("0", row["SS__FORMAT__"], "Incorrect value of SS__FORMAT__")
 
     def testDuplicateAnnotationMetaData(self):
+        """
+        Tests that the metadata is populated correctly in cases where duplicate annotations are present in the input VCF
+        file.
+        """
         inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_annotation.vcf"])
 
         creator = VcfInputMutationCreator(inputFilename)
@@ -391,7 +420,9 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertTrue("SS__FORMAT__" in md, "SS__FORMAT__ is missing in metadata.")
 
     def testMissingFilter(self):
-
+        """
+        Tests that the missing FILTER fields are parsed correctly.
+        """
         inputFilename = os.path.join(*["testdata", "vcf", "example.missing_filters.vcf"])
         outputFilename = os.path.join("out", "example.missing_filters.out.tsv")
         expectedOutputFilename = os.path.join(*["testdata", "vcf", "example.expected.missing_filters.out.tsv"])

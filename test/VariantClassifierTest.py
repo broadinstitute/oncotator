@@ -607,5 +607,18 @@ class VariantClassifierTest(unittest.TestCase):
         vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
         self.assertTrue(gt_vc == vc.get_vc(), "Should have been " + gt_vc + ", but saw " + vc.get_vc() + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref_allele, alt_allele]))
 
+    stop_codon_insertion_data = lambda : (
+        ("17", "39240781", "39240782", "-", "CTGCTGCCACCCCAGCTGCTGCATCTCCAGCTGCTGTCGCCCCAGCTGCTGTGTGTCCAGGTGCTGCAGGCCCCAGTGCTGCCAGTCTGTGTGCTGCCAGCCAACCTGCTGCCGTCCCAGCTGCTGCATCTCCAGCTGCTGCCGCCCCTCTTGCTGTGAATCCAG"),
+        ("17", "39240781", "39240782", "-", "CTGCTGCCGTCCCAGCTGCTGCATCTCCAGCTGCTGCCGCCCCTCTTGCTGTGAATCCAG"),
+        ("17", "39240795", "39240796", "-", "GCTGCTGCATCTCCAGCTGCTGTCGCCCCAGCTGCTGTGTGTCCAGGTGCTGCAGGCCCCAGTGCTGCCAGTCTGTGTGCTGCCAGCCAACCTGCTGCCGTCCCAGCTGCTGCATCTCCAGCTGCTGCCGCCCCTCTTGCTGTGAATCCAGCTGCTGCCGCCCAT"),
+        ("2", "85770158", "85770159", "-", "GTAA")
+    )
+    @data_provider_decorator(stop_codon_insertion_data)
+    def test_stop_codon_insertions(self, chr, start, end, alt, ref):
+        """Test that we can handle insertions right after stop codons or where we create a second stop codon.  Just tests that no exception is thrown."""
+        tx = self._determine_test_transcript(chr, start, end, alt, ref, VariantClassification.VT_INS)
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref, alt, start, end, VariantClassification.VT_INS, dist=2)
+
 if __name__ == '__main__':
     unittest.main()

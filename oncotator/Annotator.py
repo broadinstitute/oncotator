@@ -56,12 +56,10 @@ Created on Nov 2, 2012
 
 @author: lichtens
 """
-from input.InputMutationCreator import InputMutationCreator
-from oncotator.utils.MutUtils import MutUtils
-from output.OutputRenderer import OutputRenderer
 import logging
 from utils.version import VERSION
-    
+
+
 class Annotator(object):
     """
     The Annotator is the entry point to actually perform the annotating of mutations.  The Annotator contains one input creator (IC), one output creator (OC), and a list of datasources.   

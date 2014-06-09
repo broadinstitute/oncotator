@@ -120,7 +120,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
                               'dbSNP_RS',
                               'judgement']
 
-    def __init__(self, filename, configFile='tcgaVCF1.1_output.config'):
+    def __init__(self, filename, configFile="tcgaVCF1.1_output.config", otherOptions=None):
         self._filename = filename
         self.logger = logging.getLogger(__name__)
         self.config = ConfigUtils.createConfigParser(configFile)
