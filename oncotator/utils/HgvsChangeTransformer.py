@@ -50,21 +50,9 @@ class HgvsChangeTransformer():
 
     HEADERS = [GENOMIC_CHANGE_OUTPUT_HEADER, DNA_CHANGE_OUTPUT_HEADER, PROTEIN_CHANGE_OUTPUT_HEADER]
 
-    def __init__(self, transcript_id_to_protein_id_mapping_tsv_file):
+    def __init__(self):
 
         self.vcer = VariantClassifier()
-
-        # TODO: ### HACK #####  This needs to be in separate datasource
-        self.ensembl_id_mapping = dict()
-        with open(transcript_id_to_protein_id_mapping_tsv_file) as in_fh:
-            for line in in_fh:
-                tx_id, prot_id = line.split('\t')[1:]
-                self.ensembl_id_mapping[tx_id] = prot_id.replace('\n', '')
-
-    def _get_ensembl_prot_id_from_tx_id(self, tx_id):
-        if '.' in tx_id:
-            tx_id = tx_id[:tx_id.index('.')]
-        return self.ensembl_id_mapping.get(tx_id)
 
     def _get_tx_alleles(self, mutation):
         tx_ref_allele, tx_alt_allele = mutation['ref_allele'], mutation['alt_allele']
@@ -107,7 +95,7 @@ class HgvsChangeTransformer():
 
         try:
             hgvs_genomic_change = self._adjust_genome_change(variant_type, chrn, mut_start, mut_end, ref_allele, alt_allele, build, ref_context)
-        except:
+        except Exception as e:
             hgvs_genomic_change = 'Exception_encountered'
 
 
@@ -117,12 +105,12 @@ class HgvsChangeTransformer():
         else:
             try:
                 hgvs_coding_dna_change = self._adjust_coding_DNA_change(mutation, tx)
-            except:
+            except Exception as e:
                 hgvs_coding_dna_change = 'Exception_encountered'
 
             try:
                 hgvs_protein_change = self._adjust_protein_change(mutation, tx)
-            except:
+            except Exception as e:
                 hgvs_protein_change = 'Exception_encountered'
 
             if hgvs_protein_change.startswith('None'):
@@ -255,7 +243,7 @@ class HgvsChangeTransformer():
             ref_aa, aa_pos, alt_aa = [regx_res.group(i) for i in range(1, 4)]
             adjusted_prot_change = 'p.%s%s%s' % (AA_NAME_MAPPING[ref_aa], aa_pos, AA_NAME_MAPPING[alt_aa])
 
-        prot_id = self._get_ensembl_prot_id_from_tx_id(mutation['annotation_transcript'])
+        prot_id = tx.get_protein_id()
         adjusted_prot_change = '%s:%s' % (prot_id, adjusted_prot_change) if adjusted_prot_change else ''
         return adjusted_prot_change
  

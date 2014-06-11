@@ -69,7 +69,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """
     """This is the list of annotations that get populated by this datasource"""
     POPULATED_ANNOTATION_NAMES = set(['transcript_exon', 'variant_type', 'variant_classification', 'other_transcripts', 'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand', 'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change', 'transcript_change', 'transcript_strand', 'gene', 'gene_type', 'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript', 'ccds_id', 'gencode_transcript_type', 'transcript_position', 'gencode_transcript_name'])
-    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy", tx_to_protein_filename=None):
+    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
         ensembl_index_fname = src_file + ".transcript.idx"
@@ -96,12 +96,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         logging.getLogger(__name__).info("%s %s is being set up with %s filtering.  " % (title, version, tx_filter))
         self._tx_filter = TranscriptFilterFactory.create_instance(tx_filter)
 
-        self._hgvs_xformer = None
-        if tx_to_protein_filename is None or tx_to_protein_filename.strip() == "":
-            logging.getLogger(__name__).info("%s %s is not using an ENSEMBL transcript to protein mapping (HGVS annotations will be empty)." % (title, version))
-        else:
-            logging.getLogger(__name__).info("%s %s is using %s for ENSEMBL transcript to protein mapping (used in HGVS)." % (title, version, str(tx_to_protein_filename)))
-            self._hgvs_xformer = HgvsChangeTransformer(tx_to_protein_filename)
+        self._hgvs_xformer = HgvsChangeTransformer()
 
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:

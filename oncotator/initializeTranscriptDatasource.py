@@ -93,14 +93,6 @@ def main():
         fp.close()
         config_parser.set("general", "tx_filter", tx_filter)
 
-        if protein_map_file is not None:
-            logging.getLogger(__name__).info("Copying %s to %s  HGVS will be available in this datasource" % (protein_map_file, ds_build_dir + os.path.basename(protein_map_file)))
-            shutil.copyfile(protein_map_file, ds_build_dir + os.path.basename(protein_map_file))
-            config_parser.set("general", "protein_map_file", os.path.basename(protein_map_file))
-        else:
-            logging.getLogger(__name__).info("No protein mapping file found.  HGVS will NOT be available in this datasource")
-            config_parser.set("general", "protein_map_file", "")
-
         # Write updated config file
         fp = file(config_filename, 'w')
         config_parser.write(fp)

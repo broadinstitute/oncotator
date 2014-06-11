@@ -23,6 +23,7 @@ class Transcript(object):
         self._other_attributes = {}
         self._gene_type = gene_type
         self._protein_seq = None
+        self._protein_id = None
 
     def add_exon(self, start, end, exon_number):
         self._exons.append((start, end, exon_number))
@@ -36,6 +37,12 @@ class Transcript(object):
     def set_gene(self, gene):
         #should be self._gene = gene ?
         self._transcript_id = id
+
+    def set_protein_id(self, protein_id):
+        self._protein_id = protein_id
+
+    def get_protein_id(self):
+        return self._protein_id
 
     def get_transcript_id(self):
         return self._transcript_id

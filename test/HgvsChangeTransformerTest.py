@@ -16,8 +16,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
-        ds_path = op.join(self.config.get('DEFAULT', 'dbDir'), 'hgvs/hg19/ensembl_id_mappingsGRCh37.p13.txt')
-        self.hgvs_datasource = HgvsChangeTransformer('testdata/ensembl_transcript_protein_ids.tsv')
+        self.hgvs_datasource = HgvsChangeTransformer()
 
     ### TODO need test to assert that all necessary fields are present
 

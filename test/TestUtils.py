@@ -177,7 +177,6 @@ class TestUtils(object):
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename)
-        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic",
-                                                 tx_to_protein_filename="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt")
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename, protein_id_mapping_file="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt")
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic")
         return ensembl_ds
