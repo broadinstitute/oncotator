@@ -142,7 +142,11 @@ class DatasourceFactory(object):
         elif dsType == "dbsnp":
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "ensembl":
-            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'), tx_filter=configParser.get('general', 'transcript_filter'))
+            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'),
+                                                 title=configParser.get('general', 'title'),
+                                                 version=configParser.get('general', 'version'),
+                                                 tx_filter=configParser.get('general', 'transcript_filter'),
+                                                 tx_to_protein_filename=configParser.get('general', 'protein_map_file'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
         elif dsType == 'ref':

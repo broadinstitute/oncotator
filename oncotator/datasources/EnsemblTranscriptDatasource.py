@@ -53,9 +53,11 @@ from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
+from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
+
 
 
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
@@ -67,7 +69,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
     """
     """This is the list of annotations that get populated by this datasource"""
     POPULATED_ANNOTATION_NAMES = set(['transcript_exon', 'variant_type', 'variant_classification', 'other_transcripts', 'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand', 'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change', 'transcript_change', 'transcript_strand', 'gene', 'gene_type', 'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript', 'ccds_id', 'gencode_transcript_type', 'transcript_position', 'gencode_transcript_name'])
-    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy"):
+    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy", tx_to_protein_filename=None):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
         ensembl_index_fname = src_file + ".transcript.idx"
@@ -93,6 +95,13 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
         logging.getLogger(__name__).info("%s %s is being set up with %s filtering.  " % (title, version, tx_filter))
         self._tx_filter = TranscriptFilterFactory.create_instance(tx_filter)
+
+        self._hgvs_xformer = None
+        if tx_to_protein_filename is None or tx_to_protein_filename.strip() == "":
+            logging.getLogger(__name__).info("%s %s is not using an ENSEMBL transcript to protein mapping (HGVS annotations will be empty)." % (title, version))
+        else:
+            logging.getLogger(__name__).info("%s %s is using %s for ENSEMBL transcript to protein mapping (used in HGVS)." % (title, version, str(tx_to_protein_filename)))
+            self._hgvs_xformer = HgvsChangeTransformer(tx_to_protein_filename)
 
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
@@ -127,6 +136,20 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         txs = self._filter_transcripts(txs_unfiltered)
         return txs
 
+    def _create_hgvs_dict(self, chosen_tx, mutation):
+        hgvs_dict = dict()
+        if self._hgvs_xformer is not None:
+            hgvs_dict = self._hgvs_xformer.hgvs_annotate_mutation_given_tx(mutation, chosen_tx)
+        return hgvs_dict
+
+    def _create_hgvs_annotation_dict(self, mutation, chosen_tx):
+        hgvs_dict_keys = HgvsChangeTransformer.HEADERS
+        hgvs_dict = self._create_hgvs_dict(chosen_tx, mutation)
+        hgvs_dict_annotations = dict()
+        for k in hgvs_dict_keys:
+            hgvs_dict_annotations[k] = self._create_basic_annotation(hgvs_dict.get(k, ""))
+        return hgvs_dict_annotations
+
     def annotate_mutation(self, mutation):
         chr = mutation.chr
         start = int(mutation.start)
@@ -134,6 +157,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         txs = self.get_transcripts_by_pos(chr, start, end)
         final_annotation_dict = self._create_blank_set_of_annotations()
         final_annotation_dict['variant_type'] = Annotation(value=TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), datasourceName=self.title)
+        chosen_tx = None
 
         # We have hit IGR if no transcripts come back.  Most annotations can just use the blank set.
         if len(txs) == 0:
@@ -180,6 +204,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             # final_annotation_dict['gene_id'].value
 
         mutation.addAnnotations(final_annotation_dict)
+
+        # Add the HGVS annotations ... setting to "" if not available.
+        hgvs_dict_annotations = self._create_hgvs_annotation_dict(mutation, chosen_tx)
+        mutation.addAnnotations(hgvs_dict_annotations)
+
         return mutation
 
     def _filter_transcripts(self, txs):

@@ -1,10 +1,7 @@
-import os.path as op
 import re
-import logging
 
 from Bio import Seq
 
-from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
@@ -97,6 +94,7 @@ class HgvsChangeTransformer():
     def hgvs_annotate_mutation_given_tx(self, mutation, tx):
         """
         Returns a dictionary with the name value pairs of the static HEADERS as keys.
+        If no transcript is available (e.g. IGR), then tx can be None.
         """
 
         variant_type = mutation['variant_type']

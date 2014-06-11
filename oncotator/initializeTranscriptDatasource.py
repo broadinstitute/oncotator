@@ -34,6 +34,8 @@ def parseOptions():
     Note that all transcripts are present in a datasource, so if a filter change is needed to a datasource that has
         already been generated, you can edit the config file, instead of re-creating the entire datasource.
 
+    IF you wish to have HGVS support, you must provide the protein mapping file (--protein-map-file).
+
     """
     desc = "Create a gencode/ensembl based datasource."
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
@@ -44,6 +46,8 @@ def parseOptions():
     parser.add_argument("--name", type=str, help="name of the datasource.  For example, ensembl.  Or GENCODE", default="ensembl")
     parser.add_argument("version", type=str, help="version.  For example, v18")
     parser.add_argument("--filter", type=str, help="Filter to use from " + str(TranscriptFilterFactory.TRANSCRIPT_FILTER_DICT.keys()) + ".  For non-GENCODE ENSEMBL, this should be set to dummy. default: basic", default="basic")
+    parser.add_argument("-p", "--protein-map-file", type=str, help="Protein mapping file (a tsv with transcript ID to protein ID .... Typically, for ENSEMBL or GENCODE a file with ENST to ENSP mappings).")
+
     # Process arguments
     args = parser.parse_args()
 
@@ -62,6 +66,7 @@ def main():
     name = args.name
     ver = args.version
     tx_filter = args.filter
+    protein_map_file = args.protein_map_file
 
     # create temp dir
     tmpDir = tempfile.mkdtemp(prefix="onco_ensembl_ds_")
@@ -81,12 +86,22 @@ def main():
         idx_cols = DatasourceInstallUtils.indexCols("dummy_option", "dummy_values")
         config_file_creator._createConfigFile(configFilename=config_filename + ".tmp", baseDSFile=os.path.basename(gtf_files[0]),ds_type="ensembl", ds_version=ver, ds_name=name, indexCols=idx_cols)
 
-        # Append the tx_filter
+        # Append the tx_filter and protein map file
         config_parser = SafeConfigParser()
         fp = file(config_filename + ".tmp", 'r')
         config_parser.readfp(fp)
         fp.close()
         config_parser.set("general", "tx_filter", tx_filter)
+
+        if protein_map_file is not None:
+            logging.getLogger(__name__).info("Copying %s to %s  HGVS will be available in this datasource" % (protein_map_file, ds_build_dir + os.path.basename(protein_map_file)))
+            shutil.copyfile(protein_map_file, ds_build_dir + os.path.basename(protein_map_file))
+            config_parser.set("general", "protein_map_file", os.path.basename(protein_map_file))
+        else:
+            logging.getLogger(__name__).info("No protein mapping file found.  HGVS will NOT be available in this datasource")
+            config_parser.set("general", "protein_map_file", "")
+
+        # Write updated config file
         fp = file(config_filename, 'w')
         config_parser.write(fp)
         fp.close()
