@@ -166,7 +166,7 @@ class TestUtils(object):
                             level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
 
     @staticmethod
-    def _create_test_gencode_ds(base_output_filename):
+    def _create_test_gencode_ds(base_output_filename, protein_id_mapping_file="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt"):
         genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1", "KRTAP4-7", "MAT2A"]
         gtf_list = []
         fasta_list = []
@@ -177,6 +177,6 @@ class TestUtils(object):
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename, protein_id_mapping_file="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt")
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename, protein_id_mapping_file=protein_id_mapping_file)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic")
         return ensembl_ds
