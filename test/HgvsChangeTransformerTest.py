@@ -39,6 +39,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr13.hg19:g.32914782C>T')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000380152.3:c.6290C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000369497:p.Thr2097Met')
@@ -62,6 +63,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr5.hg19:g.45303809G>A')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000303230.4:c.1510C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000307342:p.Arg504*')
@@ -87,6 +89,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2:g.80529551A>C')
 
     def test_annotate_SNP_intron(self):
@@ -110,6 +113,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.80529551A>C')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000402739.4:c.1057-90785A>C')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -134,6 +138,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr10.hg19:g.118891993A>G')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000277905.2:c.430-5T>C')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -159,6 +164,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr7.hg19:g.6865862G>C')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000316731.8:c.-34C>G')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -182,6 +188,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr7.hg19:g.55086964A>T')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000275493.2:c.-7A>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -206,7 +213,8 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
-        
+
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr8.hg19:g.27145409G>A')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000521253.1:c.*220C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -230,6 +238,8 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr7.hg19:g.55273314C>T')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000275493.2:c.*4C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -254,6 +264,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m.get('annotation_transcript', None))
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is None, "Transcript was not None for an IGR.")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr15.hg19:g.30938316G>A')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), '')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -276,6 +287,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.19549914G>A')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000477853.1:c.2352C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -301,6 +313,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr19.hg19:g.52994576G>A')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000421239.2:c.-121-1G>A')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -325,6 +338,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr5.hg19:g.484634C>T')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000264938.3:c.932+1G>A')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -349,6 +363,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.45140082G>T')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000372237.3:c.-19C>A')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -372,6 +387,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr22.hg19:g.27003913_27003914delinsAT')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000215939.2:c.371_372delinsAT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000215939:p.Trp124Tyr')
@@ -400,6 +416,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #this ins of GCC occurs in a GCC-repeat region and thus need to 3' adjust position for HGVS compliance
         # it is technically a duplication
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr5.hg19:g.113698641_113698643dupGCC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000512097.3:c.169_171dupGCC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000427120:p.Ala58dup')
@@ -415,7 +432,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         m.createAnnotation('alt_allele', 'GCAGCG')
         m.createAnnotation('transcript_strand', '-')
         m.createAnnotation('variant_classification', 'In_Frame_Ins')
-        m.createAnnotation('annotation_transcript', 'ENST00000423059.3')
+        m.createAnnotation('annotation_transcript', 'ENST00000423059.4')
         m.createAnnotation('genome_change', 'g.chr7:11871469_11871470insGCAGCG')
         m.createAnnotation('transcript_change', 'c.103_104insCGCTGC')
         m.createAnnotation('protein_change', 'p.34_35insPL')
@@ -425,8 +442,9 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr7.hg19:g.11871488_11871493dupGCAGCG')
-        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000423059.3:c.98_103dupCGCTGC')
+        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000423059.4:c.98_103dupCGCTGC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000406482:p.Pro33_Leu34dup')
 
     def test_annotate_INS_inframe_3(self):
@@ -449,6 +467,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr8.hg19:g.10467629_10467630insTTC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000382483.3:c.3978_3979insGAA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000371923:p.Lys1326_Thr1327insGlu')
@@ -473,6 +492,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr8.hg19:g.10467628_10467629insCCC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000382483.3:c.3979_3980insGGG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000371923:p.Thr1327delinsArgAla')
@@ -497,6 +517,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.3197915_3197917dupCAT')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000398659.4:c.755_757dupATG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000381652:p.Asn252_Ala253insAsp')
@@ -520,6 +541,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637602_248637603insTGA')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.951_952insTGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Lys318*')
@@ -543,6 +565,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637605_248637606insTGA')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955insTGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -569,6 +592,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #this ins of CG does NOT occurs next to a CG and does not need to be position adjusted
         # it is technically an insertion
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr4.hg19:g.1388441_1388442insCG')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000324803.4:c.142_143insCG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000323978:p.Met48fs')
@@ -593,6 +617,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr9.hg19:g.135977872_135977875dupCGCT')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000393160.3:c.1832_1835dupAGCG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000376867:p.Arg612fs')
@@ -619,6 +644,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
         #this deletion is straightforward, no position adjustments necessary
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr14.hg19:g.70924869_70924871delATG')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000603540.1:c.653_655delATG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000474385:p.Asp219del')
@@ -644,6 +670,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
         #this deletion is straightforward, no position adjustments necessary
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr12.hg19:g.50156659_50156667delAAGAAGAAA')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000552699.1:c.868_876delAAGAAGAAA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000446734:p.Lys290_Lys292del')
@@ -670,6 +697,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
         #this deletion is straightforward, no position adjustments necessary
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr19.hg19:g.40900189_40900191delTCC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000324001.7:c.4077_4079delGGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000326018:p.Glu1361del')
@@ -696,6 +724,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #Here only the genomic change needs to get '3 shifted because the transcript is negative strand 
         #and the coding postion is already the most 3'
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr19.hg19:g.11348960delG')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000294618.7:c.1664delC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000294618:p.Pro555fs')
@@ -719,6 +748,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr7.hg19:g.55273310A>G')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000275493.2:c.3633A>G')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000275493:p.*1211Trpext*6') #6 new amino acids added until another stop codon is encountered
@@ -746,6 +776,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #Here only the genomic change needs to get '3 shifted because the transcript is negative strand 
         #and the coding postion is already the most 3'
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637607delA')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.956delA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.*319Cysext*?')
@@ -772,6 +803,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #Here only the genomic change needs to get '3 shifted because the transcript is negative strand 
         #and the coding postion is already the most 3'
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637605_248637606delGT')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955delGT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.*319Valext*?')
@@ -793,6 +825,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637608_248637610delGTA')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.957_*2delGTA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
@@ -814,6 +847,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637602_248637610delAAAGTAGTA')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.951_*2delAAAGTAGTA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Glu317_*319delinsGluext*?')
@@ -836,6 +870,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.29416090_29416091delTC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000389048.3:c.4862_4863delGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000373700:p.*1621Cysext*53')
@@ -858,6 +893,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.29416092_29416094delAGG')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000389048.3:c.4859_4861delCCT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000373700:p.Pro1620_*1621delinsArgext*41')
@@ -880,6 +916,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.29416085_29416090delCGAGCT')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000389048.3:c.4863_*5delAGCTCG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000373700:p.*1621Trpext*39')
@@ -901,6 +938,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637606_248637607insCAT')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.955_956insCAT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.*319Serext*1')
@@ -924,6 +962,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637605_248637606delinsCC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955delinsCC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Lys318_*319delinsAsnGlnext*1')

@@ -91,7 +91,7 @@ def main():
         fp = file(config_filename + ".tmp", 'r')
         config_parser.readfp(fp)
         fp.close()
-        config_parser.set("general", "tx_filter", tx_filter)
+        config_parser.set("general", "transcript_filter", tx_filter)
 
         # Write updated config file
         fp = file(config_filename, 'w')
