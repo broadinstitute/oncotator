@@ -209,9 +209,22 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         m2 = ds.annotate_mutation(m)
         self.assertTrue(m2['transcript_change'] == "c.1G>T", "Incorrect transcript change: " + m2['transcript_change'])
 
+    def test_hgvs_annotations(self):
+        """Test that HGVS annotations appear (incl. protein change) in a mutation, so we believe that the Transcript objects are populated properly."""
+        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_")
 
-        pass
-
+        # Now for a negative strand
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22221730"
+        m.end = "22221730"
+        m.ref_allele = "T"
+        m.alt_allele = "G"
+        m.build = "hg19"
+        m2 = ds.annotate_mutation(m)
+        self.assertEqual(m2.get('HGVS_genomic_change', None), 'chr22.hg19:g.22221730T>G')
+        self.assertEqual(m2.get('HGVS_coding_DNA_change', None), 'ENST00000215832.6:c.1A>C')
+        self.assertEqual(m2.get('HGVS_protein_change', None), 'ENSP00000215832:p.Met1Leu')
 
 if __name__ == '__main__':
     unittest.main()

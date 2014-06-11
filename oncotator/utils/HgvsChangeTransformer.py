@@ -114,9 +114,9 @@ class HgvsChangeTransformer():
                 hgvs_protein_change = 'Exception_encountered'
 
             if hgvs_protein_change.startswith('None'):
-                hgvs_protein_change = hgvs_protein_change.replace('None', 'unknown_prot_seq')
+                hgvs_protein_change = hgvs_protein_change.replace('None', 'unknown_prot_seq_id')
             elif hgvs_protein_change.startswith(':'):
-                hgvs_protein_change = 'unknown_prot_seq' + hgvs_protein_change
+                hgvs_protein_change = 'unknown_prot_seq_id' + hgvs_protein_change
 
         result = dict()
         result[HgvsChangeTransformer.GENOMIC_CHANGE_OUTPUT_HEADER] = hgvs_genomic_change

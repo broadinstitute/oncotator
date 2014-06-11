@@ -1,3 +1,4 @@
+import logging
 from Bio import Seq
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 
@@ -42,7 +43,14 @@ class Transcript(object):
         self._protein_id = protein_id
 
     def get_protein_id(self):
-        return self._protein_id
+        """There is logic to make this backwards compatible with existing gencode datasources.
+        """
+        result = None
+        try:
+            result = self._protein_id
+        except Exception as e:
+            logging.getLogger(__name__).warn("Could not find a protein id field in transcript %s.  Returning None.  Is this an older GENCODE datasource?" % self.get_transcript_id())
+        return result
 
     def get_transcript_id(self):
         return self._transcript_id
