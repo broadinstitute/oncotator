@@ -133,7 +133,6 @@ class HgvsChangeTransformer():
             genome_pos_adjust = self._genome_pos_adjust_if_duplication(alt_allele, ref_context, variant_type)
             genome_pos_adjust = genome_pos_adjust - len(alt_allele)
 
-            #BUG: duplications are only rendered if position needs to be adjusted! Implement duplication test like done for coding and protein position
             if self._determine_if_genomic_duplication(alt_allele, ref_context, variant_type):
                 start_pos = mut_end + genome_pos_adjust
                 end_pos = start_pos + len(alt_allele) - 1
@@ -164,7 +163,6 @@ class HgvsChangeTransformer():
         return adjusted_genome_change
 
     def _adjust_coding_DNA_change(self, mutation, tx):
-        ### IF DELETION, THEN DUPLICATION CHECK AND POS ADJUSTMENT NOT BEING DONE!!
         start_i = int(mutation.start)
         end_i = int(mutation.end)
         tx_id = tx.get_transcript_id()
