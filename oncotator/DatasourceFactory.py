@@ -68,6 +68,7 @@ from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.datasources.GenericGenomicMutationDatasource import GenericGenomicMutationDatasource
 from oncotator.datasources.TabixIndexedTsvDatasource import IndexedTsvDatasource
 from oncotator.datasources.TabixIndexedVcfDatasource import IndexedVcfDatasource
+from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -141,7 +142,10 @@ class DatasourceFactory(object):
         elif dsType == "dbsnp":
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "ensembl":
-            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'), tx_filter=configParser.get('general', 'transcript_filter'))
+            result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'),
+                                                 title=configParser.get('general', 'title'),
+                                                 version=configParser.get('general', 'version'),
+                                                 tx_filter=configParser.get('general', 'transcript_filter'))
         elif dsType == "cosmic":
             result = Cosmic(src_file=filePrefix + configParser.get('general', 'src_file'), version=configParser.get('general', 'version'), gpp_tabix_file=filePrefix + configParser.get('general', 'gpp_src_file'))
         elif dsType == 'ref':
@@ -170,6 +174,7 @@ class DatasourceFactory(object):
                                                                               src_file="file://" + filePrefix + configParser.get('general', 'src_file'), # three slashes for sqlite
                                                                               inputPositionAnnotationName=configParser.get('general', 'inputPositionAnnotationName'),
                                                                               outputPositionAnnotationName=configParser.get('general','outputPositionAnnotationName'))
+        
         elif dsType == "mock_exception":
             result = MockExceptionThrowingDatasource(title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         elif dsType == "indexed_vcf":
@@ -309,6 +314,7 @@ class DatasourceFactory(object):
             2) Put position transforming datasources at the front (though see next step)
             3) Make sure that any Gaf datasources are put up front."""
         newlist = sorted(datasources, key=lambda k: isinstance(k, GenericGeneDatasource))
+        newlist = sorted(newlist, key=lambda k: isinstance(k, ChangeTransformingDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, PositionTransformingDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, ReferenceDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, TranscriptProvider))

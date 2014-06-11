@@ -56,14 +56,6 @@ echo "Now attempting to install packages into the virtual environment."
 which python
 python --version
 
-##################################################
-## Make sure we're using the latest pip
-##################################################
-#
-#echo " "
-#echo "Pegging pip version"
-#
-#pip install pip==1.0.1
 
 #################################################
 # Easy installations
@@ -72,7 +64,7 @@ python --version
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in bcbio-gff nose shove python-memcached
+for PACKAGE in bcbio-gff nose shove python-memcached natsort
 do 
 	echo " "
 	echo "$PACKAGE =========================="

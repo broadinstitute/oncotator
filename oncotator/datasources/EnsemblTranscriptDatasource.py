@@ -53,9 +53,11 @@ from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
+from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
+
 
 
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
@@ -94,6 +96,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         logging.getLogger(__name__).info("%s %s is being set up with %s filtering.  " % (title, version, tx_filter))
         self._tx_filter = TranscriptFilterFactory.create_instance(tx_filter)
 
+        self._hgvs_xformer = HgvsChangeTransformer()
+
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
             logging.getLogger(__name__).warn("Attempting to set transcript mode of CANONICAL for ensembl.  This operation is only supported for GENCODE.  Otherwise, will be the same as EFFECT.")
@@ -122,14 +126,33 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             return ""
         return str(attribute_dict.get(attribute_name, ""))
 
+    def get_transcripts_by_pos(self, chr, start, end):
+        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end)
+        txs = self._filter_transcripts(txs_unfiltered)
+        return txs
+
+    def _create_hgvs_dict(self, chosen_tx, mutation):
+        hgvs_dict = dict()
+        if self._hgvs_xformer is not None:
+            hgvs_dict = self._hgvs_xformer.hgvs_annotate_mutation_given_tx(mutation, chosen_tx)
+        return hgvs_dict
+
+    def _create_hgvs_annotation_dict(self, mutation, chosen_tx):
+        hgvs_dict_keys = HgvsChangeTransformer.HEADERS
+        hgvs_dict = self._create_hgvs_dict(chosen_tx, mutation)
+        hgvs_dict_annotations = dict()
+        for k in hgvs_dict_keys:
+            hgvs_dict_annotations[k] = self._create_basic_annotation(hgvs_dict.get(k, ""))
+        return hgvs_dict_annotations
+
     def annotate_mutation(self, mutation):
         chr = mutation.chr
         start = int(mutation.start)
         end = int(mutation.end)
-        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end, padding=max(VariantClassifier.FLANK_PADDING_5PRIME, VariantClassifier.FLANK_PADDING_3PRIME,))
-        txs = self._filter_transcripts(txs_unfiltered)
+        txs = self.get_transcripts_by_pos(chr, start, end)
         final_annotation_dict = self._create_blank_set_of_annotations()
         final_annotation_dict['variant_type'] = Annotation(value=TranscriptProviderUtils.infer_variant_type(mutation.ref_allele, mutation.alt_allele), datasourceName=self.title)
+        chosen_tx = None
 
         # We have hit IGR if no transcripts come back.  Most annotations can just use the blank set.
         if len(txs) == 0:
@@ -176,6 +199,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
             # final_annotation_dict['gene_id'].value
 
         mutation.addAnnotations(final_annotation_dict)
+
+        # Add the HGVS annotations ... setting to "" if not available.
+        hgvs_dict_annotations = self._create_hgvs_annotation_dict(mutation, chosen_tx)
+        mutation.addAnnotations(hgvs_dict_annotations)
+
         return mutation
 
     def _filter_transcripts(self, txs):
@@ -296,8 +324,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         for s in size_extensions:
             new_start = start - s
             if new_start < 0: new_start = 1
-            txs_unfiltered = self.get_overlapping_transcripts(chr, new_start, end)
-            txs = self._filter_transcripts(txs_unfiltered)
+            txs = self.get_transcripts_by_pos(chr, new_start, end)
             nearest_gene_border = 0
             for tx in txs:
                 if tx.get_strand() == "-":
@@ -315,8 +342,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         right_gene, right_dist = None, None
         for s in size_extensions:
             new_end = end + s
-            txs_unfiltered = self.get_overlapping_transcripts(chr, start, new_end)
-            txs = self._filter_transcripts(txs_unfiltered)
+            txs = self.get_transcripts_by_pos(chr, start, new_end)
             nearest_gene_border = int(1e9)
             for tx in txs:
                 if tx.get_strand() == "-":
@@ -386,6 +412,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def getTranscriptDict(self):
         return self.transcript_db
+
+    def get_transcript(self, tx_id):
+        if tx_id is None:
+            return None
+        return self.transcript_db.get(tx_id, None)
 
     def get_tx_mode(self):
         return self.tx_mode

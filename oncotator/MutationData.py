@@ -154,6 +154,25 @@ class MutationData(collections.MutableMapping):
     def getAttributeNames(self):
         return list(self.attributes)
 
+    def print_annotations(self):
+        """ Pretty print datasources, annotations, and annotations value."""
+        outputs = list()
+        for annotation in self.annotations:
+            if annotation in ['build', 'chr' , 'start', 'end', 'ref_allele', 'alt_allele']:
+                ds_name = 'INPUT'
+                ann_value = self[annotation]
+            else:
+                ds_name = self.annotations[annotation].getDatasource()
+                ann_value = self.annotations[annotation].getValue()
+            output = (ds_name, annotation, ann_value)
+            outputs.append(output)
+        outputs.sort(key=lambda x: x[1])
+        outputs.sort(key=lambda x: x[0])
+        outputs.sort(key=lambda x: x[0] == 'INPUT', reverse=True)
+        print "Datasource -- Annotation -- Annotation Value"
+        for output in outputs:
+            print "%s -- %s -- %s" % output
+
     def __setitem__(self, key, value):
         
         if key in MutationData.attributes:

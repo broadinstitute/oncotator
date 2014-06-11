@@ -104,14 +104,19 @@ class TestUtils(object):
         return config
     
     @staticmethod
-    def createGafDatasource(config, tx_mode="CANONICAL", protocol="file"):
-        """ Creates a Gaf 3.0 datasource from a config file.
-            Assumes a gaf3.0 section with keys: gaf_fname and gaf_transcript_seqs_fname
+    def createTranscriptProviderDatasource(config, tx_mode="CANONICAL", protocol="file"):
+        """ Creates a GENCODE or Gaf 3.0 datasource from a config file.  Determines which is available automatically,
+            For GAF 3.0, assumes a gaf3.0 section with keys: gaf_fname and gaf_transcript_seqs_fname
+
             """
-        gaf_fname = config.get("gaf3.0", "gaf_fname")
-        gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
-        gafDatasource = Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol=protocol)
-        return gafDatasource
+        if os.path.exists(config.get("gencode", "gencodeDir")):
+            gencode_dir = config.get("gencode", "gencodeDir")
+            result_ds = EnsemblTranscriptDatasource(gencode_dir + "/gencode.v19.annotation.gtf", title="GENCODE", version="TEST v19", tx_filter="basic")
+        else:
+            gaf_fname = config.get("gaf3.0", "gaf_fname")
+            gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
+            result_ds = Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol=protocol)
+        return result_ds
 
     @staticmethod
     def createReferenceDatasource(config):
@@ -161,7 +166,7 @@ class TestUtils(object):
                             level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
 
     @staticmethod
-    def _create_test_gencode_ds(base_output_filename):
+    def _create_test_gencode_ds(base_output_filename, protein_id_mapping_file="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt"):
         genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1", "KRTAP4-7", "MAT2A"]
         gtf_list = []
         fasta_list = []
@@ -172,6 +177,6 @@ class TestUtils(object):
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename)
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename, protein_id_mapping_file=protein_id_mapping_file)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic")
         return ensembl_ds

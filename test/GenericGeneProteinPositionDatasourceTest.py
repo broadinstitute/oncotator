@@ -92,7 +92,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         """
         outputFilename = 'out/genericGeneProteinPositionTest.out.tsv'
 
-        gafDS = TestUtils.createGafDatasource(self.config)
+        gafDS = TestUtils.createTranscriptProviderDatasource(self.config)
         gppDS = DatasourceFactory.createDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.config", "testdata/simple_uniprot_natvar/")
 
         annotator = Annotator()
