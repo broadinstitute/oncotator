@@ -100,7 +100,7 @@ def main():
 
         logging.getLogger(__name__).info("Starting index construction (temp location: " + ds_build_dir + ") ...")
         factory = GenomeBuildFactory()
-        factory.construct_ensembl_indices(gtf_files, fasta_files, ds_build_dir + os.path.basename(gtf_files[0]))
+        factory.construct_ensembl_indices(gtf_files, fasta_files, ds_build_dir + os.path.basename(gtf_files[0]), protein_id_mapping_file=protein_map_file)
 
         logging.getLogger(__name__).info("Creating datasource md5...")
         DatasourceInstallUtils.create_datasource_md5_file(ds_build_dir)
