@@ -125,7 +125,7 @@ class CosmicDatasourceTest(unittest.TestCase):
 
     def testRealWorld(self):
         """Test that the full COSMIC datasource can retrieve entries by both gp and gpp."""
-        gafDS = TestUtils.createGafDatasource(self.config)
+        gafDS = TestUtils.createTranscriptProviderDatasource(self.config)
         cosmicDS = TestUtils.createCosmicDatasource(self.config)
 
         # These values are not taken from a real world scenario, but are cooked for this test.

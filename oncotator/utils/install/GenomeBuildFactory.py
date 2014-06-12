@@ -4,6 +4,7 @@ from shove.core import Shove
 from oncotator.Transcript import Transcript
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.index.gaf import region2bin
+from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
 from BCBio import GFF
@@ -23,6 +24,20 @@ class GenomeBuildFactory(object):
     def __init__(self):
         self._transcript_index = dict()
 
+    def _create_tx_id_to_protein_id_mapping(self, mapping_file):
+        """
+        Mapping file is assumed to have three columns and be a tsv:
+        Ensembl Gene ID, Ensembl Transcript ID, and Ensembl Protein ID
+
+        """
+        result = dict()
+        if mapping_file is None or mapping_file.strip() == "":
+            return result
+        tsv_reader = GenericTsvReader(mapping_file)
+        for line_dict in tsv_reader:
+            result[line_dict['Ensembl Transcript ID']] = line_dict['Ensembl Protein ID']
+        return result
+
     def _determine_protein_seq(self, tx):
         cds_start, cds_stop = tx.determine_cds_footprint()
         if cds_start == -1 or cds_stop == -1:
@@ -40,7 +55,7 @@ class GenomeBuildFactory(object):
 
         return prot_seq
 
-    def _convertGFFRecordToTranscript(self, gff_record, seq_dict, seq_dict_keys):
+    def _convertGFFRecordToTranscript(self, gff_record, seq_dict, seq_dict_keys, tx_to_protein_mapping):
         """
 
         :param gff_record:
@@ -86,6 +101,12 @@ class GenomeBuildFactory(object):
                 genome_seq_as_str = ""
 
             self._transcript_index[transcript_id].set_seq(genome_seq_as_str)
+
+            tx_id_for_protein_lookup = transcript_id
+            if '.' in transcript_id:
+                tx_id_for_protein_lookup = tx_id_for_protein_lookup[:tx_id_for_protein_lookup.index('.')]
+            self._transcript_index[transcript_id].set_protein_id(tx_to_protein_mapping.get(tx_id_for_protein_lookup, ""))
+
             tx = self._transcript_index[transcript_id]
 
         gff_type = gff_record['type']
@@ -125,7 +146,7 @@ class GenomeBuildFactory(object):
 
         return seq_dict
 
-    def build_ensembl_transcript_index(self, ensembl_input_gtfs, ensembl_input_fastas, output_filename, protocol="file"):
+    def build_ensembl_transcript_index(self, ensembl_input_gtfs, ensembl_input_fastas, output_filename, protocol="file", protein_id_mapping_file=None):
         """Create the transcript index (using shove) for ensembl.  Key is transcript ID.
 
         Note:  This method will hold the entire transcript index in RAM.
@@ -139,6 +160,9 @@ class GenomeBuildFactory(object):
         # Example code taken from http://biopython.org/wiki/GFF_Parsing
         shove = Shove(protocol + "://" + output_filename, "memory://")
         logging.getLogger(__name__).info("Transcript index being created: " + protocol + "://" + output_filename)
+
+        # Get the transcript ID to protein ID mapping
+        tx_to_protein_mapping = self._create_tx_id_to_protein_id_mapping(protein_id_mapping_file)
 
         seq_dict = {}
         for in_seq_file in ensembl_input_fastas:
@@ -157,7 +181,7 @@ class GenomeBuildFactory(object):
                 if len(rec['quals']['transcript_id']) > 1:
                     logging.getLogger(__name__).warn("ensembl records had more than one transcript id: " + str(rec['quals']['transcript_id']))
 
-                self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys)
+                self._convertGFFRecordToTranscript(rec, seq_dict, seq_dict_keys, tx_to_protein_mapping)
                 ctr += 1
                 if (ctr % 10000) == 0:
                     logging.getLogger(__name__).info("Added " + str(ctr) + " lines of gtf " + str(file_ctr+1) + " of " + str(len(ensembl_input_gtfs)) + " (" + in_file + ") into internal transcript index.")
@@ -238,7 +262,7 @@ class GenomeBuildFactory(object):
         output_db.close()
         transcript_db.close()
 
-    def construct_ensembl_indices(self, ensembl_input_gtfs, ensembl_input_fastas, base_output_filename):
+    def construct_ensembl_indices(self, ensembl_input_gtfs, ensembl_input_fastas, base_output_filename, protein_id_mapping_file=None):
         """
 
         :param ensembl_input_gtfs: (list) gtf input files
@@ -247,6 +271,6 @@ class GenomeBuildFactory(object):
         :return:
         """
         ensembl_transcript_index_filename = base_output_filename + ".transcript.idx"
-        self.build_ensembl_transcript_index(ensembl_input_gtfs, ensembl_input_fastas, ensembl_transcript_index_filename)
+        self.build_ensembl_transcript_index(ensembl_input_gtfs, ensembl_input_fastas, ensembl_transcript_index_filename, protein_id_mapping_file=protein_id_mapping_file)
         self.build_ensembl_transcripts_by_gene_index(ensembl_transcript_index_filename, base_output_filename + ".transcript_by_gene.idx")
         self.build_ensembl_transcripts_by_genomic_location_index(ensembl_transcript_index_filename, base_output_filename + ".transcript_by_gp_bin.idx")

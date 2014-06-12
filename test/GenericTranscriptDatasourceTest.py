@@ -82,7 +82,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
         ''' Test annotation from a generic TSV based on a transcript annotation.  Only confirms the proper headers of the output. '''
         # We need a gaf data source to annotate gene
 
-        gafDatasource = TestUtils.createGafDatasource(config=self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(config=self.config)
         transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
         outputFilename = 'out/genericTranscriptTest.out.tsv'
         

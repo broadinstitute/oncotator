@@ -227,6 +227,9 @@ USAGE
         if is_skip_no_alts and (inputFormat != "VCF"):
             logging.getLogger(__name__).info("--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything.")
 
+        if outputFormat=="TCGAVCF":
+            logging.getLogger(__name__).error("TCGA VCF output is not supported and should be considered experimental, outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users.")
+
         # Create a run configuration to pass to the Annotator class.
         runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,

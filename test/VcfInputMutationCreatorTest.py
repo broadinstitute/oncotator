@@ -79,7 +79,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def _createGafDataSource(self):
         self.logger.info("Initializing gaf 3.0")
-        return TestUtils.createGafDatasource(self.config)
+        return TestUtils.createTranscriptProviderDatasource(self.config)
 
     def testBasicCreationWithExampleVcf(self):
         """
@@ -118,7 +118,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
-        annotator.addDatasource(TestUtils.createGafDatasource(self.config))
+        annotator.addDatasource(TestUtils.createTranscriptProviderDatasource(self.config))
         annotator.annotate()
 
     def testSimpleAnnotationWithAComplexVcf(self):

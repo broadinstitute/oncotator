@@ -112,9 +112,9 @@ class AnnotatorTest(unittest.TestCase):
             Does not attempt to initialize input or output.  Only a gaf datasource.
          """
         annotator = Annotator()
-        annotator.addDatasource(TestUtils.createGafDatasource(self.config))
+        annotator.addDatasource(TestUtils.createTranscriptProviderDatasource(self.config))
         tmp = annotator.createHeaderString()
-        self.assertTrue(tmp.find("Gaf ") != -1, "Could not find Gaf version in header string.")
+        self.assertTrue(tmp.find("Gaf ") != -1 or tmp.find("GENCODE") != -1, "Could not find Gaf or GENCODE version in header string.")
         self.assertTrue(tmp.find("Oncotator") != -1, "Could not find the word Oncotator in header string.")
 
     def testManualAnnotations(self):

@@ -137,6 +137,16 @@ class Gaf(Datasource, TranscriptProvider):
         # TODO: Check for valid values.
         self.tx_mode = tx_mode
 
+    def get_transcript(self, tx_id):
+        """Throws NotImplementedError """
+        raise NotImplementedError("Cannot get Transcript objects from a GAF 3.0 datasource.")
+
+    def get_transcripts_by_pos(self, chr, start, end):
+        """ Return Transcript instances for the given chromosome start and end.
+        Not implemented for GAF datasource.
+        """
+        raise NotImplementedError("Cannot get Transcript objects from a GAF 3.0 datasource.")
+
     def get_tx_mode(self):
         return self.tx_mode
 
