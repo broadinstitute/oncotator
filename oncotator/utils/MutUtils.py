@@ -384,19 +384,24 @@ class MutUtils(object):
 
     @staticmethod
     def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
-                            exposedFields=None):
+                            exposedFields=None, prepend="i_"):
         """ Creates a dictionary of the output maf file headers to the annotations.
-        Input:
-            headers -- optional and required fields
-            annotations -- annotations seen on a mutation
-            alternativeDictionary -- mapping from headers to acceptable annotation names.
-            isRenderInternalFields -- should the resulting dictionary include
-                unused annotations (as i_annotation_name)?
-            exposedFields -- These are fields that, if seen, should not be treated as internal.
+        :param headers:  optional and required fields
+        :param annotations: annotations seen on a mutation
+        :param alternativeDictionary: mapping from headers to acceptable annotation names.
+        :param isRenderInternalFields: should the resulting dictionary include
+                unused annotations (as [prepend]annotation_name)?
+        :param exposedFields: These are fields that, if seen, should not be treated as internal.
+        :param prepend: prepend to use for internal annotations (i.e. ones that are not seen in the required or optional fields)
+
 
         Output:
         Final headers that should be used
          """
+
+        if prepend is None:
+            prepend = ""
+
         if exposedFields is None:
             exposedFields = set()
 
@@ -417,10 +422,10 @@ class MutUtils(object):
             internalFields = sAnnotations.difference(result.values())
             for i in internalFields:
                 if not i.startswith('_') and i is not "transcripts":
-                    if i.startswith("i_") or i in exposedFields:
+                    if prepend.strip() == "" or i.startswith(prepend) or i in exposedFields:
                         result[i] = i
                     else:
-                        result["i_" + i] = i
+                        result[prepend + i] = i
 
         return result
 

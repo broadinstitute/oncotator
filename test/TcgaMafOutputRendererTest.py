@@ -48,6 +48,7 @@
 #"""
 from TestUtils import TestUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
+from oncotator.utils.OptionConstants import OptionConstants
 
 
 """
@@ -89,12 +90,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         pass
 
     def tearDown(self):
-        pass
-
-
-    def testSimpleVersionString(self):
-        tmp = TcgaMafOutputRenderer('dummy', configFile=os.path.join("configs", "tcgaMAF2.4_output.config"))
-        tmp.getOncotatorHeaderVersionString()
         pass
 
     def _validateTcgaMafContents(self, filename):
@@ -151,13 +146,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
-
-    def testVersionString(self):
-        """ Simple test of the Oncotator header string """   
-        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
-        outputRenderer = TcgaMafOutputRenderer("out/testVersion.maf.tsv", configFile='configs/tcgaMAF2.4_output.config', datasources=[gafDatasource.title + gafDatasource.version])
-        tmp = outputRenderer.getOncotatorHeaderVersionString()
-        print tmp
     
     def testFullSNPOutput(self):
         """ Create a TCGA MAF from a SNP TSV file."""
@@ -209,7 +197,33 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         self.assertTrue("Hugo_Symbol" in headers, "Hugo_Symbol not found in output headers")
         self.assertTrue("TEST" not in headers, "TEST was found in output headers when it should have been renamed to i_TEST")
         self.assertTrue("i_TEST" in headers, "i_TEST not found in output headers")
-        
+
+    def testInternalFieldsSkipPrepend(self):
+        """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
+        outputFilename = "out/testInternalFields_v2.4.maf.tsv"
+        m = MutationData()
+        m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
+
+        # The next annotation is real and should not be considered internal.
+        m.createAnnotation("gene", "EGFR")
+
+        outputRenderer = TcgaMafOutputRenderer(outputFilename, configFile='configs/tcgaMAF2.4_output.config', other_options={OptionConstants.NO_PREPEND:True})
+        outputRenderer.renderMutations(iter([m]), ['No comments'])
+
+        configFile = ConfigUtils.createConfigParser('configs/tcgaMAF2.4_output.config')
+        requiredColumns = configFile.get("general", "requiredColumns")
+        self.assertTrue("Hugo_Symbol" in requiredColumns, " This test assumes that Hugo_Symbol is a required column in the TCGA MAF.  If not, the test must be modified.")
+
+        statinfo = os.stat(outputFilename)
+        self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + outputFilename + ") is empty.")
+
+        tsvReader = GenericTsvReader(outputFilename)
+        headers = tsvReader.getFieldNames()
+        self.assertTrue("Hugo_Symbol" in headers, "Hugo_Symbol not found in output headers")
+        self.assertTrue("i_TEST" not in headers, "i_TEST was found in output headers when prepend was disabled.")
+        self.assertTrue("TEST" in headers, "TEST was not found in output headers.")
+
+
     def testMutationDatasources(self):
         """ Test that we can create a simple TSV output from all of the current datasources (specified in the config file).  Note that no validation is done.  Simply that the output file was created. 
         TODO: This unit test needs to be moved."""
