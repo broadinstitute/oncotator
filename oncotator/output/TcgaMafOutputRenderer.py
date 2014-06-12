@@ -46,6 +46,7 @@
 # 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #"""
+from oncotator.utils.OptionConstants import OptionConstants
 
 
 """
@@ -76,18 +77,15 @@ class TcgaMafOutputRenderer(OutputRenderer):
     def getTcgaMafVersion(self):
         return self.config.get("general", "version")
 
-    def __init__(self, filename, configFile="tcgaMAF2.4_output.config", datasources=None, options=None,
-                 otherOptions=None):
+    def __init__(self, filename, configFile="tcgaMAF2.4_output.config", other_options=None):
         """
         TODO: Need functionality for not prepending the i_ on internal fields.
         """
-        datasources = [] if datasources is None else datasources
-        options = dict() if options is None else options
+        options = dict() if other_options is None else other_options
 
         self._filename = filename
         self.logger = logging.getLogger(__name__)
         self.config = ConfigUtils.createConfigParser(configFile)
-        self._datasources = datasources
 
         self.logger.info("Building alternative keys dictionary...")
         self.alternativeDictionary = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config)
@@ -95,11 +93,11 @@ class TcgaMafOutputRenderer(OutputRenderer):
         #TODO: Read missing options from the config file or specify that error should be thrown.
         self.options = options
 
+        self._prepend = self.config.get("general", "prepend")
+        if self.options.get(OptionConstants.NO_PREPEND, False):
+            self._prepend = ""
+
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
-        
-    def getOncotatorHeaderVersionString(self):
-        dsString = "|".join(self._datasources)
-        return "Oncotator " + VERSION + " | " + dsString
     
     def lookupNCBI_Build(self, build):
         """ If a build number exists in the config file, use that.  Otherwise, use the name specified. """
@@ -234,7 +232,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
         # Create a mapping between column name and annotation name
         fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary,
                                                 self.config.getboolean("general", "displayAnnotations"),
-                                                exposedFields=self.exposedColumns)
+                                                exposedFields=self.exposedColumns, prepend=self._prepend)
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
         headers.extend(internalFields)
