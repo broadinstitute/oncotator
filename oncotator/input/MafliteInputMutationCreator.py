@@ -76,10 +76,12 @@ class MafliteInputMutationCreator(InputMutationCreator):
     IMPORTANT NOTE: maflite will look at all aliases for alt_allele (see maflite_input.config) and choose the first that does not match the ref_allele
     """
 
-    def __init__(self, filename, configFile='maflite_input.config', genomeBuild="hg19"):
+    def __init__(self, filename, configFile='maflite_input.config', genomeBuild="hg19", other_options=None):
         """
         Constructor
-        #TODO: Low priority. Too much logic in the constructor.  Need to move initialization check outside of the constructor.
+
+        Currently, this InputCreator does not support any other options.  The parameter is ignored.
+
         """
         self.logger = logging.getLogger(__name__)
 

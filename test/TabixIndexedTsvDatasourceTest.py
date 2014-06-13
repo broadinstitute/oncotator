@@ -81,12 +81,12 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
 
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        cur_annotation = Annotation(value="75.0", datasourceName="ESP", dataType="Float",
+        cur_annotation = Annotation(value="75.0", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="Integer",
+        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
@@ -168,13 +168,13 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1.start = "100075333"
         m1.end = "100075333"
 
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Float", description="",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
                                     tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Integer", description="",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
                                     tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
@@ -204,7 +204,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Integer", description="",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Float", description="",
                                     tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
@@ -227,13 +227,13 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1.start = "100075333"
         m1.end = "100075333"
 
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Float", description="",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
                                     tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Integer", description="",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String", description="",
                                     tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
@@ -259,12 +259,12 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
 
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        cur_annotation = Annotation(value="85.0", datasourceName="ESP", dataType="Float",
+        cur_annotation = Annotation(value="85.0", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="Integer",
+        cur_annotation = Annotation(value="692", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
@@ -334,6 +334,10 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingIndelExactMatch(self):
+        """
+
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_exact_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -346,12 +350,12 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
 
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgAAsampleReadDepth")
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Float",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_TotalAAsamplesCovered")
-        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="Integer",
+        cur_annotation = Annotation(value="", datasourceName="ESP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
@@ -361,6 +365,10 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingIndelAvgMatch(self):
+        """
+
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_avg_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -388,6 +396,10 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
     def testESPCoverageAnnotationWithMissingIndelOverlapMatch(self):
+        """
+
+
+        """
         self.logger.info("Initializing ESP6500SI-V2 Coverage")
         tabixIndexedTsvDirName = os.path.join(*["testdata", "small_esp_coverage_overlap_ds", "hg19"])
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
@@ -431,5 +443,220 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
         m1_annotation = m1_annotated.getAnnotation("ESP_AvgSampleReadDepth")
         cur_annotation = Annotation(value="91.25", datasourceName="ESP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithExactMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_6vars_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_6vars_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35138"
+        m1.end = "35138"
+        m1.ref_allele = "T"
+        m1.alt_allele = "G"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="3", datasourceName="dbNSFP", dataType="Integer",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="TAA", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="-", datasourceName="dbNSFP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithMissingExactMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_6vars_exact_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_6vars_exact_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35138"
+        m1.end = "35138"
+        m1.ref_allele = "T"
+        m1.alt_allele = "C"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="Integer",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithAvgMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_chr3_100vars_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_avg_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35138"
+        m1.end = "35139"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="2.5", datasourceName="dbNSFP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="TAA|TAA|TAA|TAA", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="-|-|-|-", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithMissingAvgMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_chr3_100vars_avg_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_avg_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35137"
+        m1.end = "35137"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="Float",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithOverlapMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_chr3_100vars_overlap_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_overlap_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35138"
+        m1.end = "35139"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="3|3|2|2", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="TAA|TAA|TAA|TAA", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="-|-|-|-", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPAnnotationWithMissingOverlapMatch(self):  # SNPs only
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_chr3_100vars_overlap_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_overlap_ds.config"), tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35136"
+        m1.end = "35137"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+    def testdbNSFPNoRefAltAnnotationWithExactMatch(self):
+        """
+
+        """
+        self.logger.info("Initializing dbNSFP")
+        tabixIndexedTsvDirName = os.path.join(*["testdata", "dbNSFP_chr1_chr3_100vars_exact_no_ref_alt_ds", "hg19"])
+        tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
+            os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_exact_no_ref_alt_ds.config"),
+            tabixIndexedTsvDirName)
+
+        m1 = MutationData()
+        m1.chr = "1"
+        m1.start = "35140"
+        m1.end = "35140"
+
+        m1_annotated = tabixIndexedTsvDatasource.annotate_mutation(m1)
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_codonpos")
+        cur_annotation = Annotation(value="1|1|1", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_refcodon")
+        cur_annotation = Annotation(value="TAA|TAA|TAA", datasourceName="dbNSFP", dataType="String",
+                                    description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+
+        m1_annotation = m1_annotated.getAnnotation("dbNSFP_cds_strand")
+        cur_annotation = Annotation(value="-|-|-", datasourceName="dbNSFP", dataType="String",
                                     description="", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT], number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")

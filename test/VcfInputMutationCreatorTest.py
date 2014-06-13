@@ -79,7 +79,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def _createGafDataSource(self):
         self.logger.info("Initializing gaf 3.0")
-        return TestUtils.createGafDatasource(self.config)
+        return TestUtils.createTranscriptProviderDatasource(self.config)
 
     def testBasicCreationWithExampleVcf(self):
         """
@@ -95,7 +95,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for m in muts:
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 (# REF alleles x # samples) mutations, but saw: " + str(ctr))
-        self.assertTrue((m.chr == "21") and (m.start == 1234570), "Last mutation was not correct: " + str(m))
+        self.assertTrue((m.chr == "21") and (m.start == 1234569), "Last mutation was not correct: " + str(m))
 
         # Reminder: muts is a generator, so it has to be reset
         creator.reset()
@@ -118,7 +118,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
-        annotator.addDatasource(TestUtils.createGafDatasource(self.config))
+        annotator.addDatasource(TestUtils.createTranscriptProviderDatasource(self.config))
         annotator.annotate()
 
     def testSimpleAnnotationWithAComplexVcf(self):

@@ -84,7 +84,7 @@ class dbSNP(Datasource):
         try:
             overlapping_vcf_records = self.vcf_reader.fetch(chrom, start, end)
         except ValueError as ve:
-            self.logger.warn("Exception when looking for vcf records.  Empty set of records being returned: " + repr(ve))
+            self.logger.debug("Exception when looking for vcf records.  Empty set of records being returned: " + repr(ve))
 
         for vcf_rec in overlapping_vcf_records:
             for header in self.output_headers:

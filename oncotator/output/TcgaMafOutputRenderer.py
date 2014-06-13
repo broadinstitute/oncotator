@@ -195,6 +195,9 @@ class TcgaMafOutputRenderer(OutputRenderer):
         if row['Entrez_Gene_Id'] == "":
             row['Entrez_Gene_Id'] = "0"
 
+        if row['Entrez_Gene_Id'] == "0" and row['Hugo_Symbol'] != "Unknown":
+            logging.getLogger(__name__).warn("Entrez Gene ID was zero, but Hugo Symbol was not Unknown.  Is the HGNC and/or Transcript datasource complete?")
+
         self._update_validation_values(row)
 
         dw.writerow(row)

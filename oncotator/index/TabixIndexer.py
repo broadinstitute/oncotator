@@ -64,6 +64,7 @@ import tempfile
 import string
 from oncotator.index.TabixIndexerFileMissingError import TabixIndexerFileMissingError
 
+
 class TabixIndexer(object):
     """
     Static class (do not instantiate) that handles the creation of datasource indexes.

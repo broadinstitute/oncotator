@@ -174,6 +174,17 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         genes = ds.get_overlapping_genes("22", 22115000, 22120000)
         self.assertTrue(len(set(["MAPK1"]) - genes) == 0)
 
+    def test_overlapping_gene_5flank(self):
+        """Test that we can collect an overlapping gene on its 5' Flank """
+        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_flank")
+        txs = ds.get_overlapping_transcripts("22", 22222050, 22222050, padding=100)
+        self.assertTrue( len(txs) == 1)
+        self.assertTrue(txs[0].get_transcript_id() == "ENST00000398822.3")
+
+        txs = ds.get_overlapping_transcripts("22", 22224920, 22224920)
+        self.assertTrue(len(txs) == 0)
+
+
     def test_small_positive_strand_transcript_change(self):
         """Test one location on a transcript and make sure that the transcript change rendered properly """
         ds = TestUtils._create_test_gencode_ds("out/small_positive_strand_")
@@ -198,9 +209,57 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         m2 = ds.annotate_mutation(m)
         self.assertTrue(m2['transcript_change'] == "c.1G>T", "Incorrect transcript change: " + m2['transcript_change'])
 
+    def test_hgvs_annotations_simple_SNP(self):
+        """Test that HGVS annotations appear (incl. protein change) in a mutation, so we believe that the Transcript objects are populated properly."""
+        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_")
 
-        pass
+        # Now for a negative strand
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22221730"
+        m.end = "22221730"
+        m.ref_allele = "T"
+        m.alt_allele = "G"
+        m.build = "hg19"
+        m2 = ds.annotate_mutation(m)
+        self.assertEqual(m2.get('HGVS_genomic_change', None), 'chr22.hg19:g.22221730T>G')
+        self.assertEqual(m2.get('HGVS_coding_DNA_change', None), 'ENST00000215832.6:c.1A>C')
+        self.assertEqual(m2.get('HGVS_protein_change', None), 'ENSP00000215832:p.Met1Leu')
 
+    def test_hgvs_annotations_IGR(self):
+        """Test that the HGVS annotations appear for IGR"""
+        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_IGR_")
+        m = MutationData()
+        m.createAnnotation('variant_type', 'SNP')
+        m.createAnnotation('build', 'hg19')
+        m.createAnnotation('variant_classification', 'IGR')
+        m.createAnnotation('chr', '15')
+        m.createAnnotation('start', 30938316)
+        m.createAnnotation('end', 30938316)
+        m.createAnnotation('ref_allele', 'G')
+        m.createAnnotation('alt_allele', 'A')
+        m2 = ds.annotate_mutation(m)
+        self.assertEqual(m2.get('HGVS_genomic_change', None), 'chr15.hg19:g.30938316G>A')
+        self.assertEqual(m2.get('HGVS_coding_DNA_change', None), '')
+        self.assertEqual(m2.get('HGVS_protein_change', None), '')
+
+    def test_no_mapping_file(self):
+        """Test that we can still create (from scratch) and instantiate a EnsemblDatasource when no protein mapping is specified (i.e. limited HGVS support)"""
+        """Test that HGVS annotations appear (incl. protein change) in a mutation, so we believe that the Transcript objects are populated properly."""
+        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_no_mapping_", protein_id_mapping_file=None)
+
+        # Now for a negative strand
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22221730"
+        m.end = "22221730"
+        m.ref_allele = "T"
+        m.alt_allele = "G"
+        m.build = "hg19"
+        m2 = ds.annotate_mutation(m)
+        self.assertEqual(m2.get('HGVS_genomic_change', None), 'chr22.hg19:g.22221730T>G')
+        self.assertEqual(m2.get('HGVS_coding_DNA_change', None), 'ENST00000215832.6:c.1A>C')
+        self.assertEqual(m2.get('HGVS_protein_change', None), 'unknown_prot_seq_id:p.Met1Leu')
 
 if __name__ == '__main__':
     unittest.main()

@@ -83,9 +83,12 @@ def annotate_mutations_global(t):
         result.append(ds.annotate_mutation(m))
     return result
 
+globalConfig = TestUtils.createUnitTestConfig()
+
 TestUtils.setupLogging(__file__, __name__)
 # globalConfig = TestUtils.createUnitTestConfig()
 # @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test.  GAF 3.0 will not be supported for much longer.")
+@unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default datasource corpus, with GAF 3.0, is needed to run this test.")
 class GafDatasourceTest(unittest.TestCase):
 
     # HACK: Allow config to be viewed by unittest decorators.
@@ -102,7 +105,7 @@ class GafDatasourceTest(unittest.TestCase):
     def testNoUnknownAnnotations(self):
         """ Make sure that the gaf 3.0 datasource does not annotate anything with source set to Unknown """
         inputCreator = MafliteInputMutationCreator('testdata/maflite/Patient0.snp.maf.txt')
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         mutations = inputCreator.createMutations()    
         for m in mutations:
             m = gafDatasource.annotate_mutation(m)
@@ -115,7 +118,7 @@ class GafDatasourceTest(unittest.TestCase):
         """ Does a simple gaf datasource annotation run and makes sure that no mutations were lost """
         inputFilename = 'testdata/maflite/Patient0.snp.maf.txt'
         inputCreator = MafliteInputMutationCreator(inputFilename, "configs/maflite_input.config")
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
         numMutsInput = len(file(inputFilename, 'r').readlines()) - 1
         mutations = inputCreator.createMutations()  
@@ -131,7 +134,7 @@ class GafDatasourceTest(unittest.TestCase):
     def testChrM(self):
         """ Test that mitochondrial mutations can be annotated properly. """
         inputCreator = MafliteInputMutationCreator('testdata/maflite/chrM.maf.txt', "configs/maflite_input.config")
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         mutations = inputCreator.createMutations() 
         for m in mutations:
             try:
@@ -146,7 +149,7 @@ class GafDatasourceTest(unittest.TestCase):
     def testChrGLs(self):
         """ Test that mutations on unaligned transcripts can be annotated properly.  I.e. when chromosome = GL....."""
         inputCreator = MafliteInputMutationCreator('testdata/maflite/chrGLs.maf.tsv', "configs/maflite_input.config")
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         mutations = inputCreator.createMutations() 
         for m in mutations:
             try:
@@ -166,7 +169,7 @@ class GafDatasourceTest(unittest.TestCase):
         m.end = '89985913'
         m.ref_allele = 'G'
         m.alt_allele = 'A'
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         m = gafDatasource.annotate_mutation(m)
 
         # At some point, we would expect this to be MC1R, not TUBB3
@@ -183,13 +186,13 @@ class GafDatasourceTest(unittest.TestCase):
         m.end = '105246407'
         m.ref_allele = 'G'
         m.alt_allele = 'A'
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         m = gafDatasource.annotate_mutation(m)
         self.assertTrue(m['gene'] == "AKT1", "Incorrect gene found: " + m['gene'] + "  If updating GAF, this may not be an error, but should be confirmed manually.")
 
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def test_effect_tx_mode(self):
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
 
         # Canonical mutation was Intron
@@ -223,7 +226,7 @@ class GafDatasourceTest(unittest.TestCase):
         # AGTTCTCCTT C TGGAAAAAAG
         refs = 'AGTTCTCCTTCTGGAAAAAAG'
         alts = 'TCAGACTGAAAATACCCCCCT'
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         vcs = []
         for s in range(10998326, 10998347):
             m = MutationData()
@@ -255,7 +258,7 @@ class GafDatasourceTest(unittest.TestCase):
         refs = "TGGGCTCGGGCTCTCTGAAAAGAAAA"
         alts = "TGGGCTCAGGCTCGCTGAAAAGAAAA"
         vcs = []
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         numSpliceSites = 0
         numSilent = 0
         startWindow = 28233780
@@ -292,7 +295,7 @@ class GafDatasourceTest(unittest.TestCase):
         refs = "TGGGCTCGGGCTCTCTGAAAAGAAAA"
         alts = "TGGGCTCAGGCTCTCTGAAAAGAAAA"
         vcs = []
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         numSpliceSites = 0
         numSilent = 0
         startWindow = 11042200
@@ -316,7 +319,7 @@ class GafDatasourceTest(unittest.TestCase):
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def testFlank2(self):
         """Test a second real-world flank scenario"""
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
         # 1	228646357 nearest Gene=HIST3H2A C>T
         m = MutationData()
@@ -335,7 +338,7 @@ class GafDatasourceTest(unittest.TestCase):
         """Test proper annotation of miRNA
         """
         #uc021qwk.1	chr12:31379258-31379277:-	hsa-miR-3194-3p|?	chr12:31379258-31379277:-		Confidence=100
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         m = MutationData()
         m.start = 31379268
         m.end = 31379268
@@ -351,7 +354,7 @@ class GafDatasourceTest(unittest.TestCase):
     def testExonRetrievalForGene(self):
         """Make sure that the GAF datasource can retrieve exons, given a gene"""
         testGeneList = ['CEBPA', 'BRCA1', 'PIK3CA']
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         for gene in testGeneList:
             exons = gafDatasource.retrieveExons(gene, isCodingOnly=True)
             self.assertTrue(exons is not None)
@@ -363,7 +366,7 @@ class GafDatasourceTest(unittest.TestCase):
         inputGeneList = file('testdata/testGeneList.txt', 'r')
         outputFileFP = file("out/testGeneListExons.txt", 'w')
         errorFileFP = file("out/testGeneListExons.err.txt", 'w')
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         for line in inputGeneList:
             gene = line.strip()
             exons = gafDatasource.retrieveExons(gene, isCodingOnly=True)
@@ -459,7 +462,7 @@ class GafDatasourceTest(unittest.TestCase):
 
     def testChangeInTxModeChangesHashcode(self):
         """Test that a change in the tx-mode will change the hashcode"""
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
         gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
         old_hashcode = gafDatasource.get_hashcode()
@@ -469,7 +472,7 @@ class GafDatasourceTest(unittest.TestCase):
 
     def test_start_codon(self):
         """Test a start codon hit in a GAF datasource"""
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
         m = MutationData()
         m.start = str(22221729)
@@ -483,7 +486,7 @@ class GafDatasourceTest(unittest.TestCase):
     @unittest.skip("GAF 3.0 datasources are not being supported much longer, but this test may have exposed a minor bug, so is being preserved if a bugfix is implemented.")
     def test_denovo(self):
         """GAF de novo test """
-        gafDatasource = TestUtils.createGafDatasource(self.config)
+        gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
         m = MutationData()
         m.start = str(22221735)

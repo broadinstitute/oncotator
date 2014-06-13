@@ -60,6 +60,9 @@ import vcf
 import os
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.utils.OptionConstants import OptionConstants
+from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
+from oncotator.utils.GenericTsvReader import GenericTsvReader
+
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -75,7 +78,7 @@ class VcfOutputRendererTest(unittest.TestCase):
     
     def _createGafDataSource(self):   
         self.logger.info("Initializing gaf 3.0")
-        return TestUtils.createGafDatasource(self.config)
+        return TestUtils.createTranscriptProviderDatasource(self.config)
 
     def testRemoveAnnotationsThatBeginWithUnderscore(self):
         """
@@ -344,7 +347,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
-        annotator.addDatasource(TestUtils.createGafDatasource(self.config))
+        annotator.addDatasource(TestUtils.createTranscriptProviderDatasource(self.config))
         annotator.annotate()
 
     def _compareGenotypeFields(self, currentSampleFields, expectedSampleFields):
@@ -854,6 +857,63 @@ class VcfOutputRendererTest(unittest.TestCase):
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
         renderer = VcfOutputRenderer(outputFilename, otherOptions={"infer_genotypes": True})
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        expectedVcfReader = vcf.Reader(filename=inputFilename, strict_whitespace=True)
+        currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        self._compareVcfs(expectedVcfReader, currentVcfReader)
+
+    def testMaf2Vcf2MafConversions(self):
+        """
+        Tests that the MAF to VCF to MAF conversion works for insertions and deletions.
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "indels.verify.maf"])
+        outputFilename = os.path.join("out", "indels.verify.out.vcf")
+
+        creator = MafliteInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.addDatasource(TestUtils.createReferenceDatasource(self.config))
+        annotator.annotate()
+
+        # Output Vcf file is the new input file
+        creator = VcfInputMutationCreator(outputFilename)
+        creator.createMutations()
+        outputFilename = os.path.join(*["out", "indels.verify.maf"])
+        renderer = SimpleOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        inputFileReader = GenericTsvReader(inputFilename)
+        outputFileReader = GenericTsvReader(outputFilename)
+
+        for inputRow in inputFileReader:
+            outputRow = outputFileReader.next()
+            self.assertEqual(inputRow["Chromosome"], outputRow["chr"], "Chromosomes do not match.")
+            self.assertEqual(inputRow["Start_position"], outputRow["start"], "Start positions do not match.")
+            self.assertEqual(inputRow["End_position"], outputRow["end"], "End positions do not match.")
+            self.assertEqual(inputRow["Reference_Allele"], outputRow["ref_allele"], "Reference alleles do not match.")
+            self.assertEqual(inputRow["Tumor_Seq_Allele2"], outputRow["alt_allele"], "Alternate alleles do not match.")
+
+    def testVcf2VcfWithMultipleRecordsWithSamePosition(self):
+        """
+        Tests that the output VCF file is rendered correctly when the input is a VCF file that has multiple records
+        with the same position.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.multiple_records_same_position.vcf"])
+        outputFilename = os.path.join("out", "example.multiple_records_same_position.vcf")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = VcfOutputRenderer(outputFilename)
         annotator = Annotator()
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
