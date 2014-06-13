@@ -133,8 +133,10 @@ class TranscriptProviderUtils(object):
         return genome_change
 
     @staticmethod
-    def render_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded):
+    def render_transcript_change(variant_type, variant_classification, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, secondary_vc):
         """
+
+
 
         :param variant_type:
         :param variant_classification:
@@ -142,9 +144,10 @@ class TranscriptProviderUtils(object):
         :param exon_position_end: Coordinates in transcript/exon space
         :param ref_allele_stranded: ref_allele with strand already accounted
         :param alt_allele_stranded: alt_allele with strand already accounted
+        :param secondary_vc:
         """
         transcript_change = ""
-        if variant_classification.startswith('Splice_Site'):
+        if variant_classification.startswith(VariantClassification.SPLICE_SITE) and secondary_vc == VariantClassification.INTRON:
             return 'c.%d_splice' % (exon_position_start)
 
         if variant_type == VariantClassification.VT_SNP:
@@ -180,18 +183,18 @@ class TranscriptProviderUtils(object):
 
 
     @staticmethod
-    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele):
-        protein_change = ""
-        if variant_classification.startswith('Splice_Site'):
-            if prot_position_start > 0:
-                protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
-        elif variant_classification.startswith('Frame_Shift'):
+    def _render_basic_protein_change(variant_classification, ref_prot_allele, alt_prot_allele, prot_position_end,
+                                     prot_position_start):
+        """
+        Helper method that handles the main variant classifications: INDELS and SNPs... no splice sites.
+        """
+        if variant_classification.startswith('Frame_Shift'):
             protein_change = 'p.%s%dfs' % (ref_prot_allele, prot_position_start)
         elif alt_prot_allele == '-' or alt_prot_allele == '':
             protein_change = 'p.%s%ddel' % (ref_prot_allele, prot_position_start)
         elif ref_prot_allele == '-' or ref_prot_allele == '':
             protein_change = 'p.%d_%dins%s' % (prot_position_start,
-                prot_position_end, alt_prot_allele)
+                                               prot_position_end, alt_prot_allele)
         elif len(ref_prot_allele) == 1 and len(alt_prot_allele) == 1:
             protein_change = 'p.%s%d%s' % (ref_prot_allele, prot_position_start, alt_prot_allele)
         else:
@@ -199,7 +202,24 @@ class TranscriptProviderUtils(object):
         return protein_change
 
     @staticmethod
-    def render_splice_site_codon_change(dist_from_exon, exon_i):
+    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, secondary_variant_classification=""):
+        if variant_classification.startswith('Splice_Site'):
+            # True when exon side splice site.
+            if prot_position_start > 0:
+                # protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
+                protein_change = TranscriptProviderUtils._render_basic_protein_change(secondary_variant_classification, ref_prot_allele,
+                                                                              alt_prot_allele, prot_position_end,
+                                                                              prot_position_start)
+            else:
+                protein_change = ""
+        else:
+            protein_change = TranscriptProviderUtils._render_basic_protein_change(variant_classification, ref_prot_allele,
+                                                                              alt_prot_allele, prot_position_end,
+                                                                              prot_position_start)
+        return protein_change
+
+    @staticmethod
+    def render_intronic_splice_site_codon_change(dist_from_exon, exon_i):
         if dist_from_exon < 0:
             dist_from_exon = str(dist_from_exon)
         else:
@@ -208,7 +228,7 @@ class TranscriptProviderUtils(object):
         return codon_change
 
     @staticmethod
-    def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i):
+    def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i, secondary_vc):
         """
         :param tx:
         :param variant_type:
@@ -225,8 +245,8 @@ class TranscriptProviderUtils(object):
         if variant_classification.startswith('Frame_Shift'):
             codon_change = 'c.(%d-%d)%sfs' % (codon_position_start, codon_position_end, updated_ref_seq)
 
-        elif variant_classification == VariantClassification.SPLICE_SITE:
-            codon_change = TranscriptProviderUtils.render_splice_site_codon_change(dist_from_exon, exon_i)
+        elif variant_classification == VariantClassification.SPLICE_SITE and secondary_vc == VariantClassification.INTRON:
+            codon_change = TranscriptProviderUtils.render_intronic_splice_site_codon_change(dist_from_exon, exon_i)
 
         elif variant_type.endswith('NP'):
             codon_change = 'c.(%d-%d)%s>%s' % (codon_position_start, codon_position_end, updated_ref_seq, updated_alt_seq)
