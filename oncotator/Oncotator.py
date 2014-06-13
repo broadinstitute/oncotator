@@ -97,7 +97,7 @@ def parseOptions(program_license, program_version_message):
         If --skip-no-alt is specified, VCF input processing will remove mutations with alt_allele_seen of False entirely (the mutations will not even seen when output format is SIMPLE_TSV).
     '''
     parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
-    parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 0]", default=0)
+    parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 5]", default=5)
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
     parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
     parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR,
@@ -120,6 +120,7 @@ def parseOptions(program_license, program_version_message):
                         help="Forces the output renderer to populate the output genotypes as heterozygous.  This option should only be used when converting a MAFLITE to a VCF; otherwise, the option has no effect.  [default: %s]" % "false")
     parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If alt_allele_seen annotation is missing, render the mutation.")
     parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  Default: oncotator.log")
+    parser.add_argument('--prepend', dest="prepend", action='store_true', help="If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs")
 
     # Process arguments
     args = parser.parse_args()
@@ -202,6 +203,7 @@ USAGE
         tx_mode = args.tx_mode
         is_skip_no_alts = args.skip_no_alt
         genome_build = args.genome_build
+        is_no_prepend = not args.prepend
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
@@ -226,9 +228,11 @@ USAGE
             logging.getLogger(__name__).warn("--skip-no-alt specified when output is a VCF.  This is likely to generate errors.")
         if is_skip_no_alts and (inputFormat != "VCF"):
             logging.getLogger(__name__).info("--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything.")
+        if is_no_prepend and (outputFormat != "TCGAMAF"):
+            logging.getLogger(__name__).info("no prepend specified when output is not TCGAMAF.  Ignoring and proceeding.")
 
         if outputFormat=="TCGAVCF":
-            logging.getLogger(__name__).error("TCGA VCF output is not supported and should be considered experimental, outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users.")
+            logging.getLogger(__name__).warning("TCGA VCF output is not supported and should be considered experimental when used outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users.")
 
         # Create a run configuration to pass to the Annotator class.
         runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
@@ -251,6 +255,7 @@ USAGE
 
 def determineOtherOptions(args, logger):
     opts = dict()
+    opts[OptionConstants.NO_PREPEND] = not args.prepend
     opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
     if args.input_format == "VCF" and args.output_format == "VCF":
         if opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:

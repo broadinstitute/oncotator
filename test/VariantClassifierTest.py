@@ -159,7 +159,15 @@ class VariantClassifierTest(unittest.TestCase):
         ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "INS", "-", "GAG",  "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG",  "c.(2932-2934)gag>GAGgag","p.978_978E>EE"),
         ("PIK3CA", "3", "178948160", "178948162", "In_Frame_Del", "DEL", "GAG", "-",  "g.chr3:178948160_178948162delGAG", "c.2932_2934delGAG",  "c.(2932-2934)gagdel", "p.E978del"),
         ("PIK3CA", "3", "178948160", "178948161", "Frame_Shift_Del", "DEL", "GA", "-",  "g.chr3:178948160_178948161delGA", "c.2932_2933delGA",  "c.(2932-2934)gagfs", "p.E978fs"),
-        ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978_splice"),
+        ("PIK3CA", "3", "178948160", "178948164", "Splice_Site", "DEL", "GAGAG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.(2932-2937)gagagg>g", "p.ER978fs"),
+        ("PIK3CA", "3", "178948160", "178948167", "Splice_Site", "DEL", "GAGAGGTG", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.(2932-2937)gagagg>g", "p.ER978fs"),
+        # TODO: Issue 174... uncomment the next line for a unit test that will fail protein change (at least)
+        # ("PIK3CA", "3", "178948160", "178948168", "Splice_Site", "DEL", "GAGAGGTGA", "-", "g.chr3:178948160_178948164delGAGAG", "c.2936_splice",  "c.e20+1", "p.ER978fs"), # This is actually a frame shift (p.ER978fs?), since 5 codon bases are deleted
+        ("PIK3CA", "3", "178948166", "178948168", "Splice_Site", "DEL", "TGA", "-", "g.chr3:178948166_178948168delTGA", "c.2936_splice",  "c.e20+2", ""),
+        ("PIK3CA", "3", "178948163", "178948164", "Splice_Site", "INS", "-", "TGA", "g.chr3:178948163_178948164insTGA", "c.2936_splice",  "c.(2935-2937)agg>aTGAgg", "p.978_979insM"),
+        ("PIK3CA", "3", "178948163", "178948164", "Splice_Site", "INS", "-", "T", "g.chr3:178948163_178948164insT", "c.2936_splice",  "c.(2935-2937)agg>aTgg", "p.R979fs"),
+        ("PIK3CA", "3", "178948165", "178948166", "Splice_Site", "INS", "-", "T", "g.chr3:178948165_178948166insT", "c.2936_splice",  "c.e20+1", ""),
+        ("PIK3CA", "3", "178948166", "178948167", "Splice_Site", "INS", "-", "T", "g.chr3:178948166_178948167insT", "c.2936_splice",  "c.e20+2", ""), # Should this be a splice site?  Technically, this was an insertion of a base 3 away from splice...
         ("PIK3CA", "3", "178948154", "178948158", "Frame_Shift_Del", "DEL", "GAATT", "-", "g.chr3:178948154_178948158delGAATT", "c.2926_2930delGAATT", "c.(2926-2931)gaatttfs", "p.EF976fs"),
         ("PIK3CA", "3", "178948154", "178948157", "Frame_Shift_Del", "DEL", "GAAT", "-", "g.chr3:178948154_178948158delGAAT", "c.2926_2929delGAAT", "c.(2926-2931)gaatttfs", "p.EF976fs"),
     )
