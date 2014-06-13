@@ -180,22 +180,39 @@ class TranscriptProviderUtils(object):
 
 
     @staticmethod
-    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele):
-        protein_change = ""
-        if variant_classification.startswith('Splice_Site'):
-            if prot_position_start > 0:
-                protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
-        elif variant_classification.startswith('Frame_Shift'):
+    def _render_basic_protein_change(variant_classification, ref_prot_allele, alt_prot_allele, prot_position_end,
+                                     prot_position_start):
+        """
+        Helper method that handles the main variant classifications: INDELS and SNPs... no splice sites.
+        """
+        if variant_classification.startswith('Frame_Shift'):
             protein_change = 'p.%s%dfs' % (ref_prot_allele, prot_position_start)
         elif alt_prot_allele == '-' or alt_prot_allele == '':
             protein_change = 'p.%s%ddel' % (ref_prot_allele, prot_position_start)
         elif ref_prot_allele == '-' or ref_prot_allele == '':
             protein_change = 'p.%d_%dins%s' % (prot_position_start,
-                prot_position_end, alt_prot_allele)
+                                               prot_position_end, alt_prot_allele)
         elif len(ref_prot_allele) == 1 and len(alt_prot_allele) == 1:
             protein_change = 'p.%s%d%s' % (ref_prot_allele, prot_position_start, alt_prot_allele)
         else:
             protein_change = 'p.%d_%d%s>%s' % (prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele)
+        return protein_change
+
+    @staticmethod
+    def render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, secondary_variant_classification=""):
+        if variant_classification.startswith('Splice_Site'):
+            # True when exon side splice site.
+            if prot_position_start > 0:
+                # protein_change = 'p.%s%d_splice' % (ref_prot_allele, prot_position_start)
+                protein_change = TranscriptProviderUtils._render_basic_protein_change(secondary_variant_classification, ref_prot_allele,
+                                                                              alt_prot_allele, prot_position_end,
+                                                                              prot_position_start)
+            else:
+                protein_change = ""
+        else:
+            protein_change = TranscriptProviderUtils._render_basic_protein_change(variant_classification, ref_prot_allele,
+                                                                              alt_prot_allele, prot_position_end,
+                                                                              prot_position_start)
         return protein_change
 
     @staticmethod
