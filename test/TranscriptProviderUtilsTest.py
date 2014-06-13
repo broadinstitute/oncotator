@@ -135,22 +135,24 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         self.assertTrue(codon_seq == gt_codon, "Did not get correct codon (%s): %s    loc: %s-%s" %(gt_codon, codon_seq, start, end))
 
     transcript_change_testdata = lambda: (
-        ("SNP", VariantClassification.MISSENSE, 6353, 6353, "C", "T", "c.6353C>T"),
-        ("SNP", VariantClassification.NONSENSE, 6037, 6037, "C", "T", "c.6037C>T"),
-        ("SNP", VariantClassification.MISSENSE, 192, 192, "G", "A", "c.192G>A"),
-        ("SNP", VariantClassification.SPLICE_SITE, 316, 316, "G", "A", "c.316_splice"),
-        ("DEL", VariantClassification.IN_FRAME_DEL, 1358, 1360, "AGA", "-", "c.1358_1360delAGA"),
-        ("DEL", VariantClassification.IN_FRAME_DEL, 1358, 1360, "AGA", "", "c.1358_1360delAGA"),
-        ("SNP", VariantClassification.RNA,	2543, 2543, "A", "G", "c.2543A>G"),
-        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3991, "-", "TTCTTAAG", "c.3990_3991insTTCTTAAG"),
-        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3991, "", "TTCTTAAG", "c.3990_3991insTTCTTAAG"),
-        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "-", "TTCTTAAG", "c.3990_3997insTTCTTAAG"),
-        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "", "TTCTTAAG", "c.3990_3997insTTCTTAAG")
+        ("SNP", VariantClassification.MISSENSE, 6353, 6353, "C", "T", "c.6353C>T", ""),
+        ("SNP", VariantClassification.NONSENSE, 6037, 6037, "C", "T", "c.6037C>T", ""),
+        ("SNP", VariantClassification.MISSENSE, 192, 192, "G", "A", "c.192G>A", ""),
+        ("SNP", VariantClassification.SPLICE_SITE, 316, 316, "G", "A", "c.316_splice", VariantClassification.INTRON),
+        ("SNP", VariantClassification.SPLICE_SITE, 316, 316, "G", "A", "c.316G>A", VariantClassification.MISSENSE),
+        ("SNP", VariantClassification.SPLICE_SITE, 2784, 2784, "C", "A", "c.2784C>A", VariantClassification.MISSENSE),
+        ("DEL", VariantClassification.IN_FRAME_DEL, 1358, 1360, "AGA", "-", "c.1358_1360delAGA", ""),
+        ("DEL", VariantClassification.IN_FRAME_DEL, 1358, 1360, "AGA", "", "c.1358_1360delAGA", ""),
+        ("SNP", VariantClassification.RNA,	2543, 2543, "A", "G", "c.2543A>G", ""),
+        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3991, "-", "TTCTTAAG", "c.3990_3991insTTCTTAAG", ""),
+        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3991, "", "TTCTTAAG", "c.3990_3991insTTCTTAAG", ""),
+        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "-", "TTCTTAAG", "c.3990_3997insTTCTTAAG", ""),
+        ("INS", VariantClassification.FRAME_SHIFT_INS, 3990, 3997, "", "TTCTTAAG", "c.3990_3997insTTCTTAAG", "")
     )
     @data_provider_decorator(transcript_change_testdata)
-    def test_render_transcript_change(self, variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, gt):
+    def test_render_transcript_change(self, variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, gt, secondary_vc):
         """Simple test of transcript change, once parameters have been rendered. """
-        guess = TranscriptProviderUtils.render_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded)
+        guess = TranscriptProviderUtils.render_transcript_change(variant_type, vc, exon_position_start, exon_position_end, ref_allele_stranded, alt_allele_stranded, secondary_vc)
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
     protein_change_testdata = lambda: (
