@@ -589,7 +589,7 @@ class VariantClassifier(object):
             return ""
         ref_prot_allele = vc.get_ref_aa()
         alt_prot_allele = vc.get_alt_aa()
-        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), int(prot_position_start), int(prot_position_end), ref_prot_allele, alt_prot_allele)
+        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), int(prot_position_start), int(prot_position_end), ref_prot_allele, alt_prot_allele, vc.get_secondary_vc())
         return result
 
     def generate_codon_change_from_vc(self, t, start, end, vc):
@@ -604,8 +604,8 @@ class VariantClassifier(object):
         """
         dist_from_exon = self._get_splice_site_coordinates(t, start, end, vc.get_exon_i())
         exon_i = vc.get_exon_i()
-        if vc.get_vc() == VariantClassification.SPLICE_SITE:
-            return TranscriptProviderUtils.render_splice_site_codon_change(dist_from_exon, exon_i)
+        if vc.get_vc() == VariantClassification.SPLICE_SITE and vc.get_secondary_vc() == VariantClassification.INTRON:
+            return TranscriptProviderUtils.render_intronic_splice_site_codon_change(dist_from_exon, exon_i)
 
         if vc.get_ref_codon_start_in_exon() == "" or vc.get_ref_codon_end_in_exon() == "":
             return ""
@@ -616,7 +616,7 @@ class VariantClassifier(object):
         ref_codon_seq = vc.get_ref_codon()
         alt_codon_seq = vc.get_alt_codon()
 
-        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i)
+        result = TranscriptProviderUtils.render_codon_change(vc.get_vt(), vc.get_vc(), int(codon_position_start_cds_space), int(codon_position_end_cds_space), ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i, vc.get_secondary_vc())
         return result
 
     def generate_transcript_change_from_tx(self, tx, variant_type, vc, start_genomic_space, end_genomic_space, ref_allele, alt_allele):
@@ -626,12 +626,11 @@ class VariantClassifier(object):
         :return:
         """
 
-        if vc.get_vc() == VariantClassification.SPLICE_SITE:
-            if vc.get_secondary_vc() == VariantClassification.INTRON:
-                return ""
-            dist_from_exon = self._get_splice_site_coordinates(tx, start_genomic_space, end_genomic_space, vc.get_exon_i())
-            exon_i = vc.get_exon_i()
-            return TranscriptProviderUtils.render_splice_site_transcript_change(tx, dist_from_exon, exon_i, vc.get_secondary_vc() == VariantClassification.INTRON)
+        if vc.get_vc() == VariantClassification.SPLICE_SITE and vc.get_secondary_vc() == VariantClassification.INTRON:
+            return ""
+            # dist_from_exon = self._get_splice_site_coordinates(tx, start_genomic_space, end_genomic_space, vc.get_exon_i())
+            # exon_i = vc.get_exon_i()
+            # return TranscriptProviderUtils.render_splice_site_transcript_change(tx, dist_from_exon, exon_i, vc.get_secondary_vc() == VariantClassification.INTRON)
 
         if vc.get_cds_start_in_exon_space() == "" or vc.get_cds_start_in_exon_space() < 0:
             return ""
@@ -645,7 +644,7 @@ class VariantClassifier(object):
             cds_position_end_cds_space = exon_position_end - int(vc.get_cds_start_in_exon_space())
 
         observed_allele_stranded, reference_allele_stranded = self._get_stranded_alleles(ref_allele, alt_allele, tx)
-        result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded)
+        result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded, vc.get_secondary_vc())
         return result
 
     def _determine_closest_distance_from_exon(self, start_genomic, end_genomic, exon_i,  t):
