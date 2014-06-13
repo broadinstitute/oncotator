@@ -154,16 +154,17 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
     protein_change_testdata = lambda: (
-        ("SNP", "Missense_Mutation", 2118, 2118, "S", "L", "-", "p.S2118L"),
-        ("SNP", "Nonsense_Mutation", 2013, 2013, "Q", "*", "-", "p.Q2013*"),
-        ("SNP", "Splice_Site", 106, 106, "V", "A", "-", "p.V106_splice"),
-        ("DEL", "In_Frame_Del", 454, 454, "K", "-",	"+", "p.K454del"),
-        ("SNP", "Nonstop_Mutation", 246, 246, "*", "S", "+", "p.*246S")
+        ("SNP", "Missense_Mutation", "", 2118, 2118, "S", "L", "-", "p.S2118L"),
+        ("SNP", "Nonsense_Mutation",  "", 2013, 2013, "Q", "*", "-", "p.Q2013*"),
+        ("SNP", "Splice_Site",  VariantClassification.MISSENSE, 106, 106, "V", "A", "-", "p.V106A"),
+        ("SNP", "Splice_Site", VariantClassification.INTRON, 0, 0, "V", "A", "-", ""),
+        ("DEL", "In_Frame_Del", "", 454, 454, "K", "-",	"+", "p.K454del"),
+        ("SNP", "Nonstop_Mutation", "", 246, 246, "*", "S", "+", "p.*246S")
     )
     @data_provider_decorator(protein_change_testdata)
-    def test_render_protein_change(self, variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele, strand, gt):
+    def test_render_protein_change(self, variant_type, variant_classification, secondary_vc, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, strand, gt):
         """Simple test of protein change, once parameters have been rendered. """
-        guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_allele, alt_allele)
+        guess = TranscriptProviderUtils.render_protein_change(variant_type, variant_classification, prot_position_start, prot_position_end, ref_prot_allele, alt_prot_allele, secondary_vc)
         self.assertTrue(guess == gt, "Incorrect guess gt <> guess: %s <> %s" % (gt, guess))
 
     mutate_ref_sequence_testdata = lambda: (

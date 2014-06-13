@@ -589,7 +589,7 @@ class VariantClassifier(object):
             return ""
         ref_prot_allele = vc.get_ref_aa()
         alt_prot_allele = vc.get_alt_aa()
-        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), int(prot_position_start), int(prot_position_end), ref_prot_allele, alt_prot_allele)
+        result = TranscriptProviderUtils.render_protein_change(vc.get_vt(), vc.get_vc(), int(prot_position_start), int(prot_position_end), ref_prot_allele, alt_prot_allele, vc.get_secondary_vc())
         return result
 
     def generate_codon_change_from_vc(self, t, start, end, vc):
