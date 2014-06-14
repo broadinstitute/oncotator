@@ -8,16 +8,7 @@ def isSourceFile(filename):
     return str.endswith(filename, ".java") or str.endswith(filename, ".scala")
 
 def getAppropriateLicense(filename):
-    licenseFileName = ""
-    if filename.startswith("private"):
-        licenseFileName = "licensing/private_license.txt"
-    elif filename.startswith("protected"):
-        licenseFileName = "licensing/protected_license.txt"
-    elif filename.startswith("public"):
-        licenseFileName = "licensing/public_license.txt"
-    else:
-        logging.error(filename + " is not in public, private or protected\n")
-        exit(1)
+    licenseFileName = "broad_license_oncotator_oday.txt"
     return licenseFileName
 
 def blankLine(line):
@@ -37,7 +28,7 @@ def extractLicenseFromSource(file):
         if blankLine(strippedLine):
             continue                # just skip blank lines
 
-        if strippedLine.startswith("/*"):
+        if strippedLine.startswith('"""'):
             inCommentBlock += 1     # mark start of a comment block
 
         if inCommentBlock or lineIsCommentedOut(strippedLine):

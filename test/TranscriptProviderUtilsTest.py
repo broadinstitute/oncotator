@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import shutil
 import Bio
 from oncotator.DatasourceFactory import DatasourceFactory

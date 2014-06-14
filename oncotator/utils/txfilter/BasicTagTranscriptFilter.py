@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 class BasicTagTranscriptFilter(object):
     """ Class for transcript filter that only passes transcripts that have a tag of basic.
 

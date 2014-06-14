@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 from ConfigParser import SafeConfigParser
 from argparse import RawTextHelpFormatter, ArgumentParser
 import logging

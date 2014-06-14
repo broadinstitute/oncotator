@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import re
 
 from Bio import Seq

@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import math
 import Bio
 from oncotator.utils.VariantClassification import VariantClassification

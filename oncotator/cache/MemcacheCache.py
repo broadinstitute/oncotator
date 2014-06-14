@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 from oncotator.cache.Cache import Cache
 
 class MemcacheCache(Cache):

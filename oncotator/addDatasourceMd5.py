@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 from argparse import ArgumentParser, RawTextHelpFormatter
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 

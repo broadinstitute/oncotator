@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import string
 
 from VcfOutputConfigTable import VcfOutputConfigTable

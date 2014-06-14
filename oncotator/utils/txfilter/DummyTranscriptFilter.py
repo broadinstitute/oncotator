@@ -1,4 +1,4 @@
-__author__ = 'lichtens'
+# LICENSE_GOES_HERE
 
 class DummyTranscriptFilter(object):
     """ Class for transcript filter that does not actually filter anything """

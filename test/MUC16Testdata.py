@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 
 muc16testdata = lambda : (
     ("19", "8966742", "8966742", "Missense_Mutation", "SNP", "C", "T"),

@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 from collections import OrderedDict
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData

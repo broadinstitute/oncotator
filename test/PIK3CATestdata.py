@@ -1,4 +1,6 @@
-__author__ = 'lichtens'
+# LICENSE_GOES_HERE
+
+
 pik3ca_testdata = lambda: (
 ("PIK3CA", "3", "178916938", "178916940", "In_Frame_Del", "GAA", "-", "DEL",  "g.chr3:178916938_178916940delGAA", "c.325_327delGAA", "p.E110del"),
 ("PIK3CA", "3", "178948159", "178948160", "In_Frame_Ins", "-", "GAG", "INS", "g.chr3:178948159_178948160insGAG", "c.2931_2932insGAG", "p.978_978E>EE"),

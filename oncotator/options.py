@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 class Options:
 	"""
 	A container for options that control how a annotation database set should be handled

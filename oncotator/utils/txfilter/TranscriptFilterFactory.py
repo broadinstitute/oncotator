@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import logging
 from oncotator.utils.txfilter.BasicTagTranscriptFilter import BasicTagTranscriptFilter
 from oncotator.utils.txfilter.DummyTranscriptFilter import DummyTranscriptFilter

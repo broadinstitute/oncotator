@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 from copy import deepcopy
 import logging
 from shove.core import Shove

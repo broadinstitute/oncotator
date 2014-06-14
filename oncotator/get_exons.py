@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import os
 from oncotator.DatasourceFactory import DatasourceFactory

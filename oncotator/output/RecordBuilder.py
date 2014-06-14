@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import collections
 import logging
 import string

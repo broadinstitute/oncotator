@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import logging
 from oncotator.cache.DummyCache import DummyCache
 from oncotator.cache.MemcacheCache import MemcacheCache

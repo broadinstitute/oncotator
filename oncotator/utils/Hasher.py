@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 import hashlib
 import logging
 

@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 from VcfOutputConfigTableCreator import VcfOutputConfigTableCreator
 from VcfInputConfigTableCreator import VcfInputConfigTableCreator
 

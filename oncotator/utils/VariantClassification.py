@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 
 class VariantClassification(object):
     """ Stores the names and values of a variant classification.

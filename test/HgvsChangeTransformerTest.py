@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import unittest
 import logging
 import os.path as op

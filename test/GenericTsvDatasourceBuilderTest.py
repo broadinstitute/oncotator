@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import os
 from oncotator.index.GenericTsvDatasourceCreator import GenericTsvDatasourceCreator
 from test.TestUtils import TestUtils

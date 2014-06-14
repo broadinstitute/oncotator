@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 
 class MissingAnnotationException(Exception):
     '''

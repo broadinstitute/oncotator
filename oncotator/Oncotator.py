@@ -1,6 +1,7 @@
 #!/usr/local/bin/python2.7
-#!/usr/local/bin/python2.7
 # encoding: utf-8
+# LICENSE_GOES_HERE
+
 '''
 Oncotator -- An annotation engine for Cancer
 

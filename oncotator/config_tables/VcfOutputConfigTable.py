@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 
 class VcfOutputConfigTable():
     _infoFieldNames = dict()  # info (name, ID) pairs

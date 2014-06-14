@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
 from test.TestUtils import TestUtils
 

@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import abc
 
 __author__ = 'lichtens'

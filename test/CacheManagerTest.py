@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import unittest
 from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager

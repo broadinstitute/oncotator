@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import logging
 from Bio import Seq
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils

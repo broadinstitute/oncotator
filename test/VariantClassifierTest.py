@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import Bio
 
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils

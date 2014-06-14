@@ -1,48 +1,31 @@
-#!/bin/zsh
+#!/bin/bash
 
-# This script will CHECK all files in the GATK for the license information
+# This script will CHECK all files in the Oncotator for the license information
 # it is meant to be run by bamboo as a sanity check that our repo contains the
 # correct license information in all files.
 #
 # script must be run from the $GIT_ROOT
 #
+# Adapted from a script for the GATK:
 # author: Mauricio Carneiro
 # date: 1/9/13
 
-echo "Checking all licenses in the GATK.. ";
+echo "Checking all licenses in Oncotator... ";
 
 result=0
-ls public/**/*.java     | python private/python/licensing/CheckLicense.py
+ls oncotator/**/*.py     | python private/python/licensing/CheckLicense.py
 if [[ "$?" == "255" ]]
 then
     result=1
 fi
 
-ls protected/**/*.java  | python private/python/licensing/CheckLicense.py
+ls scripts/**/*.py     | python private/python/licensing/CheckLicense.py
 if [[ "$?" == "255" ]]
 then
     result=1
 fi
 
-ls private/**/*.java    | python private/python/licensing/CheckLicense.py
-if [[ "$?" == "255" ]]
-then
-    result=1
-fi
-
-ls public/**/*.scala    | python private/python/licensing/CheckLicense.py
-if [[ "$?" == "255" ]]
-then
-    result=1
-fi
-
-ls protected/**/*.scala | python private/python/licensing/CheckLicense.py
-if [[ "$?" == "255" ]]
-then
-    result=1
-fi
-
-ls private/**/*.scala   | python private/python/licensing/CheckLicense.py
+ls test/**/*.py  | python private/python/licensing/CheckLicense.py
 if [[ "$?" == "255" ]]
 then
     result=1

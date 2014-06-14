@@ -1,3 +1,4 @@
+# LICENSE_GOES_HERE
 from DatasourceCreator import DatasourceCreator
 from TabixIndexer import TabixIndexer
 import ConfigParser

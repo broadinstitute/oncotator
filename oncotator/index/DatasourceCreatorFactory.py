@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 from GenericTsvDatasourceCreator import GenericTsvDatasourceCreator
 from TabixIndexedTsvDatasourceCreator import TabixIndexedTsvDatasourceCreator
 from TabixIndexedVcfDatasourceCreator import TabixIndexedVcfDatasourceCreator

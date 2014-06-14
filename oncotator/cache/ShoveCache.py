@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import logging
 from shove import Shove
 from oncotator.cache.Cache import Cache

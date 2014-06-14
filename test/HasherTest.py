@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import os
 from oncotator.utils.Hasher import Hasher
 from test.TestUtils import TestUtils

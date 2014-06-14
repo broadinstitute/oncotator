@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# LICENSE_GOES_HERE
 
 import sys
 from oncotator.index.TabixIndexer import TabixIndexer

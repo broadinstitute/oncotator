@@ -1,3 +1,5 @@
+# LICENSE_GOES_HERE
+
 import vcf
 from VcfInputConfigTable import VcfInputConfigTable
 from ConfigTableCreator import ConfigTableCreator
