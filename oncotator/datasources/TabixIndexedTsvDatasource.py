@@ -131,20 +131,25 @@ class IndexedTsvDatasource(Datasource):
         :param mutation: mutation to annotate
         :return: annotated mutation
         """
-        vals = {}
+
+        chrom = mutation.chr
         mut_start = int(mutation.start)
         mut_end = int(mutation.end)
+        self_output_tsv_headers = self.output_tsv_headers
+        self_tsv_headers = self.tsv_headers
+
+        vals = {}
         try:
             # tabix needs position - 1
-            tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start - 1, mut_end, parser=pysam.asTuple())
+            tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
             for tsv_record in tsv_records:
                 if not tsv_record:  # skip in case no records are found
                     continue
 
                 # Determine whether the new tsv record matches mutation or not
                 if self._is_matching(mutation, tsv_record):
-                    for colName in self.output_tsv_headers:
-                        val = tsv_record[self.tsv_headers[colName]]
+                    for colName in self_output_tsv_headers:
+                        val = tsv_record[self_tsv_headers[colName]]
                         if colName not in vals:
                             vals[colName] = [val]
                         else:
@@ -154,15 +159,18 @@ class IndexedTsvDatasource(Datasource):
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
             logging.getLogger(__name__).debug(msg)
 
-        for colName in self.output_tsv_headers:
+        self_data_types = self.dataTypes
+        self_tsv_index_keys = self.tsv_index.keys()
+        for colName in self_output_tsv_headers:
             if colName in vals:  # this case happens when there are no matching records to be found
                 val = string.join(vals[colName], "|")
             else:
                 val = ""
 
-            ds_type = self.dataTypes[colName]
+            ds_type = self_data_types[colName]
             if self.match_mode == "exact":
-                if "ref" not in self.tsv_index or "alt" not in self.tsv_index:
+
+                if "ref" not in self_tsv_index_keys or "alt" not in self_tsv_index_keys:
                     ds_type = "String"
             elif self.match_mode == "avg":
                 if ds_type == "Integer" or ds_type == "Float":
@@ -189,7 +197,7 @@ class IndexedTsvDatasource(Datasource):
                       "Empty set of records being returned." % (mutation.chr, mutation.start, mutation.end)
                 logging.getLogger(__name__).debug(msg)
 
-            mutation.createAnnotation(self.output_tsv_headers[colName], val, self.title, annotationDataType=ds_type,
+            mutation.createAnnotation(self_output_tsv_headers[colName], val, self.title, annotationDataType=ds_type,
                                       tags=[TagConstants.INFO, TagConstants.NOT_SPLIT])
 
         return mutation
