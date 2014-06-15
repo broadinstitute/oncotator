@@ -126,25 +126,26 @@ class IndexedTsvDatasource(Datasource):
 
     def _get_record_vals(self, chrom, mut_start, mut_end, mutation, output_tsv_headers, tsv_headers):
         vals = {}
-        try:
-            # tabix needs position - 1
-            tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
-            for tsv_record in tsv_records:
-                if not tsv_record:  # skip in case no records are found
-                    continue
+        # try:
 
-                # Determine whether the new tsv record matches mutation or not
-                if self._is_matching(mutation, tsv_record):
-                    for colName in output_tsv_headers:
-                        val = tsv_record[tsv_headers[colName]]
-                        if colName not in vals:
-                            vals[colName] = [val]
-                        else:
-                            vals[colName] += [val]
+        # tabix needs position - 1
+        tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
+        for tsv_record in tsv_records:
+            if not tsv_record:  # skip in case no records are found
+                continue
 
-        except ValueError as ve:
-            msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
-            logging.getLogger(__name__).debug(msg)
+            # Determine whether the new tsv record matches mutation or not
+            if self._is_matching(mutation, tsv_record):
+                for colName in output_tsv_headers:
+                    val = tsv_record[tsv_headers[colName]]
+                    if colName not in vals:
+                        vals[colName] = [val]
+                    else:
+                        vals[colName] += [val]
+
+        # except ValueError as ve:
+        #     msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
+        #     logging.getLogger(__name__).debug(msg)
         return vals
 
     def annotate_mutation(self, mutation):
