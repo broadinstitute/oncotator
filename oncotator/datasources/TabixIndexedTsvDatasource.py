@@ -135,28 +135,25 @@ class IndexedTsvDatasource(Datasource):
 
     def _get_record_vals(self, chrom, mut_start, mut_end, mutation, output_tsv_headers_keys, tsv_headers):
         vals = {}
-        # try:
+        try:
 
-        tsv_records = self._retrieve_records(chrom, mut_end, mut_start)
-        for tsv_record in tsv_records:
-            if not tsv_record:  # skip in case no records are found
-                continue
+            tsv_records = self._retrieve_records(chrom, mut_end, mut_start)
+            for tsv_record in tsv_records:
+                if not tsv_record:  # skip in case no records are found
+                    continue
 
-            # Determine whether the new tsv record matches mutation or not
-            if self._is_matching(mutation, tsv_record):
-                max_index = max(tsv_headers.values())
-                val_list = self._get_vals_as_list(max_index, tsv_record)
-                # vals = {k,v for }
-                for colName in output_tsv_headers_keys:
-                    val = val_list[tsv_headers[colName]]
-                    if colName not in vals:
-                        vals[colName] = [val]
-                    else:
-                        vals[colName] += [val]
+                # Determine whether the new tsv record matches mutation or not
+                if self._is_matching(mutation, tsv_record):
+                    max_index = max(tsv_headers.values())
+                    val_list = self._get_vals_as_list(max_index, tsv_record)
 
-        # except ValueError as ve:
-        #     msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
-        #     logging.getLogger(__name__).debug(msg)
+                    vals = [val_list[tsv_headers[colName]] for colName in output_tsv_headers_keys]
+
+
+        except ValueError as ve:
+            msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
+            logging.getLogger(__name__).debug(msg)
+
         return vals
 
     def annotate_mutation(self, mutation):
