@@ -129,7 +129,7 @@ class IndexedTsvDatasource(Datasource):
         tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
         return tsv_records
 
-    def _get_record_vals(self, chrom, mut_start, mut_end, mutation, output_tsv_headers, tsv_headers):
+    def _get_record_vals(self, chrom, mut_start, mut_end, mutation, output_tsv_headers_keys, tsv_headers):
         vals = {}
         # try:
 
@@ -140,7 +140,7 @@ class IndexedTsvDatasource(Datasource):
 
             # Determine whether the new tsv record matches mutation or not
             if self._is_matching(mutation, tsv_record):
-                for colName in output_tsv_headers:
+                for colName in output_tsv_headers_keys:
                     val = tsv_record[tsv_headers[colName]]
                     if colName not in vals:
                         vals[colName] = [val]
@@ -166,7 +166,7 @@ class IndexedTsvDatasource(Datasource):
         self_output_tsv_headers = self.output_tsv_headers
         self_tsv_headers = self.tsv_headers
 
-        vals = self._get_record_vals(chrom, mut_start, mut_end, mutation, self_output_tsv_headers, self_tsv_headers)
+        vals = self._get_record_vals(chrom, mut_start, mut_end, mutation, self_output_tsv_headers.keys(), self_tsv_headers)
 
         self_data_types = self.dataTypes
         self_tsv_index_keys = self.tsv_index.keys()
