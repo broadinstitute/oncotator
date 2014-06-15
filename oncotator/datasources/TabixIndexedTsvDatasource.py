@@ -126,7 +126,7 @@ class IndexedTsvDatasource(Datasource):
 
     def _retrieve_records(self, chrom, mut_end, mut_start):
         # tabix needs position - 1
-        tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end)
+        tsv_records = self.tsv_reader.fetch(region=chrom, start=(mut_start - 1), end=(mut_end), parser=pysam.asTuple())
         return tsv_records
 
     def _get_vals_as_list(self, max_index, tsv_record):
