@@ -140,8 +140,11 @@ class IndexedTsvDatasource(Datasource):
 
             # Determine whether the new tsv record matches mutation or not
             if self._is_matching(mutation, tsv_record):
+                max_index = max(tsv_headers.values())
+                val_list = tsv_record[0:max_index+1]
+                # vals = {k,v for }
                 for colName in output_tsv_headers_keys:
-                    val = tsv_record[tsv_headers[colName]]
+                    val = val_list[tsv_headers[colName]]
                     if colName not in vals:
                         vals[colName] = [val]
                     else:
