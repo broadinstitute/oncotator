@@ -138,7 +138,8 @@ class IndexedTsvDatasource(Datasource):
         try:
 
             tsv_records = self._retrieve_records(chrom, mut_end, mut_start)
-            for tsv_record in tsv_records:
+            i=0
+            for i,tsv_record in enumerate(tsv_records):
                 if not tsv_record:  # skip in case no records are found
                     continue
 
@@ -147,8 +148,8 @@ class IndexedTsvDatasource(Datasource):
                     max_index = max(tsv_headers.values())
                     val_list = self._get_vals_as_list(max_index, tsv_record)
 
-                    vals = [val_list[tsv_headers[colName]] for colName in output_tsv_headers_keys]
-
+                    vals = {colName:val_list[tsv_headers[colName]] for colName in output_tsv_headers_keys}
+            logging.getLogger(__name__).info("Found %d records" % i )
 
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
