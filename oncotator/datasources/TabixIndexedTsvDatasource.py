@@ -124,12 +124,16 @@ class IndexedTsvDatasource(Datasource):
 
         return False
 
+    def _retrieve_records(self, chrom, mut_end, mut_start):
+        # tabix needs position - 1
+        tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
+        return tsv_records
+
     def _get_record_vals(self, chrom, mut_start, mut_end, mutation, output_tsv_headers, tsv_headers):
         vals = {}
         # try:
 
-        # tabix needs position - 1
-        tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
+        tsv_records = self._retrieve_records(chrom, mut_end, mut_start)
         for tsv_record in tsv_records:
             if not tsv_record:  # skip in case no records are found
                 continue
