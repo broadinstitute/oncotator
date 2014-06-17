@@ -141,6 +141,7 @@ class IndexedTsvDatasource(Datasource):
             for i,tsv_record in enumerate(tsv_records):
                 if not tsv_record:  # skip in case no records are found
                     continue
+                continue
                 logging.getLogger(__name__).debug("Got a record.")
                 # Determine whether the new tsv record matches mutation or not
                 if self._is_matching(mutation, tsv_record):
