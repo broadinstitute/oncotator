@@ -196,6 +196,8 @@ class DatasourceFactory(object):
 
             columnDataTypes = dict()
             for columnName in annotationColumnNames:
+                if columnName.strip() == "":
+                    continue
                 columnDataTypes[columnName] = configParser.get("data_types", columnName)
 
             result = IndexedTsvDatasource(src_file=filePrefix + configParser.get("general", "src_file"),
