@@ -131,7 +131,9 @@ class IndexedTsvDatasource(Datasource):
         vals = {}
         try:
             # tabix needs position - 1
-            tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
+            query_str = '{}:{}-{}'.format(chrom, mut_start, mut_end)
+            tsv_records = self.tsv_reader.fetch(region=query_str)
+            # tsv_records = self.tsv_reader.fetch(chrom, mut_start - 1, mut_end, parser=pysam.asTuple())
             i = -1
             for i, tsv_record in enumerate(tsv_records):
                 if not tsv_record:  # skip in case no records are found
