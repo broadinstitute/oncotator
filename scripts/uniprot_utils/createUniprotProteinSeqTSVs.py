@@ -51,11 +51,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import csv
 import os
-from reportlab.platypus.doctemplate import onDrawStr
 import shutil
 from createUniprotTSVs import parse_uniprot_data
 from createUniprotProteinSeqsAlignments import parseWithShove,generateTranscriptMuts
-from oncotator.datasources import Generic_Gene_DataSource, Gaf
+from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource, Gaf
 from oncotator.utils.TsvFileSorter import TsvFileSorter
 
 __author__ = 'lichtens'
@@ -121,7 +120,7 @@ if __name__ == '__main__':
 
     # Use simple_uniprot TSV to get the uniprot_entry_names
     # Create the gene to uniprot info mappings.  But take less RAM.  Given a gene, get the uniprot record.
-    uniprotDS = Generic_Gene_DataSource(src_file=uniprot_tsv, title="UniProt", version="2011_09", geneColumnName="gene")
+    uniprotDS = GenericGeneDatasource(src_file=uniprot_tsv, title="UniProt", version="2011_09", geneColumnName="gene")
 
     # key is the uniprot_entry_name from the uniprotDS
     muts = generateTranscriptMuts(gafDS, uniprotDS)

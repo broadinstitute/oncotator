@@ -126,7 +126,7 @@ class IndexedTsvDatasource(Datasource):
 
     def _retrieve_records(self, chrom, mut_end, mut_start):
         # tabix needs position - 1
-        tsv_records = self.tsv_reader.fetch(region=chrom, start=(mut_start - 1), end=(mut_end), parser=pysam.asTuple())
+        tsv_records = self.tsv_reader.fetch(chrom, start=(mut_start - 1), end=(mut_end), parser=pysam.asTuple())
         return tsv_records
 
     def _get_vals_as_list(self, max_index, tsv_record):
@@ -142,14 +142,14 @@ class IndexedTsvDatasource(Datasource):
             for i,tsv_record in enumerate(tsv_records):
                 if not tsv_record:  # skip in case no records are found
                     continue
-                logging.getLogger(__name__).info("On record %d " % i )
+                # logging.getLogger(__name__).info("On record %d " % i )
                 # Determine whether the new tsv record matches mutation or not
                 if self._is_matching(mutation, tsv_record):
                     max_index = max(tsv_headers.values())
                     val_list = self._get_vals_as_list(max_index, tsv_record)
 
                     vals = {colName:val_list[tsv_headers[colName]] for colName in output_tsv_headers_keys}
-            logging.getLogger(__name__).info("Found %d records" % i )
+            # logging.getLogger(__name__).info("Found %d records" % i )
 
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
