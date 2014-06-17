@@ -138,21 +138,21 @@ class IndexedTsvDatasource(Datasource):
             # tabix needs position - 1
             tsv_records = self.tsv_reader.fetch(mutation.chr, mut_start - 1, mut_end, parser=pysam.asTuple())
             i = -1
-            # for i,tsv_record in enumerate(tsv_records):
-            #     if not tsv_record:  # skip in case no records are found
-            #         continue
-            #
-            #     logging.getLogger(__name__).debug("Got a record.")
-            #     # Determine whether the new tsv record matches mutation or not
-            #     if self._is_matching(mutation, tsv_record):
-            #         for colName in self.output_tsv_headers:
-            #             if colName.strip() == "":
-            #                 continue
-            #             val = tsv_record[self.tsv_headers[colName]]
-            #             if colName not in vals:
-            #                 vals[colName] = [val]
-            #             else:
-            #                 vals[colName] += [val]
+            for i,tsv_record in enumerate(tsv_records):
+                if not tsv_record:  # skip in case no records are found
+                    continue
+
+                logging.getLogger(__name__).debug("Got a record.")
+                # Determine whether the new tsv record matches mutation or not
+                # if self._is_matching(mutation, tsv_record):
+                #     for colName in self.output_tsv_headers:
+                #         if colName.strip() == "":
+                #             continue
+                #         val = tsv_record[self.tsv_headers[colName]]
+                #         if colName not in vals:
+                #             vals[colName] = [val]
+                #         else:
+                #             vals[colName] += [val]
             logging.getLogger(__name__).debug("Processed %d records." % (i+1))
         except ValueError as ve:
             msg = "Exception when looking for tsv records. Empty set of records being returned: " + repr(ve)
