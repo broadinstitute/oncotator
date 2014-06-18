@@ -17,7 +17,7 @@ class ShoveDatasourceTest(unittest.TestCase):
         shove_tmp = Shove(output_url, "simple://", max_entries=300)
 
         index_cols = ["#chr", "pos(1-coor)", "pos(1-coor)", "ref", "alt"]
-        tsv_file = "dbNSFP2.4_variant.chr1"
+        tsv_file = "/xchip/cga_home/mgupta/mgupta/dbNSFP/dbNSFP2.4_variant.chr1"
         fp = file(tsv_file, 'r')
         for i,line in enumerate(fp):
             line_list = line.split("\t")
