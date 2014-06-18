@@ -12,7 +12,7 @@ class ShoveDatasourceTest(unittest.TestCase):
 
         # chr, start, end, ref, alt
         protocol = "sqlite"
-        output_url = protocol + "://dbNSFP_chr1.sqlite"
+        output_url = protocol + ":///dbNSFP_chr1.sqlite"
 
         shove_tmp = Shove(output_url, "simple://", max_entries=300)
 
