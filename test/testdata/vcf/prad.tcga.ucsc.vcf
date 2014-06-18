@@ -1,0 +1,50 @@
+##fileformat=VCFv4.1
+##tcgaversion=1.1
+##fileDate=20131230
+##center=UCSC
+##source="RADIA pipeline v1.0"
+##reference=file:/inside/depot/fa/all_sequences.fasta
+##phasing=none
+##vcfGenerator=<addOrigin=<True>,algorithm=<RADIA>,batchSize=<10000000>,chromSizesFilename=</inside/home/aradenba/rnaEditing/data/hg19/hg19_chromSizes.tab>,dataSource=<cgHub>,dnaNormalFastaFilename=</inside/depot/fa/Homo_sapiens_assembly19.fasta>,dnaNormalFilename=</inside/depot4/users/aradenba/data/hg19/prad/bams/wxs/TCGA-CH-5745-10A-01D-1576-08.bam>,dnaNormalMaxErrPct=<0.01>,dnaNormalMaxTotalNumBases=<20000>,dnaNormalMinAltNumBases=<4>,dnaNormalMinAltPct=<0.1>,dnaNormalMinBaseQuality=<10>,dnaNormalMinMappingQuality=<10>,dnaNormalMinStrandBiasDepth=<4>,dnaNormalMinTotalNumBases=<10>,dnaNormalMitochon=<M>,dnaNormalStrandBias=<0.01>,dnaNormalUseChrPrefix=<False>,dnaTumorFastaFilename=</inside/depot/fa/Homo_sapiens_assembly19.fasta>,dnaTumorFilename=</inside/depot4/users/aradenba/data/hg19/prad/bams/wxs/TCGA-CH-5745-01A-11D-1576-08.bam>,dnaTumorMaxErrPct=<0.01>,dnaTumorMaxTotalNumBases=<20000>,dnaTumorMinAltNumBases=<4>,dnaTumorMinAltPct=<0.1>,dnaTumorMinBaseQuality=<10>,dnaTumorMinMappingQuality=<10>,dnaTumorMinStrandBiasDepth=<4>,dnaTumorMinTotalNumBases=<10>,dnaTumorMitochon=<M>,dnaTumorStrandBias=<0.01>,dnaTumorUseChrPrefix=<False>,fastaFilename=</inside/depot/fa/Homo_sapiens_assembly19.fasta>,filterUsingDNA=<False>,filterUsingRNA=<False>,genotypeMinDepth=<2>,genotypeMinPct=<0.1>,logLevel=<WARNING>,lohMaxDepth=<2>,lohMaxPct=<0.02>,maxAltDepth=<2>,maxAltPct=<0.01>,minAltAvgBaseQual=<20.0>,modMinDepth=<4>,modMinPct=<0.1>,outputFilename=</inside/depot4/users/aradenba/data/hg19/prad/radia/filters/dnaCalls/TCGA-CH-5745-10A-01D-1576-08_TCGA-CH-5745-01A-11D-1576-08_chr1.vcf>,refFilename=</inside/depot/fa/all_sequences.fasta>,refId=<hg19>,refUrl=</inside/depot/fa/Homo_sapiens_assembly19.fasta>,rnaTumorFastaFilename=</inside/depot/fa/GRCh37-lite_w_chr_prefix.fa>,rnaTumorFilename=</inside/depot4/users/aradenba/data/hg19/prad/bams/rna/TCGA-CH-5745-01A-11R-1580-07.bam>,rnaTumorMaxErrPct=<0.01>,rnaTumorMaxTotalNumBases=<20000>,rnaTumorMinAltNumBases=<4>,rnaTumorMinAltPct=<0.1>,rnaTumorMinBaseQuality=<10>,rnaTumorMinMappingQuality=<10>,rnaTumorMinStrandBiasDepth=<4.0>,rnaTumorMinTotalNumBases=<10>,rnaTumorMitochon=<M>,rnaTumorStrandBias=<0.01>,rnaTumorUseChrPrefix=<True>,sequencingPlatform=<Illumina>,startCoordinate=<1>,stopCoordinate=<249250621>,useChrPrefix=<False>,vcfFileFormat=<VCFv4.1>,version=<1.0>>
+##INDIVIDUAL=TCGA-CH-5745
+##SAMPLE=<ID=DNA_NORMAL,SampleUUID=e32b30c3-6ed3-42ce-ad17-69b26146f7e4,SampleTCGABarcode=TCGA-CH-5745-10A-01D-1576-08,Individual=TCGA-CH-5745,Description="Normal DNA Sample",File="/inside/depot4/users/aradenba/data/hg19/prad/bams/wxs/TCGA-CH-5745-10A-01D-1576-08.bam",Platform="Illumina",Source=CGHub,Accession=30a96e1e-ae71-46d3-8fc1-b8abde0c1ad2,SequenceSource=WXS,softwareName=<RADIA>,sotwareVer=<1.0>,softwareParam=<genotypeMinPct=0.10,modMinDepth=4,modMinPct=0.10,dnaNormalMinTotalBases=10,dnaNormalMinAltBases=4,dnaNormalMinAltPct=0.10,dnaNormalMaxErrPct=0.01,dnaNormalMinStrandBiasDepth=4,dnaTumorMinTotalBases=10,dnaTumorMinAltBases=4,dnaTumorMinAltPct=0.10,dnaTumorMaxErrPct=0.01,dnaTumorMinStrandBiasDepth=4>>
+##SAMPLE=<ID=DNA_TUMOR,SampleUUID=51db8439-c35f-472e-baf0-8e6e22833c39,SampleTCGABarcode=TCGA-CH-5745-01A-11D-1576-08,Individual=TCGA-CH-5745,Description="Tumor DNA Sample",File="/inside/depot4/users/aradenba/data/hg19/prad/bams/wxs/TCGA-CH-5745-01A-11D-1576-08.bam",Platform="Illumina",Source=CGHub,Accession=83035ab1-7e89-4801-8cdd-84dd920604b2,SequenceSource=WXS,softwareName=<RADIA>,sotwareVer=<1.0>,softwareParam=<genotypeMinPct=0.10,modMinDepth=4,modMinPct=0.10,dnaNormalMinTotalBases=10,dnaNormalMinAltBases=4,dnaNormalMinAltPct=0.10,dnaNormalMaxErrPct=0.01,dnaNormalMinStrandBiasDepth=4,dnaTumorMinTotalBases=10,dnaTumorMinAltBases=4,dnaTumorMinAltPct=0.10,dnaTumorMaxErrPct=0.01,dnaTumorMinStrandBiasDepth=4>>
+##SAMPLE=<ID=RNA_TUMOR,SampleUUID=4ca3b9ec-cd21-46fc-9a44-05d5225f0c57,SampleTCGABarcode=TCGA-CH-5745-01A-11R-1580-07,Individual=TCGA-CH-5745,Description="Tumor RNA Sample",File="/inside/depot4/users/aradenba/data/hg19/prad/bams/rna/TCGA-CH-5745-01A-11R-1580-07.bam",Platform="Illumina",Source=CGHub,Accession=9844ccd7-d591-4b27-b4fd-e65c5d273925,SequenceSource=RNA-Seq,softwareName=<RADIA>,sotwareVer=<1.0>,softwareParam=<genotypeMinPct=0.10,modMinDepth=4,modMinPct=0.10,dnaNormalMinTotalBases=10,dnaNormalMinAltBases=4,dnaNormalMinAltPct=0.10,dnaNormalMaxErrPct=0.01,dnaNormalMinStrandBiasDepth=4,dnaTumorMinTotalBases=10,dnaTumorMinAltBases=4,dnaTumorMinAltPct=0.10,dnaTumorMaxErrPct=0.01,dnaTumorMinStrandBiasDepth=4>>
+##INFO=<ID=COSMIC,Number=0,Type=Flag,Description="Overlaps with Catalogue Of Somatic Mutations In Cancer (COSMIC)">
+##INFO=<ID=EGPS,Number=0,Type=Flag,Description="Overlaps with ENCODE/GENCODE pseudogenes">
+##INFO=<ID=RTPS,Number=0,Type=Flag,Description="Overlaps with retrotransposon or pseudogene">
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership">
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=AC,Number=.,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=.,Type=Float,Description="Allele Frequency in primary data, for each ALT allele, in the same order as listed">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth across samples">
+##INFO=<ID=INDEL,Number=1,Type=Integer,Description="Number of indels for all samples">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Number of reads starting at this position across all samples">
+##INFO=<ID=STOP,Number=1,Type=Integer,Description="Number of reads stopping at this position across all samples">
+##INFO=<ID=BQ,Number=1,Type=Integer,Description="RMS base quality">
+##INFO=<ID=SB,Number=1,Type=Float,Description="Strand bias">
+##INFO=<ID=FA,Number=1,Type=Float,Description="Overall fraction of reads supporting ALT">
+##INFO=<ID=MT,Number=.,Type=String,Description="Modification types at this position">
+##INFO=<ID=MC,Number=.,Type=String,Description="Modification base changes at this position">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Indicates if record is a somatic mutation">
+##INFO=<ID=VT,Number=1,Type=String,Description="Variant type, can be SNP, INS or DEL">
+##INFO=<ID=ORIGIN,Number=.,Type=String,Description="Where the call originated from, the tumor DNA, RNA, or both">
+##FILTER=<ID=perfect5,Description="Less than 5 perfect reads supporting mutation">
+##FILTER=<ID=perfectsbias,Description="Strand bias in perfect reads">
+##FILTER=<ID=blat,Description="Mutated reads blat to other positions">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth at this position in the sample">
+##FORMAT=<ID=INDEL,Number=1,Type=Integer,Description="Number of indels">
+##FORMAT=<ID=START,Number=1,Type=Integer,Description="Number of reads starting at this position">
+##FORMAT=<ID=STOP,Number=1,Type=Integer,Description="Number of reads stopping at this position">
+##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Depth of reads supporting alleles 0/1/2/3...">
+##FORMAT=<ID=AF,Number=.,Type=Float,Description="Fraction of reads supporting alleles">
+##FORMAT=<ID=BQ,Number=.,Type=Integer,Description="Average base quality for reads supporting alleles">
+##FORMAT=<ID=SB,Number=.,Type=Float,Description="Strand Bias for reads supporting alleles">
+##INFO=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
+##FORMAT=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
+##FORMAT=<ID=SSC,Number=1,Type=Integer,Description="Somatic score between 0 and 255">
+##vcfProcessLog=<InputVCF=</inside/depot4/users/aradenba/data/hg19/prad/radia/finalPatientVCFsPassingSom/TCGA-CH-5745-10A-01D-1576-08_TCGA-CH-5745-01A-11D-1576-08.vcf>,InputVCFSource=<RADIA>,InputVCFVer=<1.0>,InputVCFParam=<genotypeMinPct=0.10,modMinDepth=4,modMinPct=0.10,dnaNormalMinTotalBases=10,dnaNormalMinAltBases=4,dnaNormalMinAltPct=0.10,dnaNormalMaxErrPct=0.01,dnaNormalMinStrandBiasDepth=4,dnaTumorMinTotalBases=10,dnaTumorMinAltBases=4,dnaTumorMinAltPct=0.10,dnaTumorMaxErrPct=0.01,dnaTumorMinStrandBiasDepth=4>>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	DNA_NORMAL	DNA_TUMOR	RNA_TUMOR
+1	248813373	.	G	A	0	PASS	AC=4;AF=0.04;AN=2;BQ=37;DP=94;FA=0.04;INDEL=0;MC=G>A;MT=SOM;NS=2;ORIGIN=DNA;SB=0.21;SOMATIC;SS=2;START=1;STOP=3;VT=SNP	GT:DP:INDEL:START:STOP:AD:AF:BQ:SB:SS:SSC	0/0:52:0:1:2:52,0:1.0,0.0:38,0:0.19,0.0:0:0	0/1:42:0:0:1:38,4:0.9,0.1:37,32:0.21,0.5:2:0	.:.:.:.:.:.:.:.:.:.:.

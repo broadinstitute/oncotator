@@ -457,6 +457,20 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                                                                            pandas.isnull(expected[colName]))) ==
                             len(current.index), "Should have the same values in column " + colName)
 
+    def testUCSC_TCGA_Vcf2TsvComments(self):
+        """
+        Tests that the missing FILTER fields are parsed correctly.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "prad.tcga.ucsc.vcf"])
+        outputFilename = os.path.join("out", "prad.tcga.ucsc.out.tsv")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
 
 if __name__ == "__main__":
     unittest.main()
