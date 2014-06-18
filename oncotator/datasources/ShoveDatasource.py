@@ -11,11 +11,13 @@ class ShoveDatasource(Datasource):
     file:///absolute/path/to/a/folder/
     leveldb:///absolute/path/to/a/folder/
 
-    Values returned from a
+    Values returned from a ShoveDatasrource will be
+
+    Index columns must match exactly in order to receive a value from the ShoveDatasource
 
     """
 
-    def __init__(self, src_file, title='', version=None, shove_cache_url="simple://", max_entries=500):
+    def __init__(self, src_file, title, version, index_cols, shove_cache_url="simple://", max_entries=500):
         """
 
         :param src_file: Shove URI for store
@@ -25,7 +27,21 @@ class ShoveDatasource(Datasource):
         One entry will be
         :param max_entries:
         """
-
+        super(ShoveDatasource, self).__init__(src_file, title=title, version=version)
         self._db_store = Shove(src_file, shove_cache_url, max_entries=max_entries)
+
+    def annotate_mutation(self, mutation):
+        """ Mutations are annotated only with exact matches of chr, start, end, ref, and alt.
+        """
+
+        # create hash for this mutation
+
+        # extract value for this hash from the db
+
+        # Annotate
+
+    @staticmethod
+    def generate_hash(m):
+        return "%s_%s_%s_%s_%s" % (m.chr, m.start, m.end, m.ref_allele, m.alt_allele)
 
 
