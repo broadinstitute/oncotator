@@ -396,15 +396,15 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
         tsvReader = GenericTsvReader(outputFilename)
         fieldnames = tsvReader.getFieldNames()
-        self.assertTrue("SS" in fieldnames, "SS field is missing in the header.")
-        self.assertTrue("SS__FORMAT__" in fieldnames, "SS__FORMAT__ is missing in the header.")
+        self.assertTrue("variant_status" in fieldnames, "variant_status field is missing in the header.")
+        self.assertTrue("sample_variant_status" in fieldnames, "sample_variant_status is missing in the header.")
 
         row = tsvReader.next()
-        self.assertTrue("SS" in row, "SS field is missing in the row.")
-        self.assertTrue("SS__FORMAT__" in row, "SS__FORMAT__ is missing in the row.")
+        self.assertTrue("variant_status" in row, "variant_status field is missing in the row.")
+        self.assertTrue("sample_variant_status" in row, "sample_variant_status is missing in the row.")
 
-        self.assertEqual("2", row["SS"], "Incorrect value of SS.")
-        self.assertEqual("0", row["SS__FORMAT__"], "Incorrect value of SS__FORMAT__")
+        self.assertEqual("2", row["variant_status"], "Incorrect value of variant_status.")
+        self.assertEqual("0", row["sample_variant_status"], "Incorrect value of sample_variant_status")
 
     def testDuplicateAnnotationMetaData(self):
         """
@@ -416,8 +416,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         creator = VcfInputMutationCreator(inputFilename)
         md = creator.getMetadata()
 
-        self.assertTrue("SS" in md, "SS field is missing in metadata.")
-        self.assertTrue("SS__FORMAT__" in md, "SS__FORMAT__ is missing in metadata.")
+        self.assertTrue("variant_status" in md, "variant_status field is missing in metadata.")
+        self.assertTrue("sample_variant_status" in md, "sample_variant_status is missing in metadata.")
 
     def testMissingFilter(self):
         """
