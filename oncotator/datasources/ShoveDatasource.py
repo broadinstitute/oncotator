@@ -38,7 +38,7 @@ class ShoveDatasource(Datasource):
         """
 
         # create hash for this mutation
-        h = ShoveDatasource.generate_hash(mutation)
+        h = ShoveDatasource.generate_hash(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele)
 
         # extract value for this hash from the db
         annotations_list = []
