@@ -43,7 +43,7 @@ class ShoveDatasource(Datasource):
         # extract value for this hash from the db
         annotations_list = []
         try:
-            annotations_list = self._db_store.Get(h)
+            annotations_list = self._db_store.Get(h).split(",")
         except KeyError:
             # do nothing
             pass
