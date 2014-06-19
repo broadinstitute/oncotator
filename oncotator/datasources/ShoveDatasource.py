@@ -1,5 +1,6 @@
 from shove.core import Shove
 from oncotator.datasources.Datasource import Datasource
+import leveldb
 
 
 class ShoveDatasource(Datasource):
@@ -28,7 +29,8 @@ class ShoveDatasource(Datasource):
         :param max_entries:
         """
         super(ShoveDatasource, self).__init__(src_file, title=title, version=version)
-        self._db_store = Shove(src_file, shove_cache_url, max_entries=max_entries)
+        # self._db_store = Shove(src_file, shove_cache_url, max_entries=max_entries)
+        self._db_store = leveldb.LevelDB(src_file)
         self._annotation_columns = annotation_columns
 
     def annotate_mutation(self, mutation):
@@ -41,7 +43,7 @@ class ShoveDatasource(Datasource):
         # extract value for this hash from the db
         annotations_list = []
         try:
-            annotations_list = self._db_store[h]
+            annotations_list = self._db_store.Get(h)
         except KeyError:
             # do nothing
             pass
