@@ -44,6 +44,7 @@ class ShoveDatasource(Datasource):
         annotations_list = []
         try:
             annotations_list = self._db_store.Get(h).split(",")
+            print ",".join(annotations_list)
         except KeyError:
             # do nothing
             pass
