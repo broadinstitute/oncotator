@@ -78,19 +78,23 @@ class LevelDbDatasource(Datasource):
         try:
             # TODO: Attempt preloading?
             annotations_list = self._db_store.Get(h).split(",")
+
+            # # Annotate
+            # for i,col in enumerate(self._annotation_columns):
+                # if len(annotations_list) <= i:
+                #     # TODO: Throw exception here instead?
+                #     logging.getLogger(__name__).error("Disconcordant length of annotation columns between datasource config file and the actual data.")
+                #     mutation.createAnnotation(col, "", self.title)
+                # else:
+                #     mutation.createAnnotation(col, annotations_list[i], self.title)
+
+
+            [mutation.createAnnotation(col, annotations_list[i], self.title)  for i,col in enumerate(self._annotation_columns)]
         except KeyError:
             # do nothing
-            pass
+            mutation.addAnnotations(self._blank_annotations)
 
-        # Annotate
-        # for i,col in enumerate(self._annotation_columns):
-            # if len(annotations_list) <= i:
-            #     # TODO: Throw exception here instead?
-            #     logging.getLogger(__name__).error("Disconcordant length of annotation columns between datasource config file and the actual data.")
-            #     mutation.createAnnotation(col, "", self.title)
-            # else:
-            #     mutation.createAnnotation(col, annotations_list[i], self.title)
-        [mutation.createAnnotation(col, annotations_list[i], self.title)  for i,col in enumerate(self._annotation_columns)]
+
 
         return mutation
 
