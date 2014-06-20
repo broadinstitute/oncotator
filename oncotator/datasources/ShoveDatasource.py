@@ -93,5 +93,5 @@ class ShoveDatasource(Datasource):
         chrom_pos_offset += b_alt
 
 
-        return chrom_pos_offset
+        return str(chrom_pos_offset)
 
