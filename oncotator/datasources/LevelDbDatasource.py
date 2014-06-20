@@ -52,7 +52,7 @@ class LevelDbDatasource(Datasource):
         # Initialize a level db datasource w/ 100MB of memory cache
         self._db_store = leveldb.LevelDB(src_file, block_cache_size=(100 * (2 << 20)), create_if_missing=False)
         self._annotation_columns = annotation_columns
-        self._blank_annotations = {k:Annotation("", annotationSource=self.title, annotationDataType="String", annotationDescription="") for k in self._annotation_columns}
+        self._blank_annotations = {k:Annotation("", datasourceName=self.title, dataType="String", description="") for k in self._annotation_columns}
 
     def annotate_mutation(self, mutation):
         """ Mutations are annotated only with exact matches of chr, start, end, ref, and alt.
