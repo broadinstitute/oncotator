@@ -65,6 +65,33 @@ class ShoveDatasource(Datasource):
         return ShoveDatasource.generate_hash(m.chr, m.start, m.end, m.ref_allele, m.alt_allele)
 
     @staticmethod
+    def _generate_int_from_base(b):
+        if b == "A": return 0
+        if b == "C": return 1
+        if b == "G": return 2
+        if b == "T": return 3
+
+    @staticmethod
     def generate_hash(chrom, start,end,ref,alt):
-        return "%s_%s_%s_%s_%s" % (chrom, start, end, ref, alt)
+
+        #TODO: Non-hg19 builds
+        #TODO: support for chomosomes other than chr1-22,X,Y
+        #TODO: Convert to genomic space using actual length of contigs, not just 300M
+
+        if chrom == "X":
+            raw_chrom = 23
+        elif chrom =="Y":
+            raw_chrom = 24
+        else:
+            raw_chrom = int(chrom)
+        chrom_pos_offset = ((raw_chrom-1) * 300000000) + int(start)
+        chrom_pos_offset = chrom_pos_offset << 4
+
+        b_ref = ShoveDatasource._generate_int_from_base(ref)
+        b_alt = ShoveDatasource._generate_int_from_base(alt)
+        chrom_pos_offset += (b_ref << 2)
+        chrom_pos_offset += b_alt
+
+
+        return chrom_pos_offset
 
