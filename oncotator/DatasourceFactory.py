@@ -215,8 +215,8 @@ class DatasourceFactory(object):
             result = LevelDbDatasource(src_file=filePrefix + configParser.get("general", "src_file"),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get("general", "version"),
-                                           annotationColNames=annotationColumnNames,
-                                           indexColNames=indexColumnNames)
+                                           annotation_columns=annotationColumnNames,
+                                           index_cols=indexColumnNames)
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)
