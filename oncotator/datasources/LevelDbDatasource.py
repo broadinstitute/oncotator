@@ -90,7 +90,7 @@ class LevelDbDatasource(Datasource):
             #     mutation.createAnnotation(col, "", self.title)
             # else:
             #     mutation.createAnnotation(col, annotations_list[i], self.title)
-        [mutation.createAnnotation(col, annotations_list[i], self.title)  for col in self._annotation_columns]
+        [mutation.createAnnotation(col, annotations_list[i], self.title)  for i,col in enumerate(self._annotation_columns)]
 
         return mutation
 
