@@ -87,7 +87,7 @@ class LevelDbDatasource(Datasource):
         # extract value for this hash from the db
         annotations_list = []
         try:
-            #self._alter_preload(h)
+            self._alter_preload(h)
             annotations_list = self._db_store.Get(h).split(",")
 
             # # Annotate
