@@ -70,6 +70,7 @@ class ShoveDatasource(Datasource):
         if b == "C": return 1
         if b == "G": return 2
         if b == "T": return 3
+        else: return 4
 
     @staticmethod
     def generate_hash(chrom, start,end,ref,alt):
@@ -85,11 +86,11 @@ class ShoveDatasource(Datasource):
         else:
             raw_chrom = int(chrom)
         chrom_pos_offset = ((raw_chrom-1) * 300000000) + int(start)
-        chrom_pos_offset = chrom_pos_offset << 4
+        chrom_pos_offset = chrom_pos_offset << 6
 
         b_ref = ShoveDatasource._generate_int_from_base(ref)
         b_alt = ShoveDatasource._generate_int_from_base(alt)
-        chrom_pos_offset += (b_ref << 2)
+        chrom_pos_offset += (b_ref << 3)
         chrom_pos_offset += b_alt
 
 
