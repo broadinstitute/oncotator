@@ -126,16 +126,7 @@ setup(
 #''',
   long_description=open('README.rst').read(),
   
-  # Installed in reverse order, so numpy must go first (since pandas and biopython need it)
-  # IMPORTANT: biopython, cython, and numpy had to be installed manually.
-  #  For example:
-  #    sudo pip -E /path/to/virtualenv/bin/python install biopython
-  #
-  # Additionally, pyvcf did not install without manual intervention to create vcf/cparse.c manually using cython:
-  #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
-  #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env/build/pyvcf/vcf$ cython cparse.pyx
-  #  (oncotator_env)lichtens@Oncobuntu:~/py_env/oncotator_env$ pip install pyvcf
-  install_requires=['bcbio-gff', 'pyvcf >= 0.6.3', 'pysam == 0.7.5', 'pandas', 'biopython', 'numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached', 'natsort'],
+  install_requires=['bcbio-gff', 'pyvcf >= 0.6.3', 'pysam == 0.7.5', 'pandas', 'biopython', 'numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached', 'natsort', 'leveldb'],
   
   # For future reference... how to specify required libraries.
     #  scripts=['scripts/vcf_melt', 'scripts/vcf_filter.py'],
