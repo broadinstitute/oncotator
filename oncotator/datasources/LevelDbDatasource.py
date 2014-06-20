@@ -60,7 +60,7 @@ class LevelDbDatasource(Datasource):
         if h >=  self._preload_start and h <= self._preload_end:
             pass
         else:
-            self._db_store.RangeIter(key_from = h, key_to = (int(h) + (1000000 << 6)), include_value = True, verify_checksums = False, fill_cache = True)
+            self._db_store.RangeIter(key_from = h, key_to = str(int(h) + (1000000 << 6)), include_value = True, verify_checksums = False, fill_cache = True)
 
 
     def annotate_mutation(self, mutation):
