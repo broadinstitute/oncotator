@@ -53,6 +53,15 @@ class LevelDbDatasource(Datasource):
         self._db_store = leveldb.LevelDB(src_file, block_cache_size=(100 * (2 << 20)), create_if_missing=False)
         self._annotation_columns = annotation_columns
         self._blank_annotations = {k:Annotation("", datasourceName=self.title, dataType="String", description="") for k in self._annotation_columns}
+        self._preload_start = -1
+        self._preload_end = -1
+
+    def _alter_preload(self, h):
+        if h >=  self._preload_start and h <= self._preload_end:
+            pass
+        else:
+            self._db_store.RangeIter(key_from = h, key_to = (int(h) + (1000000 << 6)), include_value = True, verify_checksums = False, fill_cache = True)
+
 
     def annotate_mutation(self, mutation):
         """ Mutations are annotated only with exact matches of chr, start, end, ref, and alt.
@@ -76,7 +85,7 @@ class LevelDbDatasource(Datasource):
         # extract value for this hash from the db
         annotations_list = []
         try:
-            # TODO: Attempt preloading?
+            self._alter_preload(h)
             annotations_list = self._db_store.Get(h).split(",")
 
             # # Annotate
