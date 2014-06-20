@@ -1,5 +1,6 @@
 import logging
 from shove.core import Shove
+from oncotator.Annotation import Annotation
 from oncotator.datasources.Datasource import Datasource
 import leveldb
 
@@ -51,6 +52,7 @@ class LevelDbDatasource(Datasource):
         # Initialize a level db datasource w/ 100MB of memory cache
         self._db_store = leveldb.LevelDB(src_file, block_cache_size=(100 * (2 << 20)), create_if_missing=False)
         self._annotation_columns = annotation_columns
+        self._blank_annotations = {k:Annotation("", annotationSource=self.title, annotationDataType="String", annotationDescription="") for k in self._annotation_columns}
 
     def annotate_mutation(self, mutation):
         """ Mutations are annotated only with exact matches of chr, start, end, ref, and alt.
@@ -60,8 +62,7 @@ class LevelDbDatasource(Datasource):
 
             # We do not have anything to do here, since it is not a SNP.
             # Populate all annotations with blank values
-            for col in self._annotation_columns:
-                mutation.createAnnotation(col, "", annotationSource=self.title, annotationDataType="String", annotationDescription="")
+            mutation.addAnnotations(self._blank_annotations)
 
         else:
             mutation = self._perform_annotate_mutation(mutation)
@@ -82,13 +83,14 @@ class LevelDbDatasource(Datasource):
             pass
 
         # Annotate
-        for i,col in enumerate(self._annotation_columns):
-            if len(annotations_list) <= i:
-                # TODO: Throw exception here instead?
-                logging.getLogger(__name__).error("Disconcordant length of annotation columns between datasource config file and the actual data.")
-                mutation.createAnnotation(col, "", self.title)
-            else:
-                mutation.createAnnotation(col, annotations_list[i], self.title)
+        # for i,col in enumerate(self._annotation_columns):
+            # if len(annotations_list) <= i:
+            #     # TODO: Throw exception here instead?
+            #     logging.getLogger(__name__).error("Disconcordant length of annotation columns between datasource config file and the actual data.")
+            #     mutation.createAnnotation(col, "", self.title)
+            # else:
+            #     mutation.createAnnotation(col, annotations_list[i], self.title)
+        [mutation.createAnnotation(col, annotations_list[i], self.title)  for col in self._annotation_columns]
 
         return mutation
 
