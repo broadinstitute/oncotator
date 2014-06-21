@@ -164,10 +164,11 @@ class Annotator(object):
         cache_url = runSpec.get_cache_url()
         if cache_url is not None and cache_url != "":
             db_dir_key = self.create_db_dir_key()
+            self._cacheManager = CacheManager()
+            self._cacheManager.initialize(cache_url, db_dir_key, is_read_only=runSpec.get_is_read_only_cache())
         else:
             db_dir_key = "never_used"
-        self._cacheManager = CacheManager()
-        self._cacheManager.initialize(cache_url, db_dir_key, is_read_only=runSpec.get_is_read_only_cache())
+            self._cacheManager = None
 
     def initialize(self,runSpec):
         """ Given a RunSpecification instance, initialize self properly.  Do not start annotation.
@@ -232,13 +233,15 @@ class Annotator(object):
 
         filename = self._outputRenderer.renderMutations(mutations, metadata=metadata, comments=comments)
 
-        self.logger.info("Closing cache: (misses: " + str(self._cache_stats['miss']) + "  hits: " + str(self._cache_stats['hit']) + ")")
-        self._cacheManager.close_cache()
+        if self._cacheManager is not None:
+            self.logger.info("Closing cache: (misses: " + str(self._cache_stats['miss']) + "  hits: " + str(self._cache_stats['hit']) + ")")
+            self._cacheManager.close_cache()
 
         return filename
     
     def _applyManualAnnotations(self, mutations, manualAnnotations):
         manualAnnotationKeys = manualAnnotations.keys()
+
         for m in mutations:
             for k in manualAnnotationKeys:
                 # newRequired = False allows this call to overwrite the previous value.
@@ -289,13 +292,17 @@ class Annotator(object):
             if self._is_skip_no_alts and m.get("alt_allele_seen", "True") == "False":
                 continue
 
-            annot_dict = self._cacheManager.retrieve_cached_annotations(m)
+            annot_dict = None
+            if self._cacheManager is not None:
+                annot_dict = self._cacheManager.retrieve_cached_annotations(m)
 
             if annot_dict is None:
-                self._cache_stats['miss'] += 1
                 for datasource in self._datasources:
                     m = datasource.annotate_mutation(m)
-                self._cacheManager.store_annotations_in_cache(m)
+
+                if self._cacheManager is not None:
+                    self._cache_stats['miss'] += 1
+                    self._cacheManager.store_annotations_in_cache(m)
             else:
                 self._cache_stats['hit'] += 1
                 m.addAnnotations(annot_dict)
