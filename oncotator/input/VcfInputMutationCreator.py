@@ -200,7 +200,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 val = str(val)
 
-            mutation.createAnnotation(name, val, "INPUT", dataType, infos_id_.desc, tags=tags,
+            mutation.createAnnotation(name, val, "INPUT", dataType, infos_id.desc, tags=tags,
                                       number=num)
 
         return mutation
