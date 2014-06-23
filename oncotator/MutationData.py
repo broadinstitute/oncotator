@@ -113,7 +113,7 @@ class MutationData(collections.MutableMapping):
         This method must be called to add an annotation to a mutation.  Do not use: mut['new_annotation_name'] = 'annotation_value'
         
         """
-        tags = [] if tags is None else tags
+
 
 #        self.lock.acquire()
         if annotationName in MutationData.attributes:
@@ -125,6 +125,7 @@ class MutationData(collections.MutableMapping):
             else:
                 raise DuplicateAnnotationException('Attempting to create an annotation multiple times (' + annotationName + ') with old, new values of (' + str(self.annotations[annotationName].value) + ", " + str(annotationValue) + ")")
         else:
+            tags = [] if tags is None else tags
             self.annotations[annotationName] = Annotation(annotationValue, annotationSource, annotationDataType, annotationDescription, tags=tags, number=number)
 #        self.lock.release()
         
