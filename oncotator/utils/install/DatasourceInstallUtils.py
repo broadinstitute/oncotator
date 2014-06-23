@@ -106,7 +106,7 @@ class DatasourceInstallUtils(object):
         datasourceBuilder = DatasourceBuilderFactory.getDatasourceCreatorInstance(ds_type)
         configFilename = os.path.join(*[destDir, string.join([ds_foldername, "config"], ".")])
         datasourceBuilder.createDatasource(destDir=destDir, ds_file=ds_file, index_column_names=index_columns,
-                                           configFilename=configFilename, ds_type=ds_type, ds_name=ds_name,
+                                           out_config_filename=configFilename, ds_type=ds_type, ds_name=ds_name,
                                            ds_version=ds_version, ds_match_mode=ds_match_mode,
                                            annotation_column_names=ds_annotation_columns,
                                            indexCols=DatasourceInstallUtils.getIndexCols(ds_type, index_columns))

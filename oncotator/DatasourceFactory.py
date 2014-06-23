@@ -52,7 +52,7 @@ import logging
 import os
 from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatasource
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
-from oncotator.datasources.LevelDbDatasource import LevelDbDatasource
+from oncotator.datasources.SnpOnlyLevelDbDatasource import SnpOnlyLevelDbDatasource
 from utils.ConfigUtils import ConfigUtils
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
@@ -209,10 +209,10 @@ class DatasourceFactory(object):
                                            indexColNames=indexColumnNames,
                                            match_mode=configParser.get("general", "match_mode"),
                                            colDataTypes=columnDataTypes)
-        elif dsType == "leveldb":
+        elif dsType == "snp_leveldb":
             annotationColumnNames = configParser.get("general", "annotation_column_names").split(",")
             indexColumnNames = configParser.get("general", "index_column_names").split(",")
-            result = LevelDbDatasource(src_file=filePrefix + configParser.get("general", "src_file"),
+            result = SnpOnlyLevelDbDatasource(src_file=filePrefix + configParser.get("general", "src_file"),
                                            title=configParser.get("general", "title"),
                                            version=configParser.get("general", "version"),
                                            annotation_columns=annotationColumnNames,
