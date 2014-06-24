@@ -149,6 +149,9 @@ def parseOptions():
 
    # Create a datasource using Exome Seq. Project (ESP) data that is in variant call format (VCF)
    initializeDatasource --ds_type indexed_vcf --ds_file ESP6500SI-V2.vcf --name ESP --version 6500SI-V2 --dbDir ~/oncotest_ESP6500SI-V2 --genome_build hg19 --match_mode exact --ds_foldername ~/ESP6500SI-V2_exact
+
+   # Create a datasource from a tsv
+   initializeDatasource --ds_type snp_leveldb --ds_file test/testdata/small_tsv_leveldb/dbNSFP2.4_variant.chr1_cut5000.tsv  --name dbNSFP5k --version TEST --dbDir /path/to/test_db_dir/ --index_columns "chr,pos(1-coor),pos(1-coor),ref,alt" --genome_build hg19 --ds_foldername dbNSFP5k
     """
 
     desc = """
