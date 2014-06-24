@@ -47,17 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
-
-
-"""
-Created on Jan 15, 2013
-
-Simple script to create a datasource given some information from the user and an appropriate file.
-
-
-@author: lichtens
-"""
-
+import logging
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 import tempfile
@@ -245,15 +235,27 @@ def createDatasource(tmpDir):
     destDir = os.path.join(*[tmpDir, ds_foldername, genome_build])
     os.makedirs(destDir)
 
+    # Create a basic logger to a file
+    loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
+    logging.basicConfig(filename="initializeDatasource.log", level=logging.INFO, format=loggingFormat)
+
+    # Add a console logger to the root logger, which means that all loggers generated will have the console dump.
+    #    Output on the console will be the same as what is in the log file.
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    formatter = logging.Formatter(loggingFormat)
+    ch.setFormatter(formatter)
+    logging.getLogger('').addHandler(ch)
+
     # Copy the tsv file into genome build dir
     DatasourceInstallUtils.create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version,
                                              index_columns, ds_annotation_columns, ds_match_mode)
 
-    print("Config file created: " + os.path.join(destDir, ds_foldername) + ".config")
+    logging.getLogger(__name__).info("Config file created: " + os.path.join(destDir, ds_foldername) + ".config")
 
     # Last step:  Copy the directory to the destination dbDir.
     shutil.copytree(symlinks=True, src=os.path.join(tmpDir, ds_foldername), dst=os.path.join(dbDir, ds_foldername))
-    print("Datasource copied from temp location to " + os.path.join(dbDir, ds_foldername))
+    logging.getLogger(__name__).info("Datasource copied from temp location to " + os.path.join(dbDir, ds_foldername))
 
 
 def main():
