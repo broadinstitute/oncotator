@@ -36,7 +36,7 @@ class SnpOnlyLevelDbDatasourceCreator(DatasourceCreator):
         config.write(filePtr)
         filePtr.close()
 
-    def createDatasource(self, destDir, ds_file, index_column_names, out_config_filename, ds_type, ds_name, ds_version,
+    def createDatasource(self, destDir, ds_file, index_column_names, configFilename, ds_type, ds_name, ds_version,
                          ds_match_mode, annotation_column_names, indexCols):
         """
 
@@ -44,26 +44,39 @@ class SnpOnlyLevelDbDatasourceCreator(DatasourceCreator):
         :param destDir:
         :param ds_file:
         :param index_column_names:
-        :param out_config_filename:
+        :param configFilename:
         :param ds_type:
         :param ds_name:
         :param ds_version:
         :param ds_match_mode:
-        :param annotation_column_names:
+        :param annotation_column_names: If blank, assume all in the tsv (minus the index columns)
         :param indexCols: list of the index columns.  Assumed to be five corresponding to chrom, start, end, ref, and alt.
         """
+        index_column_names = index_column_names.split(",")
+
         output_filename = destDir + "/" + ds_name + ".leveldb"
         src_file = os.path.basename(output_filename)
         db = leveldb.LevelDB(output_filename, create_if_missing=True)
 
+        comment_prepend = "#"
+        if any([True for icol in index_column_names if icol.startswith("#")]):
+            comment_prepend = "%"
+
         tsv_file = ds_file
-        tsv_reader = GenericTsvReader(tsv_file)
+        tsv_reader = GenericTsvReader(tsv_file, commentPrepend=comment_prepend)
+
+
+        if annotation_column_names is None:
+            annotation_column_names = copy.copy(tsv_reader.getFieldNames())
+            for icol in index_column_names:
+                if icol in annotation_column_names:
+                    annotation_column_names.remove(icol)
 
         logging.getLogger(__name__).info("Creating SNP LevelDB for the following index headers: " + str(index_column_names))
         logging.getLogger(__name__).info("Creating SNP LevelDB for the following data headers: " + str(annotation_column_names))
 
         # Create the config file
-        self._createConfigFile(out_config_filename + "/" + ds_name + ".config", src_file, ds_name, ds_version, index_column_names, annotation_columns=annotation_column_names)
+        self._createConfigFile(configFilename, src_file, ds_name, ds_version, index_column_names, annotation_columns=annotation_column_names)
 
         batch = leveldb.WriteBatch()
         for i,line_dict in enumerate(tsv_reader):

@@ -65,7 +65,7 @@ import shutil
 import os
 from oncotator.utils.MutUtils import MutUtils
 
-supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv']
+supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv', 'snp_leveldb']
 
 
 def parseOptions():
@@ -109,6 +109,9 @@ def parseOptions():
                3) tsv --> tab separated values, so the file must be a table of tab-separated values with the same number of values on every row.
 
        "indexed_vcf" -- vcf or tabix indexed vcf file referenced by chromosome and position.
+
+       "snp_leveldb" -- tsv file that is for SNP/SNV only.  Matches on chromosome, start, end, ref_allele, and alt_allele.  start will typically equal end.
+            This datasource is good for large TSVs that cannot fit in RAM.
 
    datasource filename -- input data file.  In the case of tabix_gp_tsv, it would be the source tsv file.
    name -- arbitrary name for the datasource.  This will be the folder moved into the the destination db dir.  Must be unique from other datasources.  
@@ -259,7 +262,7 @@ def main():
     """
     tmpDir = None
     try:
-        tmpDir = tempfile.mkdtemp()
+        tmpDir = tempfile.mkdtemp(prefix="initializeDatasource_")
         createDatasource(tmpDir)
     finally:
         try:

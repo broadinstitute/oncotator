@@ -3,7 +3,6 @@ import shutil
 import copy
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
-from oncotator.datasources.SnpOnlyLevelDbDatasource import SnpOnlyLevelDbDatasource
 from oncotator.index.SnpOnlyLevelDbDatasourceCreator import SnpOnlyLevelDbDatasourceCreator
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from test.TestUtils import TestUtils
