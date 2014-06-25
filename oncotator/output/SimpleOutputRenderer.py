@@ -83,7 +83,11 @@ class SimpleOutputRenderer(OutputRenderer):
         self._delimiter = "\t"
 
     def _determineHeaders(self, mut, metadata):
-        headers = MutUtils.getAllAttributeNames(mut) if not None else []
+        if mut is None:
+            headers = []
+        else:
+            headers = MutUtils.getAllAttributeNames(mut)
+
         if len(headers) == 0:
             headers = metadata.keys()
 
@@ -112,18 +116,21 @@ class SimpleOutputRenderer(OutputRenderer):
         fptr = file(self._filename, 'w')
         if len(comments) != 0:
             fptr.write('#' + "\n# ".join(comments) + "\n")
-            
-        mut = None
-        for mutation in mutations:
-            mut = copy.deepcopy(mutation)
-            lst = [mutations, (mut for mut in [mut])]
-            mutations = itertools.chain(*lst)
+
+        try:
+            mut = mutations.next()
+        except StopIteration:
+            mut = None
 
         headers = self._determineHeaders(mut, metadata)
 
         writer = csv.DictWriter(fptr, headers, delimiter=self._delimiter, lineterminator=self._lineterminator,
                                 extrasaction="ignore")
         writer.writeheader()
+
+        if mut is not None:
+            writer.writerow(mut)
+            ctr += 1
 
         for m in mutations:
             writer.writerow(m)

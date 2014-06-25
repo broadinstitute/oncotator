@@ -90,6 +90,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         self.gene_db = shove.Shove(protocol + '://%s' % ensembl_gene_to_transcript_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
         self.gp_bin_db = shove.Shove(protocol + '://%s' % ensembl_genomic_position_bins_to_transcript_index_fname, cache_protocol + "://", timeout=timeout, max_entries=max_entries)
 
+        tmp = self.gp_bin_db.keys()
+
         logging.getLogger(__name__).info("%s %s is being set up with default tx-mode: %s.  " % (title, version, tx_mode))
         self.set_tx_mode(tx_mode)
 

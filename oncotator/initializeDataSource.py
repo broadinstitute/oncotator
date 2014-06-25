@@ -47,17 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
-
-
-"""
-Created on Jan 15, 2013
-
-Simple script to create a datasource given some information from the user and an appropriate file.
-
-
-@author: lichtens
-"""
-
+import logging
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
 import tempfile
@@ -65,7 +55,7 @@ import shutil
 import os
 from oncotator.utils.MutUtils import MutUtils
 
-supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv']
+supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv', 'snp_leveldb']
 
 
 def parseOptions():
@@ -110,6 +100,9 @@ def parseOptions():
 
        "indexed_vcf" -- vcf or tabix indexed vcf file referenced by chromosome and position.
 
+       "snp_leveldb" -- tsv file that is for SNP/SNV only.  Matches on chromosome, start, end, ref_allele, and alt_allele.  start will typically equal end.
+            This datasource is good for large TSVs that cannot fit in RAM.
+
    datasource filename -- input data file.  In the case of tabix_gp_tsv, it would be the source tsv file.
    name -- arbitrary name for the datasource.  This will be the folder moved into the the destination db dir.  Must be unique from other datasources.  
        This will be a prefix on all annotations from this datasource.
@@ -146,6 +139,9 @@ def parseOptions():
 
    # Create a datasource using Exome Seq. Project (ESP) data that is in variant call format (VCF)
    initializeDatasource --ds_type indexed_vcf --ds_file ESP6500SI-V2.vcf --name ESP --version 6500SI-V2 --dbDir ~/oncotest_ESP6500SI-V2 --genome_build hg19 --match_mode exact --ds_foldername ~/ESP6500SI-V2_exact
+
+   # Create a datasource from a tsv
+   initializeDatasource --ds_type snp_leveldb --ds_file test/testdata/small_tsv_leveldb/dbNSFP2.4_variant.chr1_cut5000.tsv  --name dbNSFP5k --version TEST --dbDir /path/to/test_db_dir/ --index_columns "chr,pos(1-coor),pos(1-coor),ref,alt" --genome_build hg19 --ds_foldername dbNSFP5k
     """
 
     desc = """
@@ -239,15 +235,27 @@ def createDatasource(tmpDir):
     destDir = os.path.join(*[tmpDir, ds_foldername, genome_build])
     os.makedirs(destDir)
 
+    # Create a basic logger to a file
+    loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
+    logging.basicConfig(filename="initializeDatasource.log", level=logging.INFO, format=loggingFormat)
+
+    # Add a console logger to the root logger, which means that all loggers generated will have the console dump.
+    #    Output on the console will be the same as what is in the log file.
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    formatter = logging.Formatter(loggingFormat)
+    ch.setFormatter(formatter)
+    logging.getLogger('').addHandler(ch)
+
     # Copy the tsv file into genome build dir
     DatasourceInstallUtils.create_datasource(destDir, ds_file, ds_foldername, ds_name, ds_type, ds_version,
                                              index_columns, ds_annotation_columns, ds_match_mode)
 
-    print("Config file created: " + os.path.join(destDir, ds_foldername) + ".config")
+    logging.getLogger(__name__).info("Config file created: " + os.path.join(destDir, ds_foldername) + ".config")
 
     # Last step:  Copy the directory to the destination dbDir.
     shutil.copytree(symlinks=True, src=os.path.join(tmpDir, ds_foldername), dst=os.path.join(dbDir, ds_foldername))
-    print("Datasource copied from temp location to " + os.path.join(dbDir, ds_foldername))
+    logging.getLogger(__name__).info("Datasource copied from temp location to " + os.path.join(dbDir, ds_foldername))
 
 
 def main():
@@ -259,7 +267,7 @@ def main():
     """
     tmpDir = None
     try:
-        tmpDir = tempfile.mkdtemp()
+        tmpDir = tempfile.mkdtemp(prefix="initializeDatasource_")
         createDatasource(tmpDir)
     finally:
         try:

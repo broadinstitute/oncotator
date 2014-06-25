@@ -52,7 +52,7 @@ from abc import abstractmethod
 
 class DatasourceCreator(object):
     """
-    This is the base class for creating databases and congif files.
+    This is the base class for creating databases and config files.
     """
 
     @abstractmethod

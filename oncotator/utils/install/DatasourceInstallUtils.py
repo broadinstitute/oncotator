@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import logging
 import os
 import string
 from oncotator.utils.Hasher import Hasher
@@ -80,7 +81,7 @@ class DatasourceInstallUtils(object):
         if datasource_dir.endswith('/'):
             datasource_dir = datasource_dir[:-1]
         md5_filename = os.path.abspath(datasource_dir) + ".md5"
-        print("md5 being written to: " + os.path.abspath(md5_filename))
+        logging.getLogger(__name__).info("md5 being written to: " + os.path.abspath(md5_filename))
         hasher = Hasher()
         hashcode = hasher.create_hashcode_for_dir(datasource_dir)
         fp = file(md5_filename, "w")
