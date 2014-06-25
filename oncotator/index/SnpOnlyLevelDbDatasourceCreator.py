@@ -8,6 +8,10 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 import copy
 
 class SnpOnlyLevelDbDatasourceCreator(DatasourceCreator):
+    """
+    Datasource Creator for Snp-Only LevelDB datasources.  This class is meant to be called as part of the framework in
+      initializeDatasource (for example).
+    """
 
     def __init__(self):
         pass
