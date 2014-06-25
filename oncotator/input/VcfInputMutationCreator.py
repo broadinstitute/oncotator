@@ -165,9 +165,11 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         for ID in IDs:
             val = ""
-            dataType = self.vcf_reader.infos[ID].type
 
-            num = self.vcf_reader.infos[ID].num
+            infos_id = self.vcf_reader.infos[ID]
+            dataType = infos_id.type
+
+            num = infos_id.num
             name = self.configTable.getInfoFieldName(ID)
             tags = []
 
@@ -198,7 +200,7 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 val = str(val)
 
-            mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.infos[ID].desc, tags=tags,
+            mutation.createAnnotation(name, val, "INPUT", dataType, infos_id.desc, tags=tags,
                                       number=num)
 
         return mutation

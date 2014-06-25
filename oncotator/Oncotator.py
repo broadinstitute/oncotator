@@ -233,6 +233,7 @@ USAGE
         logging.getLogger('').addHandler(ch)
         
         logger = logging.getLogger(__name__)
+        logger.info("Oncotator " + program_version)
         logger.info("Args: " + str(args))
         logger.info('Log file: ' + os.path.abspath(logFilename))
         
