@@ -323,10 +323,10 @@ class DatasourceFactory(object):
     def sortDatasources(datasources):
         """ 1) Make sure to put the gene-indexed datasources at the end of the list (in any order otherwise).  This is so that a gene annotation can be created ahead of annotating by gene. 
             2) Put position transforming datasources at the front (though see next step)
-            3) Make sure that any Gaf datasources are put up front."""
+            3) Make sure that any Transcript datasources are put up front, but still behind ref_hg."""
         newlist = sorted(datasources, key=lambda k: isinstance(k, GenericGeneDatasource))
         newlist = sorted(newlist, key=lambda k: isinstance(k, ChangeTransformingDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, PositionTransformingDatasource))
-        newlist = sorted(newlist, key=lambda k: not isinstance(k, ReferenceDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, TranscriptProvider))
+        newlist = sorted(newlist, key=lambda k: not isinstance(k, ReferenceDatasource))
         return newlist

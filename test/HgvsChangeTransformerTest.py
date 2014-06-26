@@ -54,6 +54,7 @@ import os.path as op
 from oncotator.MutationData import MutationData
 from TestUtils import TestUtils
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 TestUtils.setupLogging(__file__, __name__)
@@ -1015,4 +1016,31 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr1.hg19:g.248637605_248637606delinsCC')
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955delinsCC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Lys318_*319delinsAsnGlnext*1')
+
+    def test_annotate_DEL_ref_hg(self):
+        """Make sure that a simple HGVS annotation run can actually see ref_hg. """
+
+        m = MutationData()
+        m.chr = "2"
+        m.start = "201722365"
+        m.end = "201722366"
+        # m.createAnnotation('variant_type', VariantClassification.VT_DEL)
+        m.ref_allele = "AC"
+        m.alt_allele = "-"
+        m.createAnnotation('build', 'hg19')
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+
+        # This test should still pass even without ref context annotation being populated.
+        ref_hg_ds = TestUtils.createReferenceDatasource(self.config)
+        m = ref_hg_ds.annotate_mutation(m)
+        m = transcript_ds.annotate_mutation(m)
+        tx = transcript_ds.get_transcript(m['annotation_transcript'])
+        hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
+
+
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
+        self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.201722369_201722370delAC') # NOTE: This is right-shifted in HGVS
+        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000434813.2:c.958+74GT>-')
+        self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
+
 
