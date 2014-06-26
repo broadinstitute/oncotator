@@ -34,3 +34,4 @@
 /profile_stats.*
 /scripts/uniprot_utils/pickles/*
 !/scripts/uniprot_utils/pickles/README
+/initializeDatasource.log
