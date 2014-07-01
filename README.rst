@@ -21,7 +21,7 @@ http://www.broadinstitute.org/oncotator
 
 Please note that the web interface uses an older version of Oncotator and older datasources.
 
-If you are a researcher/employee of the Broad Institute, you can find Broad-specific help in the Cancer Genome Analysis section of Confluence.
+All documentation can be found in the Oncotator forums: http://gatkforums.broadinstitute.org/categories/oncotator
 
 Installation
 ------------
