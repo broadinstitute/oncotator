@@ -270,7 +270,10 @@ class TcgaMafOutputRenderer(OutputRenderer):
         except Exception as e:
             import traceback
             self.logger.error(traceback.format_exc())
-            self.logger.error("Error at mutation " + str(ctr) + " " + str([m.chr,m.start,m.end]) + ": ")
+            self.logger.error("Error at mutation " + str(ctr) + " " + str([m.chr,m.start,m.end,m.ref_allele,m.alt_allele]) + ": ")
+            self.logger.error("Incomplete: rendered %d mutations." % (ctr))
+            fp.close()
+            raise e
         
         fp.close()
         self.logger.info("Rendered all " + str(ctr) + " mutations.")

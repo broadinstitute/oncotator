@@ -79,6 +79,10 @@ class VariantClassification(object):
     VT_INS = "INS"
     VT_DEL = "DEL"
     VT_SNP = "SNP"
+    VT_DNP = "DNP"
+    VT_TNP = "TNP"
+    VT_ONP = "ONP"
+    VT_xNP = "NP" # used for .endswith()
 
     def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="",
         alt_codon_end_in_exon="", ref_codon="", ref_codon_start_in_exon="", ref_codon_end_in_exon="", ref_aa="",

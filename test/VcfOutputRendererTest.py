@@ -923,5 +923,20 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    def test_protein_rendering_exception_for_non_primitive(self):
+        """Test problematic variants from the GATK, even with VariantToAllelicPrimitive.  Tests no exception is thrown."""
+        inputFilename = os.path.join(*["testdata", "vcf", "protein_rendering_exception.vcf"])
+        outputFilename = os.path.join("out", "protein_rendering_exception.annotated.vcf")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        annotator.addDatasource(transcript_ds)
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+
 if __name__ == "__main__":
     unittest.main()

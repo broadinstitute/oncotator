@@ -47,5 +47,12 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 
+class InvalidVariantException(Exception):
+    """Used when VariantClassifier cannot process a variant due to inconsistent information.
+    """
 
-VERSION = "v1.2.7.0"
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
