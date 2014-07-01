@@ -55,25 +55,29 @@ from oncotator.utils.VariantClassification import VariantClassification
 class TranscriptProviderUtils(object):
 
     @staticmethod
+    def is_xnp(variant_type):
+        return variant_type.endswith(VariantClassification.VT_xNP)
+
+    @staticmethod
     def infer_variant_type(reference_allele, observed_allele):
         """ To go completely in annotate method.  Returns variant type string."""
         if reference_allele == '-': #is insertion
-            return 'INS'
+            return VariantClassification.VT_INS
         elif observed_allele == '-': #is deletion
-            return 'DEL'
+            return VariantClassification.VT_DEL
         else:
             if len(observed_allele) > len(reference_allele):
-                return 'INS'
+                return VariantClassification.VT_INS
             elif len(observed_allele) < len(reference_allele):
-                return 'DEL'
+                return VariantClassification.VT_DEL
             elif len(reference_allele) == 1:
-                return 'SNP'
+                return VariantClassification.VT_SNP
             elif len(reference_allele) == 2:
-                return 'DNP'
+                return VariantClassification.VT_DNP
             elif len(reference_allele) == 3:
-                return 'TNP'
+                return VariantClassification.VT_TNP
             elif len(reference_allele) > 3:
-                return 'ONP'
+                return VariantClassification.VT_ONP
 
         raise Exception('Variant Type cannot be inferred from reference and observed allele: (%s, %s)' % (reference_allele, observed_allele))
 

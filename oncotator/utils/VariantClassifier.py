@@ -46,11 +46,13 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import logging
 
 import Bio
 from Bio import Seq
 import itertools
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.InvalidVariantException import InvalidVariantException
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.gaf_annotation import chop
 
@@ -129,7 +131,8 @@ class VariantClassifier(object):
             if adjusted_obs_aa == '': adjusted_obs_aa = '-'
             if adjusted_ref_aa == '-': #insertion between codons:
                 adjusted_start, adjusted_end = min(adjusted_start, adjusted_end), max(adjusted_start, adjusted_end)
-                if adjusted_end-adjusted_start != 1: raise Exception
+                if adjusted_end-adjusted_start != 1:
+                    raise InvalidVariantException("Insertion of protein between codons cannot be rendered properly.")
 
             reference_aa, observed_aa = adjusted_ref_aa, adjusted_obs_aa
             protein_position_start, protein_position_end = adjusted_start, adjusted_end
@@ -315,9 +318,16 @@ class VariantClassifier(object):
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
 
         if variant_type != VariantClassification.VT_SNP:
-            reference_aa, observed_aa, protein_position_start, protein_position_end = \
-                self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
-                    protein_position_end, reference_aa, observed_aa)
+
+            try:
+                reference_aa, observed_aa, protein_position_start, protein_position_end = \
+                    self._adjust_protein_position_and_alleles(protein_seq, protein_position_start,
+                        protein_position_end, reference_aa, observed_aa)
+            except InvalidVariantException as ive:
+                logging.getLogger(__name__).error("Could not properly adjust protein position for variant: %s, %s, %s, %s, %s VT: %s" % (tx.get_contig(), start, end, ref_allele, alt_allele, variant_type))
+                logging.getLogger(__name__).error(str(ive))
+                logging.getLogger(__name__).warn("Above error may not have exact start and end positions if this is a VCF input.")
+                logging.getLogger(__name__).warn("protein_change may not be properly rendered.")
 
         vc_tmp, vc_tmp_secondary = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
