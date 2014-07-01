@@ -327,7 +327,7 @@ class VariantClassifier(object):
                 logging.getLogger(__name__).error("Could not properly adjust protein position for variant: %s, %s, %s, %s, %s VT: %s" % (tx.get_contig(), start, end, ref_allele, alt_allele, variant_type))
                 logging.getLogger(__name__).error(str(ive))
                 logging.getLogger(__name__).warn("Above error may not have exact start and end positions if this is a VCF input.")
-                logging.getLogger(__name__).warn("protein_change may not be properly rendered.")
+                logging.getLogger(__name__).warn("The protein_change annotation may not be properly rendered.")
 
         vc_tmp, vc_tmp_secondary = self.infer_variant_classification(variant_type, reference_aa, observed_aa, ref_allele, alt_allele,
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
