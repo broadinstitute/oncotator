@@ -2,6 +2,14 @@
 Oncotator
 ======================
 
+License
+-------
+
+Oncotator is free for non-profit users.  Please see the LICENSE file here for more information.
+
+Package Overview
+----------------
+
 The name of the directory, oncotator, is also the name of the **distribution**.
 This distribution contains the oncotator package.
 
@@ -103,4 +111,4 @@ http://nvie.com/posts/a-successful-git-branching-model/
 Help
 -------------------
 
-Email oncotator@broadinstitute.org with issues and feature requests.
+Please post questions, issues, and feature requests in the forum at http://gatkforums.broadinstitute.org/categories/oncotator
