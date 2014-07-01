@@ -55,6 +55,42 @@ from oncotator.utils.VariantClassification import VariantClassification
 class TranscriptProviderUtils(object):
 
     @staticmethod
+    def is_valid_xNP(variant_type, ref, alt):
+        """Call this method when this may be an invalid variant type, but it is xNP.
+        :param variant_type: One of the VariantClassificaton.VT_SNP, VariantClassificaton.VT_DNP,
+            VariantClassificaton.VT_TNP, or VariantClassificaton.VT_ONP
+        :param ref: (str) ref allele
+        :param alt: (str) alt allele
+
+        Adapted from http://code.activestate.com/recipes/499304-hamming-distance/
+
+        Returns a string with a message if there is a difference.  Empty string means no issue seen.
+
+        """
+        diffs = 0
+        for ch1, ch2 in zip(ref, alt):
+                if ch1 != ch2:
+                        diffs += 1
+
+        if ref != "-" and alt != "-" and len(ref) != len(alt):
+            return "ref and alt are of different lengths.  This is an indel, but variant type is: %s" % (variant_type)
+
+        message = ""
+
+        if diffs == 0:
+            message = "No difference between ref and alt."
+        if diffs == 1 and variant_type != VariantClassification.VT_SNP:
+            message = "%s>%s is a SNP, but is found to be: %s." %(ref, alt, variant_type)
+        if diffs == 2 and variant_type != VariantClassification.VT_DNP:
+            message = "%s>%s is a DNP, but is found to be: %s." %(ref, alt, variant_type)
+        if diffs == 3 and variant_type != VariantClassification.VT_TNP:
+            message = "%s>%s is a TNP, but is found to be: %s." %(ref, alt, variant_type)
+        if diffs > 3 and variant_type != VariantClassification.VT_ONP:
+            message = "%s>%s is a ONP, but is found to be: %s." %(ref, alt, variant_type)
+
+        return message
+
+    @staticmethod
     def is_xnp(variant_type):
         return variant_type.endswith(VariantClassification.VT_xNP)
 
