@@ -31,7 +31,7 @@ class SnpOnlyLevelDbDatasourceTest(unittest.TestCase):
                 annotation_cols.remove(icol)
 
         ds_creator = SnpOnlyLevelDbDatasourceCreator()
-        ds_creator.createDatasource(full_name, input_tsv, index_cols, dir_name + "/" +  base_name, "snp_leveldb", base_name, "TEST",
+        ds_creator.createDatasource(full_name, input_tsv, ",".join(index_cols), full_name + "/" + base_name + ".config", "snp_leveldb", base_name, "TEST",
                          "exact", annotation_cols, [])
 
         config_filename = "out/test_simple_annotate_snp_only_leveldb/test_snp_leveldb/test_snp_leveldb.config"
