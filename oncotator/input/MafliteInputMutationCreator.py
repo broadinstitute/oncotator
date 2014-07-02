@@ -101,7 +101,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
         for col in requiredColumns:
             if col not in specifiedFields:
                 isAltFound = False
-                for alt in self._alternativeDict[col]:
+                for alt in self._alternativeDict.get(col, []):
                     if alt in specifiedFields:
                         isAltFound = True
                         break
