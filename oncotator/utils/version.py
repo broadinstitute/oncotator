@@ -48,4 +48,4 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 
-VERSION = "v1.2.7.0"
+VERSION = "v1.2.8.1"
