@@ -95,10 +95,10 @@ class MafliteInputMutationCreator(InputMutationCreator):
         
         missingRequiredHeaders = []
         specifiedFields = self._tsvReader.getFieldNames()
-        requiredColumns = sorted(list(MutationData.attributes))
+        required_columns = sorted(self.config.get("general", "required_headers").split(","))
         self._build = genomeBuild
 
-        for col in requiredColumns:
+        for col in required_columns:
             if col not in specifiedFields:
                 isAltFound = False
                 for alt in self._alternativeDict.get(col, []):
@@ -132,7 +132,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
     def _find_alt_allele_in_other_field(self, raw_line_dict, ref_allele):
         """Check all the possible alt allele columns and choose the one that does not match the reference allele. """
 
-        list_alternates = self._alternativeDict.get("alt_allele")
+        list_alternates = self._alternativeDict.get("alt_allele", [])
 
         for candidate_field in list_alternates:
             candidate_value = raw_line_dict.get(candidate_field, "")

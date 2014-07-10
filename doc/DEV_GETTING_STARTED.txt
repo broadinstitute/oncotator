@@ -80,3 +80,6 @@ STEPS:
 	dbDir=/home/user/oncotator_ds/
 
 
+Documentation help
+==================
+http://sphinx-doc.org/domains.html#info-field-lists

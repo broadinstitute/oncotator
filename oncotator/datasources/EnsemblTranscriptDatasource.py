@@ -51,6 +51,7 @@ import shove
 from oncotator.Annotation import Annotation
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
@@ -60,7 +61,7 @@ from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFac
 
 
 
-class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
+class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
         Also, supports gencode
 
@@ -422,3 +423,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def get_tx_mode(self):
         return self.tx_mode
+
+    def annotate_segment(self, seg):
+        raise NotImplementedError(__name__ + " has not implemnted annotation of segments, yet.")

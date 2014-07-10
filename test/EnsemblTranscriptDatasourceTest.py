@@ -261,5 +261,16 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertEqual(m2.get('HGVS_coding_DNA_change', None), 'ENST00000215832.6:c.1A>C')
         self.assertEqual(m2.get('HGVS_protein_change', None), 'unknown_prot_seq_id:p.Met1Leu')
 
+    def test_retrieve_transcripts_from_region(self):
+        """Test that we can retrieve a large number of transcripts.  Requires a full gencode datasource."""
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        filtered_txs = transcript_ds.get_transcripts_by_pos(chr="1", start="1", end="100000000")
+
+        self.assertTrue(len(filtered_txs) > 4000)
+        gene_set = set([tx.get_gene() for tx in filtered_txs])
+        self.assertTrue(len(gene_set) > 1500)
+
+
 if __name__ == '__main__':
     unittest.main()

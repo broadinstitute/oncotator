@@ -94,6 +94,10 @@ class RunSpecification(object):
         numCores -- number of cores to use if isMulticore is True.  Otherwise, this is ignored.
         cache_url -- if None, implies that there is no cache.
         """
+
+    ANNOTATE_SEGMENTS = "SEG"
+    ANNOTATE_MUTATIONS = "MUT"
+
     def __init__(self):
         self.__inputCreator = None
         self.__outputRenderer = None
@@ -212,7 +216,16 @@ class RunSpecification(object):
     def del_is_skip_no_alts(self):
         del self.__is_skip_no_alts
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False):
+    def get_annotating_type(self):
+        return self.__annotating_type
+
+    def set_annotating_type(self, value):
+        self.__annotating_type = value
+
+    def del_annotating_type(self):
+        del self.__annotating_type
+
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False, annotating_type=None):
         self.inputCreator = inputCreator
         self.outputRenderer = outputRenderer
         self.manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
@@ -223,6 +236,7 @@ class RunSpecification(object):
         self.cacheUrl = cacheUrl
         self.isReadOnlyCache = read_only_cache
         self.isSkipNoAlts = is_skip_no_alts
+        self.annotating_type = annotating_type if annotating_type is not None else RunSpecification.ANNOTATE_MUTATIONS
 
     
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
@@ -235,7 +249,7 @@ class RunSpecification(object):
     cacheUrl = property(get_cache_url, set_cache_url, del_cache_url, "cacheUrl's docstring")
     isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
     isSkipNoAlts = property(get_is_skip_no_alts, set_is_skip_no_alts, del_is_skip_no_alts, "isSkipNoAlts's docstring")
-
+    annotating_type = property(get_annotating_type, set_annotating_type, del_annotating_type, "annotating type is static value indiciating what type of mutation to annotate.")
 
 class OncotatorCLIUtils(object):
     """
@@ -268,7 +282,8 @@ class OncotatorCLIUtils(object):
         """ Poor man's dependency injection. Change this method to support 
         more input formats."""
         return {'MAFLITE': (MafliteInputMutationCreator, 'maflite_input.config'),
-                "VCF": (VcfInputMutationCreator, 'vcf.in.config')}
+                "VCF": (VcfInputMutationCreator, 'vcf.in.config'),
+                "SEG_FILE": (MafliteInputMutationCreator, 'seg_file_input.config')}
 
     @staticmethod
     def createOutputFormatNameToClassDict():
@@ -316,7 +331,7 @@ class OncotatorCLIUtils(object):
     def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=None,
                         datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4,
                         defaultAnnotations=None, cacheUrl=None, read_only_cache=True,
-                        tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False, other_opts=None):
+                        tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False, other_opts=None, annotating_type=None):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
         
         If datasourceDir is None, then the default location is used.  TODO: Define default location.

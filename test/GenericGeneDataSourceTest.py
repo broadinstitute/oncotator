@@ -111,9 +111,9 @@ class GenericGeneDataSourceTest(unittest.TestCase):
         for lineDict in tsvReader:
             self.assertTrue('gene' in lineDict.keys())
             if lineDict['gene'] in genesAvailable:
-                self.assertTrue(lineDict['CGC_Abridged_GeneID'] <> '', "'CGC_Abridged_GeneID' was missing on a row that should have been populated.  Line: " + str(ctr))
-                linesThatShouldBeAnnotated = linesThatShouldBeAnnotated + 1
-            ctr = ctr + 1
+                self.assertTrue(lineDict['CGC_Abridged_GeneID'] != '', "'CGC_Abridged_GeneID' was missing on a row that should have been populated.  Line: " + str(ctr))
+                linesThatShouldBeAnnotated += 1
+            ctr += 1
         self.assertTrue((linesThatShouldBeAnnotated) > 0, "Bad data -- cannot test missed detects.")
     
     def testAnnotationSourceIsPopulated(self):
