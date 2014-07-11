@@ -49,14 +49,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 from oncotator.Annotation import Annotation
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.utils.Hasher import Hasher
-from oncotator.utils.OncotatorCLIUtils import RunSpecification
+from oncotator.utils.RunSpecification import RunSpecification
 
-
-"""
-Created on Nov 2, 2012
-
-@author: lichtens
-"""
 import logging
 from utils.version import VERSION
 

@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 '''
 Oncotator -- An annotation engine for Cancer
@@ -284,7 +285,7 @@ USAGE
             logging.getLogger(__name__).warning("TCGA VCF output is not supported and should be considered experimental when used outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users.")
 
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
+        runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
                                                       isMulticore=(not args.noMulticore),
                                                       defaultAnnotations=defaultValues, cacheUrl=cache_url,
