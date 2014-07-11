@@ -1,0 +1,15 @@
+##fileformat=VCFv4.1
+##fileDate=20090805
+##source=myImputationProgramV3.1
+##reference=file:///seq/references/1000GenomesPilot-NCBI36.fasta
+##contig=<ID=20,length=62435964,assembly=B36,md5=f126cdf8a6e0c7f379d618ff66beb2da,species="Homo sapiens",taxonomy=x>
+##phasing=partial
+##INFO=<ID=AC,Number=1,Type=String,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
+##FORMAT=<ID=AD,Number=G,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed, base-quality filtered">
+##FORMAT=<ID=DF,Number=G,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed, forward reads, base-quality filtered">
+##FORMAT=<ID=DR,Number=G,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed, reverse reads, base-quality filtered">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA00001	NA00002
+MAL1	263	.	C	A	.	.	AC=0	GT:DF:DP:DR:AD	.:27,11,.:55:17,0,.:44,11,.	.:45,.,.:68:23,.,.:68,.,.
+MAL1	330	.	G	A,T	.	.	AC=0,0	GT:DF:DP:DR:AD	.:5,7,2,.,.,.:29:12,3,0,.,.,.:17,10,2,.,.,.	.:5,3,.,.,.,.:25:15,2,.,.,.,.:20,5,.,.,.,.

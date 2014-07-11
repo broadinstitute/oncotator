@@ -307,6 +307,8 @@ class RecordBuilder:
     def addFormat(self, sampleName, ID, num=None, dataType="String", val=None, isSplit=True, inferGenotype=False):
         """
 
+
+        :param inferGenotype: 
         :param sampleName:
         :param ID:
         :param num:
@@ -371,6 +373,10 @@ class RecordBuilder:
             alt = "."
         if alt not in self._alts:
             self._alts += [alt]
+            if len(self._alts) > 1:
+                # Expand per sample
+
+                pass
 
     def addFilter(self, filt, val):
         if val == "FAIL":

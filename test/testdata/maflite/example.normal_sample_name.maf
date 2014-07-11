@@ -1,7 +1,3 @@
 Chromosome	Start_position	End_position	Reference_Allele	Tumor_Seq_Allele1	Tumor_Seq_Allele2	dbSNP_RS	Matched_Norm_Sample_Barcode	ReadDepth
 20	14370	14370	G	G	A	rs6054257	NA0001-TP	10
 20	14370	14370	G	A	T	rs6054257	NA0001-NT	8
-21	123090	123090	T	T	C		NA0001-NT	2
-22	3239880	3239881	G	C	C		NA0001-NB	8
-21	123090	123090	T	T	C		NA0004-NT	9
-21	123090	123090	T	T	C		NA0005-NT	7

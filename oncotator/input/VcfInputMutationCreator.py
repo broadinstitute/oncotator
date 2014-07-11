@@ -49,8 +49,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import re
 import logging
 import string
-import copy
-
 import vcf
 
 from oncotator.Metadata import Metadata
