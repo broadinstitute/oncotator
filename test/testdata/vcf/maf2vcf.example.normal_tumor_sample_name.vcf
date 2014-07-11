@@ -4,6 +4,6 @@
 ##FORMAT=<ID=DP,Number=.,Type=Integer,Description="Unknown">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA0001-NB-NA0001-TP	NA0001-NT-NA0001-TP	NA0004-NT-NA0004-TP	NA0005-NT-NA0005-TP
-20	14370	.	G	A,T	.	PASS	dbSNP_RS=rs6054257,rs6054257	GT:DP	./.:10,.	./.:8,.	./.:.,.	./.:.,.
+20	14370	.	G	A,T	.	PASS	dbSNP_RS=rs6054257,rs6054257	GT:DP	./.:10	./.:8	./.:.	./.:.
 21	123090	.	T	C	.	PASS	.	GT:DP	./.:.	./.:2	./.:9	./.:7
 22	3239880	.	G	C	.	PASS	.	GT:DP	./.:8	./.:.	./.:.	./.:.

@@ -538,29 +538,22 @@ class OutputDataManager:
                 return False
             else:
                 return True
-        elif num is None:  # number is unknown (default: behave the way as if num=-1)
-            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
-                return False
-            elif self.configTable.isFieldNameInNotSplitSet(fieldType, name):
-                return False
-            else:
+        elif num is None:  # number is unknown
+            if TagConstants.SPLIT in tags:  # override the default using the tags section
                 return True
-
-            # if TagConstants.SPLIT in tags:  # override the default using the tags section
-            #     return True
-            # elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
-            #     return True
-            # else:
-            #     return True
-        else:  # by the number
-            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
+            elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
+                return True
+            else:
                 return False
+        else:
+            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
+                return True
             elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
                 return True
             else:
                 return False
 
-        return True
+        return False
 
     def _resolveFieldType(self, name, tags):
         """

@@ -937,13 +937,6 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
-        reader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
-        for record in reader:
-            self.assertEqual(len(record.INFO["variant_classification"]), 2,
-                             "Length of must be 2 but was %s." % len(record.INFO["variant_classification"]))
-            self.assertEqual(len(record.INFO["variant_type"]), 2,
-                             "Length of must be 2 but was %s." % len(record.INFO["variant_type"]))
-
 
 if __name__ == "__main__":
     unittest.main()
