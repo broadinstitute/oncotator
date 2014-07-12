@@ -548,7 +548,7 @@ class OutputDataManager:
                 logging.getLogger(__name__).warn("Annotation or config file specifying is not split for field type (%s) with Number=A name: %s  A datasource or VCF file may be misconfigured." % (field_type, name))
             return True
 
-        elif num is None or num > -1:  # number is unknown or greater than -1 (Use config file, then annotation to decide... otherwise, True)
+        elif num is None or num > -1:  # number is unknown or greater than -1 (Use config file, then annotation to decide... otherwise, True for num=="." and False for num >=0)
             if is_config_split:
                 return True
             elif is_config_not_split:
@@ -560,7 +560,10 @@ class OutputDataManager:
 
             # both unknown
             else:
-                return True
+                if num is None:
+                    return True
+                else:
+                    return False
 
         # Should never get here.  Throw warning and return True
         logging.getLogger(__name__).warn("%s %s num: %d  -- number is unrecognized.  Assuming is split." % (field_type, name, num))
