@@ -157,6 +157,10 @@ class RecordBuilder:
                 nums[i] = prop.num if prop.num is not None else "."
                 val = [None]
 
+                """
+                if prop.num == -1 or (prop.num is None and )
+                """
+
                 if data is not None and ID in data:
                     val = data[ID]
 
@@ -248,22 +252,22 @@ class RecordBuilder:
 
         return val
 
-    def _determineVal2FixedNumField(self, data, ID, num, isSplit, val):
+    def _determineVal2FixedNumField(self, data, field_name, num, isSplit, val):
         """
 
         :param data:
-        :param ID:
+        :param field_name:
         :param num:
         :param isSplit:
         :param val:
         """
-        if ID not in data:
-            data[ID] = self._fixVal(val, isSplit)
+        if field_name not in data:
+            data[field_name] = self._fixVal(val, isSplit)
         elif isSplit and num > 1:
-            vals = data[ID]
+            vals = data[field_name]
             if len(vals) < num:
                 vals += self._fixVal(val, isSplit)
-                data[ID] = vals
+                data[field_name] = vals
 
     def addInfo(self, sampleName, ID, num=None, dataType="String", val=None, isSplit=True):
         """
