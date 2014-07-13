@@ -157,10 +157,6 @@ class RecordBuilder:
                 nums[i] = prop.num if prop.num is not None else "."
                 val = [None]
 
-                """
-                if prop.num == -1 or (prop.num is None and )
-                """
-
                 if data is not None and ID in data:
                     val = data[ID]
 
@@ -252,7 +248,7 @@ class RecordBuilder:
 
         return val
 
-    def _determineVal2FixedNumField(self, data, field_name, num, isSplit, val):
+    def _determineVal2FixedNumField(self, data, field_name, num, isSplit, val, nalts):
         """
 
         :param data:
@@ -335,16 +331,14 @@ class RecordBuilder:
                 except KeyError:
                     pass
 
+            nalts = len(self._alts)
             if num == -2:  # num is the number of samples
-                nalts = len(self._alts)
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
             elif num == -1:  # num is the number of alternate alleles
-                nalts = len(self._alts)
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
             elif num == 0:  # num is either true or false
                 pass
             elif num is None:  # num is unknown
-                nalts = len(self._alts)
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
             else:  # num is fixed
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, num, isSplit, val)
