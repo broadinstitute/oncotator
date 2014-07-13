@@ -248,7 +248,7 @@ class RecordBuilder:
 
         return val
 
-    def _determineVal2FixedNumField(self, data, field_name, num, isSplit, val, nalts):
+    def _determineVal2FixedNumField(self, data, field_name, num, isSplit, val):
         """
 
         :param data:
@@ -332,14 +332,11 @@ class RecordBuilder:
                     pass
 
             nalts = len(self._alts)
-            if num == -2:  # num is the number of samples
-                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
-            elif num == -1:  # num is the number of alternate alleles
+            if num == -2 or num == -1 or num is None:  # num is the number of genotype combos (i.e. num=G) or alts (num == A) or num is unknown "."
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
             elif num == 0:  # num is either true or false
+                # Do nothing in this case
                 pass
-            elif num is None:  # num is unknown
-                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
             else:  # num is fixed
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, num, isSplit, val)
 
