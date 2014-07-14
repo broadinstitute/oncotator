@@ -319,12 +319,14 @@ class RecordBuilder:
         """
         if sampleName in self._sampleNames and num != 0:  # FORMAT fields can never have a value of type flag
             sampleNameIndex = self._sampleNameIndexes[sampleName]
-            if "GT" not in self._fmt[sampleNameIndex].keys():  # GT is always the first field
+            # GT is always the first field, so create it if it does not already exist.
+            if "GT" not in self._fmt[sampleNameIndex].keys():
                 self._fmtIDs = ["GT"]
                 self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
                 if inferGenotype:
                     self._fmt[sampleNameIndex]["GT"] = [self._determineGenotype()]
 
+            # If GT was specified by the input, then delete the previous copy created in the above few lines.
             if field_name == "GT":
                 try:
                     del self._fmt[sampleNameIndex][field_name]

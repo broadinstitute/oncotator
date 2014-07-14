@@ -113,13 +113,14 @@ class VcfOutputRenderer(OutputRenderer):
         # Initialize the config table
         self.configTable = self.configTableBuilder.getConfigTable(configFilename=self.configFilename)
 
-        path = os.getcwd()
 
+        tempTemplateFile = tempfile.NamedTemporaryFile(prefix="onco_vcf_out_")
+        path = os.path.dirname(tempTemplateFile.name)
         dataManager = OutputDataManager(self.configTable, mutations, comments, metadata, path)
         self.sampleNames = dataManager.getSampleNames()
 
         # Write the header
-        tempTemplateFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
+
         filePointer = file(tempTemplateFile.name, 'w')
         header = dataManager.getHeader()
         filePointer.write(header)
@@ -136,12 +137,6 @@ class VcfOutputRenderer(OutputRenderer):
         self.logger.info("Render starting...")
         self._renderSortedTsv(tempTemplateFile.name, self._filename, sortedTempTsvFileName, self.sampleNames,
                               dataManager, inferGenotypes)
-
-        # Remove template filename
-        os.remove(tempTemplateFile.name)
-
-        # Remove sorted tsv filename
-        os.remove(sortedTempTsvFileName)
 
         self.logger.info("Rendered all mutations.")
 
