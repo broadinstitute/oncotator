@@ -458,18 +458,5 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                             len(current.index), "Should have the same values in column " + colName)
 
 
-    def testNumberGRenderingOfRandomVcf(self):
-        inputFilename = os.path.join(*["testdata", "vcf", "number_g.random.vcf"])
-        outputFilename = os.path.join("out", "number_g.random.out.tsv")
-
-        creator = VcfInputMutationCreator(inputFilename)
-        creator.createMutations()
-        renderer = SimpleOutputRenderer(outputFilename)
-        annotator = Annotator()
-        annotator.setInputCreator(creator)
-        annotator.setOutputRenderer(renderer)
-        annotator.annotate()
-
-
 if __name__ == "__main__":
     unittest.main()
