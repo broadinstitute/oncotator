@@ -466,7 +466,7 @@ class MutUtils(object):
         preceding_bases = mut[MutUtils.PRECEDING_BASES_ANNOTATION_NAME]
         alt_allele = preceding_bases + mut.alt_allele
         ref_allele = preceding_bases
-        updated_start = mut.start - len(preceding_bases) + 1
+        updated_start = int(mut.start) - len(preceding_bases) + 1
 
         return ref_allele, alt_allele, updated_start
 
