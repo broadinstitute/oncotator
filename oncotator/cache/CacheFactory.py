@@ -57,7 +57,7 @@ class CacheFactory(object):
     """Currently, only supports Shove cache and a custom interface to memcache. """
 
     @staticmethod
-    def createCache(url, is_thread_safe=True):
+    def createCache(url, is_thread_safe=False):
         """
 
         :param is_thread_safe: If this is True, uses a slower, but thread safe version of the Cache, if available.
@@ -75,7 +75,7 @@ class CacheFactory(object):
                 cache_url = "memory://"
             else:
                 # We should set up in-memory cache as well.
-                logging.getLogger(__name__).info("Cache being set up as faster, but NOT thread safe." )
+                logging.getLogger(__name__).info("File cache being set up as faster, but NOT thread safe.")
                 cache_url = "simple://"
 
         if url.startswith("memcache"):
