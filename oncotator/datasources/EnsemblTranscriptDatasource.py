@@ -437,5 +437,5 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         txs = self.get_transcripts_by_pos(seg.chr, seg.start, seg.end)
         genes = set(([tx.get_gene() for tx in txs]))
         genes_annotation_value = ",".join(sorted(list(genes)))
-        seg.createAnnotation("genes", genes_annotation_value, annotationSource=self.title, annotationDataType="String", annotationDescription="List of genes in the region.", tags=[TagConstants.NOT_SPLIT])
+        seg.createAnnotation("genes", genes_annotation_value, annotationSource=self.title, annotationDataType="String", annotationDescription="List of genes in the region.")
         return seg

@@ -28,9 +28,6 @@ class RunSpecificationFactory(object):
         """
         # TODO: Use dependency injection for list of name value pairs?  Otherwise, set it up as an attribute on this class.
         # TODO: Use dependency injection to return instance of the input/output classes
-        # TODO: Support more than the default configs.
-        # TODO: On error, list the supported formats (both input and output)
-        # TODO: Make sure that we can pass in both a class and a config file, not just a class.
 
         globalAnnotations = dict() if globalAnnotations is None else globalAnnotations
         defaultAnnotations = dict() if defaultAnnotations is None else defaultAnnotations
@@ -43,16 +40,16 @@ class RunSpecificationFactory(object):
         outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat, other_opts)
 
         # Step 2 Datasources
-        datasourceList = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+        datasource_list = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
 
         #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
-        for ds in datasourceList:
+        for ds in datasource_list:
             if isinstance(ds, TranscriptProvider):
                 logging.getLogger(__name__).info("Setting %s %s to tx-mode of %s..." % (ds.title, ds.version, tx_mode))
                 ds.set_tx_mode(tx_mode)
 
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasourceList,
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasource_list,
                           isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations,
                           cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts, annotating_type=annotating_type)
         return result

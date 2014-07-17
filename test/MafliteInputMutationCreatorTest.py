@@ -184,7 +184,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
     def test_simple_seg_file_input(self):
         """Test that we can read in a seg file, do no annotation, and output as SIMPLE_TSV"""
         inputFilename = "testdata/seg/Patient0.seg.txt"
-        output_filename = "out/test_simple_seg_file.tsv"
+        output_filename = "out/test_simple_seg_file_input.tsv"
         if os.path.exists(output_filename):
             os.remove(output_filename)
         ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
@@ -268,7 +268,6 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         if os.path.exists(output_filename):
             os.remove(output_filename)
 
-        gencode_ds = TestUtils._create_test_gencode_ds("out/full_seg_file_gencode_ds")
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("SEG_FILE", "SIMPLE_TSV", inputFilename, output_filename,
                                                            datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
