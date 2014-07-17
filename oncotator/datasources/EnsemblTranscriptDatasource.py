@@ -55,6 +55,7 @@ from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
+from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
@@ -425,4 +426,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         return self.tx_mode
 
     def annotate_segment(self, seg):
-        raise NotImplementedError(__name__ + " has not implemnted annotation of segments, yet.")
+        """
+        Akin to annotate_mutation, but for segments.
+
+        Generates the following annotations:
+        genes -- a comma-separated list of the genes found in a given region.
+
+        :returns MutationData seg: Annotated segment/region
+        """
+        txs = self.get_transcripts_by_pos(seg.chr, seg.start, seg.end)
+        genes = set(([tx.get_gene() for tx in txs]))
+        genes_annotation_value = ",".join(sorted(list(genes)))
+        seg.createAnnotation("genes", genes_annotation_value, annotationSource=self.title, annotationDataType="String", annotationDescription="List of genes in the region.", tags=[TagConstants.NOT_SPLIT])
+        return seg

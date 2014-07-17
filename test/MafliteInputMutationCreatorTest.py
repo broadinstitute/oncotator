@@ -49,6 +49,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import shutil
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
+from oncotator.utils.RunSpecification import RunSpecification
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 
 """
@@ -216,7 +218,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             self.assertTrue(line_dict['end'].strip() != "")
 
     def test_simple_seg_file_annotations(self):
-        """Test that we can read in a seg file, do no annotation, and output as SIMPLE_TSV"""
+        """Test that we can read in a seg file, do GENCODE annotation, and output as SIMPLE_TSV"""
         inputFilename = "testdata/seg/Patient0.seg.txt"
         output_filename = "out/test_simple_seg_file_annotations.tsv"
         if os.path.exists(output_filename):
@@ -236,11 +238,13 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         gencode_ds = TestUtils._create_test_gencode_ds("out/seg_file_gencode_ds")
         annotator = Annotator()
 
-        OncotatorCLIUtils.create_run_spec("")
+        segs_annotated = []
+        for seg in segs:
+            segs_annotated.append(gencode_ds.annotate_segment(seg))
 
 
         outputRenderer = SimpleOutputRenderer(output_filename, '')
-        outputRenderer.renderMutations(segs)
+        outputRenderer.renderMutations(segs_annotated.__iter__())
 
         # Now check the output
         output_reader = GenericTsvReader(output_filename)
@@ -255,6 +259,38 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             self.assertTrue(line_dict['start'].strip() != "")
             self.assertTrue(line_dict['end'] is not None)
             self.assertTrue(line_dict['end'].strip() != "")
+            self.assertTrue("genes" in line_dict.keys())
+
+    def test_full_seg_file_annotations(self):
+        """Test that we can read in a seg file, do a proper full annotation, and output as SIMPLE_TSV"""
+        inputFilename = "testdata/seg/Patient0.seg.txt"
+        output_filename = "out/test_simple_seg_file_annotations.tsv"
+        db_dir = self.config.get('DEFAULT',"dbDir")
+        if os.path.exists(output_filename):
+            os.remove(output_filename)
+
+        gencode_ds = TestUtils._create_test_gencode_ds("out/full_seg_file_gencode_ds")
+        annotator = Annotator()
+        run_spec = RunSpecificationFactory.create_run_spec("SEG_FILE", "SIMPLE_TSV", inputFilename, output_filename,
+                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
+        annotator.initialize(run_spec)
+        annotator.annotate()
+
+        # Now check the output
+        output_reader = GenericTsvReader(output_filename)
+
+        required_cols = ["Sample", "Num_Probes", "Segment_Mean"]
+        headers = output_reader.getFieldNames()
+        for rcol in required_cols:
+            self.assertTrue(rcol in headers)
+
+        for line_dict in output_reader:
+            self.assertTrue(line_dict['start'] is not None)
+            self.assertTrue(line_dict['start'].strip() != "")
+            self.assertTrue(line_dict['end'] is not None)
+            self.assertTrue(line_dict['end'].strip() != "")
+            self.assertTrue("genes" in line_dict.keys())
+            self.assertTrue(len(line_dict["genes"].split(",")) > 1)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

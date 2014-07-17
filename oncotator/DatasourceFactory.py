@@ -252,7 +252,11 @@ class DatasourceFactory(object):
         
         # Get a list of all of the directories
         dsDirs = []
-        dirs = os.listdir(datasourceDir)
+        if os.path.exists(datasourceDir):
+            dirs = os.listdir(datasourceDir)
+        else:
+            logging.getLogger(__name__).warn("%s does not exist, so there will be no datasources.")
+            dirs = []
         for d in dirs:
             tmpD = os.path.join(datasourceDir, d)
             fullD = os.path.join(*[tmpD, genomeBuild, ""])
