@@ -502,7 +502,7 @@ class OutputDataManager:
 
         return table, revTable
 
-    def _determineIsSplit(self, name, num, fieldType, tags=None):
+    def _determineIsSplit(self, name, num, field_type, tags=None):
         """
         Determines whether a given name's value was split by the alternate allele or not.
         This method implements the following decision tree for the number and field type corresponding to the ID:
@@ -518,42 +518,56 @@ class OutputDataManager:
 
         :param name: field name
         :param num: integer that describes the number of values that can be included with the field
-        :param fieldType: type of Vcf field (for example, INFO)
+        :param field_type: type of Vcf field (for example, INFO)
         :return: whether the field ID's value was split by the alternate or not
         """
         tags = [] if tags is None else tags
 
-        if num == -2:  # by the number of samples
-            if fieldType == "FORMAT":
-                if TagConstants.SPLIT in tags:  # override the default using the tags section
-                    return True
-                elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
+        if field_type != "FORMAT" and num == -2:
+            logging.getLogger(__name__).warn("Non-FORMAT field type (%s) with Number=G name: %s  A datasource or VCF file may be misconfigured." % (field_type, name))
+
+        # Whether the annotation indicates split, not split, or unspecified
+        is_annotation_split = (TagConstants.SPLIT in tags)
+        is_annotation_not_split = (TagConstants.NOT_SPLIT in tags)
+        is_annotation_split_unknown = (not is_annotation_split) and (not is_annotation_not_split)
+
+        # Whether the config file indicates split, not split, or unspecified
+        is_config_split = self.configTable.isFieldNameInSplitSet(field_type, name)
+        is_config_not_split = self.configTable.isFieldNameInNotSplitSet(field_type, name)
+        is_config_unknown = (not is_config_not_split) and (not is_config_split)
+
+        if num == -2:  # by the number of samples (Number=G)
+            # Always return false, but show log message if config file or annotation indicates it should be true
+            if is_config_split or is_annotation_split:
+                logging.getLogger(__name__).warn("Annotation or config file specifying is split for field type (%s) with Number=G name: %s  A datasource or VCF file may be misconfigured." % (field_type, name))
+            return False
+
+        elif num == -1:  # by the number of alternates (Number=A)
+            # Always return true, but show log message if config file or annotation indicates it should be false
+            if is_config_split or is_annotation_split:
+                logging.getLogger(__name__).warn("Annotation or config file specifying is not split for field type (%s) with Number=A name: %s  A datasource or VCF file may be misconfigured." % (field_type, name))
+            return True
+
+        elif num is None or num > -1:  # number is unknown or greater than -1 (Use config file, then annotation to decide... otherwise, True for num=="." and False for num >=0)
+            if is_config_split:
+                return True
+            elif is_config_not_split:
+                return False
+            elif is_annotation_split:
+                return True
+            elif is_annotation_not_split:
+                return False
+
+            # both unknown
+            else:
+                if num is None:
                     return True
                 else:
                     return False
-        elif num == -1:  # by the number of alternates
-            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
-                return False
-            elif self.configTable.isFieldNameInNotSplitSet(fieldType, name):
-                return False
-            else:
-                return True
-        elif num is None:  # number is unknown
-            if TagConstants.SPLIT in tags:  # override the default using the tags section
-                return True
-            elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
-                return True
-            else:
-                return False
-        else:
-            if TagConstants.NOT_SPLIT in tags:  # override the default using the tags section
-                return True
-            elif self.configTable.isFieldNameInSplitSet(fieldType, name):  # override the default using the config file
-                return True
-            else:
-                return False
 
-        return False
+        # Should never get here.  Throw warning and return True
+        logging.getLogger(__name__).warn("%s %s num: %d  -- number is unrecognized.  Assuming is split." % (field_type, name, num))
+        return True
 
     def _resolveFieldType(self, name, tags):
         """
