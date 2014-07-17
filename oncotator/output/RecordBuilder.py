@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import collections
+from collections import OrderedDict
 import logging
 import string
 import vcf
@@ -76,7 +77,7 @@ class RecordBuilder:
         self._filt = []  # PASS if this position has passed all filters
         self._info = collections.OrderedDict()  # additional information
         self._infoFieldProperty = collections.OrderedDict()
-        self._fmt = [None]*len(sampleNames)
+        self._fmt = [OrderedDict() for x in xrange(0,len(sampleNames))]
         self._fmtIDs = []
         self._fmtFieldProperty = collections.OrderedDict()
         self._sampleNames = sampleNames
@@ -248,22 +249,22 @@ class RecordBuilder:
 
         return val
 
-    def _determineVal2FixedNumField(self, data, ID, num, isSplit, val):
+    def _determineVal2FixedNumField(self, data, field_name, num, is_split, val):
         """
 
         :param data:
-        :param ID:
+        :param field_name:
         :param num:
-        :param isSplit:
+        :param is_split:
         :param val:
         """
-        if ID not in data:
-            data[ID] = self._fixVal(val, isSplit)
-        elif isSplit and num > 1:
-            vals = data[ID]
+        if field_name not in data:
+            data[field_name] = self._fixVal(val, is_split)
+        elif is_split and num > 1:
+            vals = data[field_name]
             if len(vals) < num:
-                vals += self._fixVal(val, isSplit)
-                data[ID] = vals
+                vals += self._fixVal(val, is_split)
+                data[field_name] = vals
 
     def addInfo(self, sampleName, ID, num=None, dataType="String", val=None, isSplit=True):
         """
@@ -304,11 +305,11 @@ class RecordBuilder:
         genotype = string.join(map(str, [0, nalts]), "/")  # unphased genotype
         return genotype
 
-    def addFormat(self, sampleName, ID, num=None, dataType="String", val=None, isSplit=True, inferGenotype=False):
+    def addFormat(self, sampleName, field_name, num=None, dataType="String", val=None, isSplit=True, inferGenotype=False):
         """
 
         :param sampleName:
-        :param ID:
+        :param field_name:
         :param num:
         :param dataType:
         :param val:
@@ -316,38 +317,49 @@ class RecordBuilder:
         """
         if sampleName in self._sampleNames and num != 0:  # FORMAT fields can never have a value of type flag
             sampleNameIndex = self._sampleNameIndexes[sampleName]
-            if self._fmt[sampleNameIndex] is None:  # GT is always the first field
-                self._fmt[sampleNameIndex] = collections.OrderedDict()
+            # GT is always the first field, so create it if it does not already exist.
+            if "GT" not in self._fmt[sampleNameIndex].keys():
                 self._fmtIDs = ["GT"]
                 self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
                 if inferGenotype:
                     self._fmt[sampleNameIndex]["GT"] = [self._determineGenotype()]
 
-            if ID == "GT":
+            # If GT was specified by the input, then delete the previous copy created in the above few lines.
+            if field_name == "GT":
                 try:
-                    del self._fmt[sampleNameIndex][ID]
+                    del self._fmt[sampleNameIndex][field_name]
                 except KeyError:
                     pass
 
-            if num == -2:  # num is the number of samples
-                nalts = len(self._alts)
-                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
-            elif num == -1:  # num is the number of alternate alleles
-                nalts = len(self._alts)
-                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
+            nalts = len(self._alts)
+
+            if num == -2 or num == -1 or num is None:
+                if not isSplit:
+                    self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, nalts, isSplit, val)
+                else:
+                    # Make sure that all samples get a new entry for the alternate in this field, since it is split.
+                    for sample_name in self._sampleNames:
+                        if field_name not in self._fmt[self._sampleNameIndexes[sample_name]].keys():
+                            self._fmt[self._sampleNameIndexes[sample_name]][field_name] = []
+                        sample_field_dict = self._fmt[self._sampleNameIndexes[sample_name]]
+                        while len(sample_field_dict[field_name]) < nalts:
+                            sample_field_dict[field_name].append(None)
+                    this_sample_field_dict = self._fmt[sampleNameIndex]
+                    this_sample_field_dict[field_name][-1] = self._fixVal(val, isSplit)[0]
+
+
             elif num == 0:  # num is either true or false
+                # Do nothing in this case
                 pass
-            elif num is None:  # num is unknown
-                nalts = len(self._alts)
-                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, nalts, isSplit, val)
             else:  # num is fixed
-                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], ID, num, isSplit, val)
+                self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, num, isSplit, val)
 
-            if ID not in self._fmtIDs:
-                self._fmtIDs += [ID]
 
-            if ID not in self._fmtFieldProperty:
-                self._fmtFieldProperty[ID] = self.fieldProperty(num, dataType, isSplit)
+            if field_name not in self._fmtIDs:
+                self._fmtIDs += [field_name]
+
+            if field_name not in self._fmtFieldProperty:
+                self._fmtFieldProperty[field_name] = self.fieldProperty(num, dataType, isSplit)
 
     def addQual(self, qual):
         try:

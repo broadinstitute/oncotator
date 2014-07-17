@@ -1,4 +1,4 @@
-ancestral allele	alt_allele	alt allele seen	genotype	end	genotype_quality	qual	sample_name	dbSNP_membership	haplotype quality	q10	start	chr	build	allele frequency	samples number	read_depth	ref_allele	id	depth across samples	s50	hapmap2 membership
+ancestral allele	alt_allele	alt allele seen	genotype	end	genotype_quality	qual	sample_name	dbSNP_membership	haplotype_quality	q10	start	chr	build	allele frequency	samples number	read_depth	ref_allele	id	depth across samples	s50	hapmap2 membership
 	A	False	0|0	14370	48	29	NA 00001	True	51,51	PASS	14370	20	hg19			1	G	rs6054257		PASS	False
 	A	True	1|0	14370	48	29	NA 00002	True	51,51	PASS	14370	20	hg19			8	G	rs6054257		PASS	False
 	A	True	1/1	14370	43	29	NA 00003	True	,	PASS	14370	20	hg19			5	G	rs6054257		PASS	False
