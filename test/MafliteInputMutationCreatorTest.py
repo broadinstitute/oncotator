@@ -242,7 +242,6 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         for seg in segs:
             segs_annotated.append(gencode_ds.annotate_segment(seg))
 
-
         outputRenderer = SimpleOutputRenderer(output_filename, '')
         outputRenderer.renderMutations(segs_annotated.__iter__())
 
@@ -264,7 +263,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
     def test_full_seg_file_annotations(self):
         """Test that we can read in a seg file, do a proper full annotation, and output as SIMPLE_TSV"""
         inputFilename = "testdata/seg/Patient0.seg.txt"
-        output_filename = "out/test_simple_seg_file_annotations.tsv"
+        output_filename = "out/test_full_seg_file_annotations.tsv"
         db_dir = self.config.get('DEFAULT',"dbDir")
         if os.path.exists(output_filename):
             os.remove(output_filename)
@@ -290,7 +289,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             self.assertTrue(line_dict['end'] is not None)
             self.assertTrue(line_dict['end'].strip() != "")
             self.assertTrue("genes" in line_dict.keys())
-            self.assertTrue(len(line_dict["genes"].split(",")) > 1)
+            self.assertTrue(len(line_dict["genes"].split(",")) > 0)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

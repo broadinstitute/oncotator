@@ -48,6 +48,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from oncotator.Annotation import Annotation
 from oncotator.cache.CacheManager import CacheManager
+from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.RunSpecification import RunSpecification
 
@@ -114,6 +116,7 @@ class Annotator(object):
     """
 
     ANNOTATING_FUNC_DICT = {RunSpecification.ANNOTATE_MUTATIONS: _annotate_mut, RunSpecification.ANNOTATE_SEGMENTS: _annotate_seg}
+    ANNOTATING_DS_DICT = {RunSpecification.ANNOTATE_MUTATIONS: Datasource, RunSpecification.ANNOTATE_SEGMENTS: SegmentDatasource}
 
     def __init__(self):
         """
@@ -238,6 +241,18 @@ class Annotator(object):
 
         return mutations
 
+    def _prune_datasources_by_annotating_type(self):
+        # Remove datasources that do not match the annotation type (segment or mutation)
+        datasource_class = Annotator.ANNOTATING_DS_DICT.get(self._annotating_type, RunSpecification.ANNOTATE_MUTATIONS)
+        pruned_ds = []
+        for ds in self._datasources:
+            if not isinstance(ds, datasource_class):
+                logging.getLogger(__name__).info(
+                    "Removing %s, since it does not support annotating %s" % (ds.title, str(self._annotating_type)))
+            else:
+                pruned_ds.append(ds)
+        return pruned_ds
+
     def annotate(self):
         """
         Annotate the given mutations specified in the input.
@@ -246,6 +261,12 @@ class Annotator(object):
 
         :return: outputFilename
         """
+
+        if self._annotating_type is None:
+            self._annotating_type = RunSpecification.ANNOTATE_MUTATIONS
+
+        self._datasources = self._prune_datasources_by_annotating_type()
+
         self.logger.info("Annotating with " + str(len(self._datasources)) + " datasources: " + self.createHeaderString())
         
         mutations = self._inputCreator.createMutations()

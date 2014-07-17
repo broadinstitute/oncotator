@@ -53,6 +53,7 @@ import os
 from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatasource
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.datasources.SnpOnlyLevelDbDatasource import SnpOnlyLevelDbDatasource
+from oncotator.utils.RunSpecification import RunSpecification
 from utils.ConfigUtils import ConfigUtils
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
@@ -249,7 +250,7 @@ class DatasourceFactory(object):
         """
         # TODO: Note that createDatasources does not honor the tx-mode
         dsQueueList = []
-        
+
         # Get a list of all of the directories
         dsDirs = []
         if os.path.exists(datasourceDir):
@@ -290,7 +291,7 @@ class DatasourceFactory(object):
                 result.append(DatasourceFactory.createDatasourceGivenTuple(dsTuple))
         else:
             result = DatasourceFactory._createDatasourcesMulticore(numCores, dsQueueList)
-        
+
         return DatasourceFactory.sortDatasources(result)
     
     @staticmethod

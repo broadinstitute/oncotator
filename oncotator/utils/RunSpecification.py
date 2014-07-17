@@ -18,8 +18,8 @@ class RunSpecification(object):
         cache_url -- if None, implies that there is no cache.
         """
 
-    ANNOTATE_SEGMENTS = "SEG"
-    ANNOTATE_MUTATIONS = "MUT"
+    ANNOTATE_SEGMENTS = "segments"
+    ANNOTATE_MUTATIONS = "mutations"
 
     def __init__(self):
         self.__inputCreator = None
