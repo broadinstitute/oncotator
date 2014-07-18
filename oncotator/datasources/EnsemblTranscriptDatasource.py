@@ -438,4 +438,5 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         genes = set(([tx.get_gene() for tx in txs]))
         genes_annotation_value = ",".join(sorted(list(genes)))
         seg.createAnnotation("genes", genes_annotation_value, annotationSource=self.title, annotationDataType="String", annotationDescription="List of genes in the region.")
+        # TODO: Check edges for being in a transcript, so that we can check for individual exons
         return seg
