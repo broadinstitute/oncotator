@@ -197,7 +197,7 @@ def main(argv=None):  # IGNORE:C0111
 
   Copyright 2012 Broad Institute. All rights reserved.
   
-  #TODO: License Here
+  Oncotator is free for non-profit use.  See LICENSE for complete licensing information.
   
   Distributed on an "AS IS" basis without warranties
   or conditions of any kind, either express or implied.
