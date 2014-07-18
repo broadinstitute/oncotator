@@ -51,7 +51,7 @@ class RunSpecificationFactory(object):
         if is_skip_no_alts and (inputFormat != "VCF"):
             result.append(RunSpecificationMessage(logging.INFO, "--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything."))
 
-        is_no_prepend = other_opts[OptionConstants.NO_PREPEND]
+        is_no_prepend = other_opts.get(OptionConstants.NO_PREPEND, True)
         if is_no_prepend and (outputFormat != "TCGAMAF"):
             result.append(RunSpecificationMessage(logging.INFO, "no prepend specified when output is not TCGAMAF.  Ignoring and proceeding."))
 

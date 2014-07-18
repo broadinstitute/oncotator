@@ -281,7 +281,7 @@ USAGE
                                                       defaultAnnotations=defaultValues, cacheUrl=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
                                                       is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
-                                                      other_opts=determineOtherOptions(args, logger))
+                                                      other_opts=determineOtherOptions(args))
 
         annotator = Annotator()
         annotator.initialize(runConfig)
@@ -293,7 +293,7 @@ USAGE
         return 0
 
 
-def determineOtherOptions(args, logger):
+def determineOtherOptions(args):
     opts = dict()
     opts[OptionConstants.NO_PREPEND] = not args.prepend
     opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
