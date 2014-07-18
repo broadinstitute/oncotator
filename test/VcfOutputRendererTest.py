@@ -68,6 +68,9 @@ TestUtils.setupLogging(__file__, __name__)
 
 
 class VcfOutputRendererTest(unittest.TestCase):
+
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
@@ -254,7 +257,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         correctly when the input is a VCF file.
         """
         inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
-        outputFilename = os.path.join("out", "example.variants.vcf")
+        outputFilename = os.path.join("out", "example.test_metadata.variants.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -281,7 +284,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         Tests that the output VCF file is rendered correctly when the input is a VCF file.
         """
         inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
-        outputFilename = os.path.join("out", "example.variants.vcf")
+        outputFilename = os.path.join("out", "example.content_of_example.variants.vcf")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -461,7 +464,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         Tests that the VCF file created from a MAF file contains missing genotype information in the FORMAT fields.
         """
         inputFilename = os.path.join(*["testdata", "maflite", "example.pair_name.maf"])
-        outputFilename = os.path.join("out", "maf2vcf.example.pair_name.vcf")
+        outputFilename = os.path.join("out", "maf2vcf.example.missing_gt.pair_name.vcf")
 
         creator = MafliteInputMutationCreator(inputFilename)
         creator.createMutations()
