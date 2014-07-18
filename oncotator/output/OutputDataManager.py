@@ -172,7 +172,7 @@ class OutputDataManager:
                     sampleName = string.join([mut[normalSampleNameAnnotationName],
                                               mut[tumorSampleNameAnnotationName]], sep="-")
                     sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
-                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "INPUT")
+                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "OUTPUT")
                     if ctr == 0:
                         self.logger.info("Sample name is the concatenation of %s and %s columns."
                                          % (normalSampleNameAnnotationName, tumorSampleNameAnnotationName))
