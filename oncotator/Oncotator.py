@@ -274,16 +274,6 @@ USAGE
             defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
-        if is_skip_no_alts and (outputFormat == "VCF"):
-            logging.getLogger(__name__).warn("--skip-no-alt specified when output is a VCF.  This is likely to generate errors.")
-        if is_skip_no_alts and (inputFormat != "VCF"):
-            logging.getLogger(__name__).info("--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything.")
-        if is_no_prepend and (outputFormat != "TCGAMAF"):
-            logging.getLogger(__name__).info("no prepend specified when output is not TCGAMAF.  Ignoring and proceeding.")
-
-        if outputFormat=="TCGAVCF":
-            logging.getLogger(__name__).warning("TCGA VCF output is not supported and should be considered experimental when used outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users.")
-
         # Create a run configuration to pass to the Annotator class.
         runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
@@ -307,10 +297,7 @@ def determineOtherOptions(args, logger):
     opts = dict()
     opts[OptionConstants.NO_PREPEND] = not args.prepend
     opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
-    if args.input_format == "VCF" and args.output_format == "VCF":
-        if opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:
-            logger.warn("Infer genotypes option has been set to true.  "
-                        "Because the input is a VCF file, infer genotypes will have no effect on the output.")
+
     return opts
 
 

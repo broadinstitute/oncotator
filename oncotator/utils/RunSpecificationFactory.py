@@ -3,7 +3,11 @@ from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
+from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecification import RunSpecification
+from oncotator.utils.RunSpecificationException import RunSpecificationException
+from oncotator.utils.RunSpecificationMessage import RunSpecificationMessage
+
 
 class RunSpecificationFactory(object):
     """Static class for getting instances of RunSpecification"""
@@ -11,6 +15,54 @@ class RunSpecificationFactory(object):
     def __init__(self):
         """Throw an exception since this is a static class """
         raise NotImplementedError("RunSpecificationFactory is a static class and should not be instantiated.")
+
+    @staticmethod
+    def _validate_run_spec_parameters(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations,
+                        datasourceDir, genomeBuild, isMulticore, numCores,
+                        defaultAnnotations, cacheUrl, read_only_cache,
+                        tx_mode, is_skip_no_alts, other_opts, annotating_type):
+        """
+
+
+        :param inputFormat:
+        :param outputFormat:
+        :param inputFilename:
+        :param outputFilename:
+        :param globalAnnotations:
+        :param datasourceDir:
+        :param genomeBuild:
+        :param isMulticore:
+        :param numCores:
+        :param defaultAnnotations:
+        :param cacheUrl:
+        :param read_only_cache:
+        :param tx_mode:
+        :param is_skip_no_alts:
+        :param other_opts:
+        :param annotating_type:
+        :returns list: List of RunSpecificationMessage
+        """
+        result = []
+        if outputFormat=="TCGAVCF":
+            result.append(RunSpecificationMessage(logging.WARN, "TCGA VCF output is not supported and should be considered experimental when used outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users."))
+
+        if is_skip_no_alts and (outputFormat == "VCF"):
+            result.append(RunSpecificationMessage(logging.WARN, "--skip-no-alt specified when output is a VCF.  This is likely to generate errors."))
+        if is_skip_no_alts and (inputFormat != "VCF"):
+            result.append(RunSpecificationMessage(logging.INFO, "--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything."))
+
+        is_no_prepend = other_opts[OptionConstants.NO_PREPEND]
+        if is_no_prepend and (outputFormat != "TCGAMAF"):
+            result.append(RunSpecificationMessage(logging.INFO, "no prepend specified when output is not TCGAMAF.  Ignoring and proceeding."))
+
+        if outputFormat=="GENE_LIST" and inputFormat != "SEG_FILE":
+            result.append(RunSpecificationMessage(logging.ERROR, "Output format of GENE_LIST is only supported when input is SEG_FILE"))
+
+        if inputFormat == "VCF" and outputFormat == "VCF" and other_opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:
+            result.append(RunSpecificationMessage(logging.WARN,"Infer genotypes option has been set to true.  "
+                        "Because the input is a VCF file, infer genotypes will have no effect on the output."))
+
+        return result
 
     @staticmethod
     def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=None,
@@ -34,6 +86,16 @@ class RunSpecificationFactory(object):
         other_opts = dict() if other_opts is None else other_opts
 
         other_opts[InputMutationCreatorOptions.IS_SKIP_ALTS] = is_skip_no_alts
+
+        # Step 0 Validate given parameters and log messages.  If an error or critical is found, throw an exception.
+        validation_messages = RunSpecificationFactory._validate_run_spec_parameters(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations,
+                        datasourceDir, genomeBuild, isMulticore, numCores,
+                        defaultAnnotations, cacheUrl, read_only_cache,
+                        tx_mode, is_skip_no_alts, other_opts, annotating_type)
+        for msg in validation_messages:
+            logging.getLogger(__name__).log(msg.level, msg.message)
+            if (msg.level == logging.ERROR) or (msg.level == logging.CRITICAL):
+                raise RunSpecificationException(msg.message)
 
         # Step 1 Initialize input and output
         inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild, other_opts)
