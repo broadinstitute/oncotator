@@ -113,7 +113,6 @@ class VcfOutputRenderer(OutputRenderer):
         # Initialize the config table
         self.configTable = self.configTableBuilder.getConfigTable(configFilename=self.configFilename)
 
-
         tempTemplateFile = tempfile.NamedTemporaryFile(prefix="onco_vcf_out_")
         path = os.path.dirname(tempTemplateFile.name)
         dataManager = OutputDataManager(self.configTable, mutations, comments, metadata, path)

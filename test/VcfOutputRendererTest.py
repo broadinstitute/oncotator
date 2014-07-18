@@ -937,6 +937,29 @@ class VcfOutputRendererTest(unittest.TestCase):
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
+        reader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        for record in reader:
+            self.assertEqual(len(record.INFO["variant_classification"]), 2,
+                "Length of must be 2 but was %s." % len(record.INFO["variant_classification"]))
+            self.assertEqual(len(record.INFO["variant_type"]), 2,
+                "Length of must be 2 but was %s." % len(record.INFO["variant_type"]))
+
+    def test_rendering_vcf_output_format_field(self):
+        """Test that we do not drop FORMAT fields for a given maflite (issue 201) """
+        inputFilename = os.path.join(*["testdata", "maflite", "example_input_for_vcf_out.call_stats.txt"])
+        outputFilename = os.path.join("out", "example_input_for_vcf_out.call_stats.txt.vcf")
+        creator = MafliteInputMutationCreator(inputFilename)
+        renderer = VcfOutputRenderer(outputFilename)
+        annotator = Annotator()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        annotator.addDatasource(transcript_ds)
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        reader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
+        for record in reader:
+            self.assertTrue(len(record.FORMAT.split(":")) == 4, "There should be four FORMAT fields, but saw %d: %s" % (len(record.FORMAT.split(":")),record.FORMAT))
 
 if __name__ == "__main__":
     unittest.main()
