@@ -108,7 +108,7 @@ class OncotatorCLIUtils(object):
                 'SIMPLE_BED': (SimpleBedOutputRenderer, ""),
                 'TCGAVCF': (TcgaVcfOutputRenderer, "tcgaVCF1.1_output.config"),
                 'VCF': (VcfOutputRenderer, "vcf.out.config"),
-                'GENE_LIST': (GeneListOutputRenderer, "")}
+                'GENE_LIST': (GeneListOutputRenderer, "gene_list_output.config")}
 
     @staticmethod
     def getSupportedOutputFormats():

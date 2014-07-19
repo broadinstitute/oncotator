@@ -30,16 +30,16 @@ class GeneListOutputRendererTest(unittest.TestCase):
         # Now check the output
         output_reader = GenericTsvReader(output_filename)
 
-        required_cols = ["Sample", "Num_Probes", "Segment_Mean"]
         headers = output_reader.getFieldNames()
 
         for line_dict in output_reader:
-            self.assertTrue(line_dict['start'] is not None)
-            self.assertTrue(line_dict['start'].strip() != "")
-            self.assertTrue(line_dict['end'] is not None)
-            self.assertTrue(line_dict['end'].strip() != "")
-            self.assertTrue("genes" in line_dict.keys())
-            self.assertTrue(len(line_dict["genes"].split(",")) > 0)
+            self.assertTrue(line_dict['segment_start'] is not None)
+            self.assertTrue(line_dict['segment_start'].strip() != "")
+            self.assertTrue(line_dict['segment_end'] is not None)
+            self.assertTrue(line_dict['segment_end'].strip() != "")
+            self.assertTrue("gene" in line_dict.keys())
+            self.assertTrue(len(line_dict["gene"]) > 0)
+            self.assertTrue(float(line_dict["Num_Probes"]))
 
 
 

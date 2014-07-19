@@ -2,6 +2,8 @@ from collections import OrderedDict
 import csv
 import logging
 from oncotator.output.OutputRenderer import OutputRenderer
+from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.MutUtils import MutUtils
 
 
 class GeneListOutputRenderer(OutputRenderer):
@@ -33,8 +35,9 @@ class GeneListOutputRenderer(OutputRenderer):
 
 
     """
-    def __init__(self, filename, configFile="", other_options=None):
+    def __init__(self, filename, config_file="", other_options=None):
         self._filename = filename
+        self._config_file = config_file
 
 
     def renderMutations(self, segments, metadata=None, comments=None):
@@ -44,6 +47,11 @@ class GeneListOutputRenderer(OutputRenderer):
         :param metadata:
         :param comments:
         """
+
+        config_parser = ConfigUtils.createConfigParser(self._config_file)
+
+        logging.getLogger(__name__).info("Building alternative keys dictionary...")
+        self._alternativeDictionary = ConfigUtils.buildAlternateKeyDictionaryFromConfig(config_parser)
 
         if metadata is None:
             metadata = OrderedDict()
@@ -56,13 +64,15 @@ class GeneListOutputRenderer(OutputRenderer):
             fp.write("## " + c + "\n")
 
         # TODO: Define constant for "genes", and other annotations
-        headers = ["gene", "segment_contig", "segment_start", "segment_end", "segment_mean", "segment_call"]
+        headers = config_parser.options("alternatives")
         gene_to_segment_dict = dict()
         annotations = []
         i = 0
         for i, seg in enumerate(segments):
             if len(annotations) == 0:
                 annotations = seg.keys()
+                field_mapping = MutUtils.createFieldsMapping(headers, annotations, self._alternativeDictionary, isRenderInternalFields=False)
+
             gene_list = seg['genes'].split(",")
             for g in gene_list:
                 gene_to_segment_dict[g] = seg
@@ -74,14 +84,15 @@ class GeneListOutputRenderer(OutputRenderer):
 
         writer = csv.DictWriter(fp, headers, delimiter="\t", lineterminator="\n", extrasaction="ignore")
 
-        headers.extend(sorted(annotations))
         writer.writeheader()
         for gene in all_genes_seen:
             # This next line may be slow...
             line_dict = dict()
+            seg = gene_to_segment_dict[gene]
+            for h in headers:
+                annotation_field = field_mapping.get(h, h)
+                line_dict[h] = seg.get(annotation_field, "")
             line_dict["gene"] = gene
-            line_dict.update(gene_to_segment_dict[gene])
-            del line_dict['genes']
             writer.writerow(line_dict)
 
         fp.close()
