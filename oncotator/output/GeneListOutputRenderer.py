@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import csv
+import logging
 from oncotator.output.OutputRenderer import OutputRenderer
 
 
@@ -53,14 +55,35 @@ class GeneListOutputRenderer(OutputRenderer):
         for c in comments:
             fp.write("## " + c + "\n")
 
-        # TODO: Define constant for "genes", exon
-        all_genes_seen_dict = []
-        annotations_per_gene = []
-        for seg in segments:
-
-
-
+        # TODO: Define constant for "genes", and other annotations
+        headers = ["gene", "segment_contig", "segment_start", "segment_end", "segment_mean", "segment_call"]
+        gene_to_segment_dict = dict()
+        annotations = []
+        i = 0
+        for i, seg in enumerate(segments):
+            if len(annotations) == 0:
+                annotations = seg.keys()
             gene_list = seg['genes'].split(",")
             for g in gene_list:
-                all_genes_seen_dict[g] = {}
+                gene_to_segment_dict[g] = seg
+
+
+        all_genes_seen = sorted(gene_to_segment_dict.keys())
+        if i == 0:
+            logging.getLogger(__name__).info("No segments given.  There will be no genes in the list.")
+
+        writer = csv.DictWriter(fp, headers, delimiter="\t", lineterminator="\n", extrasaction="ignore")
+
+        headers.extend(sorted(annotations))
+        writer.writeheader()
+        for gene in all_genes_seen:
+            # This next line may be slow...
+            line_dict = dict()
+            line_dict["gene"] = gene
+            line_dict.update(gene_to_segment_dict[gene])
+            del line_dict['genes']
+            writer.writerow(line_dict)
+
+        fp.close()
+
 

@@ -16,7 +16,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
     def test_basic_rendering(self):
         """Test that we can render a basic seg file as a gene list"""
         inputFilename = "testdata/seg/Patient0.seg.txt"
-        output_filename = "out/test_full_seg_file_annotations.gene_list.tsv"
+        output_filename = "out/test_basic_rendering.gene_list.tsv"
         db_dir = self.config.get('DEFAULT',"dbDir")
         if os.path.exists(output_filename):
             os.remove(output_filename)
@@ -32,8 +32,6 @@ class GeneListOutputRendererTest(unittest.TestCase):
 
         required_cols = ["Sample", "Num_Probes", "Segment_Mean"]
         headers = output_reader.getFieldNames()
-        for rcol in required_cols:
-            self.assertTrue(rcol in headers)
 
         for line_dict in output_reader:
             self.assertTrue(line_dict['start'] is not None)

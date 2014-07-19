@@ -50,6 +50,7 @@ import os
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
+from oncotator.output.GeneListOutputRenderer import GeneListOutputRenderer
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 import logging
 
@@ -106,7 +107,8 @@ class OncotatorCLIUtils(object):
                 "SIMPLE_TSV": (SimpleOutputRenderer, ""),
                 'SIMPLE_BED': (SimpleBedOutputRenderer, ""),
                 'TCGAVCF': (TcgaVcfOutputRenderer, "tcgaVCF1.1_output.config"),
-                'VCF': (VcfOutputRenderer, "vcf.out.config")}
+                'VCF': (VcfOutputRenderer, "vcf.out.config"),
+                'GENE_LIST': (GeneListOutputRenderer, "")}
 
     @staticmethod
     def getSupportedOutputFormats():
