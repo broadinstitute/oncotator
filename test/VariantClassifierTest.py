@@ -658,7 +658,7 @@ class VariantClassifierTest(unittest.TestCase):
 
     @data_provider_decorator(flank_test_pik3ca)
     def test_flank_test_positive_strand(self, chr, start, end, gt_vc, vt, ref_allele, alt_allele):
-        """Test 5' Flank on a negative strand """
+        """Test 5' Flank on a positive strand """
         tx = self._retrieve_test_transcript_PIK3CA()
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)

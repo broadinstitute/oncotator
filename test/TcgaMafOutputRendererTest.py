@@ -200,7 +200,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         self.assertTrue("i_TEST" in headers, "i_TEST not found in output headers")
 
     def testInternalFieldsSkipPrepend(self):
-        """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
+        """ Test that no prepending of "i_" is honored."""
         outputFilename = "out/testInternalFields_v2.4.maf.tsv"
         m = MutationData()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
