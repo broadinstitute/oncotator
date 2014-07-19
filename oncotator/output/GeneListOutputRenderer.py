@@ -71,7 +71,7 @@ class GeneListOutputRenderer(OutputRenderer):
         for i, seg in enumerate(segments):
             if len(annotations) == 0:
                 annotations = seg.keys()
-                field_mapping = MutUtils.createFieldsMapping(headers, annotations, self._alternativeDictionary, isRenderInternalFields=False)
+                field_mapping = MutUtils.createFieldsMapping(headers, annotations, self._alternativeDictionary, isRenderInternalFields=True, prepend="")
 
             gene_list = seg['genes'].split(",")
             for g in gene_list:

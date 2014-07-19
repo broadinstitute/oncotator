@@ -40,6 +40,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
             self.assertTrue("gene" in line_dict.keys())
             self.assertTrue(len(line_dict["gene"]) > 0)
             self.assertTrue(float(line_dict["segment_num_probes"]))
+            self.assertTrue(line_dict['sample'] == "Patient0")
 
 
 
