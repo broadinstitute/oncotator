@@ -489,7 +489,7 @@ class HgvsChangeTransformer():
     def _get_cdna_change_for_intron(self, mutation, tx):
         #### HACK #####
 
-        nearest_exon = self.vcer._determine_closest_exon(tx, int(mutation['start']),
+        nearest_exon = TranscriptProviderUtils.determine_closest_exon(tx, int(mutation['start']),
             int(mutation['end']))
         dist_to_exon = self.vcer._get_splice_site_coordinates(tx, int(mutation['start']),
             int(mutation['end']), nearest_exon)

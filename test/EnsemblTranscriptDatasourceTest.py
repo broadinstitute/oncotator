@@ -51,11 +51,13 @@ import logging
 import shutil
 
 import unittest
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
 from test.TestUtils import TestUtils
 
@@ -271,6 +273,34 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         gene_set = set([tx.get_gene() for tx in filtered_txs])
         self.assertTrue(len(gene_set) > 1500)
 
+    def test_determine_exon_for_intron_segment(self):
+        """Test whether we can determine which exon is covered by a start position of a segment (negative strand)"""
+        # Fake that the segment is chr22 22123684-22127000
+        # Has to be chosen as canonical
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        start_txs = transcript_ds.get_transcripts_by_pos(chr="22", start="22123684", end="22123684")
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", "22123684", "22123684")
+
+        exon_index = TranscriptProviderUtils.determine_closest_exon(chosen_tx, 22165000, 22165000)
+        is_exon_overlap = (exon_index != -1)
+        left_distance, right_distance = TranscriptProviderUtils.determine_closest_distance_from_exon(22165000, 22165000, exon_index, chosen_tx)
+
+        pass
+
+
+    def test_determine_exon_for_IGR_segment(self):
+        """Test exon inclusion for a segment that has a start position in IGR"""
+        self.assertTrue(False)
+
+    def test_determine_exon_for_exon_segment(self):
+        """Test exon inclusion for a segment that has a start position in an exon"""
+        self.assertTrue(False)
+
+    def test_determine_exon_for_UTR_segment(self):
+        """Test exon inclusion for a segment that has a start position in a UTR"""
+        self.assertTrue(False)
 
 if __name__ == '__main__':
     unittest.main()
