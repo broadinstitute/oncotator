@@ -341,6 +341,25 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
         self.assertTrue(result_tuple[1] == gt_exon_direction)
 
+    segment_end_data_positive_strand = lambda: (
+        ("3", 178920000, 3, "-"),
+        ("3", 178921000, 3, "-"),
+        ("3", 178919500, 3, "-"),
+        ("3", 178917500, 2, "-"), # in exon
+    )
+    @data_provider_decorator(segment_end_data_positive_strand)
+    def test_determine_exons_affected_by_end_positive_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
+
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(end), end=str(end))
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(end), str(end))
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(end, chosen_tx)
+
+        self.assertTrue(str(result_tuple[0])+result_tuple[1] == str(gt_exon_id)+gt_exon_direction, "GT did not match guess exon ID... GT exon ID: %s    Seen: %s " % (str(gt_exon_id) + gt_exon_direction, str(result_tuple[0]) + result_tuple[1]))
+
     # ("3", 178990000, -1, "") # IGR
     # ("22", 22062050, -1, ""),
     def test_determine_exon_for_IGR_segment(self):
