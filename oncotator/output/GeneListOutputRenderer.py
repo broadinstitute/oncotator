@@ -83,13 +83,13 @@ class GeneListOutputRenderer(OutputRenderer):
                     gene_to_segment_dict[g] = seg
 
 
-        all_genes_seen = sorted(gene_to_segment_dict.keys())
         if i == 0:
             logging.getLogger(__name__).info("No segments given.  There will be no genes in the list.")
 
         writer = csv.DictWriter(fp, headers, delimiter="\t", lineterminator="\n", extrasaction="ignore")
-
         writer.writeheader()
+
+        all_genes_seen = sorted(gene_to_segment_dict.keys())
         for gene in all_genes_seen:
             # This next line may be slow...
             line_dict = dict()
