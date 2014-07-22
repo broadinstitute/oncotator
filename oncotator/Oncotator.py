@@ -111,11 +111,16 @@ class CLIError(Exception):
         return self.msg
 
 
-def parseOptions(program_license, program_version_message):
+def parseOptions(program_version_message):
     # Setup argument parser
-    epilog= '''
-    
-    Example usage :
+    description = program_version_message + '''
+
+    Oncotator is a tool for annotating human genomic point mutations and indels with data relevant to cancer researchers.
+
+    '''
+    epilog = '''
+    Example usage
+    -------------
     oncotator -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
     
     IMPORTANT NOTE:  hg19 is only supported genome build for now.
@@ -144,8 +149,12 @@ def parseOptions(program_license, program_version_message):
         This feature is to allow users to include or exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
 
         If --skip-no-alt is specified, VCF input processing will remove mutations with alt_allele_seen of False entirely (the mutations will not even seen when output format is SIMPLE_TSV).
+
+    -----
+    Copyright 2012 Broad Institute. All rights reserved.  Distributed on an "AS IS" basis without warranties or conditions of any kind, either express or implied.
+    Oncotator is free for non-profit use.  See LICENSE for complete licensing information.
     '''
-    parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
+    parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 5]", default=5)
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
     parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
@@ -188,25 +197,10 @@ def main(argv=None):  # IGNORE:C0111
         sys.argv.extend(argv)
 
     program_version = "%s" % __version__
-    program_build_date = str(__updated__)
-    program_version_message = '%%(prog)s %s' % (program_version)
-    program_shortdesc = program_version_message
-    program_license = '''%s
-
-    %s
-
-  Copyright 2012 Broad Institute. All rights reserved.
-  
-  Oncotator is free for non-profit use.  See LICENSE for complete licensing information.
-  
-  Distributed on an "AS IS" basis without warranties
-  or conditions of any kind, either express or implied.
-
-USAGE
-''' % (program_shortdesc, str(__date__))
+    program_version_message = '%%(prog)s %s' % program_version
 
     try:
-        args = parseOptions(program_license, program_version_message)
+        args = parseOptions(program_version_message)
         verbose = args.verbose
         if verbose > 0:
             print("Verbose mode on")

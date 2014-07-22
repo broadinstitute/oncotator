@@ -286,11 +286,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     @data_provider_decorator(segment_start_data_negative_strand)
     def test_determine_exons_affected_by_start_negative_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
 
-        config = TestUtils.createUnitTestConfig()
-        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
-        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
-        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(start), end=str(start))
-        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(start), str(start))
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
 
         result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
 
@@ -309,11 +305,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     @data_provider_decorator(segment_end_data_negative_strand)
     def test_determine_exons_affected_by_end_negative_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
 
-        config = TestUtils.createUnitTestConfig()
-        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
-        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
-        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(end), end=str(end))
-        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(end), str(end))
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, end)
 
         result_tuple = transcript_ds._determine_exons_affected_by_end(end, chosen_tx)
 
@@ -330,11 +322,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     @data_provider_decorator(segment_start_data_positive_strand)
     def test_determine_exons_affected_by_start_positive_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
 
-        config = TestUtils.createUnitTestConfig()
-        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
-        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
-        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(start), end=str(start))
-        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(start), str(start))
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
 
         result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
 
@@ -347,21 +335,29 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ("3", 178919500, 3, "-"),
         ("3", 178917500, 2, "-"), # in exon
     )
-    @data_provider_decorator(segment_end_data_positive_strand)
-    def test_determine_exons_affected_by_end_positive_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
 
+    def _get_chosen_tx_and_transcript_ds(self, chrom, loc):
         config = TestUtils.createUnitTestConfig()
         transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
         transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
-        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(end), end=str(end))
-        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(end), str(end))
+        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(loc), end=str(loc))
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(),
+                                                     VariantClassification.VT_SNP, "", "", str(loc), str(loc))
+        return chosen_tx, transcript_ds
+
+    @data_provider_decorator(segment_end_data_positive_strand)
+    def test_determine_exons_affected_by_end_positive_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
+
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, end)
 
         result_tuple = transcript_ds._determine_exons_affected_by_end(end, chosen_tx)
 
         self.assertTrue(str(result_tuple[0])+result_tuple[1] == str(gt_exon_id)+gt_exon_direction, "GT did not match guess exon ID... GT exon ID: %s    Seen: %s " % (str(gt_exon_id) + gt_exon_direction, str(result_tuple[0]) + result_tuple[1]))
 
-    # ("3", 178990000, -1, "") # IGR
-    # ("22", 22062050, -1, ""),
+    segment_igr_overlaps = lambda: (
+        ("3", 178990000, -1, ""), # IGR
+        ("22", 22062050, -1, "")
+    )
     def test_determine_exon_for_IGR_segment(self):
         """Test exon inclusion for a segment that has a start position in IGR"""
         self.assertTrue(False)
