@@ -567,14 +567,15 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             result_list = [exon_index, "-"]
 
         # The rest are not in an exon
-        if is_negative_strand and is_diff_is_positive:
-            result_list = [exon_index + 1, "+"]
-        if is_negative_strand and not is_diff_is_positive:
-            result_list = [exon_index, "+"]
-        if not is_negative_strand and is_diff_is_positive:
-            result_list = [exon_index - 1, "-"]
-        if not is_negative_strand and not is_diff_is_positive:
-            result_list = [exon_index, "-"]
+        if not is_in_exon:
+            if is_negative_strand and is_diff_is_positive:
+                result_list = [exon_index + 1, "+"]
+            if is_negative_strand and not is_diff_is_positive:
+                result_list = [exon_index, "+"]
+            if not is_negative_strand and is_diff_is_positive:
+                result_list = [exon_index - 1, "-"]
+            if not is_negative_strand and not is_diff_is_positive:
+                result_list = [exon_index, "-"]
 
         if (result_list[0] < 0 and result_list[1] == "-") or (result_list[0] >= len(tx.get_exons()) and result_list[1] == "+"):
             # This gene is unaffected by the end position

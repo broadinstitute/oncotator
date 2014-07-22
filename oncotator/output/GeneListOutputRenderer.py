@@ -75,7 +75,12 @@ class GeneListOutputRenderer(OutputRenderer):
 
             gene_list = seg['genes'].split(",")
             for g in gene_list:
-                gene_to_segment_dict[g] = seg
+                if g == seg["start_gene"]:
+                    gene_to_segment_dict[g + " " + seg["start_exon"]] = seg
+                elif g == seg["end_gene"]:
+                    gene_to_segment_dict[g + " " + seg["end_exon"]] = seg
+                else:
+                    gene_to_segment_dict[g] = seg
 
 
         all_genes_seen = sorted(gene_to_segment_dict.keys())

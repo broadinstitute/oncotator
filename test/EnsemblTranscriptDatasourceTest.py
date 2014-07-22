@@ -298,6 +298,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertTrue(result_tuple[1] == gt_exon_direction)
 
     segment_end_data_negative_strand = lambda: (
+        ("22", 22123000, 8, "+"),
         ("22", 22165000, 1, "+"),
         ("22", 22155000, 3, "+"),
         ("22", 22156000, 3, "+"),
