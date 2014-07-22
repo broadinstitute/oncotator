@@ -356,11 +356,26 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     segment_igr_overlaps = lambda: (
         ("3", 178990000, -1, ""), # IGR
-        ("22", 22062050, -1, "")
+        ("22", 22100000, -1, "")
     )
-    def test_determine_exon_for_IGR_segment(self):
+    @data_provider_decorator(segment_igr_overlaps)
+    def test_determine_exons_affected_for_start_for_IGR_segment(self, chrom, start, gt_exon_id, gt_exon_direction):
         """Test exon inclusion for a segment that has a start position in IGR"""
-        self.assertTrue(False)
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
+
+        self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
+
+    @data_provider_decorator(segment_igr_overlaps)
+    def test_determine_exons_affected_for_end_for_IGR_segment(self, chrom, start, gt_exon_id, gt_exon_direction):
+        """Test exon inclusion for a segment that has a start position in IGR"""
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(start, chosen_tx)
+
+        self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
+
 
 if __name__ == '__main__':
     unittest.main()

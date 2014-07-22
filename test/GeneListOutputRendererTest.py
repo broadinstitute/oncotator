@@ -46,7 +46,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
     def test_rendering_with_exons(self):
         """Test that we can render a seg file that includes exons at end points"""
         inputFilename = "testdata/seg/Middle_of_exon.seg.txt"
-        output_filename = "out/test_exon_seg.gene_list.tsv"
+        output_filename = "out/test_exon_seg2.gene_list.tsv"
         db_dir = self.config.get('DEFAULT',"dbDir")
         if os.path.exists(output_filename):
             os.remove(output_filename)
@@ -65,7 +65,8 @@ class GeneListOutputRendererTest(unittest.TestCase):
         for line_dict in output_reader:
             self.assertTrue(line_dict['segment_start'] is not None)
             self.assertTrue(line_dict['segment_start'].strip() != "")
-            self.assertTrue(False, "Still need to implement tests for the exon overlap.")
+            if line_dict['segment_end_gene'] == "MAPK1":
+                self.assertTrue(line_dict['segment_end_exon'].strip() == "8+", "Should have been 8+, but saw: %s" % line_dict['segment_end_exon'].strip())
 
 if __name__ == '__main__':
     unittest.main()

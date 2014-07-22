@@ -448,14 +448,15 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         return start_exon, start_gene
 
     def _extract_segment_end_overlap(self, seg):
-        end_txs = self.get_transcripts_by_pos(chr=seg.chr, start=str(seg.end), end=str(seg.end))
+        pos = seg.end
+        end_txs = self.get_transcripts_by_pos(chr=seg.chr, start=str(pos), end=str(pos))
         if end_txs is None or len(end_txs) == 0:
             end_gene = ""
             end_exon = ""
         else:
             end_chosen_tx = self._choose_transcript(end_txs, self.get_tx_mode(), VariantClassification.VT_SNP, "",
-                                                      "", str(seg.end), str(seg.end))
-            result_tuple = self._determine_exons_affected_by_start(seg.start, end_chosen_tx)
+                                                      "", str(pos), str(pos))
+            result_tuple = self._determine_exons_affected_by_end(pos, end_chosen_tx)
             end_gene = end_chosen_tx.get_gene()
             end_exon = str(result_tuple[0]) + result_tuple[1]
         return end_exon, end_gene
@@ -487,9 +488,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
         return seg
 
-    def _extract_exon_info(self, start, tx):
-        exon_index = TranscriptProviderUtils.determine_closest_exon(tx, start, start)
-        left_distance, right_distance = TranscriptProviderUtils.determine_closest_distance_from_exon(start, start,
+    def _extract_exon_info(self, position, tx):
+        exon_index = TranscriptProviderUtils.determine_closest_exon(tx, position, position)
+        if exon_index is None:
+            return exon_index, None, None, None
+        left_distance, right_distance = TranscriptProviderUtils.determine_closest_distance_from_exon(position, position,
                                                                                                      exon_index, tx)
         is_in_exon = (left_distance <= 0) and (right_distance >= 0)
         is_diff_is_positive = (left_distance > 0) and (right_distance > 0)
@@ -525,7 +528,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         All "no exon affected" will have a [0] of -1.
         """
         exon_index, is_diff_is_positive, is_in_exon, is_negative_strand = self._extract_exon_info(int(start), tx)
-
+        if exon_index is None:
+            return None
         result_list = [-2, "X"]
         if is_in_exon and is_negative_strand:
             result_list = [exon_index, "-"]
@@ -560,6 +564,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         All "no exon affected" will have a [0] of -1.
         """
         exon_index, is_diff_is_positive, is_in_exon, is_negative_strand = self._extract_exon_info(int(end), tx)
+        if exon_index is None:
+            return None
+
         result_list = [-2, "X"]
         if is_in_exon and is_negative_strand:
             result_list = [exon_index, "+"]
@@ -577,7 +584,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             if not is_negative_strand and not is_diff_is_positive:
                 result_list = [exon_index, "-"]
 
-        if (result_list[0] < 0 and result_list[1] == "-") or (result_list[0] >= len(tx.get_exons()) and result_list[1] == "+"):
+        if (result_list[0] < 0 and result_list[1] == "-") or (result_list[0] >= len(tx.get_exons()) and (result_list[1] == "+")):
             # This gene is unaffected by the end position
             result_list[0] = -1
 

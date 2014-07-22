@@ -525,8 +525,10 @@ class TranscriptProviderUtils(object):
         :param Transcript t: transcript
         :param int start: genomic coordinate for start position
         :param int end: genomic coordinate for end position
-        :return int: exon index
+        :return int: exon index.  None if t is None
         """
+        if t is None:
+            return None
         tmp_distances = []
         for i,exon in enumerate(t.get_exons()):
             left_diff, right_diff = TranscriptProviderUtils.determine_closest_distance_from_exon(start, end, i,  t)
