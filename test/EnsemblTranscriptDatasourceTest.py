@@ -59,7 +59,7 @@ from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
-from test.TestUtils import TestUtils
+from test.TestUtils import TestUtils, data_provider_decorator
 
 TestUtils.setupLogging(__file__, __name__)
 class EnsemblTranscriptDatasourceTest(unittest.TestCase):
@@ -273,33 +273,77 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         gene_set = set([tx.get_gene() for tx in filtered_txs])
         self.assertTrue(len(gene_set) > 1500)
 
-    def test_determine_exon_for_intron_segment(self):
-        """Test whether we can determine which exon is covered by a start position of a segment (negative strand)"""
-        # Fake that the segment is chr22 22123684-22127000
-        # Has to be chosen as canonical
+
+    segment_start_data_negative_strand = lambda: (
+        # The start is between exon 0 and exon 1.  Since the start and end are in genomic space, we expect 0,"-"
+        ("22", 22162050, 1, "-"),
+        ("22", 22165000, 0, "-"),
+        ("22", 22155000, 2, "-"),
+        ("22", 22156000, 2, "-"),
+        ("22", 22220000, 0, "-"),
+        ("22", 22125000, 6, "-")
+    )
+    @data_provider_decorator(segment_start_data_negative_strand)
+    def test_determine_exons_affected_by_start_negative_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
+
         config = TestUtils.createUnitTestConfig()
         transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
         transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
-        start_txs = transcript_ds.get_transcripts_by_pos(chr="22", start="22123684", end="22123684")
-        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", "22123684", "22123684")
+        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(start), end=str(start))
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(start), str(start))
 
-        exon_index = TranscriptProviderUtils.determine_closest_exon(chosen_tx, 22165000, 22165000)
-        is_exon_overlap = (exon_index != -1)
-        left_distance, right_distance = TranscriptProviderUtils.determine_closest_distance_from_exon(22165000, 22165000, exon_index, chosen_tx)
+        result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
 
-        pass
+        self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
+        self.assertTrue(result_tuple[1] == gt_exon_direction)
+
+    segment_end_data_negative_strand = lambda: (
+        ("22", 22165000, 1, "+"),
+        ("22", 22155000, 3, "+"),
+        ("22", 22156000, 3, "+"),
+        ("22", 22220000, 1, "+"),
+        ("22", 22125000, 7, "+"),
+        ("22", 22162050, 1, "+"), # in exon
+    )
+    @data_provider_decorator(segment_end_data_negative_strand)
+    def test_determine_exons_affected_by_end_negative_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
+
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(end), end=str(end))
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(end), str(end))
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(end, chosen_tx)
+
+        self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
+        self.assertTrue(result_tuple[1] == gt_exon_direction)
 
 
+    segment_start_data_positive_strand = lambda: (
+        ("3", 178920000, 4, "+"),
+        ("3", 178921000, 4, "+"),
+        ("3", 178919500, 4, "+"),
+        ("3", 178917500, 2, "+"), # in exon
+    )
+    @data_provider_decorator(segment_start_data_positive_strand)
+    def test_determine_exons_affected_by_start_positive_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
+
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(start), end=str(start))
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(), VariantClassification.VT_SNP, "", "", str(start), str(start))
+
+        result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
+
+        self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
+        self.assertTrue(result_tuple[1] == gt_exon_direction)
+
+    # ("3", 178990000, -1, "") # IGR
+    # ("22", 22062050, -1, ""),
     def test_determine_exon_for_IGR_segment(self):
         """Test exon inclusion for a segment that has a start position in IGR"""
-        self.assertTrue(False)
-
-    def test_determine_exon_for_exon_segment(self):
-        """Test exon inclusion for a segment that has a start position in an exon"""
-        self.assertTrue(False)
-
-    def test_determine_exon_for_UTR_segment(self):
-        """Test exon inclusion for a segment that has a start position in a UTR"""
         self.assertTrue(False)
 
 if __name__ == '__main__':
