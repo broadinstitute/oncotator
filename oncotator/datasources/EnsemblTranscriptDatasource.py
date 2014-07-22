@@ -234,13 +234,24 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         """Choose the transcript with the most detrimental effect.
          The rankings are in TranscriptProviderUtils.
          Ties are broken by which transcript has the longer coding length.
+
+        :param list txs: list of Transcript
+        :param str variant_type:
+        :param str ref_allele:
+        :param str alt_allele:
+        :param str start:
+        :param str end:
+        :return Transcript:
          """
         vcer = VariantClassifier()
         effect_dict = TranscriptProviderUtils.retrieve_effect_dict()
         best_effect_score = 100000000 # lower score is more likely to get picked
         best_effect_tx = None
         for tx in txs:
-            vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
+            if (ref_allele == "" or ref_allele == "-") and (alt_allele == "" or alt_allele == "-"):
+                vc = VariantClassification.SILENT
+            else:
+                vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
             effect_score = effect_dict.get(vc, 25)
             if effect_score < best_effect_score:
                 best_effect_score = effect_score
@@ -435,6 +446,15 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         return self.tx_mode
 
     def _extract_segment_start_overlap(self, seg):
+        """
+        Given a segment, return the gene and exons (e.g. 6+) overlapping the start of the segment.
+
+        :param MutationData seg:
+         :return tuple:
+            [0]: start_exon start exon index (0-based) and whether it is all previous exons
+            ("-") or downstream exons ("+") in the coding direction.
+             [1]: start_gene -- gene symbol on the canonical transcript
+        """
         start_txs = self.get_transcripts_by_pos(chr=seg.chr, start=str(seg.start), end=str(seg.start))
         if start_txs is None or len(start_txs) == 0:
             start_gene = ""
@@ -467,6 +487,15 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
         Generates the following annotations:
         genes -- a comma-separated list of the genes found in a given region.
+        start_gene -- gene symbol overlapped by the segment start position
+        end_gene -- gene symbol overlapped by the segment end position
+        start_exon -- exon overlap for the start gene.  Includes start exon index (0-based) and whether it is all previous exons
+            ("-") or downstream exons ("+") in the coding direction.
+            For example:
+                6+ sixth exon and on
+                6- sixth exon and previous
+
+                Reminder that the exons are 0-based
 
         :returns MutationData seg: Annotated segment/region
         """
@@ -489,6 +518,17 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         return seg
 
     def _extract_exon_info(self, position, tx):
+        """
+        Create basic information about the given position relative to the transcript.
+
+        :param int position: in genomic space
+        :param Transcript tx:
+         :return tuple:
+            [0]: closest exon index of the position (0-based),
+             [1]: whether the distance was left in genomic space (false for overlap)
+             [2]: whether the position overlaps an exon
+
+        """
         exon_index = TranscriptProviderUtils.determine_closest_exon(tx, position, position)
         if exon_index is None:
             return exon_index, None, None, None
