@@ -376,6 +376,32 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
 
+    def test_continuous_exons_in_segments(self):
+        """Test that all exons are accounted when annotating adjacent segments that skip an exon. """
+        # SPECC1L 10+	    22	24734447	SPECC1L	10+	41783674	TEF	1-	1215.0	-0.04975556624325125		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
+        # SPECC1L 8-	    22	16282318	POTEH	2-	24730543	SPECC1L	8-	433.0	-0.00781166374668759		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
+        # SPECC1L-ADORA2A	22	24734447	SPECC1L	10+	41783674	TEF	1-	1215.0	-0.04975556624325125		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
+
+        seg1 = MutationData()
+        seg1.chr = "22"
+        seg1.start = "24734447" # Just passed the exon 9 (0-based)
+        seg1.end = "41783674"
+
+        seg2 = MutationData()
+        seg2.chr = "22"
+        seg2.start = "16282318"
+        seg2.end = "24730543" # Just passed the exon 8 (0-based)
+
+        segs = [seg1, seg2]
+
+        # 'ENST00000314328.9' for GENCODE v19
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(seg1.chr, seg1.start)
+        result_tuple = transcript_ds._determine_exons_affected_by_start(seg1.start, chosen_tx)
+
+        self.assertTrue(result_tuple == (10, '+'))
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(seg2.end, chosen_tx)
+        self.assertTrue(result_tuple == (8, '-'))
 
 if __name__ == '__main__':
     unittest.main()
