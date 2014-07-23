@@ -58,6 +58,9 @@ class RunSpecificationFactory(object):
         if outputFormat=="GENE_LIST" and inputFormat != "SEG_FILE":
             result.append(RunSpecificationMessage(logging.ERROR, "Output format of GENE_LIST is only supported when input is SEG_FILE"))
 
+        if outputFormat not in ["GENE_LIST", "SIMPLE_TSV"] and inputFormat == "SEG_FILE":
+            result.append(RunSpecificationMessage(logging.WARN, "Input format of SEG_FILE is only supported when output is GENE_LIST or SIMPLE_TSV"))
+
         if inputFormat == "VCF" and outputFormat == "VCF" and other_opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:
             result.append(RunSpecificationMessage(logging.WARN,"Infer genotypes option has been set to true.  "
                         "Because the input is a VCF file, infer genotypes will have no effect on the output."))

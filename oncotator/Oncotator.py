@@ -271,7 +271,7 @@ def main(argv=None):  # IGNORE:C0111
 
         # Create a run configuration to pass to the Annotator class.
         annotating_type = None
-        if inputFormat == "SEG_FILE" and outputFormat == "GENE_LIST":
+        if inputFormat == "SEG_FILE":
             annotating_type = RunSpecification.ANNOTATE_SEGMENTS
         runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
