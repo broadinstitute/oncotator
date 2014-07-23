@@ -66,10 +66,10 @@ class GeneListOutputRenderer(OutputRenderer):
         # TODO: Define constant for "genes", and other annotations
         headers = config_parser.options("alternatives")
         gene_to_segment_dict = dict()
-        annotations = []
+        annotations = None
         i = 0
         for i, seg in enumerate(segments):
-            if len(annotations) == 0:
+            if annotations is None:
                 annotations = seg.keys()
                 field_mapping = MutUtils.createFieldsMapping(headers, annotations, self._alternativeDictionary, isRenderInternalFields=True, prepend="")
 
@@ -89,8 +89,10 @@ class GeneListOutputRenderer(OutputRenderer):
         writer = csv.DictWriter(fp, headers, delimiter="\t", lineterminator="\n", extrasaction="ignore")
         writer.writeheader()
 
+        logging.getLogger(__name__).info("Rendering gene list...")
         all_genes_seen = sorted(gene_to_segment_dict.keys())
-        for gene in all_genes_seen:
+        num_genes = len(all_genes_seen)
+        for i,gene in enumerate(all_genes_seen):
             # This next line may be slow...
             line_dict = dict()
             seg = gene_to_segment_dict[gene]
@@ -99,6 +101,8 @@ class GeneListOutputRenderer(OutputRenderer):
                 line_dict[h] = seg.get(annotation_field, "")
             line_dict["gene"] = gene
             writer.writerow(line_dict)
+            if i % 1000 == 0:
+                logging.getLogger(__name__).info("Rendered %d/%d genes ..." % ((i+1),num_genes))
 
         fp.close()
 
