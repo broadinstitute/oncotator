@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from oncotator.utils.RunSpecification import RunSpecification
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 '''
@@ -269,13 +270,16 @@ def main(argv=None):  # IGNORE:C0111
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
         # Create a run configuration to pass to the Annotator class.
+        annotating_type = None
+        if inputFormat == "SEG_FILE" and outputFormat == "GENE_LIST":
+            annotating_type = RunSpecification.ANNOTATE_SEGMENTS
         runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
                                                       isMulticore=(not args.noMulticore),
                                                       defaultAnnotations=defaultValues, cacheUrl=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
                                                       is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
-                                                      other_opts=determineOtherOptions(args))
+                                                      other_opts=determineOtherOptions(args), annotating_type=annotating_type)
 
         annotator = Annotator()
         annotator.initialize(runConfig)
