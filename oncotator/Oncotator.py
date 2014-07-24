@@ -48,6 +48,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from oncotator.utils.RunSpecification import RunSpecification
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 '''
 Oncotator -- An annotation engine for Cancer
@@ -110,11 +112,16 @@ class CLIError(Exception):
         return self.msg
 
 
-def parseOptions(program_license, program_version_message):
+def parseOptions(program_version_message):
     # Setup argument parser
-    epilog= '''
-    
-    Example usage :
+    description = program_version_message + '''
+
+    Oncotator is a tool for annotating human genomic point mutations and indels with data relevant to cancer researchers.
+
+    '''
+    epilog = '''
+    Example usage
+    -------------
     oncotator -v --input_format=MAFLITE --output_format=TCGAMAF myInputFile.maflite myOutputFile.maf.annotated hg19
     
     IMPORTANT NOTE:  hg19 is only supported genome build for now.
@@ -143,8 +150,12 @@ def parseOptions(program_license, program_version_message):
         This feature is to allow users to include or exclude GT of 0/0 or ./. variants when converting VCFs to MAF.
 
         If --skip-no-alt is specified, VCF input processing will remove mutations with alt_allele_seen of False entirely (the mutations will not even seen when output format is SIMPLE_TSV).
+
+    -----
+    Copyright 2012 Broad Institute. All rights reserved.  Distributed on an "AS IS" basis without warranties or conditions of any kind, either express or implied.
+    Oncotator is free for non-profit use.  See LICENSE for complete licensing information.
     '''
-    parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
+    parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 5]", default=5)
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
     parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
@@ -187,25 +198,10 @@ def main(argv=None):  # IGNORE:C0111
         sys.argv.extend(argv)
 
     program_version = "%s" % __version__
-    program_build_date = str(__updated__)
-    program_version_message = '%%(prog)s %s' % (program_version)
-    program_shortdesc = program_version_message
-    program_license = '''%s
-
-    %s
-
-  Copyright 2012 Broad Institute. All rights reserved.
-  
-  #TODO: License Here
-  
-  Distributed on an "AS IS" basis without warranties
-  or conditions of any kind, either express or implied.
-
-USAGE
-''' % (program_shortdesc, str(__date__))
+    program_version_message = '%%(prog)s %s' % program_version
 
     try:
-        args = parseOptions(program_license, program_version_message)
+        args = parseOptions(program_version_message)
         verbose = args.verbose
         if verbose > 0:
             print("Verbose mode on")
@@ -273,24 +269,17 @@ USAGE
             defaultConfigFile = None
         defaultValues = OncotatorCLIUtils.determineAllAnnotationValues(commandLineDefaultValues, defaultConfigFile)
 
-        if is_skip_no_alts and (outputFormat == "VCF"):
-            logging.getLogger(__name__).warn("--skip-no-alt specified when output is a VCF.  This is likely to generate errors.")
-        if is_skip_no_alts and (inputFormat != "VCF"):
-            logging.getLogger(__name__).info("--skip-no-alt specified when input is not VCF.  skip-no-alt is not going to do anything.")
-        if is_no_prepend and (outputFormat != "TCGAMAF"):
-            logging.getLogger(__name__).info("no prepend specified when output is not TCGAMAF.  Ignoring and proceeding.")
-
-        if outputFormat=="TCGAVCF":
-            logging.getLogger(__name__).warning("TCGA VCF output is not supported and should be considered experimental when used outside of the Broad Institute.  Outside of the Broad Institute, use of -o VCF is more likely to be desired by users.")
-
         # Create a run configuration to pass to the Annotator class.
-        runConfig = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
+        annotating_type = None
+        if inputFormat == "SEG_FILE":
+            annotating_type = RunSpecification.ANNOTATE_SEGMENTS
+        runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
                                                       globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
                                                       isMulticore=(not args.noMulticore),
                                                       defaultAnnotations=defaultValues, cacheUrl=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
                                                       is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
-                                                      other_opts=determineOtherOptions(args, logger))
+                                                      other_opts=determineOtherOptions(args), annotating_type=annotating_type)
 
         annotator = Annotator()
         annotator.initialize(runConfig)
@@ -302,14 +291,11 @@ USAGE
         return 0
 
 
-def determineOtherOptions(args, logger):
+def determineOtherOptions(args):
     opts = dict()
     opts[OptionConstants.NO_PREPEND] = not args.prepend
     opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
-    if args.input_format == "VCF" and args.output_format == "VCF":
-        if opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:
-            logger.warn("Infer genotypes option has been set to true.  "
-                        "Because the input is a VCF file, infer genotypes will have no effect on the output.")
+
     return opts
 
 

@@ -47,45 +47,16 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 
-from oncotator.datasources.GenericGeneDataSourceException import GenericGeneDataSourceException
-from oncotator.utils.db import get_db_data
-from oncotator.datasources.Datasource import Datasource
-
-
-class GenericGeneDatasource(Datasource):
+class RunSpecificationException(Exception):
     """
-    A datasource derived from a generic TSV file in which the first column is a HUGO gene
-    symbol.  First header value must be specified in the constructor (default: 'gene').  All other columns will be used for
-    annotation.
-    TODO: This is no longer true.  Actually, you can specify any column as the gene column in the config file.  Update documentation.
-    use_binary
-        if True, existing indexed binary will be used or created for future use.
-
+    Exception class arising when run spec is invalid.
     """
-    def __init__(self, src_file, title='', version=None, use_binary=True, geneColumnName='gene'):
-        super(GenericGeneDatasource, self).__init__(src_file, title=title, version=version)
 
-        index_mode = 'gene'
+    def __init__(self, value):
+        """
+        
+        """
+        self.value = value
 
-        self.db_obj, self.output_headers = get_db_data(src_file, title, use_binary, index_mode,indexColumnNames=geneColumnName)
-
-    def annotate_mutation(self, mutation, index_field='gene'):
-
-        if index_field not in mutation:
-            raise GenericGeneDataSourceException("Index field (" + index_field + ") not found.  Remember that datasources must be ordered.  Please put a datasource that provides the 'gene' annotation in front of this datasource.")
-
-        #if any([c in mutation for c in self.output_headers]):
-        for c in self.output_headers:
-            if c in mutation:
-                raise Exception('Error: Non-unique header value in annotation table (%s)' % (c))
-
-        gene = mutation[index_field]
-        if gene in self.db_obj:
-            annotations = self.db_obj[gene]
-            for k in annotations.keys():
-                mutation.createAnnotation(k, self.db_obj[gene][k], annotationSource=self.title)
-        else:
-            for h in self.output_headers:
-                mutation.createAnnotation(h, '', annotationSource=self.title)
-
-        return mutation
+    def __str__(self):
+        return repr(self.value)

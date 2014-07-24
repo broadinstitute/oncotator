@@ -48,16 +48,35 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from oncotator.Annotation import Annotation
 from oncotator.cache.CacheManager import CacheManager
+from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.utils.Hasher import Hasher
+from oncotator.utils.RunSpecification import RunSpecification
 
-
-"""
-Created on Nov 2, 2012
-
-@author: lichtens
-"""
 import logging
 from utils.version import VERSION
+
+
+def _annotate_seg(m,ds):
+    """
+    Wrapper to allow use of a function pointer in determining which datasource method to call.
+    This one is for Segments.
+
+    :param m: MutationData
+    :param ds: SegmentDatasource
+    """
+    return ds.annotate_segment(m)
+
+
+def _annotate_mut(m,ds):
+    """
+    Wrapper to allow use of a function pointer in determining which datasource method to call.
+    This one is for mutations (SNV and Indels).
+
+    :param m: MutationData
+    :param ds: Datasource
+    """
+    return ds.annotate_mutation(m)
 
 
 class Annotator(object):
@@ -96,6 +115,9 @@ class Annotator(object):
     NOTE:  While multicore information is passed into the Annotator, currently, nothing is implemented that uses multicore.    
     """
 
+    ANNOTATING_FUNC_DICT = {RunSpecification.ANNOTATE_MUTATIONS: _annotate_mut, RunSpecification.ANNOTATE_SEGMENTS: _annotate_seg}
+    ANNOTATING_DS_DICT = {RunSpecification.ANNOTATE_MUTATIONS: Datasource, RunSpecification.ANNOTATE_SEGMENTS: SegmentDatasource}
+
     def __init__(self):
         """
         options should contain the following name-value pairs as a dict: 
@@ -117,6 +139,8 @@ class Annotator(object):
         self._cacheManager.initialize(None, "not_used")
         self._cache_stats = {"miss": 0, "hit":0}
         self._is_skip_no_alts = False
+        self._annotating_type = None
+        self._annotate_func_ptr = Annotator.ANNOTATING_FUNC_DICT.get(self._annotating_type, _annotate_mut)
         pass
 
     def getIsMulticore(self):
@@ -142,6 +166,9 @@ class Annotator(object):
 
     def setDefaultAnnotations(self, value):
         self._defaultAnnotations = value
+
+    def set_annotating_type(self, value):
+        self._annotating_type = value
 
     def create_db_dir_key(self):
         """Create the db_dir_key for this annotation configuration.  Requires the datasources."""
@@ -170,19 +197,21 @@ class Annotator(object):
             db_dir_key = "never_used"
             self._cacheManager = None
 
-    def initialize(self,runSpec):
+    def initialize(self, run_spec):
         """ Given a RunSpecification instance, initialize self properly.  Do not start annotation.
         """
-        self.setInputCreator(runSpec.inputCreator)
-        self.setOutputRenderer(runSpec.outputRenderer)
-        self.setManualAnnotations(runSpec.manualAnnotations)
-        self.setDefaultAnnotations(runSpec.defaultAnnotations)
-        self._datasources = runSpec.datasources
-        self.setIsMulticore(runSpec.get_is_multicore())
-        self.setNumCores(runSpec.get_num_cores())
+        self.setInputCreator(run_spec.inputCreator)
+        self.setOutputRenderer(run_spec.outputRenderer)
+        self.setManualAnnotations(run_spec.manualAnnotations)
+        self.setDefaultAnnotations(run_spec.defaultAnnotations)
+        self._datasources = run_spec.datasources
+        self.setIsMulticore(run_spec.get_is_multicore())
+        self.setNumCores(run_spec.get_num_cores())
         self._cache_stats = {"miss": 0, "hit":0}
-        self._is_skip_no_alts = runSpec.get_is_skip_no_alts()
-        self.initialize_cache_manager(runSpec)
+        self._is_skip_no_alts = run_spec.get_is_skip_no_alts()
+        self.initialize_cache_manager(run_spec)
+        self.set_annotating_type(run_spec.annotating_type)
+        self._annotate_func_ptr = Annotator.ANNOTATING_FUNC_DICT.get(self._annotating_type, _annotate_mut)
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)
@@ -212,6 +241,18 @@ class Annotator(object):
 
         return mutations
 
+    def _prune_datasources_by_annotating_type(self):
+        # Remove datasources that do not match the annotation type (segment or mutation)
+        datasource_class = Annotator.ANNOTATING_DS_DICT.get(self._annotating_type, RunSpecification.ANNOTATE_MUTATIONS)
+        pruned_ds = []
+        for ds in self._datasources:
+            if not isinstance(ds, datasource_class):
+                logging.getLogger(__name__).info(
+                    "Removing %s, since it does not support annotating %s" % (ds.title, str(self._annotating_type)))
+            else:
+                pruned_ds.append(ds)
+        return pruned_ds
+
     def annotate(self):
         """
         Annotate the given mutations specified in the input.
@@ -220,6 +261,12 @@ class Annotator(object):
 
         :return: outputFilename
         """
+
+        if self._annotating_type is None:
+            self._annotating_type = RunSpecification.ANNOTATE_MUTATIONS
+
+        self._datasources = self._prune_datasources_by_annotating_type()
+
         self.logger.info("Annotating with " + str(len(self._datasources)) + " datasources: " + self.createHeaderString())
         
         mutations = self._inputCreator.createMutations()
@@ -271,7 +318,7 @@ class Annotator(object):
         """
         Create a default header string that lists version of Oncotator and datasource information.
 
-        :return: string
+        :return str: header string with the "|" delimiter
         """
         onco_string = ""
         if is_giving_oncotator_version:
@@ -284,26 +331,38 @@ class Annotator(object):
         return onco_string + "|".join(datasourceStrings)
     
     def _annotate_mutations_using_datasources(self, mutations):
+        """
+        Perform the actual annotating of mutations with the datasources.  Make sure to check the cache as well.
+
+        :param MutationData mutations: iterable of MutationData
+        :return generator : MutationData generator
+        """
         if len(self._datasources) == 0:
             self.logger.warn("THERE ARE NO DATASOURCES REGISTERED")
+
+        is_cache_being_used = (self._cacheManager is not None)
+
         for m in mutations:
 
             # If the alt_allele_seen annotation is present and False, skip this mutation
             if self._is_skip_no_alts and m.get("alt_allele_seen", "True") == "False":
                 continue
 
-            annot_dict = None
-            if self._cacheManager is not None:
-                annot_dict = self._cacheManager.retrieve_cached_annotations(m)
+            cache_annot_dict = None
+            if is_cache_being_used:
+                cache_annot_dict = self._cacheManager.retrieve_cached_annotations(m)
 
-            if annot_dict is None:
+            # If no cache results were found, annotate normally.
+            if cache_annot_dict is None:
                 for datasource in self._datasources:
-                    m = datasource.annotate_mutation(m)
 
-                if self._cacheManager is not None:
+                    # This will evaluate to datasource.annotate_mutation(m) or datasource.annotate_segment(m)
+                    m = self._annotate_func_ptr(m, datasource)
+
+                if is_cache_being_used:
                     self._cache_stats['miss'] += 1
                     self._cacheManager.store_annotations_in_cache(m)
             else:
                 self._cache_stats['hit'] += 1
-                m.addAnnotations(annot_dict)
+                m.addAnnotations(cache_annot_dict)
             yield m

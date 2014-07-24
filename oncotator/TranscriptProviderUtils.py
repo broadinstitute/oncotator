@@ -497,3 +497,62 @@ class TranscriptProviderUtils(object):
             cDNA_position_in_exon += 1
 
         return "c.%d_splice" % (cDNA_position_in_exon)
+
+    @staticmethod
+    def determine_closest_distance_from_exon(start_genomic, end_genomic, exon_i,  t):
+        """
+        Return the distance of the given position to the exon in the transcript.
+
+        :param int start_genomic: start position in genomic space
+        :param int end_genomic: end position in genomic space (inclusive)
+        :param int exon_i: exon index (0-based) of the transcript t
+        :param Transcript t: transcript
+        :return tuple: left_diff, right_diff -- distance from specified position from the left- (and right-) most position of the exon in genomic space.
+        """
+        left_start_diff = t.get_exons()[exon_i][0] - start_genomic
+        left_end_diff = t.get_exons()[exon_i][0] - end_genomic
+        right_start_diff = t.get_exons()[exon_i][1] - start_genomic
+        right_end_diff = t.get_exons()[exon_i][1] - end_genomic
+        left_diff = min(left_start_diff, left_end_diff)
+        right_diff = max(right_start_diff, right_end_diff)
+        return left_diff, right_diff
+
+    @staticmethod
+    def determine_closest_exon(t, start, end):
+        """
+        Return the closest exon index (0-based) in the given transcript for the given start and end position.
+
+        :param Transcript t: transcript
+        :param int start: genomic coordinate for start position
+        :param int end: genomic coordinate for end position
+        :return int: exon index.  None if t is None
+        """
+        if t is None:
+            return None
+        tmp_distances = []
+        for i,exon in enumerate(t.get_exons()):
+            left_diff, right_diff = TranscriptProviderUtils.determine_closest_distance_from_exon(start, end, i,  t)
+            tmp_distances.append((abs(left_diff), abs(right_diff)))
+
+        min_dist = float("Inf")
+        min_index = -1
+        for i,ds in enumerate(tmp_distances):
+            if ds[0] < min_dist:
+                min_dist = ds[0]
+                min_index = i
+            if ds[1] < min_dist:
+                min_dist = ds[1]
+                min_index = i
+        return min_index
+
+
+    @staticmethod
+    def determine_if_exon_overlap(s, e, tx, variant_type):
+        return TranscriptProviderUtils.determine_exon_index(s, e, tx, variant_type) != -1
+
+    @staticmethod
+    def determine_exon_index(s, e, tx, variant_type):
+        if variant_type != VariantClassification.VT_INS:
+            return TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
+        else:
+            return TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_exons())

@@ -47,12 +47,12 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 
-
 import logging
 import os
 from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatasource
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.datasources.SnpOnlyLevelDbDatasource import SnpOnlyLevelDbDatasource
+from oncotator.utils.RunSpecification import RunSpecification
 from utils.ConfigUtils import ConfigUtils
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
@@ -249,10 +249,14 @@ class DatasourceFactory(object):
         """
         # TODO: Note that createDatasources does not honor the tx-mode
         dsQueueList = []
-        
+
         # Get a list of all of the directories
         dsDirs = []
-        dirs = os.listdir(datasourceDir)
+        if os.path.exists(datasourceDir):
+            dirs = os.listdir(datasourceDir)
+        else:
+            logging.getLogger(__name__).warn("%s does not exist, so there will be no datasources.")
+            dirs = []
         for d in dirs:
             tmpD = os.path.join(datasourceDir, d)
             fullD = os.path.join(*[tmpD, genomeBuild, ""])
@@ -286,7 +290,7 @@ class DatasourceFactory(object):
                 result.append(DatasourceFactory.createDatasourceGivenTuple(dsTuple))
         else:
             result = DatasourceFactory._createDatasourcesMulticore(numCores, dsQueueList)
-        
+
         return DatasourceFactory.sortDatasources(result)
     
     @staticmethod

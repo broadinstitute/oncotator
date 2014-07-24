@@ -335,18 +335,9 @@ class VariantClassifier(object):
                                                    is_frameshift_indel=is_frameshift_indel, is_splice_site=is_splice_site, is_start_codon=is_start_codon)
 
         cds_start_exon_space, cds_end_exon_space = TranscriptProviderUtils.determine_cds_in_exon_space(tx)
-        exon_i = self._determine_exon_index(int(start), int(end), tx, variant_type)
+        exon_i = TranscriptProviderUtils.determine_exon_index(int(start), int(end), tx, variant_type)
         final_vc = VariantClassification(vc_tmp, variant_type, transcript_id=tx.get_transcript_id(), alt_codon=mutated_codon_seq, ref_codon=reference_codon_seq, ref_aa=reference_aa, ref_protein_start=protein_position_start, ref_protein_end=protein_position_end, alt_aa=observed_aa, alt_codon_start_in_exon=cds_codon_start, alt_codon_end_in_exon=cds_codon_end, ref_codon_start_in_exon=cds_codon_start, ref_codon_end_in_exon=cds_codon_end, cds_start_in_exon_space=cds_start_exon_space, ref_allele_stranded=reference_allele_stranded, alt_allele_stranded=observed_allele_stranded, exon_i=exon_i, vc_secondary=vc_tmp_secondary)
         return final_vc
-
-    def _determine_if_exon_overlap(self, e, s, tx, variant_type):
-        return self._determine_exon_index(s, e, tx, variant_type) != -1
-
-    def _determine_exon_index(self, s, e, tx, variant_type):
-        if variant_type != VariantClassification.VT_INS:
-            return TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
-        else:
-            return TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_exons())
 
     def _determine_beyond_exon_info_vt(self, start, end, tx, variant_type):
         if variant_type != VariantClassification.VT_INS:
@@ -403,7 +394,7 @@ class VariantClassifier(object):
 
         s = int(start)
         e = int(end)
-        is_exon_overlap = self._determine_if_exon_overlap(e, s, tx, variant_type)
+        is_exon_overlap = TranscriptProviderUtils.determine_if_exon_overlap(s, e, tx, variant_type)
 
         is_splice_site_tuple = self._determine_if_splice_site_overlap(s, e, tx, variant_type, dist)
         is_splice_site = is_splice_site_tuple[0]
@@ -411,7 +402,7 @@ class VariantClassifier(object):
         is_beyond_exons, side, is_flank = self._determine_beyond_exon_info_vt(start, end, tx, variant_type)
 
         if not is_exon_overlap and not is_beyond_exons:
-            exon_i = self._determine_closest_exon(tx, int(start), int(end))
+            exon_i = TranscriptProviderUtils.determine_closest_exon(tx, int(start), int(end))
             if is_splice_site:
                 # Intron Splice Site
                 return VariantClassification(VariantClassification.SPLICE_SITE, variant_type, tx.get_transcript_id(), vc_secondary=VariantClassification.INTRON, exon_i=exon_i)
@@ -708,19 +699,11 @@ class VariantClassifier(object):
         result = TranscriptProviderUtils.render_transcript_change(variant_type, vc.get_vc(), cds_position_start_cds_space, cds_position_end_cds_space, reference_allele_stranded, observed_allele_stranded, vc.get_secondary_vc())
         return result
 
-    def _determine_closest_distance_from_exon(self, start_genomic, end_genomic, exon_i,  t):
-        left_start_diff = t.get_exons()[exon_i][0] - start_genomic
-        left_end_diff = t.get_exons()[exon_i][0] - end_genomic
-        right_start_diff = t.get_exons()[exon_i][1] - start_genomic
-        right_end_diff = t.get_exons()[exon_i][1] - end_genomic
-        left_diff = min(left_start_diff, left_end_diff)
-        right_diff = max(right_start_diff, right_end_diff)
-        return left_diff, right_diff
 
     def _get_splice_site_coordinates(self, t, start, end, exon_i):
         """Returns distance from exon."""
 
-        left_diff, right_diff = self._determine_closest_distance_from_exon(start, end, exon_i,  t)
+        left_diff, right_diff = TranscriptProviderUtils.determine_closest_distance_from_exon(start, end, exon_i,  t)
 
         if abs(left_diff) < abs(right_diff):
             dist_from_exon = left_diff * -1
@@ -734,21 +717,4 @@ class VariantClassifier(object):
         if t.get_strand() == "-":
             dist_from_exon *= -1
         return dist_from_exon
-
-    def _determine_closest_exon(self, t, start, end):
-        tmp_distances = []
-        for i,exon in enumerate(t.get_exons()):
-            left_diff, right_diff = self._determine_closest_distance_from_exon(start, end, i,  t)
-            tmp_distances.append((abs(left_diff), abs(right_diff)))
-
-        min_dist = float("Inf")
-        min_index = -1
-        for i,ds in enumerate(tmp_distances):
-            if ds[0] < min_dist:
-                min_dist = ds[0]
-                min_index = i
-            if ds[1] < min_dist:
-                min_dist = ds[1]
-                min_index = i
-        return min_index
 

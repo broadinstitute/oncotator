@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 from TestUtils import TestUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.utils.OptionConstants import OptionConstants
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 
 """
@@ -142,7 +143,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             override_annotations = dict()
 
         annotator = Annotator()
-        runSpec = OncotatorCLIUtils.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts)
+        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
