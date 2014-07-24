@@ -51,16 +51,18 @@ import shove
 from oncotator.Annotation import Annotation
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
+from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
 
 
 
-class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
+class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasource):
     """ Similar to a GAF datasource, but uses ensembl transcripts.
         Also, supports gencode
 
@@ -212,7 +214,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         return self._tx_filter.filter(txs)
 
     def _choose_transcript(self, txs, tx_mode, variant_type, ref_allele, alt_allele, start, end):
-        """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use. """
+        """Given a list of transcripts and a transcript mode (e.g. CANONICAL), choose the transcript to use.
+        :param list txs: a list of transcripts that presumably overlap the variant
+        :param tx_mode:
+        :param str variant_type:
+        :param str ref_allele:
+        :param str alt_allele:
+        :param start:
+        :param end:
+        :return Transcript : chosen transcript given tx-mode
+        """
         if len(txs) == 1:
             return txs[0]
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
@@ -223,13 +234,24 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
         """Choose the transcript with the most detrimental effect.
          The rankings are in TranscriptProviderUtils.
          Ties are broken by which transcript has the longer coding length.
+
+        :param list txs: list of Transcript
+        :param str variant_type:
+        :param str ref_allele:
+        :param str alt_allele:
+        :param str start:
+        :param str end:
+        :return Transcript:
          """
         vcer = VariantClassifier()
         effect_dict = TranscriptProviderUtils.retrieve_effect_dict()
         best_effect_score = 100000000 # lower score is more likely to get picked
         best_effect_tx = None
         for tx in txs:
-            vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
+            if (ref_allele == "" or ref_allele == "-") and (alt_allele == "" or alt_allele == "-"):
+                vc = VariantClassification.SILENT
+            else:
+                vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
             effect_score = effect_dict.get(vc, 25)
             if effect_score < best_effect_score:
                 best_effect_score = effect_score
@@ -422,3 +444,188 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource):
 
     def get_tx_mode(self):
         return self.tx_mode
+
+    def _extract_segment_start_overlap(self, seg):
+        """
+        Given a segment, return the gene and exons (e.g. 6+) overlapping the start of the segment.
+
+        :param MutationData seg:
+         :return tuple:
+            [0]: start_exon start exon index (0-based) and whether it is all previous exons
+            ("-") or downstream exons ("+") in the coding direction.
+             [1]: start_gene -- gene symbol on the canonical transcript
+        """
+        start_txs = self.get_transcripts_by_pos(chr=seg.chr, start=str(seg.start), end=str(seg.start))
+        if start_txs is None or len(start_txs) == 0:
+            start_gene = ""
+            start_exon = ""
+        else:
+            start_chosen_tx = self._choose_transcript(start_txs, self.get_tx_mode(), VariantClassification.VT_SNP, "",
+                                                      "", str(seg.start), str(seg.start))
+            result_tuple = self._determine_exons_affected_by_start(int(seg.start), start_chosen_tx)
+            start_gene = start_chosen_tx.get_gene()
+            start_exon = str(result_tuple[0]) + result_tuple[1]
+        return start_exon, start_gene
+
+    def _extract_segment_end_overlap(self, seg):
+        pos = seg.end
+        end_txs = self.get_transcripts_by_pos(chr=seg.chr, start=str(pos), end=str(pos))
+        if end_txs is None or len(end_txs) == 0:
+            end_gene = ""
+            end_exon = ""
+        else:
+            end_chosen_tx = self._choose_transcript(end_txs, self.get_tx_mode(), VariantClassification.VT_SNP, "",
+                                                      "", str(pos), str(pos))
+            result_tuple = self._determine_exons_affected_by_end(pos, end_chosen_tx)
+            end_gene = end_chosen_tx.get_gene()
+            end_exon = str(result_tuple[0]) + result_tuple[1]
+        return end_exon, end_gene
+
+    def annotate_segment(self, seg):
+        """
+        Akin to annotate_mutation, but for segments.
+
+        Generates the following annotations:
+        genes -- a comma-separated list of the genes found in a given region.
+        start_gene -- gene symbol overlapped by the segment start position
+        end_gene -- gene symbol overlapped by the segment end position
+        start_exon -- exon overlap for the start gene.  Includes start exon index (0-based) and whether it is all previous exons
+            ("-") or downstream exons ("+") in the coding direction.
+            For example:
+                6+ sixth exon and on
+                6- sixth exon and previous
+
+                Reminder that the exons are 0-based
+
+        :returns MutationData seg: Annotated segment/region
+        """
+        txs = self.get_transcripts_by_pos(seg.chr, seg.start, seg.end)
+        genes = set(([tx.get_gene() for tx in txs]))
+        genes_annotation_value = ",".join(sorted(list(genes)))
+        seg.createAnnotation("genes", genes_annotation_value, annotationSource=self.title, annotationDataType="String", annotationDescription="List of genes in the region.")
+
+        # See if we can determine which gene and exon that is overlapped by start
+        start_exon, start_gene = self._extract_segment_start_overlap(seg)
+
+        seg.createAnnotation("start_gene", start_gene, annotationSource=self.title, annotationDataType="String", annotationDescription="Gene overlapping start of the region.")
+        seg.createAnnotation("start_exon", start_exon, annotationSource=self.title, annotationDataType="String", annotationDescription="Exon index (0-based) that overlaps start with '+' or '-'.  '+' indicates all further exons of the gene are in the region.  '-' indicates all previous exons of the gene are in the region")
+
+        end_exon, end_gene = self._extract_segment_end_overlap(seg)
+
+        seg.createAnnotation("end_gene", end_gene, annotationSource=self.title, annotationDataType="String", annotationDescription="Gene overlapping end of the region.")
+        seg.createAnnotation("end_exon", end_exon, annotationSource=self.title, annotationDataType="String", annotationDescription="Exon index (0-based) that overlaps end with '+' or '-'.  '+' indicates all further exons of the gene are in the region.  '-' indicates all previous exons of the gene are in the region")
+
+        return seg
+
+    def _extract_exon_info(self, position, tx):
+        """
+        Create basic information about the given position relative to the transcript.
+
+        :param int position: in genomic space
+        :param Transcript tx:
+         :return tuple:
+            [0]: closest exon index of the position (0-based),
+             [1]: whether the distance was left in genomic space (false for overlap)
+             [2]: whether the position overlaps an exon
+
+        """
+        exon_index = TranscriptProviderUtils.determine_closest_exon(tx, position, position)
+        if exon_index is None:
+            return exon_index, None, None, None
+        left_distance, right_distance = TranscriptProviderUtils.determine_closest_distance_from_exon(position, position,
+                                                                                                     exon_index, tx)
+        is_in_exon = (left_distance <= 0) and (right_distance >= 0)
+        is_diff_is_positive = (left_distance > 0) and (right_distance > 0)
+        is_negative_strand = (tx.get_strand() == "-")
+        return exon_index, is_diff_is_positive, is_in_exon, is_negative_strand
+
+    def _determine_exons_affected_by_start(self, start, tx):
+        """
+        Return the exons affected by start position for the given transcript.
+        The exon returned is always affected.
+
+        Description (position is ___ of the nearest exon is )	l_diff vs r_diff	both are	seg	tx strand	result
+        "to the right"	ldiff < rdiff	negative	start	"-"	< exon_i
+        "to the left"	ldiff < rdiff	positive	start	"-"	<= exon_i
+        "to the right"	ldiff < rdiff	negative	end	"-"	>= exon_i
+        "to the left"	ldiff < rdiff	positive	end	"-"	> exon_i
+
+        "to the right"	ldiff < rdiff	negative	start	"+"	> exon_i
+        "to the left"	ldiff < rdiff	positive	start	"+"	>= exon_i
+        "to the right"	ldiff < rdiff	negative	end	"+"	<= exon_i
+        "to the left"	ldiff < rdiff	positive	end	"+"	< exon_i
+
+        # When in an exon, include that exon as being affected
+        "in an exon"    ldiff is negative, rdiff positive    both    start  "-" <= exon_i
+        "in an exon"    ldiff is negative, rdiff positive    both    end "-" >= exon_i
+        "in an exon"    ldiff is negative, rdiff positive    both    start  "+" >= exon_i
+        "in an exon"    ldiff is negative, rdiff positive    both    end "+" <= exon_i
+
+        :param int start: start position in genomic space
+        :param Transcript tx: transcript affected by start and end
+        :return tuple: Tuple of (exon_id, {"+","-"}) where the second is whether all higher number exons ("+") or lower number exons ("-")
+        Please note that it is possible to get a result that should be interpreted as "no exon affected", such as (-1, "-")
+        All "no exon affected" will have a [0] of -1.
+        """
+        exon_index, is_diff_is_positive, is_in_exon, is_negative_strand = self._extract_exon_info(int(start), tx)
+        if exon_index is None:
+            return None
+        result_list = [-2, "X"]
+        if is_in_exon and is_negative_strand:
+            result_list = [exon_index, "-"]
+        if is_in_exon and not is_negative_strand:
+            result_list = [exon_index, "+"]
+
+        # The rest are not in an exon
+        if not is_in_exon:
+            if is_negative_strand and is_diff_is_positive:
+                result_list = [exon_index, "-"]
+            if is_negative_strand and not is_diff_is_positive:
+                result_list = [exon_index-1, "-"]
+            if not is_negative_strand and is_diff_is_positive:
+                result_list = [exon_index, "+"]
+            if not is_negative_strand and not is_diff_is_positive:
+                result_list = [exon_index + 1, "+"]
+
+        if (result_list[0] < 0 and result_list[1] == "-") or (result_list[0] >= len(tx.get_exons()) and result_list[1] == "+"):
+            # This gene is unaffected by the start position
+            result_list[0] = -1
+
+        return tuple(result_list)
+
+    def _determine_exons_affected_by_end(self, end, tx):
+        """
+        Table of calculation is in the docs for _determine_exons_affected_by_start
+
+        :param int end:
+        :param Transcript tx:
+        :return tuple: Tuple of (exon_id, {"+","-"}) where the second is whether all higher number exons ("+") or lower number exons ("-")
+        Please note that it is possible to get a result that should be interpreted as "no exon affected", such as (-1, "-")
+        All "no exon affected" will have a [0] of -1.
+        """
+        exon_index, is_diff_is_positive, is_in_exon, is_negative_strand = self._extract_exon_info(int(end), tx)
+        if exon_index is None:
+            return None
+
+        result_list = [-2, "X"]
+        if is_in_exon and is_negative_strand:
+            result_list = [exon_index, "+"]
+        if is_in_exon and not is_negative_strand:
+            result_list = [exon_index, "-"]
+
+        # The rest are not in an exon
+        if not is_in_exon:
+            if is_negative_strand and is_diff_is_positive:
+                result_list = [exon_index + 1, "+"]
+            if is_negative_strand and not is_diff_is_positive:
+                result_list = [exon_index, "+"]
+            if not is_negative_strand and is_diff_is_positive:
+                result_list = [exon_index - 1, "-"]
+            if not is_negative_strand and not is_diff_is_positive:
+                result_list = [exon_index, "-"]
+
+        if (result_list[0] < 0 and result_list[1] == "-") or (result_list[0] >= len(tx.get_exons()) and (result_list[1] == "+")):
+            # This gene is unaffected by the end position
+            result_list[0] = -1
+
+        return tuple(result_list)

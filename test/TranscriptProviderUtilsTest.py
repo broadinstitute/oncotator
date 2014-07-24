@@ -235,5 +235,12 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         mutated_allele = TranscriptProviderUtils.mutate_reference_sequence(tx.get_seq()[start_exon_space : end_exon_space+1], start_exon_space, start_exon_space, end_exon_space, observed_allele, vt)
         self.assertTrue(mutated_seq_gt == mutated_allele, "No match (gt/guess)  %s/%s for %s." % (mutated_seq_gt, mutated_allele, str([vt, start, end, ref, alt, start_exon_space, end_exon_space, mutated_seq_gt])))
 
+    def test_determine_closest_distance_from_exon_in_exon(self):
+        tx = self.retrieve_test_transcript_MAPK1()
+
+        # Right in exon 1
+        left_diff, right_diff = TranscriptProviderUtils.determine_closest_distance_from_exon(22162000, 22162005, 1,  tx)
+        self.assertTrue(left_diff < 0 and right_diff > 0, "left distance should be negative while right distance should be positive.")
+
 if __name__ == '__main__':
     unittest.main()

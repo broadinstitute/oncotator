@@ -51,13 +51,15 @@ import logging
 import shutil
 
 import unittest
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
-from test.TestUtils import TestUtils
+from test.TestUtils import TestUtils, data_provider_decorator
 
 TestUtils.setupLogging(__file__, __name__)
 class EnsemblTranscriptDatasourceTest(unittest.TestCase):
@@ -260,6 +262,146 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertEqual(m2.get('HGVS_genomic_change', None), 'chr22.hg19:g.22221730T>G')
         self.assertEqual(m2.get('HGVS_coding_DNA_change', None), 'ENST00000215832.6:c.1A>C')
         self.assertEqual(m2.get('HGVS_protein_change', None), 'unknown_prot_seq_id:p.Met1Leu')
+
+    def test_retrieve_transcripts_from_region(self):
+        """Test that we can retrieve a large number of transcripts.  Requires a full gencode datasource."""
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        filtered_txs = transcript_ds.get_transcripts_by_pos(chr="1", start="1", end="100000000")
+
+        self.assertTrue(len(filtered_txs) > 4000)
+        gene_set = set([tx.get_gene() for tx in filtered_txs])
+        self.assertTrue(len(gene_set) > 1500)
+
+
+    segment_start_data_negative_strand = lambda: (
+        # The start is between exon 0 and exon 1.  Since the start and end are in genomic space, we expect 0,"-"
+        ("22", 22162050, 1, "-"),
+        ("22", 22165000, 0, "-"),
+        ("22", 22155000, 2, "-"),
+        ("22", 22156000, 2, "-"),
+        ("22", 22220000, 0, "-"),
+        ("22", 22125000, 6, "-")
+    )
+    @data_provider_decorator(segment_start_data_negative_strand)
+    def test_determine_exons_affected_by_start_negative_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
+
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
+
+        self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
+        self.assertTrue(result_tuple[1] == gt_exon_direction)
+
+    segment_end_data_negative_strand = lambda: (
+        ("22", 22123000, 8, "+"),
+        ("22", 22165000, 1, "+"),
+        ("22", 22155000, 3, "+"),
+        ("22", 22156000, 3, "+"),
+        ("22", 22220000, 1, "+"),
+        ("22", 22125000, 7, "+"),
+        ("22", 22162050, 1, "+"), # in exon
+    )
+    @data_provider_decorator(segment_end_data_negative_strand)
+    def test_determine_exons_affected_by_end_negative_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
+
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, end)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(end, chosen_tx)
+
+        self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
+        self.assertTrue(result_tuple[1] == gt_exon_direction)
+
+
+    segment_start_data_positive_strand = lambda: (
+        ("3", 178920000, 4, "+"),
+        ("3", 178921000, 4, "+"),
+        ("3", 178919500, 4, "+"),
+        ("3", 178917500, 2, "+"), # in exon
+    )
+    @data_provider_decorator(segment_start_data_positive_strand)
+    def test_determine_exons_affected_by_start_positive_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
+
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
+
+        self.assertTrue(result_tuple[0] == gt_exon_id, "GT did not match guess exon ID... GT exon ID: %d    Seen: %d " % (gt_exon_id, result_tuple[0]))
+        self.assertTrue(result_tuple[1] == gt_exon_direction)
+
+    segment_end_data_positive_strand = lambda: (
+        ("3", 178920000, 3, "-"),
+        ("3", 178921000, 3, "-"),
+        ("3", 178919500, 3, "-"),
+        ("3", 178917500, 2, "-"), # in exon
+    )
+
+    def _get_chosen_tx_and_transcript_ds(self, chrom, loc):
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        transcript_ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        start_txs = transcript_ds.get_transcripts_by_pos(chr=chrom, start=str(loc), end=str(loc))
+        chosen_tx = transcript_ds._choose_transcript(start_txs, transcript_ds.get_tx_mode(),
+                                                     VariantClassification.VT_SNP, "", "", str(loc), str(loc))
+        return chosen_tx, transcript_ds
+
+    @data_provider_decorator(segment_end_data_positive_strand)
+    def test_determine_exons_affected_by_end_positive_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
+
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, end)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(end, chosen_tx)
+
+        self.assertTrue(str(result_tuple[0])+result_tuple[1] == str(gt_exon_id)+gt_exon_direction, "GT did not match guess exon ID... GT exon ID: %s    Seen: %s " % (str(gt_exon_id) + gt_exon_direction, str(result_tuple[0]) + result_tuple[1]))
+
+    segment_igr_overlaps = lambda: (
+        ("3", 178990000, -1, ""), # IGR
+        ("22", 22100000, -1, "")
+    )
+    @data_provider_decorator(segment_igr_overlaps)
+    def test_determine_exons_affected_for_start_for_IGR_segment(self, chrom, start, gt_exon_id, gt_exon_direction):
+        """Test exon inclusion for a segment that has a start position in IGR"""
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_start(start, chosen_tx)
+
+        self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
+
+    @data_provider_decorator(segment_igr_overlaps)
+    def test_determine_exons_affected_for_end_for_IGR_segment(self, chrom, start, gt_exon_id, gt_exon_direction):
+        """Test exon inclusion for a segment that has a start position in IGR"""
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(chrom, start)
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(start, chosen_tx)
+
+        self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
+
+    def test_continuous_exons_in_segments(self):
+        """Test that all exons are accounted when annotating adjacent segments that skip an exon. """
+        # SPECC1L 10+	    22	24734447	SPECC1L	10+	41783674	TEF	1-	1215.0	-0.04975556624325125		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
+        # SPECC1L 8-	    22	16282318	POTEH	2-	24730543	SPECC1L	8-	433.0	-0.00781166374668759		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
+        # SPECC1L-ADORA2A	22	24734447	SPECC1L	10+	41783674	TEF	1-	1215.0	-0.04975556624325125		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
+
+        seg1 = MutationData()
+        seg1.chr = "22"
+        seg1.start = "24734447" # Just passed the exon 9 (0-based)
+        seg1.end = "41783674"
+
+        seg2 = MutationData()
+        seg2.chr = "22"
+        seg2.start = "16282318"
+        seg2.end = "24730543" # Just passed the exon 8 (0-based)
+
+        segs = [seg1, seg2]
+
+        # 'ENST00000314328.9' for GENCODE v19
+        chosen_tx, transcript_ds = self._get_chosen_tx_and_transcript_ds(seg1.chr, seg1.start)
+        result_tuple = transcript_ds._determine_exons_affected_by_start(seg1.start, chosen_tx)
+
+        self.assertTrue(result_tuple == (10, '+'))
+
+        result_tuple = transcript_ds._determine_exons_affected_by_end(seg2.end, chosen_tx)
+        self.assertTrue(result_tuple == (8, '-'))
 
 if __name__ == '__main__':
     unittest.main()

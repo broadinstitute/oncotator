@@ -61,16 +61,13 @@ from oncotator.DuplicateAnnotationException import DuplicateAnnotationException
 
 TestUtils.setupLogging(__file__, __name__)
 class MutationDataTest(unittest.TestCase):
-    
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         pass
 
-
     def tearDown(self):
         pass
-
 
     def testSetValues(self):
         m = MutationData()

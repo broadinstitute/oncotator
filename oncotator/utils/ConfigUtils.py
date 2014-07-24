@@ -194,7 +194,7 @@ class ConfigUtils(object):
         """
         if not os.path.exists(sourceConfigFile):
             if not isRelaxedLogging:
-                logging.getLogger(__name__).warn("Could not find config file (" + sourceConfigFile + ").  Trying configs/ prepend.")
+                logging.getLogger(__name__).debug("Could not find config file (" + sourceConfigFile + ").  Trying configs/ prepend.")
             if os.path.exists("configs/"+sourceConfigFile):
                 logging.getLogger(__name__).info("Found config file (" + sourceConfigFile + ") using configs/ prepend.")
                 sourceConfigFile = "configs/" + sourceConfigFile
