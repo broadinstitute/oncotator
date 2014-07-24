@@ -21,146 +21,145 @@ class RunSpecification(object):
     ANNOTATE_SEGMENTS = "segments"
     ANNOTATE_MUTATIONS = "mutations"
 
-    def __init__(self):
-        self.__inputCreator = None
-        self.__outputRenderer = None
-        self.__inputFilename = None
-        self.__outputFilename = None
-        self.__manualAnnotations = None
-        self.__defaultAnnotations = None
-        self.__datasources = None
-        self.__isMulticore = False
-        self.__numCores = None
-        self.__cache_url = None
-        self.__is_read_only_cache=True
-        self.__is_skip_no_alts = False
+    def _init_(self):
+        self._inputCreator = None
+        self._outputRenderer = None
+        self._inputFilename = None
+        self._outputFilename = None
+        self._manualAnnotations = None
+        self._defaultAnnotations = None
+        self._datasources = None
+        self._isMulticore = False
+        self._numCores = None
+        self._cache_url = None
+        self._isReadOnlyCache=True
+        self._isSkipNoAlts = False
         pass
 
     def get_cache_url(self):
-        return self.__cache_url
+        return self._cache_url
 
     def set_cache_url(self, value):
-        self.__cache_url = value
+        self._cache_url = value
 
     def del_cache_url(self):
-        del self.__cache_url
+        del self._cache_url
 
     def set_is_read_only_cache(self, value):
-        self.__is_read_only_cache = value
+        self._isReadOnlyCache = value
 
     def get_is_read_only_cache(self):
-        return self.__is_read_only_cache
+        return self._isReadOnlyCache
 
     def del_is_read_only_cache(self):
-        del self.__is_read_only_cache
+        del self._isReadOnlyCache
 
     def get_is_multicore(self):
-        return self.__isMulticore
+        return self._isMulticore
 
 
     def get_num_cores(self):
-        return self.__numCores
+        return self._numCores
 
 
     def set_is_multicore(self, value):
-        self.__isMulticore = value
+        self._isMulticore = value
 
 
     def set_num_cores(self, value):
-        self.__numCores = value
+        self._numCores = value
 
 
     def del_is_multicore(self):
-        del self.__isMulticore
+        del self._isMulticore
 
 
     def del_num_cores(self):
-        del self.__numCores
+        del self._numCores
 
 
     def get_datasources(self):
-        return self.__datasources
+        return self._datasources
 
 
     def set_datasources(self, value):
-        self.__datasources = value
+        self._datasources = value
 
 
     def del_datasources(self):
-        del self.__datasources
+        del self._datasources
 
 
     def get_input_creator(self):
-        return self.__inputCreator
+        return self._inputCreator
 
 
     def get_output_renderer(self):
-        return self.__outputRenderer
+        return self._outputRenderer
 
 
     def get_manual_annotations(self):
-        return self.__manualAnnotations
+        return self._manualAnnotations
 
 
     def set_input_creator(self, value):
-        self.__inputCreator = value
+        self._inputCreator = value
 
 
     def set_output_renderer(self, value):
-        self.__outputRenderer = value
+        self._outputRenderer = value
 
     def set_manual_annotations(self, value):
-        self.__manualAnnotations = value
+        self._manualAnnotations = value
 
     def del_input_creator(self):
-        del self.__inputCreator
+        del self._inputCreator
 
     def del_output_renderer(self):
-        del self.__outputRenderer
+        del self._outputRenderer
 
     def del_manual_annotations(self):
-        del self.__manualAnnotations
+        del self._manualAnnotations
 
     def get_default_annotations(self):
-        return self.__defaultAnnotations
+        return self._defaultAnnotations
 
     def set_default_annotations(self, value):
-        self.__defaultAnnotations = value
+        self._defaultAnnotations = value
 
     def del_default_annotations(self):
-        del self.__defaultAnnotations
+        del self._defaultAnnotations
 
     def get_is_skip_no_alts(self):
-        return self.__is_skip_no_alts
+        return self._isSkipNoAlts
 
     def set_is_skip_no_alts(self, value):
-        self.__is_skip_no_alts = value
+        self._isSkipNoAlts = value
 
     def del_is_skip_no_alts(self):
-        del self.__is_skip_no_alts
+        del self._isSkipNoAlts
 
     def get_annotating_type(self):
-        return self.__annotating_type
+        return self._annotating_type
 
     def set_annotating_type(self, value):
-        self.__annotating_type = value
+        self._annotating_type = value
 
     def del_annotating_type(self):
-        del self.__annotating_type
+        del self._annotating_type
 
     def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False, annotating_type=None):
-        self.inputCreator = inputCreator
-        self.outputRenderer = outputRenderer
-        self.manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
-        self.datasources = datasources if datasources is not None else []
-        self.isMulticore = isMulticore
-        self.numCores = numCores
-        self.defaultAnnotations = defaultAnnotations if defaultAnnotations is not None else dict()
-        self.cacheUrl = cacheUrl
-        self.isReadOnlyCache = read_only_cache
-        self.isSkipNoAlts = is_skip_no_alts
-        self.annotating_type = annotating_type if annotating_type is not None else RunSpecification.ANNOTATE_MUTATIONS
-
+        self._inputCreator = inputCreator
+        self._outputRenderer = outputRenderer
+        self._manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
+        self._datasources = datasources if datasources is not None else []
+        self._isMulticore = isMulticore
+        self._numCores = numCores
+        self._defaultAnnotations = defaultAnnotations if defaultAnnotations is not None else dict()
+        self._cache_url = cacheUrl
+        self._isReadOnlyCache = read_only_cache
+        self._isSkipNoAlts = is_skip_no_alts
+        self._annotating_type = annotating_type if annotating_type is not None else RunSpecification.ANNOTATE_MUTATIONS
 
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
     outputRenderer = property(get_output_renderer, set_output_renderer, del_output_renderer, "outputRenderer's docstring")
