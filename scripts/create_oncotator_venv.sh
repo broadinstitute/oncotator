@@ -46,7 +46,11 @@ SKIP_MSG="Skipping... Make sure to install these packages manually after the scr
 # Create the V-ENV
 #################################################
 
-if [[ $(type -t workon) == "function" ]] #hack to tell if we're in a virtual environment
+IN_VENV=$( python -c \
+'import sys
+print  hasattr(sys, "real_prefix") ' )
+
+if [[ $IN_VENV == "False" ]] #hack to tell if we're in a virtual environment
 then
 	# Create and activate a test environment
 	virtualenv $ENV
@@ -57,10 +61,9 @@ then
 	echo "Now attempting to install packages into the virtual environment."
 else
 	echo " "
-	echo "already in a virtual environment"
+	echo "Already in a virtual environment"
 	which python
 	python --version
-	DONT_DEACTIVATE=1
 fi
 
 
@@ -106,7 +109,7 @@ else
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else 
-		pip install -I --allow-external pysam==0.7.5
+		pip install  pysam==0.7.5
 	fi
 	echo "OK"
 fi
@@ -144,7 +147,7 @@ fi
 #################################################
 
 echo "NOTE: Oncotator has not been installed, only the dependencies. You MUST still install Oncotator manually. "
-if [ "$DONT_DEACTIVATE" -ne "1" ]
+if [ $IN_VENV == "False"]
 then
 	deactivate
 fi
