@@ -260,6 +260,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             self.assertTrue(line_dict['end'].strip() != "")
             self.assertTrue("genes" in line_dict.keys())
 
+    @TestUtils.requiresDefaultDB()
     def test_full_seg_file_annotations(self):
         """Test that we can read in a seg file, do a proper full annotation, and output as SIMPLE_TSV"""
         inputFilename = "testdata/seg/Patient0.seg.txt"

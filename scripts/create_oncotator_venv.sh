@@ -109,7 +109,7 @@ else
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else 
-		pip install  pysam==0.7.5
+		pip install -I pysam==0.7.5
 	fi
 	echo "OK"
 fi
@@ -147,7 +147,7 @@ fi
 #################################################
 
 echo "NOTE: Oncotator has not been installed, only the dependencies. You MUST still install Oncotator manually. "
-if [ $IN_VENV == "False"]
+if [ $IN_VENV == "False" ]
 then
 	deactivate
 fi
