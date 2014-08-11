@@ -183,12 +183,6 @@ class TestUtils(object):
         return ensembl_ds
 
     @staticmethod
-    def requiresGaf():
-        """Convenience method wrapping unittest.skipIf for skipping things that require gaf"""
-        return unittest.skipIf( not os.path.exists(TestUtils.createUnitTestConfig().get("gaf3.0", "gafDir")),
-                                "Default Datasource, with GAF 3.0, corpus is needed to run this test")
-
-    @staticmethod
     def requiresDefaultDB():
         """Convenience method wrapping unittest.skipIf for skipping things that require the default datasource"""
         return unittest.skipIf(not os.path.exists(TestUtils.createUnitTestConfig().get("DEFAULT", "dbDir")),

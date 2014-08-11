@@ -105,7 +105,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 called mutations, but saw: " + str(ctr))
 
-    @TestUtils.requiresGaf()
+    @TestUtils.requiresDefaultDB()
     def testSimpleAnnotationWithExampleVcf(self):
         """
         Tests the ability to do a simple Gaf 3.0 annotation.

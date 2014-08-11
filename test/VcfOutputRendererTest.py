@@ -336,7 +336,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
-    @TestUtils.requiresGaf()
+    @TestUtils.requiresDefaultDB()
     def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
         """
         Tests that the output VCF file is rendered correctly when the input is a VCF file with ESP MAF and Gaf

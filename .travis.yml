@@ -5,11 +5,7 @@ env:
     - DB_DIR=dbdir
     #coveralls repo key
     - secure: lJtUySFLmLPV4csef2XQXqH5ZEMKK6sHkiKeIIFdq0oFUlBk4NA3xVaOnkduBXv0lRQIFp+Bsz/2bCz5YorvA2t8FRU3zjHZMNPMiRSCS95NekayXroDpJRa3nRn14w3xuT9nJ1SncfEsTiE8yKhcESbJQbcJl7nUOCluB+HU+E=
-before_install:
-  - pip uninstall -y coveralls || true
 install:
-  - pip install coverage
-  - pip install coveralls
   - sudo pip install conda
   # install deps
   - sudo conda init
@@ -17,8 +13,10 @@ install:
   - deps='pandas biopython numpy cython sqlalchemy'
   - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
+  - pip install coverage
+  - pip install coveralls
+  - bash scripts/create_travis_venv.sh
   # install your own package into the environment
-  - bash scripts/create_oncotator_venv.sh -e environment_exists_already
   - python setup.py install
 script:
   - mkdir dbdir

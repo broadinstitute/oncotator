@@ -106,7 +106,7 @@ class AnnotatorTest(unittest.TestCase):
         self.assertEqual(ctr, gt,
                          "Number of lines read was not correct: " + str(ctr) + " -- should have been: " + str(gt))
 
-    @TestUtils.requiresGaf()
+    @TestUtils.requiresDefaultDB()
     def testVersionHeader(self):
         """ This method simply tests that the version string returned by the annotator does not cause an exception.
             Minimal checking that the returned sting is actually correct.
