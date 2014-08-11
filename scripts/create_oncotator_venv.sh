@@ -46,25 +46,15 @@ SKIP_MSG="Skipping... Make sure to install these packages manually after the scr
 # Create the V-ENV
 #################################################
 
-IN_VENV=$( python -c \
-'import sys
-print  hasattr(sys, "real_prefix") ' )
+# Create and activate a test environment
+virtualenv $ENV
+source $ENV/bin/activate
 
-if [[ $IN_VENV == "False" ]] #hack to tell if we're in a virtual environment
-then
-	# Create and activate a test environment
-	virtualenv $ENV
-	source $ENV/bin/activate
-	
-	echo " "
-	echo "Virtual environment created and activated in $ENV."
-	echo "Now attempting to install packages into the virtual environment."
-else
-	echo " "
-	echo "Already in a virtual environment"
-	which python
-	python --version
-fi
+echo " "
+echo "Virtual environment created and activated in $ENV."
+echo "Now attempting to install packages into the virtual environment."
+which python
+python --version
 
 
 #################################################
@@ -147,7 +137,5 @@ fi
 #################################################
 
 echo "NOTE: Oncotator has not been installed, only the dependencies. You MUST still install Oncotator manually. "
-if [ $IN_VENV == "False" ]
-then
-	deactivate
-fi
+
+deactivate
