@@ -1,3 +1,5 @@
+  .. image:: https://travis-ci.org/broadinstitute/oncotator.svg?branch=develop
+    :target: https://travis-ci.org/broadinstitute/oncotator
 ======================
 Oncotator
 ======================
