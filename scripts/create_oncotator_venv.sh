@@ -45,7 +45,7 @@ if [ ! -z "$PYVCF" ]; then
 fi
 
 if [ ! -z "$TRAVIS" ]; then
-	printf "TRAVIS environment variable is set.  Instaling certain packages through conda"
+	printf "TRAVIS environment variable is set.  Do not activate/deactivate virtual envs."
 fi
 
 SKIP_MSG="Skipping... Make sure to install these packages manually after the script has finished. "
@@ -76,32 +76,30 @@ if [ "$COMPIL" == "skip" ];
 then
 	echo $SKIP_MSG
 else
-	if [ ! $TRAVIS ];
-	then
-		echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
+	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-		for C_PACKAGE in biopython cython numpy pandas sqlalchemy
-		do
-			echo " "
-			echo "$C_PACKAGE =========================="
-			if [ "$FLAGS" == "archflags" ]; then
-				env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install $C_PACKAGE
-			else
-				pip install $C_PACKAGE
-			fi
-			echo "OK"
-		done
-	else
+	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
+	do
 		echo " "
-		echo "Assuming biopython cython numpy pandas and sqlalchemy were installed using conda"
-	fi
+		echo "$C_PACKAGE =========================="
+		if [ "$FLAGS" == "archflags" ]; then
+			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install $C_PACKAGE
+		else
+			pip install $C_PACKAGE
+		fi
+		echo "OK"
+	done
 
 	echo " "
 	echo "pysam ========================="
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else
-		pip install -I --allow-unverified pysam pysam==0.7.5
+		if [ $TRAVIS ]; then
+			pip install  --allow-unverified pysam pysam==0.7.5
+		else
+			pip install -I --allow-unverified pysam pysam==0.7.5
+		fi
 	fi
 	echo "OK"
 fi
