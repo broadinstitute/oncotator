@@ -14,11 +14,12 @@ install:
   - bash scripts/create_oncotator_venv.sh
   # install your own package into the environment
   - python setup.py install
+  - pip install nose
   - pip install coverage
   - pip install coveralls
 script:
   - mkdir dbdir
   - sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
-  - /virtualenv/python2.7.8/bin/nosetests --all-modules --exe --with-xunit --xunit-file=${PWD}/nosetests.xml -w test -v --with-coverage --cover-package=oncotator,test --cover-inclusive --cover-erase --cover-branches --cover-tests
+  - /home/travis/virtualenv/python2.7.8/bin/nosetests --all-modules --exe --with-xunit --xunit-file=${PWD}/nosetests.xml -w test -v --with-coverage --cover-package=oncotator,test --cover-inclusive --cover-erase --cover-branches --cover-tests
   - oncotator --help
 after_success: coveralls
