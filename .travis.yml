@@ -9,8 +9,13 @@ before_install:
   - sudo apt-get update
 install:
   # install deps
-  - bash scripts/create_oncotator_venv.sh
+  - sudo pip install conda
+  - sudo conda init
+  - sudo conda update conda --yes
+  - deps='biopython cython numpy pandas sqlalchemy'
+  - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
   - export PATH=$HOME/py/bin:$PATH
+  - bash scripts/create_oncotator_venv.sh
   # install your own package into the environment
   - sudo python setup.py install
   - pip install coverage

@@ -92,18 +92,8 @@ else
 			echo "OK"
 		done
 	else
-		echo "Attempting to install packages using conda for greater speed"
-		echo "Requires passwordless sudo so this will probably not work in most environments"
-		echo "This installation does not respect your virtual environment.  Use at your own risk."
-
 		echo " "
-		sudo pip install conda
-		sudo conda init
-	    sudo conda update conda --yes
-		deps='biopython cython numpy pandas sqlalchemy'
-		conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
-		export PATH=$HOME/py/bin:$PATH
-		echo "OK"
+		echo "Assuming biopython cython numpy pandas and sqlalchemy were installed using conda"
 	fi
 
 	echo " "
