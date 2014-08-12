@@ -11,10 +11,10 @@ env:
     - secure: lJtUySFLmLPV4csef2XQXqH5ZEMKK6sHkiKeIIFdq0oFUlBk4NA3xVaOnkduBXv0lRQIFp+Bsz/2bCz5YorvA2t8FRU3zjHZMNPMiRSCS95NekayXroDpJRa3nRn14w3xuT9nJ1SncfEsTiE8yKhcESbJQbcJl7nUOCluB+HU+E=
 install:
   # install deps
+  - pip install -U distribute
   - bash scripts/create_oncotator_venv.sh
   # install your own package into the environment
   - python setup.py install
-  - pip install nose
   - pip install coverage
   - pip install coveralls
 script:
