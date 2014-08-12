@@ -7,13 +7,13 @@ env:
     - secure: lJtUySFLmLPV4csef2XQXqH5ZEMKK6sHkiKeIIFdq0oFUlBk4NA3xVaOnkduBXv0lRQIFp+Bsz/2bCz5YorvA2t8FRU3zjHZMNPMiRSCS95NekayXroDpJRa3nRn14w3xuT9nJ1SncfEsTiE8yKhcESbJQbcJl7nUOCluB+HU+E=
 before_install:
   - sudo apt-get update
-  - sudo apt-get upgrade python-nose
-  - sudo apt-get upgrade python-coverage
 install:
   # install deps
   - bash scripts/create_oncotator_venv.sh
+  - export PATH=$HOME/py/bin:$PATH
   # install your own package into the environment
   - sudo python setup.py install
+  - pip install coverage
   - pip install coveralls
 script:
   - mkdir dbdir
