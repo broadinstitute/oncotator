@@ -69,21 +69,6 @@ fi
 
 
 #################################################
-# Easy installations
-#################################################
-
-echo " "
-echo "Installing dependencies that can be obtained from pypi"
-
-for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb
-do
-	echo " "
-	echo "$PACKAGE =========================="
-	pip install -U $PACKAGE
-	echo "OK"
-done
-
-#################################################
 # Installations that require compilation
 #################################################
 
@@ -130,6 +115,22 @@ else
 	fi
 	echo "OK"
 fi
+
+#################################################
+# Easy installations
+#################################################
+
+echo " "
+echo "Installing dependencies that can be obtained from pypi"
+
+for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb
+do
+	echo " "
+	echo "$PACKAGE =========================="
+	pip install -U $PACKAGE
+	echo "OK"
+done
+
 
 #################################################
 # Tricky installations
