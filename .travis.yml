@@ -1,9 +1,9 @@
 language: python
-#sudo: false 
+sudo: false 
 python: '2.7'
-#cache:
-#  directories:
-#    - /home/travis/virtualenv/python2.7.8/lib/python2.7/site-packages
+cache:
+  directories:
+    - /home/travis/virtualenv/python2.7.8/lib/python2.7/site-packages
 env:
   global:
     - DB_DIR=dbdir
