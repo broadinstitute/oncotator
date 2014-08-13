@@ -154,5 +154,6 @@ fi
 
 echo "NOTE: Oncotator has not been installed, only the dependencies. You MUST still install Oncotator manually. "
 if [ ! $TRAVIS ]; then
+	echo "Deactivating"
 	deactivate
 fi
