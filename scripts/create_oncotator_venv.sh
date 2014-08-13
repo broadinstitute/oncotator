@@ -67,6 +67,10 @@ else
 	python --version
 fi
 
+echo "Update Pip"
+pip --version
+pip install -U pip
+pip --version
 
 #################################################
 # Installations that require compilation
@@ -85,7 +89,7 @@ else
 		if [ "$FLAGS" == "archflags" ]; then
 			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install $C_PACKAGE
 		else
-			pip install $C_PACKAGE
+			pip install --no-use-wheel $C_PACKAGE
 		fi
 		echo "OK"
 	done
@@ -95,7 +99,7 @@ else
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else
-		pip install -I --allow-unverified pysam pysam==0.7.5
+		pip install --no-use-wheel --allow-unverified pysam pysam==0.7.5
 	fi
 	echo "OK"
 fi
@@ -111,7 +115,7 @@ for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb
 do
 	echo " "
 	echo "$PACKAGE =========================="
-	pip install -U $PACKAGE
+	pip install -U --no-use-wheel $PACKAGE
 	echo "OK"
 done
 
