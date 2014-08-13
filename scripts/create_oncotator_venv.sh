@@ -45,7 +45,7 @@ if [ ! -z "$PYVCF" ]; then
 fi
 
 if [ ! -z "$TRAVIS" ]; then
-	printf "TRAVIS environment variable is set.  Do not activate/deactivate virtual envs."
+	printf "TRAVIS environment variable is set.  Do not activate/deactivate virtual envs.\n"
 fi
 
 SKIP_MSG="Skipping... Make sure to install these packages manually after the script has finished. "
@@ -95,11 +95,7 @@ else
 	if [ "$FLAGS" == "archflags" ]; then
 		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
 	else
-		if [ $TRAVIS ]; then
-			pip install  --allow-unverified pysam pysam==0.7.5
-		else
-			pip install -I --allow-unverified pysam pysam==0.7.5
-		fi
+		pip install -I --allow-unverified pysam pysam==0.7.5
 	fi
 	echo "OK"
 fi
