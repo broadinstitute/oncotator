@@ -105,6 +105,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 called mutations, but saw: " + str(ctr))
 
+    @TestUtils.requiresDefaultDB()
     def testSimpleAnnotationWithExampleVcf(self):
         """
         Tests the ability to do a simple Gaf 3.0 annotation.
@@ -154,6 +155,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         dbDir = self.config.get('DEFAULT', "dbDir")
         return DatasourceFactory.createDatasources(dbDir, "hg19", isMulticore=False)
 
+    @TestUtils.requiresDefaultDB()
     def testTCGAMAFRendering(self):
         """
         Tests the ability to render a germline VCF file as a TCGA MAF file.

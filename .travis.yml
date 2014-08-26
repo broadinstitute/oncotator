@@ -1,0 +1,25 @@
+language: python
+#sudo: false 
+python: '2.7'
+#cache:
+#  directories:
+#    - /home/travis/virtualenv/python2.7.8/lib/python2.7/site-packages
+env:
+  global:
+    - DB_DIR=dbdir
+    #coveralls repo key
+    - secure: lJtUySFLmLPV4csef2XQXqH5ZEMKK6sHkiKeIIFdq0oFUlBk4NA3xVaOnkduBXv0lRQIFp+Bsz/2bCz5YorvA2t8FRU3zjHZMNPMiRSCS95NekayXroDpJRa3nRn14w3xuT9nJ1SncfEsTiE8yKhcESbJQbcJl7nUOCluB+HU+E=
+install:
+  # install deps
+  #- pip install -U distribute
+  - bash scripts/create_oncotator_venv.sh
+  # install your own package into the environment
+  - python setup.py install
+  - pip install coverage
+  - pip install coveralls
+script:
+  - mkdir dbdir
+  - sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
+  - /home/travis/virtualenv/python2.7.8/bin/nosetests --all-modules --exe --with-xunit --xunit-file=${PWD}/nosetests.xml -w test -v --with-coverage --cover-package=oncotator,test --cover-inclusive --cover-erase --cover-branches --cover-tests
+  - oncotator --help
+after_success: coveralls

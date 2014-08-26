@@ -60,7 +60,7 @@ import unittest
 TestUtils.setupLogging(__file__, __name__)
 
 
-class IndexedVcfDatasourceBuilderTest(unittest.TestCase):
+class TabixIndexedVcfDatasourceBuilderTest(unittest.TestCase):
 
     def testCreateDatabase(self):
         dsFile = os.path.join(*["testdata", "vcf", "example.vcf"])

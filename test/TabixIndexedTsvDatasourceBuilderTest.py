@@ -59,7 +59,7 @@ import unittest
 TestUtils.setupLogging(__file__, __name__)
 
 
-class IndexedTsvDatasourceBuilderTest(unittest.TestCase):
+class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
 
     def testCreateDatabase(self):
         """

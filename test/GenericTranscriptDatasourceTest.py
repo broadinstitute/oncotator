@@ -77,7 +77,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-
+    @TestUtils.requiresDefaultDB()
     def testBasicAnnotation(self):
         ''' Test annotation from a generic TSV based on a transcript annotation.  Only confirms the proper headers of the output. '''
         # We need a gaf data source to annotate gene

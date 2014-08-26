@@ -147,7 +147,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
-    
+
+    @TestUtils.requiresDefaultDB()
     def testFullSNPOutput(self):
         """ Create a TCGA MAF from a SNP TSV file."""
         self.logger.info("Initializing Maflite SNP Test...")
@@ -157,6 +158,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
 
+    @TestUtils.requiresDefaultDB()
     def testFullIndelOutput(self):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
@@ -231,6 +233,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testsimpleSNP.maf.tsv", self._determine_db_dir(), outputFormat="SIMPLE_TSV")
         self.assertTrue(os.path.exists(testOutputFilename))
 
+    @TestUtils.requiresDefaultDB()
     def testExposedColumns(self):
         """Test that columns listed in the config file as exposed do not get the i_ prepend"""
         testOutputFilename = self._annotateTest('testdata/maflite/tiny_maflite.maf.txt', "out/testExposedCols.maf.tsv", self._determine_db_dir())
@@ -246,6 +249,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertFalse(("i_" + h) in headers, "i_ was prepended to " + h)
             self.assertTrue(h in headers, h + " not found.")
 
+    @TestUtils.requiresDefaultDB()
     def testProperConversionVcfToMaf(self):
         """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF """
 
@@ -287,6 +291,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8.")
 
+    @TestUtils.requiresDefaultDB()
     def testProperConversionVcfToMafWithThirdSample(self):
         """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF, but that the NORMAL is treated as any other sample, since this VCF has three samples in it. """
 

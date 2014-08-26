@@ -13,6 +13,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
         self.config = TestUtils.createUnitTestConfig()
         pass
 
+    @TestUtils.requiresDefaultDB()
     def test_basic_rendering(self):
         """Test that we can render a basic seg file as a gene list"""
         inputFilename = "testdata/seg/Patient0.seg.txt"
@@ -42,7 +43,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
             self.assertTrue(float(line_dict["segment_num_probes"]))
             self.assertTrue(line_dict['sample'] == "Patient0")
 
-
+    @TestUtils.requiresDefaultDB()
     def test_rendering_with_exons(self):
         """Test that we can render a seg file that includes exons at end points"""
         inputFilename = "testdata/seg/Middle_of_exon.seg.txt"

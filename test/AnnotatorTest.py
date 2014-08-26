@@ -106,6 +106,7 @@ class AnnotatorTest(unittest.TestCase):
         self.assertEqual(ctr, gt,
                          "Number of lines read was not correct: " + str(ctr) + " -- should have been: " + str(gt))
 
+    @TestUtils.requiresDefaultDB()
     def testVersionHeader(self):
         """ This method simply tests that the version string returned by the annotator does not cause an exception.
             Minimal checking that the returned sting is actually correct.
@@ -188,6 +189,7 @@ class AnnotatorTest(unittest.TestCase):
         self.assertTrue(muts_final[2]['test2'] == "foo2-original")
         self.assertTrue(muts_final[2]['test3'] == "foo3")
 
+    @TestUtils.requiresDefaultDB()
     def testAnnotateListOfMutations(self):
         """Test that we can initialize an Annotator, without an input or output and then feed mutations,
         one at a time... using a runspec"""

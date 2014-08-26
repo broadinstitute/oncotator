@@ -263,6 +263,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertEqual(m2.get('HGVS_coding_DNA_change', None), 'ENST00000215832.6:c.1A>C')
         self.assertEqual(m2.get('HGVS_protein_change', None), 'unknown_prot_seq_id:p.Met1Leu')
 
+    @TestUtils.requiresDefaultDB()
     def test_retrieve_transcripts_from_region(self):
         """Test that we can retrieve a large number of transcripts.  Requires a full gencode datasource."""
         config = TestUtils.createUnitTestConfig()
@@ -283,6 +284,8 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ("22", 22220000, 0, "-"),
         ("22", 22125000, 6, "-")
     )
+
+    @TestUtils.requiresDefaultDB()
     @data_provider_decorator(segment_start_data_negative_strand)
     def test_determine_exons_affected_by_start_negative_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
 
@@ -302,6 +305,8 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ("22", 22125000, 7, "+"),
         ("22", 22162050, 1, "+"), # in exon
     )
+
+    @TestUtils.requiresDefaultDB()
     @data_provider_decorator(segment_end_data_negative_strand)
     def test_determine_exons_affected_by_end_negative_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
 
@@ -319,6 +324,8 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ("3", 178919500, 4, "+"),
         ("3", 178917500, 2, "+"), # in exon
     )
+
+    @TestUtils.requiresDefaultDB()
     @data_provider_decorator(segment_start_data_positive_strand)
     def test_determine_exons_affected_by_start_positive_strand(self, chrom, start, gt_exon_id, gt_exon_direction):
 
@@ -345,6 +352,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
                                                      VariantClassification.VT_SNP, "", "", str(loc), str(loc))
         return chosen_tx, transcript_ds
 
+    @TestUtils.requiresDefaultDB()
     @data_provider_decorator(segment_end_data_positive_strand)
     def test_determine_exons_affected_by_end_positive_strand(self, chrom, end, gt_exon_id, gt_exon_direction):
 
@@ -358,6 +366,8 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ("3", 178990000, -1, ""), # IGR
         ("22", 22100000, -1, "")
     )
+
+    @TestUtils.requiresDefaultDB()
     @data_provider_decorator(segment_igr_overlaps)
     def test_determine_exons_affected_for_start_for_IGR_segment(self, chrom, start, gt_exon_id, gt_exon_direction):
         """Test exon inclusion for a segment that has a start position in IGR"""
@@ -367,6 +377,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
 
+    @TestUtils.requiresDefaultDB()
     @data_provider_decorator(segment_igr_overlaps)
     def test_determine_exons_affected_for_end_for_IGR_segment(self, chrom, start, gt_exon_id, gt_exon_direction):
         """Test exon inclusion for a segment that has a start position in IGR"""
@@ -376,6 +387,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         self.assertTrue(result_tuple is None, "Result should have been None for IGR overlap, but saw: %s " % str(result_tuple))
 
+    @TestUtils.requiresDefaultDB()
     def test_continuous_exons_in_segments(self):
         """Test that all exons are accounted when annotating adjacent segments that skip an exon. """
         # SPECC1L 10+	    22	24734447	SPECC1L	10+	41783674	TEF	1-	1215.0	-0.04975556624325125		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM

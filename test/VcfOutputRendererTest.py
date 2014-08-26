@@ -336,6 +336,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    @TestUtils.requiresDefaultDB()
     def testGafAnnotatedContentofExampleWithESP_MAFVcf(self):
         """
         Tests that the output VCF file is rendered correctly when the input is a VCF file with ESP MAF and Gaf
@@ -622,6 +623,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(len(current) == len(expected), "Number of lines of alts information is not the same.")
         self.assertTrue(len(current.symmetric_difference(expected)) == 0, "Lines of alts information do not match.")
 
+    @TestUtils.requiresDefaultDB()
     def testINSMaf2Vcf(self):
         """
         Tests that the insertions are rendered correctly when the input is a MAF file.
@@ -643,6 +645,8 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+
+    @TestUtils.requiresDefaultDB()
     def testDELMaf2Vcf(self):
         """
         Tests that the deletions are rendered correctly when the input is a MAF file.
@@ -664,6 +668,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    @TestUtils.requiresDefaultDB()
     def testINSVcf2Vcf(self):
         """
         Tests that the insertions are rendered correctly when the input is a VCF file.
@@ -685,6 +690,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    @TestUtils.requiresDefaultDB()
     def testDELVcf2Vcf(self):
         """
         Tests that the deletions are rendered correctly when the input is a VCF file.
@@ -706,6 +712,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    @TestUtils.requiresDefaultDB()
     def testWhitespaceInAnnotationName(self):
         """
         Tests that the INFO keys contain no white-space, semi-colons, or equals-signs.
@@ -750,6 +757,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         self.assertTrue("SS" in vcfReader.infos, "SS is missing in INFO.")
         self.assertTrue("SS" in vcfReader.formats, "SS is missing in FORMAT.")
 
+    @TestUtils.requiresDefaultDB()
     def testMaf2VcfMissingFilterAnnotations(self):
         """
         Tests that the missing FILTER fields are rendered correctly when the input is a MAF file.
@@ -869,6 +877,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    @TestUtils.requiresDefaultDB()
     def testMaf2Vcf2MafConversions(self):
         """
         Tests that the MAF to VCF to MAF conversion works for insertions and deletions.
@@ -926,6 +935,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    @TestUtils.requiresDefaultDB()
     def test_protein_rendering_exception_for_non_primitive(self):
         """Test problematic variants from the GATK, even with VariantToAllelicPrimitive.  Tests no exception is thrown."""
         inputFilename = os.path.join(*["testdata", "vcf", "protein_rendering_exception.vcf"])
@@ -947,6 +957,7 @@ class VcfOutputRendererTest(unittest.TestCase):
             self.assertEqual(len(record.INFO["variant_type"]), 2,
                 "Length of must be 2 but was %s." % len(record.INFO["variant_type"]))
 
+    @TestUtils.requiresDefaultDB()
     def test_rendering_vcf_output_format_field(self):
         """Test that we do not drop FORMAT fields for a given maflite (issue 201) """
         inputFilename = os.path.join(*["testdata", "maflite", "example_input_for_vcf_out.call_stats.txt"])

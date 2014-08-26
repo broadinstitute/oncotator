@@ -87,6 +87,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         annotationName= "UniProt_NatVar_natural_variations"
         self.assertTrue(sorted(m[annotationName].split("|")) == sorted("S -> T (in a sporadic cancer; somatic mutation).|S -> A (in a sporadic cancer; somatic mutation).".split("|")), "Incorrect annotation value seen: " + m[annotationName])
 
+    @TestUtils.requiresDefaultDB()
     def testCreationAndAnnotation(self):
         """ Test the datasource creation and then do a simple annotation
         """

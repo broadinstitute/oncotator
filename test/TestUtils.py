@@ -52,6 +52,7 @@ from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptD
 from oncotator.utils.MultiprocessingUtils import MyManager
 from ConfigParser import SafeConfigParser
 import os
+import unittest
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.dbSNP import dbSNP
@@ -180,3 +181,9 @@ class TestUtils(object):
         genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename, protein_id_mapping_file=protein_id_mapping_file)
         ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic")
         return ensembl_ds
+
+    @staticmethod
+    def requiresDefaultDB():
+        """Convenience method wrapping unittest.skipIf for skipping things that require the default datasource"""
+        return unittest.skipIf(not os.path.exists(TestUtils.createUnitTestConfig().get("DEFAULT", "dbDir")),
+                               "Default Datasource corpus is needed to run this test")
