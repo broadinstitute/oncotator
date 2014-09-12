@@ -227,6 +227,12 @@ class Annotator(object):
         return comments
 
     def annotate_mutations(self, mutations):
+        """
+        Given a list of mutations (or any iterable of mutations), return a list of annotated mutations.
+
+        :rtype : list
+        :param mutations: iterator of MutationData
+        """
         mutations = self._annotate_mutations_using_datasources(mutations)
         if mutations is None:
             self.logger.warn("Mutation list points to None after annotation.")
