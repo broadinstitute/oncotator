@@ -410,6 +410,19 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
         return '|'.join(other_transcripts)
 
+    def retrieve_transcripts_by_gene(self, gene):
+        """
+        Given a gene, return all of the transcripts (filtered) tagged with the gene.
+
+        :param str gene:
+        :rtype : list
+        """
+        txs_unfiltered = self.gene_db.get(gene, None)
+        txs = self._filter_transcripts(txs_unfiltered)
+        if txs is None:
+            return []
+        return txs
+
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon"""
         result = set()
