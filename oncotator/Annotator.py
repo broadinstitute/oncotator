@@ -50,6 +50,7 @@ from oncotator.Annotation import Annotation
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.RunSpecification import RunSpecification
 
@@ -225,6 +226,25 @@ class Annotator(object):
         comments = self._inputCreator.getComments()
         comments.append(self.createHeaderString())
         return comments
+
+    def retrieve_transcripts_by_genes(self, genes):
+        """
+        Given names of genes, return all transcripts
+
+        Datasources, particularly a TranscriptDatasource should be initialized before calling this method.
+
+        :param list genes:List of str gene names
+        :returns list: List of Transcripts
+        """
+        # Get the Transcript Datasource
+        if self._datasources is None or len(self._datasources) == 0:
+            logging.getLogger(__name__).warn("Attempting to retrieve transcripts by gene, but no datasources are initialized.")
+        txs = []
+        for ds in self._datasources:
+            if isinstance(ds, TranscriptProvider):
+                for gene in genes:
+                    txs.extend(ds.retrieve_transcripts_by_gene(gene))
+        return txs
 
     def annotate_mutations(self, mutations):
         """

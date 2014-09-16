@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 from TestUtils import TestUtils
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
 
 """
@@ -275,6 +276,34 @@ class AnnotatorTest(unittest.TestCase):
 
         ctr = self._simple_annotate(False)
         self.assertTrue(ctr == 2)
+
+    def test_querying_transcripts_by_genes(self):
+        """Test that we can get all of the transcripts for a given set of genes. """
+        annotator = Annotator()
+        annotator.addDatasource(TestUtils.createTranscriptProviderDatasource(self.config))
+        txs = annotator.retrieve_transcripts_by_genes(["MAPK1", "PIK3CA"])
+        self.assertTrue(len(txs) > 3)
+
+        ## Here is an example of getting enough data to populate the json in doc/transcript_json_commented.json.txt
+        # None of these values are validated.
+        tx = txs[0]
+        transcript_id = tx.get_transcript_id()
+        gene = tx.get_gene()
+        chr = tx.get_contig()
+        n_exons = len(tx.get_exons())
+        strand = tx.get_strand()
+        footprint_start, footprint_end = tx.determine_cds_footprint()
+        klass = tx.get_gene_type()
+        cds_start = tx.determine_cds_start()
+        cds_end = tx.determine_cds_stop()
+        id = tx.get_gene_id()
+        genomic_coords = [[exon[0], exon[1]] for exon in tx.get_exons() ]
+        transcript_coords = [
+                [TranscriptProviderUtils.convert_genomic_space_to_exon_space(exon[0]+1, exon[1], tx)]
+                for exon in tx.get_exons() ]
+        code_len = int(cds_end) - int(cds_start) + 1
+        pass
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']

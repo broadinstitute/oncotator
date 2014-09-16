@@ -87,3 +87,7 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def get_tx_mode(self):
         return
+
+    @abc.abstractmethod
+    def retrieve_transcripts_by_gene(self, gene):
+        return

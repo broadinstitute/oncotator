@@ -107,6 +107,9 @@ class Transcript(object):
     def get_gene(self):
         return self._gene
 
+    def get_gene_id(self):
+        return self._gene_id
+
     def get_seq(self):
         return self._seq
 
