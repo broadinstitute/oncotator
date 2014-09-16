@@ -248,6 +248,21 @@ class Annotator(object):
                     txs.extend(ds.retrieve_transcripts_by_gene(gene))
         return txs
 
+    def retrieve_transcripts_by_region(self, chrom, start, end):
+        """
+        Finds all TrnascriptProviders and gets the transcripts in the given genomic region (in genomic coords)
+
+        :rtype : list
+        :param chrom:
+        :param start:
+        :param end:
+        """
+        txs = []
+        for ds in self._datasources:
+            if isinstance(ds, TranscriptProvider):
+                txs.extend(ds.get_transcripts_by_pos(chrom, start, end))
+        return txs
+
     def annotate_transcript(self, tx):
         """
         Given a transcript, get all transcript annotations on a mutation.

@@ -293,34 +293,34 @@ class AnnotatorTest(unittest.TestCase):
 
         ## Here is an example of getting enough data to populate the json in doc/transcript_json_commented.json.txt
         # None of these values are validated.
-        tx = txs[0]
-        transcript_id = tx.get_transcript_id()
-        gene = tx.get_gene()
-        chr = tx.get_contig()
-        n_exons = len(tx.get_exons())
-        strand = tx.get_strand()
-        footprint_start, footprint_end = tx.determine_cds_footprint()
-        klass = tx.get_gene_type()
-        cds_start = tx.determine_cds_start()
-        cds_end = tx.determine_cds_stop()
-        id = tx.get_gene_id()
-        genomic_coords = [[exon[0], exon[1]] for exon in tx.get_exons() ]
-        transcript_coords = [
-                [TranscriptProviderUtils.convert_genomic_space_to_exon_space(exon[0]+1, exon[1], tx)]
-                for exon in tx.get_exons() ]
-        code_len = int(cds_end) - int(cds_start) + 1
+        for tx in txs:
+            transcript_id = tx.get_transcript_id()
+            gene = tx.get_gene()
+            chr = tx.get_contig()
+            n_exons = len(tx.get_exons())
+            strand = tx.get_strand()
+            footprint_start, footprint_end = tx.determine_cds_footprint()
+            klass = tx.get_gene_type()
+            cds_start = tx.determine_cds_start()
+            cds_end = tx.determine_cds_stop()
+            id = tx.get_gene_id()
+            genomic_coords = [[exon[0], exon[1]] for exon in tx.get_exons() ]
+            transcript_coords = [
+                    [TranscriptProviderUtils.convert_genomic_space_to_exon_space(exon[0]+1, exon[1], tx)]
+                    for exon in tx.get_exons()]
+            code_len = int(cds_end) - int(cds_start) + 1
 
-        # If refseq datasources are not available, this will fail.
-        dummy_mut = annotator.annotate_transcript(tx)
-        refseq_mRNA_id = dummy_mut["gencode_xref_refseq_mRNA_id"]
-        refseq_prot_id = dummy_mut["gencode_xref_refseq_prot_acc"]
+            # If refseq datasources are not available, this will fail.
+            dummy_mut = annotator.annotate_transcript(tx)
+            refseq_mRNA_id = dummy_mut["gencode_xref_refseq_mRNA_id"]
+            refseq_prot_id = dummy_mut["gencode_xref_refseq_prot_acc"]
 
-        # Description is unavailable right now
-        description = ""
+            # Description is unavailable right now
+            description = ""
 
-        self.assertTrue(refseq_mRNA_id is not None)
-        self.assertTrue(refseq_prot_id is not None)
-        self.assertTrue(len(transcript_coords) == n_exons)
+            self.assertTrue(refseq_mRNA_id is not None)
+            self.assertTrue(refseq_prot_id is not None)
+            self.assertTrue(len(transcript_coords) == n_exons)
 
 
 if __name__ == "__main__":
