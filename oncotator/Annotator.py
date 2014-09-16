@@ -47,8 +47,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from oncotator.Annotation import Annotation
+from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.Hasher import Hasher
@@ -245,6 +247,26 @@ class Annotator(object):
                 for gene in genes:
                     txs.extend(ds.retrieve_transcripts_by_gene(gene))
         return txs
+
+    def annotate_transcript(self, tx):
+        """
+        Given a transcript, get all transcript annotations on a mutation.
+
+        HACK: Looks only for GenericTranscriptDatasources
+        HACK: Not actually annotating a transcript.  Creates a dummy mutation and then only looks to annotate with
+            GenericTranscriptDatasources
+
+        :param Transcript tx: transcript to annotate
+        :returns MutationData: mutation with annotations generated from the given transcript
+        """
+        m = MutationData()
+        m['transcript_id'] = tx.get_transcript_id()
+
+        for ds in self._datasources:
+            if isinstance(ds, GenericTranscriptDatasource):
+                m = ds.annotate_mutation(m)
+
+        return m
 
     def annotate_mutations(self, mutations):
         """

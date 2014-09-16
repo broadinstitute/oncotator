@@ -51,6 +51,7 @@ from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 """
 Created on Nov 7, 2012
@@ -75,6 +76,9 @@ class AnnotatorTest(unittest.TestCase):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
         pass
+
+    def _determine_db_dir(self):
+        return self.config.get('DEFAULT',"dbDir")
 
     def tearDown(self):
         pass
@@ -279,8 +283,11 @@ class AnnotatorTest(unittest.TestCase):
 
     def test_querying_transcripts_by_genes(self):
         """Test that we can get all of the transcripts for a given set of genes. """
+
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
         annotator = Annotator()
-        annotator.addDatasource(TestUtils.createTranscriptProviderDatasource(self.config))
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
         txs = annotator.retrieve_transcripts_by_genes(["MAPK1", "PIK3CA"])
         self.assertTrue(len(txs) > 3)
 
@@ -302,7 +309,18 @@ class AnnotatorTest(unittest.TestCase):
                 [TranscriptProviderUtils.convert_genomic_space_to_exon_space(exon[0]+1, exon[1], tx)]
                 for exon in tx.get_exons() ]
         code_len = int(cds_end) - int(cds_start) + 1
-        pass
+
+        # If refseq datasources are not available, this will fail.
+        dummy_mut = annotator.annotate_transcript(tx)
+        refseq_mRNA_id = dummy_mut["gencode_xref_refseq_mRNA_id"]
+        refseq_prot_id = dummy_mut["gencode_xref_refseq_prot_acc"]
+
+        # Description is unavailable right now
+        description = ""
+
+        self.assertTrue(refseq_mRNA_id is not None)
+        self.assertTrue(refseq_prot_id is not None)
+        self.assertTrue(len(transcript_coords) == n_exons)
 
 
 if __name__ == "__main__":
