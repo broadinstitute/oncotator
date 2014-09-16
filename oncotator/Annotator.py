@@ -229,6 +229,16 @@ class Annotator(object):
         comments.append(self.createHeaderString())
         return comments
 
+    def retrieve_transcript_by_id(self, transcript_id):
+        # Get the Transcript Datasource
+        if self._datasources is None or len(self._datasources) == 0:
+            logging.getLogger(__name__).warn("Attempting to retrieve transcripts, but no datasources are initialized.")
+
+        for ds in self._datasources:
+            if isinstance(ds, TranscriptProvider):
+                return ds.get_transcript(transcript_id)
+        return None
+
     def retrieve_transcripts_by_genes(self, genes):
         """
         Given names of genes, return all transcripts
@@ -282,6 +292,34 @@ class Annotator(object):
                 m = ds.annotate_mutation(m)
 
         return m
+
+    def _annotate_genes(self, muts):
+        """
+        Given a set of mutations (with the gene annotation), annotate with values from relevant datasources.
+
+        :param muts: iterable of MutationData
+        :rtype : None
+         HACK: "relevant" is simply GenericGeneDatasources
+
+         mutations are annotated in place.
+
+        """
+        for m in muts:
+            for ds in self._datasources:
+                if isinstance(ds, GenericTranscriptDatasource):
+                    m = ds.annotate_mutation(m)
+
+    def annotate_genes_given_txs(self, txs):
+        genes = set([tx.get_gene() for tx in txs])
+        genes = list(genes).sort()
+        muts = []
+        for gene in genes:
+            m = MutationData()
+            m.createAnnotation("gene", gene)
+            muts.append(m)
+        self._annotate_genes(muts)
+        return muts
+
 
     def annotate_mutations(self, mutations):
         """
