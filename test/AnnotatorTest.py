@@ -344,6 +344,52 @@ class AnnotatorTest(unittest.TestCase):
             pass
             # etc...
 
+    def test_simple_genes_by_gene_annotation(self):
+        """Test web api backend call /gene/ """
+        # http://www.broadinstitute.org/oncotator/gene/MAPK1/
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+
+        txs = annotator.retrieve_transcripts_by_genes(["MAPK1"])
+        mut_dict = annotator.annotate_genes_given_txs(txs)
+        self.assertTrue(len(mut_dict.keys()) == 1)
+
+        # Annotate away
+
+    def test_simple_transcript_annotation(self):
+        """Test web api backend call /transcript/ """
+        # http://www.broadinstitute.org/oncotator/transcript/ENST00000215832.6/
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+
+        tx = annotator.retrieve_transcript_by_id("ENST00000215832.6")
+        self.assertTrue(tx is not None)
+        self.assertTrue(tx.get_gene() == "MAPK1")
+        # Annotate away
+
+    def test_querying_transcripts_by_region(self):
+        """Test web api backend call /transcripts/.... """
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+        txs = annotator.retrieve_transcripts_by_region("4", 50164411, 60164411)
+        for tx in txs:
+            # Step 1 Get data from Transcript object... see test_querying_transcripts_by_genes, above
+
+            # If refseq datasources are not available, this will fail.
+            # Step 2 annotate the transcript, which produces a dummy mutation with the refseq annotations.
+            dummy_mut = annotator.annotate_transcript(tx)
+            refseq_mRNA_id = dummy_mut["gencode_xref_refseq_mRNA_id"]
+            refseq_prot_id = dummy_mut["gencode_xref_refseq_prot_acc"]
+
+            # Description is unavailable right now
+            description = ""
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']
     unittest.main()
