@@ -288,6 +288,8 @@ class AnnotatorTest(unittest.TestCase):
         annotator = Annotator()
         for ds in datasource_list:
             annotator.addDatasource(ds)
+
+        # Step 1 get all of the relevant transcripts
         txs = annotator.retrieve_transcripts_by_genes(["MAPK1", "PIK3CA"])
         self.assertTrue(len(txs) > 3)
 
@@ -311,6 +313,7 @@ class AnnotatorTest(unittest.TestCase):
             code_len = int(cds_end) - int(cds_start) + 1
 
             # If refseq datasources are not available, this will fail.
+            # Step 2 annotate the transcript, which produces a dummy mutation with the refseq annotations.
             dummy_mut = annotator.annotate_transcript(tx)
             refseq_mRNA_id = dummy_mut["gencode_xref_refseq_mRNA_id"]
             refseq_prot_id = dummy_mut["gencode_xref_refseq_prot_acc"]
