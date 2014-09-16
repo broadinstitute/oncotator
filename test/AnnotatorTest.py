@@ -325,6 +325,24 @@ class AnnotatorTest(unittest.TestCase):
             self.assertTrue(refseq_prot_id is not None)
             self.assertTrue(len(transcript_coords) == n_exons)
 
+    def test_simple_genes_by_region_annotation(self):
+        """Test web api backend call /genes/ """
+        # http://www.broadinstitute.org/oncotator/genes/chr4_50164411_60164411/
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+
+        # Here is what the API would call....
+        txs = annotator.retrieve_transcripts_by_region("4", 50164411, 60164411)
+        mut_dict = annotator.annotate_genes_given_txs(txs)
+
+        # Each mut will be for a separate gene
+        for gene in mut_dict.keys():
+            mut = mut_dict[gene]
+            alt_accessions = mut['UniProt_alt_uniprot_accessions'].split("|")
+            pass
+            # etc...
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']

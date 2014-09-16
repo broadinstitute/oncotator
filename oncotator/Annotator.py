@@ -50,6 +50,7 @@ from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
 from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
@@ -306,19 +307,19 @@ class Annotator(object):
         """
         for m in muts:
             for ds in self._datasources:
-                if isinstance(ds, GenericTranscriptDatasource):
+                if isinstance(ds, GenericGeneDatasource):
                     m = ds.annotate_mutation(m)
 
     def annotate_genes_given_txs(self, txs):
         genes = set([tx.get_gene() for tx in txs])
-        genes = list(genes).sort()
-        muts = []
+        genes = sorted(list(genes))
+        muts_dict = {}
         for gene in genes:
             m = MutationData()
             m.createAnnotation("gene", gene)
-            muts.append(m)
-        self._annotate_genes(muts)
-        return muts
+            muts_dict[gene] = m
+        self._annotate_genes(muts_dict.values())
+        return muts_dict
 
 
     def annotate_mutations(self, mutations):
