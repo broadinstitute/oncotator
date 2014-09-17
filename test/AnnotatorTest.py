@@ -293,10 +293,77 @@ class AnnotatorTest(unittest.TestCase):
         txs = annotator.retrieve_transcripts_by_genes(["MAPK1", "PIK3CA"])
         self.assertTrue(len(txs) > 3)
 
+
+    def test_simple_genes_by_region_annotation(self):
+        """Test web api backend call /genes/ """
+        # http://www.broadinstitute.org/oncotator/genes/chr22_22112223_22312558/
+        # Two genes: chr22:22,112,223-22,312,558
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+
+        # Here is what the API would call....
+        txs = annotator.retrieve_transcripts_by_region("22", 22112223, 22312558)
+        mut_dict = annotator.annotate_genes_given_txs(txs)
+
+        # Each mut will be for a separate gene
+        for gene in mut_dict.keys():
+            mut = mut_dict[gene]
+            alt_accessions = mut['UniProt_alt_uniprot_accessions'].split("|")
+            tcgascape_amp_peaks = mut['TCGAScape_Amplification_Peaks'].split("|")
+            tcgascape_del_peaks = mut['TCGAScape_Deletion_Peaks'].split("|")
+            tumorscape_amp_peaks = mut['TUMORScape_Amplification_Peaks'].split("|")
+            tumorscape_del_peaks = mut['TUMORScape_Deletion_Peaks'].split("|")
+            full_name = mut['HGNC_Approved Name']
+            cosmic = {"tissue_types_affected": mut['COSMIC_Tissue_tissue_types_affected'], "total_alterations_in_gene": mut["COSMIC_Tissue_tissue_types_affected"]}
+            uniprot_accession = mut["UniProt_uniprot_accession"]
+
+            pass
+        # Now convert
+
+    def test_simple_genes_by_gene_annotation(self):
+        """Test web api backend call /gene/ """
+        # http://www.broadinstitute.org/oncotator/gene/MAPK1/
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+
+        txs = annotator.retrieve_transcripts_by_genes(["MAPK1"])
+        mut_dict = annotator.annotate_genes_given_txs(txs)
+        self.assertTrue(len(mut_dict.keys()) == 1)
+
+        # Annotate away
+
+    def test_simple_transcript_annotation(self):
+        """Test web api backend call /transcript/ """
+        # http://www.broadinstitute.org/oncotator/transcript/ENST00000215832.6/
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+
+        tx = annotator.retrieve_transcript_by_id("ENST00000215832.6")
+        self.assertTrue(tx is not None)
+        self.assertTrue(tx.get_gene() == "MAPK1")
+
+        # Annotate away
+
+    def test_querying_transcripts_by_region(self):
+        """Test web api backend call /transcripts/.... """
+        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
+        annotator = Annotator()
+        for ds in datasource_list:
+            annotator.addDatasource(ds)
+        txs = annotator.retrieve_transcripts_by_region("4", 50164411, 60164411)
+
         ## Here is an example of getting enough data to populate the json in doc/transcript_json_commented.json.txt
         # None of these values are validated.
         for tx in txs:
             transcript_id = tx.get_transcript_id()
+            tx_start = tx.determine_transcript_start()
+            tx_end = tx.determine_transcript_stop()
             gene = tx.get_gene()
             chr = tx.get_contig()
             n_exons = len(tx.get_exons())
@@ -324,71 +391,6 @@ class AnnotatorTest(unittest.TestCase):
             self.assertTrue(refseq_mRNA_id is not None)
             self.assertTrue(refseq_prot_id is not None)
             self.assertTrue(len(transcript_coords) == n_exons)
-
-    def test_simple_genes_by_region_annotation(self):
-        """Test web api backend call /genes/ """
-        # http://www.broadinstitute.org/oncotator/genes/chr4_50164411_60164411/
-        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
-        annotator = Annotator()
-        for ds in datasource_list:
-            annotator.addDatasource(ds)
-
-        # Here is what the API would call....
-        txs = annotator.retrieve_transcripts_by_region("4", 50164411, 60164411)
-        mut_dict = annotator.annotate_genes_given_txs(txs)
-
-        # Each mut will be for a separate gene
-        for gene in mut_dict.keys():
-            mut = mut_dict[gene]
-            alt_accessions = mut['UniProt_alt_uniprot_accessions'].split("|")
-            pass
-            # etc...
-
-    def test_simple_genes_by_gene_annotation(self):
-        """Test web api backend call /gene/ """
-        # http://www.broadinstitute.org/oncotator/gene/MAPK1/
-        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
-        annotator = Annotator()
-        for ds in datasource_list:
-            annotator.addDatasource(ds)
-
-        txs = annotator.retrieve_transcripts_by_genes(["MAPK1"])
-        mut_dict = annotator.annotate_genes_given_txs(txs)
-        self.assertTrue(len(mut_dict.keys()) == 1)
-
-        # Annotate away
-
-    def test_simple_transcript_annotation(self):
-        """Test web api backend call /transcript/ """
-        # http://www.broadinstitute.org/oncotator/transcript/ENST00000215832.6/
-        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
-        annotator = Annotator()
-        for ds in datasource_list:
-            annotator.addDatasource(ds)
-
-        tx = annotator.retrieve_transcript_by_id("ENST00000215832.6")
-        self.assertTrue(tx is not None)
-        self.assertTrue(tx.get_gene() == "MAPK1")
-        # Annotate away
-
-    def test_querying_transcripts_by_region(self):
-        """Test web api backend call /transcripts/.... """
-        datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
-        annotator = Annotator()
-        for ds in datasource_list:
-            annotator.addDatasource(ds)
-        txs = annotator.retrieve_transcripts_by_region("4", 50164411, 60164411)
-        for tx in txs:
-            # Step 1 Get data from Transcript object... see test_querying_transcripts_by_genes, above
-
-            # If refseq datasources are not available, this will fail.
-            # Step 2 annotate the transcript, which produces a dummy mutation with the refseq annotations.
-            dummy_mut = annotator.annotate_transcript(tx)
-            refseq_mRNA_id = dummy_mut["gencode_xref_refseq_mRNA_id"]
-            refseq_prot_id = dummy_mut["gencode_xref_refseq_prot_acc"]
-
-            # Description is unavailable right now
-            description = ""
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']
