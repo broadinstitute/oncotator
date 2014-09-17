@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import itertools
 from TestUtils import TestUtils
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
@@ -317,6 +318,8 @@ class AnnotatorTest(unittest.TestCase):
             tumorscape_del_peaks = mut['TUMORScape_Deletion_Peaks'].split("|")
             full_name = mut['HGNC_Approved Name']
             cosmic = {"tissue_types_affected": mut['COSMIC_Tissue_tissue_types_affected'], "total_alterations_in_gene": mut["COSMIC_Tissue_tissue_types_affected"]}
+            alt_aliases = list(itertools.chain([mut["HGNC_Previous Symbols"].split(", "), mut["HGNC_Synonyms"].split(", ")]))
+            location = mut["HGNC_Chromosome"]
             uniprot_accession = mut["UniProt_uniprot_accession"]
 
             pass
