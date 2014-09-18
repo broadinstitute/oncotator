@@ -321,7 +321,21 @@ class AnnotatorTest(unittest.TestCase):
             alt_aliases = list(itertools.chain([mut["HGNC_Previous Symbols"].split(", "), mut["HGNC_Synonyms"].split(", ")]))
             location = mut["HGNC_Chromosome"]
             uniprot_accession = mut["UniProt_uniprot_accession"]
-
+            transcripts = mut['transcripts']
+            self.assertTrue(transcripts is not None)
+            self.assertTrue(len(transcripts) > 0)
+            self.assertTrue(transcripts.startswith('ENST'))
+            strand = mut['strand']
+            klass = mut['class']
+            uniprot_experimentals = mut['UniProt_AA_experimental_info'].split("|")
+            self.assertTrue(len(uniprot_experimentals) > 0)
+            uniprot_natural_variations = mut['UniProt_AA_natural_variation'].split("|")
+            uniprot_regions = mut['UniProt_AA_region'].split("|")
+            uniprot_sites = mut['UniProt_AA_site'].split("|")
+            uniprot_go_biological_processes = mut["UniProt_GO_Biological_Process"].split("|")
+            uniprot_go_cellular_components = mut["UniProt_GO_Cellular_Component"].split("|")
+            self.assertTrue(len(uniprot_go_cellular_components) > 1)
+            uniprot_go_molecular_functions = mut["UniProt_GO_Molecular_Function"].split("|")
             pass
         # Now convert
 

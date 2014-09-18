@@ -64,13 +64,13 @@ class GenericGeneProteinPositionDatasource(GenericGenomicPositionDatasource):
             separated by '_'
 
     TODO: allow required annotations from the config file.
-    TODO: Range is still unsupported.  53_54
     """
     def __init__(self, src_file, title='', version=None, use_binary=True, proteinPositionAnnotation="protein_change", gpColumnNames="gene,start_AA,end_AA"):
         # In this case, we want to initialize with the Datasource class
         super(GenericGenomicPositionDatasource, self).__init__(src_file, title=title, version=version)
         self.proteinPositionAnnotation = proteinPositionAnnotation
-        self.proteinRegexp = re.compile("[A-Z\*a-z]*([0-9]+)")
+        self.protein_regexp = re.compile("[A-Z\*a-z]*([0-9]+)")
+        self.protein_regex_range = re.compile("[A-Z\*a-z]*([0-9]+)_([0-9]+)")
         index_mode = 'gene_protein_pos'
         self.db_obj, self.output_headers = get_db_data(src_file, title, use_binary, index_mode, gpColumnNames)
 
@@ -85,7 +85,7 @@ class GenericGeneProteinPositionDatasource(GenericGenomicPositionDatasource):
             if len(otList) > 2:
                 logging.getLogger(__name__).warn("More than one protein change detected in an other_transcript annotation.")
             proteinChange = otList[1]
-            proteinPosition = self.proteinRegexp.match(proteinChange)
+            proteinPosition = self.protein_regexp.match(proteinChange)
             if proteinPosition is not None:
                 transcriptProteinPos.append(proteinPosition.group(1))
 
@@ -95,16 +95,28 @@ class GenericGeneProteinPositionDatasource(GenericGenomicPositionDatasource):
         requiredAnnotations = ['gene', self.proteinPositionAnnotation]
         if all(field in mutation for field in requiredAnnotations):
             gene = mutation['gene']
+
+            # p is a tuple (start, end)
             p = None
+
             transcriptProteinPos = []
             proteinChange = mutation[self.proteinPositionAnnotation].replace("p.", "")
-            proteinPosition = self.proteinRegexp.match(proteinChange)
+
+            proteinPosition = self.protein_regex_range.match(proteinChange)
             if proteinPosition is not None:
-                p = proteinPosition.group(1)
+
+                # Get start and end AA
+                p = (int(proteinPosition.group(1)), int(proteinPosition.group(2)))
+            else:
+
+                # Get start and end AA as equal values, since this protein change can only have affected one AA, if any.
+                proteinPosition = self.protein_regexp.match(proteinChange)
+                if proteinPosition is not None:
+                    p = (int(proteinPosition.group(1)), int(proteinPosition.group(1)))
 
             if p is not None:
-                records = get_binned_data(self.db_obj, gene, int(p), int(p))
-                records = get_overlapping_records(records, int(p), int(p))
+                records = get_binned_data(self.db_obj, gene, p[0], p[1])
+                records = get_overlapping_records(records, p[0], p[1])
 
                 for c in self.output_headers:
                     summarized_results = get_summary_output_string([r[c].strip() for r in records])

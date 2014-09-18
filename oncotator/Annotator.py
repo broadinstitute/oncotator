@@ -51,9 +51,12 @@ from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
+from oncotator.datasources.GenericGeneProteinPositionDatasource import GenericGeneProteinPositionDatasource
 from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
+from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import \
+    TranscriptToUniProtProteinPositionTransformingDatasource
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.RunSpecification import RunSpecification
 
@@ -307,17 +310,32 @@ class Annotator(object):
         """
         for m in muts:
             for ds in self._datasources:
-                if isinstance(ds, GenericGeneDatasource):
+                if isinstance(ds, GenericGeneDatasource) or \
+                        isinstance(ds, GenericGeneProteinPositionDatasource):
                     m = ds.annotate_mutation(m)
 
     def annotate_genes_given_txs(self, txs):
-        genes = set([tx.get_gene() for tx in txs])
+        gene_to_tx_dict = {}
+        for tx in txs:
+            try:
+                gene_to_tx_dict[tx.get_gene()].append(tx)
+            except KeyError:
+                gene_to_tx_dict[tx.get_gene()] = [tx]
+
+        genes = set(gene_to_tx_dict.keys())
         genes = sorted(list(genes))
         muts_dict = {}
         for gene in genes:
             m = MutationData()
             m.createAnnotation("gene", gene)
+            m.createAnnotation("transcripts", ",".join(sorted([tx.get_transcript_id() for tx in gene_to_tx_dict[gene]])))
+            m.createAnnotation("strand", gene_to_tx_dict[gene][0].get_strand())
+            m.createAnnotation("class", gene_to_tx_dict[gene][0].get_gene_type())
+            endAA = str(max([len(tx.get_protein_seq()) for tx in gene_to_tx_dict[gene]]))
+            m.createAnnotation("protein_change", "p.DUMMY1_" + endAA)
+            m.createAnnotation("chr", gene_to_tx_dict[gene][0].get_contig())
             muts_dict[gene] = m
+
         self._annotate_genes(muts_dict.values())
         return muts_dict
 
