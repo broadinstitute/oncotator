@@ -328,7 +328,7 @@ class AnnotatorTest(unittest.TestCase):
             strand = mut['strand']
             klass = mut['class']
             uniprot_experimentals = mut['UniProt_AA_experimental_info'].split("|")
-            self.assertTrue(len(uniprot_experimentals) > 0)
+            self.assertTrue(uniprot_experimentals is not None)
             uniprot_natural_variations = mut['UniProt_AA_natural_variation'].split("|")
             uniprot_regions = mut['UniProt_AA_region'].split("|")
             uniprot_sites = mut['UniProt_AA_site'].split("|")
