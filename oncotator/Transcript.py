@@ -48,9 +48,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import logging
-from Bio import Seq
-from oncotator.MutationData import MutationData
-from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 
 
 class Transcript(object):
@@ -61,7 +58,6 @@ class Transcript(object):
 
     """
     def __init__(self, transcript_id, gene, contig, gene_id="", seq="", strand="+", start_codon=None, stop_codon=None, gene_type=""):
-        super(Transcript, self).__init__()
         self._transcript_id = transcript_id
         self._exons = []
         self._cds = []
