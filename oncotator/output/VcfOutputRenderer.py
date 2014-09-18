@@ -198,8 +198,6 @@ class VcfOutputRenderer(OutputRenderer):
                             vcfWriter.flush()
 
                     chrom = m["chr"]
-                    if chrom.startswith("GL"):
-                        chrom = "<" + chrom + ">"
                     pos = m["start"]
                     refAllele = m["ref_allele"]
 

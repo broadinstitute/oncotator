@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import logging
 
 from oncotator.datasources.GenericGeneDataSourceException import GenericGeneDataSourceException
 from oncotator.utils.db import get_db_data
@@ -72,7 +73,8 @@ class GenericGeneDatasource(Datasource):
     def annotate_mutation(self, mutation, index_field='gene'):
 
         if index_field not in mutation:
-            raise GenericGeneDataSourceException("Index field (" + index_field + ") not found.  Remember that datasources must be ordered.  Please put a datasource that provides the 'gene' annotation in front of this datasource.")
+            logging.warn("Index field (" + index_field + ") not found.  Remember that datasources must be ordered.  Please put a datasource that provides the '" + index_field + "' annotation in front of this datasource, such as any TranscriptProvider.")
+            return mutation
 
         #if any([c in mutation for c in self.output_headers]):
         for c in self.output_headers:
