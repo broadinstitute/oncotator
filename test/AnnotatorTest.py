@@ -334,7 +334,7 @@ class AnnotatorTest(unittest.TestCase):
             uniprot_sites = mut['UniProt_AA_site'].split("|")
             uniprot_go_biological_processes = mut["UniProt_GO_Biological_Process"].split("|")
             uniprot_go_cellular_components = mut["UniProt_GO_Cellular_Component"].split("|")
-            self.assertTrue(len(uniprot_go_cellular_components) > 1)
+            self.assertTrue(uniprot_go_cellular_components is not None)
             uniprot_go_molecular_functions = mut["UniProt_GO_Molecular_Function"].split("|")
             pass
         # Now convert
