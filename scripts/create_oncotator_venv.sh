@@ -111,7 +111,7 @@ fi
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb
+for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb ngslib
 do
 	echo " "
 	echo "$PACKAGE =========================="
