@@ -70,6 +70,7 @@ from oncotator.datasources.GenericGenomicMutationDatasource import GenericGenomi
 from oncotator.datasources.TabixIndexedTsvDatasource import IndexedTsvDatasource
 from oncotator.datasources.TabixIndexedVcfDatasource import IndexedVcfDatasource
 from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
+from oncotator.datasources.BigWig import BigWigDatasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
@@ -217,6 +218,9 @@ class DatasourceFactory(object):
                                            version=configParser.get("general", "version"),
                                            annotation_columns=annotationColumnNames,
                                            index_cols=indexColumnNames)
+        
+        elif dsType == 'bigwig':
+            result = BigWigDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         else:
             raise Exception('Unknown datasource type: %s' % dsType)
 
@@ -331,6 +335,7 @@ class DatasourceFactory(object):
             2) Put position transforming datasources at the front (though see next step)
             3) Make sure that any Transcript datasources are put up front, but still behind ref_hg."""
         newlist = sorted(datasources, key=lambda k: isinstance(k, GenericGeneDatasource))
+        newlist = sorted(newlist, key=lambda k: isinstance(k, BigWigDatasource))
         newlist = sorted(newlist, key=lambda k: isinstance(k, ChangeTransformingDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, PositionTransformingDatasource))
         newlist = sorted(newlist, key=lambda k: not isinstance(k, TranscriptProvider))

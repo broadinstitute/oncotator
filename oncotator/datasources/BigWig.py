@@ -21,7 +21,9 @@ class BigWigDatasource(Datasource):
         else:
             chrn = mutation.chr
 
-        scores = [r.score for r in self.bigwig_fh.fetch(chrom=chrn, start=mutation.start - 1, stop=mutation.end)] #start - 1 because bigwig format is zero-based coords
+        variant_start, variant_end = int(mutation.start) - 1, int(mutation.end) #start - 1 because bigwig format is zero-based coords
+
+        scores = [r.score for r in self.bigwig_fh.fetch(chrom=chrn, start=variant_start, stop=variant_end)]
 
         if not scores:
             final_score = None
