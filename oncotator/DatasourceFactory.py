@@ -222,7 +222,7 @@ class DatasourceFactory(object):
         elif dsType == 'bigwig':
             result = BigWigDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         else:
-            raise Exception('Unknown datasource type: %s' % dsType)
+            raise RuntimeError('Unknown datasource type: %s' % dsType)
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)
