@@ -217,6 +217,8 @@ class DatasourceFactory(object):
                                            version=configParser.get("general", "version"),
                                            annotation_columns=annotationColumnNames,
                                            index_cols=indexColumnNames)
+        else:
+            raise Exception('Unknown datasource type: %s' % dsType)
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)
