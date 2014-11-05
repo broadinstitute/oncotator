@@ -65,3 +65,5 @@ class DatasourceBuilderFactory():
             return TabixIndexedTsvDatasourceCreator()
         elif dsType in ("snp_leveldb",):
             return SnpOnlyLevelDbDatasourceCreator()
+        elif dsType == 'bigwig':
+            return BigWigDatasourceCreator()
