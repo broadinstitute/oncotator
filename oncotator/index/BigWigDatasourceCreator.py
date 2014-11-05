@@ -10,7 +10,7 @@ class BigWigDatasourceCreator(DatasourceCreator):
         baseDSFile = self._createDatabase(destDir, ds_file)
 
         # Create config file
-        self._createConfigFile(configFilename, baseDSFile, ds_type, ds_name, ds_version, indexCols)
+        self._createConfigFile(configFilename, baseDSFile, ds_type, ds_name, ds_version)
 
     def _createDatabase(self, destDir, ds_file):
         baseDSFile = os.path.basename(ds_file)

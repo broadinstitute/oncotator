@@ -51,7 +51,7 @@ from GenericTsvDatasourceCreator import GenericTsvDatasourceCreator
 from TabixIndexedTsvDatasourceCreator import TabixIndexedTsvDatasourceCreator
 from TabixIndexedVcfDatasourceCreator import TabixIndexedVcfDatasourceCreator
 from oncotator.index.SnpOnlyLevelDbDatasourceCreator import SnpOnlyLevelDbDatasourceCreator
-
+from oncotator.index.BigWigDatasourceCreator import BigWigDatasourceCreator
 
 class DatasourceBuilderFactory():
 
