@@ -70,7 +70,7 @@ from oncotator.datasources.GenericGenomicMutationDatasource import GenericGenomi
 from oncotator.datasources.TabixIndexedTsvDatasource import IndexedTsvDatasource
 from oncotator.datasources.TabixIndexedVcfDatasource import IndexedVcfDatasource
 from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
-from oncotator.datasources.BigWig import BigWigDatasource
+from oncotator.datasources.BigWigDatasource import BigWigDatasource
 from utils.MultiprocessingUtils import LoggingPool
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone

@@ -2,7 +2,7 @@ import unittest
 import logging
 
 from oncotator.MutationData import MutationData
-from oncotator.datasources.BigWig import BigWigDatasource
+from oncotator.datasources.BigWigDatasource import BigWigDatasource
 from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
