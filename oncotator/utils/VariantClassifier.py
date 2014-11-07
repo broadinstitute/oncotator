@@ -254,7 +254,6 @@ class VariantClassifier(object):
 
         return False, -1, None, False
 
-
     def _get_stranded_alleles(self, ref_allele, alt_allele, tx):
         reference_allele_stranded, observed_allele_stranded = ref_allele, alt_allele
         if tx.get_strand() == '-':

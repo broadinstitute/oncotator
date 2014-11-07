@@ -235,7 +235,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
         segs = ic.createMutations()
 
-        gencode_ds = TestUtils._create_test_gencode_ds("out/seg_file_gencode_ds")
+        gencode_ds = TestUtils._create_test_gencode_v19_ds("out/seg_file_gencode_ds")
         annotator = Annotator()
 
         segs_annotated = []

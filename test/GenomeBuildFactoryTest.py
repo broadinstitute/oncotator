@@ -191,8 +191,8 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
     def test_gencode_small(self):
         """Test that we can create Transcript instances from a small gencode gtf and fasta."""
-        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
+        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v19.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v19.pc_transcripts.fa"
         base_output_filename = "out/test_small_gencode"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
@@ -217,8 +217,8 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
     def test_gencode_cp(self):
         """Test the indexing of a gene that was causing problems and make sure that it can be indexed."""
-        gencode_input_gtf = "testdata/gencode/CP.gencode.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/CP.gencode.pc_transcripts.fa"
+        gencode_input_gtf = "testdata/gencode/CP.gencode.v19.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/CP.gencode.v19.pc_transcripts.fa"
         base_output_filename = "out/test_cp_gencode"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
@@ -240,8 +240,8 @@ class GenomeBuildFactoryTest(unittest.TestCase):
 
     def test_multiple_gtf_initialization(self):
         """Test that we can create a datasource from multiple gtf & fastas"""
-        gencode_input_gtfs = ["testdata/gencode/CP.gencode.annotation.gtf", "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"]
-        gencode_input_fastas = ["testdata/gencode/CP.gencode.pc_transcripts.fa", "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"]
+        gencode_input_gtfs = ["testdata/gencode/CP.gencode.v19.annotation.gtf", "testdata/gencode/MAPK1.gencode.v19.annotation.gtf"]
+        gencode_input_fastas = ["testdata/gencode/CP.gencode.v19.pc_transcripts.fa", "testdata/gencode/MAPK1.gencode.v19.pc_transcripts.fa"]
         base_output_filename = "out/test_multi_gencode"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)

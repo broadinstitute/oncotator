@@ -112,7 +112,7 @@ class TestUtils(object):
             """
         if os.path.exists(config.get("gencode", "gencodeDir")):
             gencode_dir = config.get("gencode", "gencodeDir")
-            result_ds = EnsemblTranscriptDatasource(gencode_dir + "/gencode.v19.annotation.gtf", title="GENCODE", version="TEST v19", tx_filter="basic")
+            result_ds = EnsemblTranscriptDatasource(gencode_dir + "/gencode.v19.annotation.gtf", title="GENCODE", version="TEST v19", tx_filter="basic", tx_mode=tx_mode)
         else:
             try:
                 gaf_fname = config.get("gaf3.0", "gaf_fname")
@@ -170,23 +170,30 @@ class TestUtils(object):
                             level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(name)s:%(lineno)d]  %(message)s')
 
     @staticmethod
-    def _create_test_gencode_ds(base_output_filename, protein_id_mapping_file="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt"):
-        genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1", "KRTAP4-7", "MAT2A"]
+    def _create_test_gencode_ds(base_output_filename, protein_id_mapping_file, gencode_version):
+        genes = ["MAPK1", "MUC16", "PIK3CA", "YPEL1", "KRTAP4-7", "MAT2A", "DDX11L10"]
         gtf_list = []
         fasta_list = []
         for gene in genes:
-            gtf_list.append("testdata/gencode/" + gene + ".gencode.v18.annotation.gtf")
-            fasta_list.append("testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa")
+            gtf_list.append("testdata/gencode/" + gene + ".gencode.v" + str(gencode_version) +".annotation.gtf")
+            fasta_list.append("testdata/gencode/" + gene + ".gencode.v" + str(gencode_version) + ".pc_transcripts.fa")
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gp_bin.idx", ignore_errors=True)
         genome_build_factory = GenomeBuildFactory()
-        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename, protein_id_mapping_file=protein_id_mapping_file)
-        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v18", tx_filter="basic")
+        genome_build_factory.construct_ensembl_indices(gtf_list, fasta_list, base_output_filename,
+                                                       protein_id_mapping_file=protein_id_mapping_file)
+        ensembl_ds = EnsemblTranscriptDatasource(base_output_filename, title="GENCODE", version="v"+str(gencode_version),
+                                                 tx_filter="basic")
         return ensembl_ds
+
+    @staticmethod
+    def _create_test_gencode_v19_ds(base_output_filename, protein_id_mapping_file="testdata/gencode/ensembl_id_mappingsGRCh37.p13.txt"):
+        return TestUtils._create_test_gencode_ds(base_output_filename, protein_id_mapping_file, 19)
 
     @staticmethod
     def requiresDefaultDB():
         """Convenience method wrapping unittest.skipIf for skipping things that require the default datasource"""
-        return unittest.skipIf(not os.path.exists(TestUtils.createUnitTestConfig().get("DEFAULT", "dbDir")),
-                               "Default Datasource corpus is needed to run this test")
+        db_dir = TestUtils.createUnitTestConfig().get("DEFAULT", "dbDir")
+        return unittest.skipIf(not os.path.exists(db_dir),
+                               "Default Datasource corpus is needed to run this test.  Looked for db_dir=%s but it didn't exist" % db_dir)

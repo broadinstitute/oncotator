@@ -130,7 +130,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         self.assertTrue(ctr == 1, "Number of mutations incorrect (1): " + str(ctr) )
 
     def testMissingAnnotations(self):
-        ''' Tests that if the required annotations ("gene", "protein_change", and "other_transcripts") are missing, an excpetion is thrown.
+        ''' Tests that if the required annotations ("gene", "protein_change", and "other_transcripts") are missing, an exception is thrown.
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="SmallNatVar", version="test")
 
