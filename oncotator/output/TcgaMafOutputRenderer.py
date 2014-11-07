@@ -190,6 +190,10 @@ class TcgaMafOutputRenderer(OutputRenderer):
         :return:
         """
         row = self._createMutationRow(m, fieldMapKeys, fieldMap)
+
+        if row['Entrez_Gene_Id'] == "" and m.get('HGNC_Entrez Gene ID(supplied by NCBI)', "") != "":
+            row['Entrez_Gene_Id'] = m.get('HGNC_Entrez Gene ID(supplied by NCBI)')
+
         if row['Entrez_Gene_Id'] == "":
             row['Entrez_Gene_Id'] = "0"
 

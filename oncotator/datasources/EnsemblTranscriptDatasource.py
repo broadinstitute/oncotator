@@ -131,6 +131,14 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         return str(attribute_dict.get(attribute_name, ""))
 
     def get_transcripts_by_pos(self, chr, start, end):
+        """
+        Returns filtered list of transcripts that overlap the given genomic position.
+
+        :rtype : list
+        :param str chr:
+        :param str|int start:
+        :param str|int end:
+        """
         txs_unfiltered = self.get_overlapping_transcripts(chr, start, end)
         txs = self._filter_transcripts(txs_unfiltered)
         return txs
@@ -409,6 +417,19 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
                 other_transcripts.append(o)
 
         return '|'.join(other_transcripts)
+
+    def retrieve_transcripts_by_gene(self, gene):
+        """
+        Given a gene, return all of the transcripts (filtered) tagged with the gene.
+
+        :param str gene:
+        :rtype : list
+        """
+        txs_unfiltered = self.gene_db.get(gene, None)
+        txs = self._filter_transcripts(txs_unfiltered)
+        if txs is None:
+            return []
+        return txs
 
     def retrieveExons(self, gene, padding=10, isCodingOnly=False):
         """Return a list of (chr, start, end) tuples for each exon"""

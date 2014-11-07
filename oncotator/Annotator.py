@@ -47,9 +47,16 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from oncotator.Annotation import Annotation
+from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.datasources.Datasource import Datasource
+from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
+from oncotator.datasources.GenericGeneProteinPositionDatasource import GenericGeneProteinPositionDatasource
+from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
+from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import \
+    TranscriptToUniProtProteinPositionTransformingDatasource
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.RunSpecification import RunSpecification
 
@@ -226,7 +233,120 @@ class Annotator(object):
         comments.append(self.createHeaderString())
         return comments
 
+    def retrieve_transcript_by_id(self, transcript_id):
+        # Get the Transcript Datasource
+        if self._datasources is None or len(self._datasources) == 0:
+            logging.getLogger(__name__).warn("Attempting to retrieve transcripts, but no datasources are initialized.")
+
+        for ds in self._datasources:
+            if isinstance(ds, TranscriptProvider):
+                return ds.get_transcript(transcript_id)
+        return None
+
+    def retrieve_transcripts_by_genes(self, genes):
+        """
+        Given names of genes, return all transcripts
+
+        Datasources, particularly a TranscriptDatasource should be initialized before calling this method.
+
+        :param list genes:List of str gene names
+        :returns list: List of Transcripts
+        """
+        # Get the Transcript Datasource
+        if self._datasources is None or len(self._datasources) == 0:
+            logging.getLogger(__name__).warn("Attempting to retrieve transcripts by gene, but no datasources are initialized.")
+        txs = []
+        for ds in self._datasources:
+            if isinstance(ds, TranscriptProvider):
+                for gene in genes:
+                    txs.extend(ds.retrieve_transcripts_by_gene(gene))
+        return txs
+
+    def retrieve_transcripts_by_region(self, chrom, start, end):
+        """
+        Finds all TrnascriptProviders and gets the transcripts in the given genomic region (in genomic coords)
+
+        :rtype : list
+        :param chrom:
+        :param start:
+        :param end:
+        """
+        txs = []
+        for ds in self._datasources:
+            if isinstance(ds, TranscriptProvider):
+                txs.extend(ds.get_transcripts_by_pos(chrom, start, end))
+        return txs
+
+    def annotate_transcript(self, tx):
+        """
+        Given a transcript, get all transcript annotations on a mutation.
+
+        HACK: Looks only for GenericTranscriptDatasources
+        HACK: Not actually annotating a transcript.  Creates a dummy mutation and then only looks to annotate with
+            GenericTranscriptDatasources
+
+        :param Transcript tx: transcript to annotate
+        :returns MutationData: mutation with annotations generated from the given transcript
+        """
+        m = MutationData()
+        m['transcript_id'] = tx.get_transcript_id()
+
+        for ds in self._datasources:
+            if isinstance(ds, GenericTranscriptDatasource):
+                m = ds.annotate_mutation(m)
+
+        return m
+
+    def _annotate_genes(self, muts):
+        """
+        Given a set of mutations (with the gene annotation), annotate with values from relevant datasources.
+
+        :param muts: iterable of MutationData
+        :rtype : None
+         HACK: "relevant" is simply GenericGeneDatasources
+
+         mutations are annotated in place.
+
+        """
+        for m in muts:
+            for ds in self._datasources:
+                if isinstance(ds, GenericGeneDatasource) or \
+                        isinstance(ds, GenericGeneProteinPositionDatasource):
+                    m = ds.annotate_mutation(m)
+
+    def annotate_genes_given_txs(self, txs):
+        gene_to_tx_dict = {}
+        for tx in txs:
+            try:
+                gene_to_tx_dict[tx.get_gene()].append(tx)
+            except KeyError:
+                gene_to_tx_dict[tx.get_gene()] = [tx]
+
+        genes = set(gene_to_tx_dict.keys())
+        genes = sorted(list(genes))
+        muts_dict = {}
+        for gene in genes:
+            m = MutationData()
+            m.createAnnotation("gene", gene)
+            m.createAnnotation("transcripts", ",".join(sorted([tx.get_transcript_id() for tx in gene_to_tx_dict[gene]])))
+            m.createAnnotation("strand", gene_to_tx_dict[gene][0].get_strand())
+            m.createAnnotation("class", gene_to_tx_dict[gene][0].get_gene_type())
+            endAA = str(max([len(tx.get_protein_seq()) for tx in gene_to_tx_dict[gene]]))
+            m.createAnnotation("protein_change", "p.DUMMY1_" + endAA)
+            m.createAnnotation("chr", gene_to_tx_dict[gene][0].get_contig())
+            muts_dict[gene] = m
+
+        self._annotate_genes(muts_dict.values())
+        return muts_dict
+
+
     def annotate_mutations(self, mutations):
+        """
+        Given a list of mutations (or any iterable of mutations), return a list of annotated mutations.
+
+        :rtype : list
+        :param mutations: iterator of MutationData
+        """
         mutations = self._annotate_mutations_using_datasources(mutations)
         if mutations is None:
             self.logger.warn("Mutation list points to None after annotation.")
