@@ -137,7 +137,7 @@ class VariantClassifierTest(unittest.TestCase):
     )
 
     @data_provider_decorator(frameshift_indels)
-    def test_is_framshift_indel(self, vt, s, e, alt, gt):
+    def test_is_frameshift_indel(self, vt, s, e, alt, gt):
         vcer = VariantClassifier()
         self.assertTrue(vcer.is_frameshift_indel(vt, s, e, alt) == gt)
 

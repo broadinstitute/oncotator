@@ -114,9 +114,12 @@ class TestUtils(object):
             gencode_dir = config.get("gencode", "gencodeDir")
             result_ds = EnsemblTranscriptDatasource(gencode_dir + "/gencode.v19.annotation.gtf", title="GENCODE", version="TEST v19", tx_filter="basic")
         else:
-            gaf_fname = config.get("gaf3.0", "gaf_fname")
-            gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
-            result_ds = Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol=protocol)
+            try:
+                gaf_fname = config.get("gaf3.0", "gaf_fname")
+                gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
+                result_ds = Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol=protocol)
+            except Exception as gaf_failure_reason:
+                raise Exception("Couldn't create a transcript provider datasource, no gencode dir found and %s" % gaf_failure_reason)
         return result_ds
 
     @staticmethod

@@ -284,6 +284,7 @@ class AnnotatorTest(unittest.TestCase):
         ctr = self._simple_annotate(False)
         self.assertTrue(ctr == 2)
 
+    @TestUtils.requiresDefaultDB()
     def test_querying_transcripts_by_genes(self):
         """Test that we can get all of the transcripts for a given set of genes. """
 
@@ -297,6 +298,7 @@ class AnnotatorTest(unittest.TestCase):
         self.assertTrue(len(txs) > 3)
 
 
+    @TestUtils.requiresDefaultDB()
     def test_simple_genes_by_region_annotation(self):
         """Test web api backend call /genes/ """
         # http://www.broadinstitute.org/oncotator/genes/chr22_22112223_22312558/
@@ -308,6 +310,8 @@ class AnnotatorTest(unittest.TestCase):
 
         # Here is what the API would call....
         txs = annotator.retrieve_transcripts_by_region("22", 22112223, 22312558)
+        self.assertTranscriptsFound(txs)
+
         mut_dict = annotator.annotate_genes_given_txs(txs)
 
         # Each mut will be for a separate gene
@@ -341,6 +345,11 @@ class AnnotatorTest(unittest.TestCase):
             pass
         # Now convert
 
+    def assertTranscriptsFound(self, txs):
+        self.assertTrue(len(txs) > 0,
+                        "No transcripts retrieved when some should have shown up.  Do you have a transcript datasource in your testing db dir?")
+
+    @TestUtils.requiresDefaultDB()
     def test_simple_genes_by_gene_annotation(self):
         """Test web api backend call /gene/ """
         # http://www.broadinstitute.org/oncotator/gene/MAPK1/
@@ -350,11 +359,14 @@ class AnnotatorTest(unittest.TestCase):
             annotator.addDatasource(ds)
 
         txs = annotator.retrieve_transcripts_by_genes(["MAPK1"])
+        self.assertTranscriptsFound(txs)
+
         mut_dict = annotator.annotate_genes_given_txs(txs)
         self.assertTrue(len(mut_dict.keys()) == 1)
 
         # Annotate away
 
+    @TestUtils.requiresDefaultDB()
     def test_simple_transcript_annotation(self):
         """Test web api backend call /transcript/ """
         # http://www.broadinstitute.org/oncotator/transcript/ENST00000215832.6/
@@ -364,11 +376,14 @@ class AnnotatorTest(unittest.TestCase):
             annotator.addDatasource(ds)
 
         tx = annotator.retrieve_transcript_by_id("ENST00000215832.6")
+        self.assertTranscriptsFound(tx)
+
         self.assertTrue(tx is not None)
         self.assertTrue(tx.get_gene() == "MAPK1")
 
         # Annotate away
 
+    @TestUtils.requiresDefaultDB()
     def test_querying_transcripts_by_region(self):
         """Test web api backend call /transcripts/.... """
         datasource_list = DatasourceFactory.createDatasources(self._determine_db_dir(), "hg19", isMulticore=False)
@@ -376,6 +391,7 @@ class AnnotatorTest(unittest.TestCase):
         for ds in datasource_list:
             annotator.addDatasource(ds)
         txs = annotator.retrieve_transcripts_by_region("4", 50164411, 60164411)
+        self.assertTranscriptsFound(txs)
 
         ## Here is an example of getting enough data to populate the json in doc/transcript_json_commented.json.txt
         # None of these values are validated.
