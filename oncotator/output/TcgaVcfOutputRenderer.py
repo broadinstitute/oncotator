@@ -398,7 +398,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         chromList = map(str, range(0,23))
         chromList.extend(['X', 'Y', 'MT'])
         result = chr
-        if chr not in chromList:
+        if chr not in chromList and not chr.startswith("GL"):
             result = '<' + chr + '>'
         return result
 

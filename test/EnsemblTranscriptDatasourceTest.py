@@ -415,5 +415,23 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         result_tuple = transcript_ds._determine_exons_affected_by_end(seg2.end, chosen_tx)
         self.assertTrue(result_tuple == (8, '-'))
 
+    def test_retrieve_transcript_by_gene(self):
+        """Simple test of retrieve_transcript_by_gene """
+        gene = "MAPK1"
+
+        ds = TestUtils._create_test_gencode_ds("out/test_retrieve_transcript_by_gene_")
+        txs = ds.retrieve_transcripts_by_gene(gene)
+
+        self.assertTrue(len(txs) > 2)
+
+        tx_ids = [tx.get_transcript_id() for tx in txs]
+
+        self.assertTrue("ENST00000398822.3" in tx_ids, "ENST00000398822.3 not in gene %s -- is the version number correct?" % gene)
+        self.assertTrue("ENST00000215832.6" in tx_ids, "ENST00000215832.6 not in gene %s -- is the version number correct?" % gene)
+
+        for tx in txs:
+            self.assertTrue(tx.get_gene() == gene)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -80,10 +80,10 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(hdr.find("broad.mit.edu") <> -1, "Could not find string that should have been in header.")
 
     def testChromRendering(self):
-        """Make sure that the chromosome rendering in TCGA VCF is correct: "1" --> "1"  ,  "GLXXXX.Y" --> <GLXXXX.Y>"""
+        """Make sure that the chromosome rendering in TCGA VCF is correct: "1" --> "1", "GLXXXX.Y" --> GLXXXX.Y, not <GLXXXX.Y>"""
         vcfOR = TcgaVcfOutputRenderer("out/TCGAVCF.empty.out.txt")
         testChrs = ["21", "MT", "GL1234.4", "1"]
-        gt = ["21", "MT", "<GL1234.4>", "1"]
+        gt = ["21", "MT", "GL1234.4", "1"]
         ctr = 0
         for t in testChrs:
             val = vcfOR._renderChrom(t)

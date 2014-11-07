@@ -81,13 +81,25 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         m = MutationData()
         m.createAnnotation("gene", "TP53")
         m.createAnnotation("protein_change", "p.S376C")
-        m.createAnnotation("other_transcripts", "TP53_uc002gig.1_Intron|TP53_uc002gih.2_Intron|TP53_uc010cne.1_RNA|TP53_uc010cnf.1_3'UTR|TP53_uc010cng.1_3'UTR|TP53_uc002gii.1_Missense_Mutation_p.S244C|TP53_uc010cnh.1_3'UTR|TP53_uc010cni.1_3'UTR|TP53_uc002gij.2_Missense_Mutation_p.S376C")
 
         m2 = datasource.annotate_mutation(m)
         annotationName= "UniProt_NatVar_natural_variations"
         self.assertTrue(sorted(m[annotationName].split("|")) == sorted("S -> T (in a sporadic cancer; somatic mutation).|S -> A (in a sporadic cancer; somatic mutation).".split("|")), "Incorrect annotation value seen: " + m[annotationName])
 
     @TestUtils.requiresDefaultDB()
+    def testRangeAnnotation(self):
+        ''' Test a simple case with range.
+        '''
+        datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
+
+        m = MutationData()
+        m.createAnnotation("gene", "TP53")
+        m.createAnnotation("protein_change", "p.SLEELEE370_376del") # This is not valid, but does the test.
+
+        m2 = datasource.annotate_mutation(m)
+        annotationName= "UniProt_NatVar_natural_variations"
+        self.assertTrue(sorted(m[annotationName].split("|")) == sorted("K -> Q (in a sporadic cancer; somatic mutation).|S -> T (in a sporadic cancer; somatic mutation).|S -> A (in a sporadic cancer; somatic mutation).".split("|")), "Incorrect annotation value seen: " + m[annotationName])
+
     def testCreationAndAnnotation(self):
         """ Test the datasource creation and then do a simple annotation
         """
