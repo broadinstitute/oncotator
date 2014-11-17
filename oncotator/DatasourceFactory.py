@@ -72,6 +72,7 @@ from oncotator.datasources.TabixIndexedVcfDatasource import IndexedVcfDatasource
 from oncotator.datasources.ChangeTransformingDatasource import ChangeTransformingDatasource
 from oncotator.datasources.BigWigDatasource import BigWigDatasource
 from utils.MultiprocessingUtils import LoggingPool
+from oncotator.Oncotator import NGSLIB_INSTALLED
 
 #TODO:  futures (python lib -- 2.7 backport exists on pypi) is more flexible and less error prone
 
@@ -220,6 +221,8 @@ class DatasourceFactory(object):
                                            index_cols=indexColumnNames)
         
         elif dsType == 'bigwig':
+            if not NGSLIB_INSTALLED:
+                raise RuntimeError("Bigwig datasource found in db-dir but ngslib library not installed.")
             result = BigWigDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         else:
             raise RuntimeError('Unknown datasource type: %s' % dsType)

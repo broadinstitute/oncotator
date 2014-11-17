@@ -83,6 +83,13 @@ from oncotator.utils.version import VERSION
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
 from oncotator.utils.OptionConstants import OptionConstants
 
+try:
+    import ngslib
+    NGSLIB_INSTALLED = True
+except ImportError:
+    NGSLIB_INSTALLED = False
+
+
 __version__ = VERSION
 __all__ = []
 
@@ -235,6 +242,9 @@ def main(argv=None):  # IGNORE:C0111
         
         if DEBUG:
             logger.setLevel(logging.DEBUG)
+
+        if not NGSLIB_INSTALLED:
+            logger.warn("ngslib module not installed.  Will be unable to annotate with BigWig datasources.")
         
         # Initiate an Oncotator session.
         inputFilename = os.path.expanduser(args.input_file)
