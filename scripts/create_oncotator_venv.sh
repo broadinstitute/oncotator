@@ -93,15 +93,6 @@ else
 		fi
 		echo "OK"
 	done
-
-	echo " "
-	echo "pysam ========================="
-	if [ "$FLAGS" == "archflags" ]; then
-		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
-	else
-		pip install --no-use-wheel --allow-unverified pysam pysam==0.7.5
-	fi
-	echo "OK"
 fi
 
 #################################################
