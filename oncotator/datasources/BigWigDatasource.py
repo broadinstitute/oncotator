@@ -1,10 +1,6 @@
 import numpy as np
 
-import oncotator
 from oncotator.datasources.Datasource import Datasource
-
-if oncotator.NGSLIB_INSTALLED:
-    from ngslib import BigWigFile
 
 class BigWigDatasource(Datasource):
     """
@@ -12,6 +8,8 @@ class BigWigDatasource(Datasource):
     the median of values from the BigWig are returned.
     """
     def __init__(self, src_file, title='', version=None):
+        from ngslib import BigWigFile
+
         super(BigWigDatasource, self).__init__(src_file, title=title, version=version)
 
         self.output_headers = [title + '_score']

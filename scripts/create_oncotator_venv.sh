@@ -7,7 +7,7 @@ set -e
 # Parsing arguments
 #################################################
 
-while getopts ":e:ckst" option; do
+while getopts ":e:ckstm" option; do
 	case "$option" in
 		e) ENV="$OPTARG" ;;
 		c) FLAGS="archflags" ;;
