@@ -14,6 +14,7 @@ while getopts ":e:ckst" option; do
 		k) COMPIL="skip" ;;
 		s) PYVCF="skip" ;;
 		t) TRAVIS=true ;;
+		m) MAC=true ;;
 	esac
 done
 
@@ -27,7 +28,8 @@ Optional arguments:  \n \
    \t (see documentation for details)  \n \
 -k \t skip packages that require compilation  \n \
 -s \t skip packages that are not available through PyPI \n \
--t \t run in travis installation mode \n" $0
+-t \t run in travis installation mode \n \
+-m \t create venv on Mac (i.e. skip ngslib installation) \n" $0
 
 	exit 1
 fi
@@ -82,7 +84,7 @@ then
 else
 	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-	for C_PACKAGE in biopython cython numpy pandas sqlalchemy ngslib
+	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
 	do
 		echo " "
 		echo "$C_PACKAGE =========================="
@@ -93,6 +95,17 @@ else
 		fi
 		echo "OK"
 	done
+
+	if [ ! $MAC ]; then
+		echo " "
+		echo "ngslib =========================="
+		if [ "$FLAGS" == "archflags" ]; then
+			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install ngslib
+		else
+			pip install --no-use-wheel ngslib
+		fi
+		echo "OK"
+	fi		
 fi
 
 #################################################
