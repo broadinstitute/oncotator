@@ -82,7 +82,7 @@ then
 else
 	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
+	for C_PACKAGE in biopython cython numpy pandas sqlalchemy ngslib
 	do
 		echo " "
 		echo "$C_PACKAGE =========================="
@@ -111,7 +111,7 @@ fi
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb ngslib
+for PACKAGE in bcbio-gff nose shove python-memcached natsort leveldb
 do
 	echo " "
 	echo "$PACKAGE =========================="
