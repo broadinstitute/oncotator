@@ -68,6 +68,7 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 import sys
+from oncotator import NGSLIB_INSTALLED
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.MutUtils import MutUtils
 
@@ -82,13 +83,6 @@ import logging
 from oncotator.utils.version import VERSION 
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
 from oncotator.utils.OptionConstants import OptionConstants
-
-try:
-    import ngslib
-    NGSLIB_INSTALLED = True
-except ImportError:
-    NGSLIB_INSTALLED = False
-
 
 __version__ = VERSION
 __all__ = []
