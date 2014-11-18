@@ -1,7 +1,10 @@
 import numpy as np
-from ngslib import BigWigFile
 
 from oncotator.datasources.Datasource import Datasource
+from oncotator import NGSLIB_INSTALLED
+
+if NGSLIB_INSTALLED:
+    from ngslib import BigWigFile
 
 class BigWigDatasource(Datasource):
     """
