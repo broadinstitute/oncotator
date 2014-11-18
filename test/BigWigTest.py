@@ -2,7 +2,7 @@ import unittest
 import logging
 
 from oncotator.MutationData import MutationData
-from oncotator.datasources.BigWigDatasource import BigWigDatasource
+import oncotator.datasources.BigWigDatasource
 from TestUtils import TestUtils
 
 TestUtils.setupLogging(__file__, __name__)
@@ -12,7 +12,7 @@ class BigWigDatasourceTest(unittest.TestCase):
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)
-        self.bigwig_datasource = BigWigDatasource('testdata/bigwig/small.bigWig', title='TestBigWig')
+        self.bigwig_datasource = oncotator.datasources.BigWigDatasource.BigWigDatasource('testdata/bigwig/small.bigWig', title='TestBigWig')
 
     def tearDown(self):
         self.bigwig_datasource.close()
