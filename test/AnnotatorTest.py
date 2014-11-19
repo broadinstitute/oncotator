@@ -376,8 +376,6 @@ class AnnotatorTest(unittest.TestCase):
             annotator.addDatasource(ds)
 
         tx = annotator.retrieve_transcript_by_id("ENST00000215832.6")
-        self.assertTranscriptsFound(tx)
-
         self.assertTrue(tx is not None)
         self.assertTrue(tx.get_gene() == "MAPK1")
 
