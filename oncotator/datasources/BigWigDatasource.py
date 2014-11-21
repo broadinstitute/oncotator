@@ -8,6 +8,8 @@ class BigWigDatasource(Datasource):
     the median of values from the BigWig are returned.
     """
     def __init__(self, src_file, title='', version=None):
+        # only necessary to import ngslib if instance of BigWigDatasource is created
+        # This should not run on OS X machines
         from ngslib import BigWigFile
 
         super(BigWigDatasource, self).__init__(src_file, title=title, version=version)
