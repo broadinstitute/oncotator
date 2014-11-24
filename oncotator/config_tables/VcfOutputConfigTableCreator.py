@@ -110,7 +110,7 @@ class VcfOutputConfigTableCreator(ConfigTableCreator):
         :return:
         """
         configParser = ConfigUtils.createConfigParser(configFilename, ignoreCase=False)
-        configTable = VcfOutputConfigTable()
+        configTable = VcfOutputConfigTable(configFilename)
         self.createConfigTableKeys(configParser=configParser, configTable=configTable)
 
         return configTable

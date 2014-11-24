@@ -158,7 +158,7 @@ class MutationData(collections.MutableMapping):
         """ Pretty print datasources, annotations, and annotations value."""
         outputs = list()
         for annotation in self.annotations:
-            if annotation in ['build', 'chr' , 'start', 'end', 'ref_allele', 'alt_allele']:
+            if annotation in ['build', 'chr', 'start', 'end', 'ref_allele', 'alt_allele']:
                 ds_name = 'INPUT'
                 ann_value = self[annotation]
             else:
@@ -172,6 +172,22 @@ class MutationData(collections.MutableMapping):
         print "Datasource -- Annotation -- Annotation Value"
         for output in outputs:
             print "%s -- %s -- %s" % output
+
+    def attributesEqual(self, other):
+        """
+        are the attributes of this MutationData equal to the Attributes of other
+        :param other: a different MutationData
+        :return: are the attributes of this MutationData equal to the Attributes of other
+        """
+        if self.attributes == other.attributes:
+            for a in self.attributes:
+                if self[a] != other[a]:
+                    return False
+            return True
+        return False
+
+    def positionStr(self):
+        return "%s:%s-%s %s:%s" % (self.chr, self.start, self.end, self.ref_allele, self.alt_allele)
 
     def __setitem__(self, key, value):
         
@@ -208,3 +224,19 @@ class MutationData(collections.MutableMapping):
     
     def __str__(self):
         return str(self.annotations)
+
+    def __eq__(self, other):
+        """Override the default Equals behavior"""
+        if type(other) is type(self):
+            try:
+                for k in self.keys():
+                    if self.getAnnotation(k) != other.getAnnotation(k):
+                        return False
+            except KeyError:
+                return False
+            return True
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+

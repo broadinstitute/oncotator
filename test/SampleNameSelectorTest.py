@@ -46,8 +46,31 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import unittest
+from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 
-class OptionConstants(object):
-    VCF_OUT_INFER_GENOTYPES = "vcf_out_infer_genotypes"
-    INFER_ONPS = "infer_onps"
-    NO_PREPEND = "no_prepend"
+from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
+from oncotator.utils.SampleNameSelector import SampleNameSelector
+from oncotator.utils.MutUtils import MutUtils
+
+__author__ = 'louisb'
+
+class SampleNameSelectorTest(unittest.TestCase):
+    def testSampleNameSelectorWithMaf(self):
+        input = MafliteInputMutationCreator("testdata/maflite/tiny_maflite.maf.txt")
+        first_mut = next(input.createMutations())
+        s = SampleNameSelector(first_mut)
+        for mut in input.createMutations():
+            self.assertEqual("Patient0-Normal-Patient0-Tumor", s.getSampleName(mut))
+        self.assertEqual(s.getAnnotationSource(),"OUTPUT")
+        self.assertEqual(s.getOutputAnnotationName(), MutUtils.SAMPLE_NAME_ANNOTATION_NAME)
+
+    def testSampleNameSelectorWithVCF(self):
+        input = VcfInputMutationCreator("testdata/vcf/example.1row.vcf")
+        first_mut = next(input.createMutations())
+        s = SampleNameSelector(first_mut)
+        expected = ["NA 00001", "NA 00002", "NA 00003"]
+        for mut in input.createMutations():
+            self.assertIn(s.getSampleName(mut), expected)
+        self.assertEqual(s.getAnnotationSource(), "INPUT")
+        self.assertEquals(s.getOutputAnnotationName(), "sample_name")

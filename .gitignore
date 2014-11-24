@@ -36,3 +36,5 @@
 !/scripts/uniprot_utils/pickles/README
 /initializeDatasource.log
 .coverage
+.ds_store
+*.idea

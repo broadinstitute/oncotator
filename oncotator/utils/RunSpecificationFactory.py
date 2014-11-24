@@ -61,9 +61,18 @@ class RunSpecificationFactory(object):
         if outputFormat not in ["GENE_LIST", "SIMPLE_TSV"] and inputFormat == "SEG_FILE":
             result.append(RunSpecificationMessage(logging.WARN, "Input format of SEG_FILE is only supported when output is GENE_LIST or SIMPLE_TSV"))
 
-        if inputFormat == "VCF" and outputFormat == "VCF" and other_opts[OptionConstants.VCF_OUT_INFER_GENOTYPES]:
+        if inputFormat == "VCF" and outputFormat == "VCF" and other_opts.get(OptionConstants.VCF_OUT_INFER_GENOTYPES):
             result.append(RunSpecificationMessage(logging.WARN,"Infer genotypes option has been set to true.  "
                         "Because the input is a VCF file, infer genotypes will have no effect on the output."))
+        elif inputFormat != "VCF" and outputFormat == "VCF" and not other_opts.get(OptionConstants.VCF_OUT_INFER_GENOTYPES):
+            result.append(RunSpecificationMessage(logging.WARN,"Infer genotypes option has been set to false.  "
+                        "Because the input is not a VCF file, genotype field may not be rendered properly."))
+
+        if outputFormat == "VCF" and inputFormat == "VCF" and other_opts.get(OptionConstants.INFER_ONPS):
+            result.append(RunSpecificationMessage(logging.WARN,("Inferring ONPs may cause issues with VCF->VCF annotation.")))
+
+        if other_opts.get(OptionConstants.INFER_ONPS):
+            result.append(RunSpecificationMessage(logging.INFO,("Output file order may be different than input file because we're combining SNPs into ONPs")))
 
         return result
 
@@ -105,7 +114,10 @@ class RunSpecificationFactory(object):
         outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat, other_opts)
 
         # Step 2 Datasources
-        datasource_list = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+        if datasourceDir:
+            datasource_list = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+        else:
+            datasource_list = []
 
         #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
         for ds in datasource_list:

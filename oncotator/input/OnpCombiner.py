@@ -46,8 +46,45 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import logging
 
-class OptionConstants(object):
-    VCF_OUT_INFER_GENOTYPES = "vcf_out_infer_genotypes"
-    INFER_ONPS = "infer_onps"
-    NO_PREPEND = "no_prepend"
+from oncotator.input.InputMutationCreator import InputMutationCreator
+from oncotator.input.OnpQueue import OnpQueue
+
+
+"""
+Created on Nov 19, 2014
+
+@author: louisb
+"""
+
+
+class OnpCombiner(InputMutationCreator):
+    """
+        An inputMutationCreator transformer.  This wraps an input mutation creator, and merges adjacent xNPS
+        into ONPs
+
+        Warning:Input order is not guaranteed to be maintained if there are multiple samples
+        Warning:This will change the number of mutations.  Usually mutation number will be reduced, but in the case of
+        multiple adjacent SNPs in the same sample, all possible ONP combinations will be produced, potentially leading
+        to larger numbers of mutations
+    """
+
+    def __init__(self, input_creator):
+        super(OnpCombiner, self).__init__("ONP_Combiner")
+        self.logger = logging.getLogger(__name__)
+        self.input_creator = input_creator
+        self.logger.info("Merging adjacent snps from the same samples into ONPs")
+
+    def getComments(self):
+        return self.input_creator.getComments()
+
+    def getMetadata(self):
+        return self.input_creator.getMetadata()
+
+    def createMutations(self):
+        mutations = self.input_creator.createMutations()
+        queue = OnpQueue(mutations)
+
+        for mut in queue.get_combined_mutations():
+            yield mut
