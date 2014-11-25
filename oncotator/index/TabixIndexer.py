@@ -130,8 +130,9 @@ class TabixIndexer(object):
         if preset in ("gff", "bed", "sam", "vcf", "psltbl", "pileup"):
             tabix_index = pysam.tabix_index(filename=outputFilename, force=True, preset=preset)
         else:
+            # Have to specify min_size=0 in pysam 0.8.1 to get pysam to correctly output a .tbi file 
             tabix_index = pysam.tabix_index(filename=outputFilename, force=True, seq_col=fileColumnNumList[0],
-                                            start_col=fileColumnNumList[1], end_col=fileColumnNumList[2])
+                                            start_col=fileColumnNumList[1], end_col=fileColumnNumList[2], min_size=0)
 
         return tabix_index
 
