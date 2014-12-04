@@ -650,3 +650,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             result_list[0] = -1
 
         return tuple(result_list)
+
+    def get_gene_symbols(self):
+        """Return all of the gene symbols recognized by this datasource.
+                """
+        return self.gene_db.keys()
