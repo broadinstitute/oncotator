@@ -200,6 +200,8 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 val = str(val)
 
+            if name in mutation:
+                name = string.join(words=[name, "__INFO__"], sep="")
             mutation.createAnnotation(name, val, "INPUT", dataType, infos_id.desc, tags=tags,
                                       number=num)
 
