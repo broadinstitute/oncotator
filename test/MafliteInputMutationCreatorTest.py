@@ -291,6 +291,31 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             self.assertTrue("genes" in line_dict.keys())
             self.assertTrue(len(line_dict["genes"].split(",")) > 0)
 
+    @TestUtils.requiresDefaultDB()
+    def testAnnotationWithMafliteWithTrailingSpaces(self):
+        """
+        Tests the ability to annotate a maflite file that contains trailing spaces in ref and alt alleles.
+        """
+        db_dir = self.config.get('DEFAULT',"dbDir")
+        #inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_fields.vcf"])
+        #outputFilename = os.path.join("out", "example.duplicate_fields.tsv")
+        inputFilename = '/Users/aramos/Desktop/oncotator_issues/issue_217/tiny_maflite.2.maflite'
+        outputFilename = '/Users/aramos/Desktop/oncotator_issues/issue_217/test.ouput.maf.txt'
+
+        annotator = Annotator()
+        run_spec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", inputFilename, outputFilename,
+                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS)
+        annotator.initialize(run_spec)
+        annotator.annotate()
+
+#       creator = MafliteInputMutationCreator(inputFilename)
+#       creator.createMutations()
+#       renderer = TcgaMafOutputRenderer(outputFilename, 'configs/tcgaMAF2.4_output.config')
+#       annotator = Annotator()
+#       annotator.setInputCreator(creator)
+#       annotator.setOutputRenderer(renderer)
+#       annotator.annotate()
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
