@@ -369,9 +369,9 @@ def renderSimpleUniprotTSV(gene_dict, outputFilename):
 
         g['gene'] = gene
         if 'GO' in g.keys():
-            g['GO_Biological_Process'] = sorted([t[1] for t in g['GO'].get('biological_process',[])])
-            g['GO_Cellular_Component'] = sorted([t[1] for t in g['GO'].get('cellular_component',[])])
-            g['GO_Molecular_Function'] = sorted([t[1] for t in g['GO'].get('molecular_function',[])])
+            g['GO_Biological_Process'] = sorted([t[1] + " (" + t[0] + ")" for t in g['GO'].get('biological_process',[])])
+            g['GO_Cellular_Component'] = sorted([t[1] + " (" + t[0] + ")" for t in g['GO'].get('cellular_component',[])])
+            g['GO_Molecular_Function'] = sorted([t[1] + " (" + t[0] + ")" for t in g['GO'].get('molecular_function',[])])
 
         for col in g.keys():
             if isinstance(g[col], list):
