@@ -471,5 +471,20 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
 
+    def testAnnotationWithDuplicateValuesInVcf(self):
+        """
+        Tests the ability to parse a VCF that contains an INFO, FILTER, and INFO field with the same name.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_fields.vcf"])
+        outputFilename = os.path.join("out", "example.duplicate_fields.tsv")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename, [])
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
 if __name__ == "__main__":
     unittest.main()

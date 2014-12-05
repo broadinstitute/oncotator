@@ -451,6 +451,8 @@ class OutputDataManager:
         fieldName = MutUtils.replaceChrs(fieldName, "=; :", "~|_>")  # Replace whitespace and other characters
         if fieldName.endswith("__FORMAT__"):  # Drop "__FORMAT__" from the end
             fieldName = fieldName[0:len(fieldName)-len("__FORMAT__")]
+        elif fieldName.endswith("__INFO__"):  # Drop "__INFO__" from the end
+            fieldName = fieldName[0:len(fieldName)-len("__INFO__")]
         return fieldName
 
     def _createTables(self, md, mut):
