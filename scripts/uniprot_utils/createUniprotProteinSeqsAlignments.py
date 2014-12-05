@@ -55,19 +55,13 @@ Created on Feb 5, 2013
 
 Preprocessing script to create UniProt protein sequence alignment to the GAF.
 '''
-import collections
-from Bio import SwissProt
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import os
-import csv
-import cPickle
-import itertools
 import re
 from oncotator.MutationData import MutationData
-from oncotator.datasources import Generic_Gene_DataSource, Gaf
-from oncotator.index.gaf import create_gaf_dicts
-from createUniprotTSVs import parseWithPickle
+from oncotator.datasources import GenericGeneDatasource, Gaf
+
 from createUniprotTSVs import parse_uniprot_data
 import tempfile
 import subprocess
@@ -269,12 +263,13 @@ def write_fasta(fname, header, seq):
     OUT.write(seq + '\n')
     OUT.close()
 
-def generateTranscriptMuts(gafDS,uniprotDS):
-    tDict = gafDS.getTranscriptDict()
-    for transcriptID in tDict.keys():
+def generateTranscriptMuts(tx_dict, uniprotDS):
+    tDict = tx_dict.getTranscriptDict()
+    tx_ids = tDict.keys()
+    for tx_id in tx_ids:
         m = MutationData()
-        m.createAnnotation('gene', tDict[transcriptID]['gene'])
-        m.createAnnotation('transcript_id', transcriptID)
+        m.createAnnotation('gene', tDict[tx_id].get_gene())
+        m.createAnnotation('transcript_id', tx_id)
         m = uniprotDS.annotate_mutation(m)
         yield m
 
