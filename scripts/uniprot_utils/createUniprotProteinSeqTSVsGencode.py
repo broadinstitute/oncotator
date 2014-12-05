@@ -133,7 +133,11 @@ if __name__ == '__main__':
     ctr = 0
     numTranscriptsNotInUniprot = 0
     uniprotEntryNameKey = 'UniProt_uniprot_entry_name'
+    genes_already_processed = set()
     for m in muts:
+        if m['gene'] in genes_already_processed:
+            continue
+        genes_already_processed.add(m['gene'])
         ctr += 1
         if (ctr % 1000) == 0:
             print(str(ctr))
@@ -177,18 +181,18 @@ if __name__ == '__main__':
             row[annotation] = feature[3]
             tsvWriter.writerow(row)
 
-    print("Could not get uniprot seq for " + str(numTranscriptsNotInUniprot) + " transcripts.")
-    print("Attempted " + str(ctr) + " muts")
+    print("Could not get uniprot seq for " + str(numTranscriptsNotInUniprot) + " unique genes.")
+    print("Attempted " + str(ctr) + " unique genes")
 
-    print("Creating tabix index")
-    print("Creating copy of tsv file (" + output_file + ") ...")
-    tabixBasedFilename = output_file + ".copy.tsv"
-    shutil.copyfile(output_file, tabixBasedFilename)
+    # print("Creating tabix index")
+    # print("Creating copy of tsv file (" + output_file + ") ...")
+    # tabixBasedFilename = output_file + ".copy.tsv"
+    # shutil.copyfile(output_file, tabixBasedFilename)
 
-    print("Sorting ...")
-    tsvFileSorter = TsvFileSorter(fieldNames=['gene','startAA', 'endAA'])
-    tsvFileSorter.sortFile(tabixBasedFilename, tabixBasedFilename + ".sorted")
-    print("Creating actual index ...")
+    # print("Sorting ...")
+    # tsvFileSorter = TsvFileSorter(fieldNames=['gene','startAA', 'endAA'])
+    # tsvFileSorter.sortFile(tabixBasedFilename, tabixBasedFilename + ".sorted")
+    # print("Creating actual index ...")
 
     # swiss_data[key].features
     #  For each feature, position 0 is name.

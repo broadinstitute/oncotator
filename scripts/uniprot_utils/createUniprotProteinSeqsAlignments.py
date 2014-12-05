@@ -303,6 +303,7 @@ if __name__ == '__main__':
     alignmentDB = Shove("file:////bulk/testUniprotProtSeqs.shove", "memory://")
 
     # Go through every transcript
+    #TODO: Should make a set, since it looks there are duplicate entries abounding.
     muts = generateTranscriptMuts(gafDS,uniprotDS)
     swissKeys = swiss_data.keys()
     tremblKeys = trembl_data.keys()
