@@ -98,17 +98,27 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
         new_pos = 0
         query_AA= ''
         uni_AA = ''
-        pat1 = re.compile(r'Query:\s(\d+)\s+([\w\-\*]+)\s(\d+)')
-        pat2= re.compile(r'Sbjct:\s(\d+)\s+([\w\-\*]+)\s(\d+)')
+
+        pat1 = re.compile('Query\\s+(\\d+)\\s+([\\w\\-\\*]+)\\s+(\\d+)')
+        pat2 = re.compile(r'Sbjct\s+(\d+)\s+([\w\-\*]+)\s+(\d+)')
+
+        # previous regexes:
+        pat1_old = re.compile(r'Query:\s(\d+)\s+([\w\-\*]+)\s(\d+)')
+        pat2_old = re.compile(r'Sbjct:\s(\d+)\s+([\w\-\*]+)\s(\d+)')
+
         q = 0
         qline = None
         for line in fh:
-            if q == 1 and line.startswith('Sbjct: '):
+            if q == 1 and (line.startswith('Sbjct ') or line.startswith('Sbjct: ')):
                 sline = pat2.search(line)
+                if sline is None:
+                    sline = pat2_old.search(line)
                 new_pos, query_AA, uni_AA = self._map_uni_pos(qline, sline, AA)
                 break
-            if line.startswith('Query: '):
+            if line.startswith('Query ') or line.startswith('Query: '):
                 qline = pat1.search(line)
+                if qline is None:
+                    qline = pat1_old.search(line)
                 #print '{0}\t{1}'.format(qline.group(1), qline.group(3))
                 if int(qline.group(1)) <= AA and int(qline.group(3)) >= AA:
                     q = 1
@@ -152,5 +162,5 @@ class TranscriptToUniProtProteinPositionTransformingDatasource(PositionTransform
                 # Do nothing, we will end up just annotting with ""
                 pass
 
-        mutation.createAnnotation(self.outputAnnotationName, newPos, annotationSource=self.title)
+        mutation.createAnnotation(self.outputAnnotationName, newPos, annotationSource=self.title, annotationDescription="UniProt protein position (Transcript protein position aligned against UniProt protein).")
         return mutation

@@ -198,7 +198,7 @@ def runAlignment(seq1_name, seq2_name,NP_seq,uni_seq,tmp_dir,bl2seq_path, db):
                temp_uniprot_fasta_fname, '-o', temp_align_results_fname]
     else:
         cmd = [bl2seq_path, '-query', temp_refseq_fasta_fname, '-subject', temp_uniprot_fasta_fname,
-               '-out', temp_align_results_fname, '-seg', 'no']
+               '-out', temp_align_results_fname, '-seg', 'no', '-num_threads', '2']
     subprocess.check_output(cmd, close_fds=True)
     ff = open(temp_align_results_fname)
     alignment_data = ff.readlines()

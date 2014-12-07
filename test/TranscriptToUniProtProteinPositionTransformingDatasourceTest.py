@@ -66,7 +66,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         pass
 
     def testBasicAnnotationNoChange(self):
-        """ Test whether we can translate from one coordinate system to another.  This tests no change.
+        """ Test whether we can translate from one coordinate system to another (v1).  This tests no change.
         """
         tDS = TranscriptToUniProtProteinPositionTransformingDatasource(title="UniProt", version="test", src_file="file://testdata/small_uniprot_prot_seq_ds/db")
 
@@ -79,7 +79,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         self.assertTrue(m[outputAnnotation] == "50", "Did not get proper value (50): " + m[outputAnnotation])
 
     def testBasicAnnotationWithChange(self):
-        """ Test whether we can translate from one coordinate system to another.  This tests a known change.
+        """ Test whether we can translate from one coordinate system to another (v1).  This tests a known change.
         """
         tDS = TranscriptToUniProtProteinPositionTransformingDatasource(title="UniProt", version="test", src_file="file://testdata/small_uniprot_prot_seq_ds/db")
 
@@ -92,7 +92,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         self.assertTrue(m[outputAnnotation] == "969", "Did not get proper value (969): " + m[outputAnnotation])
 
     def testDatasourceCreator(self):
-        """ Test that the datasource creator process will work for  TranscriptToUniProtProteinPositionTransformingDatasource.  NOTE: This test needs to be updated to use sqlite instead of filesystem file.
+        """ Test that the datasource creator process will work for v1 of TranscriptToUniProtProteinPositionTransformingDatasource.  NOTE: This test needs to be updated to use sqlite instead of filesystem file.
         """
 
         tDS = DatasourceFactory.createDatasource("testdata/small_uniprot_prot_seq_ds/small_uniprot_prot_seq_ds.config", "testdata/small_uniprot_prot_seq_ds/")
@@ -102,6 +102,33 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         m.createAnnotation('protein_change', 'p.T1105A')
         m = tDS.annotate_mutation(m)
         self.assertTrue(m[outputAnnotation] == "969", "Did not get proper value (969): " + m[outputAnnotation])
+
+    def test_basic_annotation_no_change_2(self):
+        """ Test whether we can translate from one coordinate system to another (v2 ... 2014).  This tests no change.
+        """
+        tDS = TranscriptToUniProtProteinPositionTransformingDatasource(title="UniProt", version="test", src_file="file://testdata/small_uniprot_prot_seq_ds_blastp_2014/db")
+
+        # Must correspond to what the datasource is going to generate
+        outputAnnotation = "UniProt_aapos"
+        m = MutationData()
+        m.createAnnotation('transcript_id', 'ENST00000264990.6')
+        m.createAnnotation('protein_change', 'p.S50T')
+        m = tDS.annotate_mutation(m)
+        self.assertTrue(m[outputAnnotation] == "50", "Did not get proper value (50): " + m[outputAnnotation])
+
+    def test_basic_annotation_with_change(self):
+        """ Test whether we can translate from one coordinate system to another (v2 2014).  This tests a known change.
+        """
+        tDS = TranscriptToUniProtProteinPositionTransformingDatasource(title="UniProt", version="test", src_file="file://testdata/small_uniprot_prot_seq_ds_blastp_2014/db")
+
+        # Must correspond to what the datasource is going to generate.
+        #ENST00000545482.1_Silent_p.S178S
+        outputAnnotation = "UniProt_aapos"
+        m = MutationData()
+        m.createAnnotation('transcript_id', 'ENST00000545482.1')
+        m.createAnnotation('protein_change', 'p.S178S')
+        m = tDS.annotate_mutation(m)
+        self.assertTrue(m[outputAnnotation] == "293", "Did not get proper value (293): " + m[outputAnnotation])
 
 
 if __name__ == '__main__':
