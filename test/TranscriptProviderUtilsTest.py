@@ -87,8 +87,8 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
     @data_provider_decorator(locs)
     def test_convert_genomic_space_to_exon_space(self, loc, gt_d):
         """Test genomic --> exon transform on real data. """
-        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v18.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v18.pc_transcripts.fa"
+        gencode_input_gtf = "testdata/gencode/MAPK1.gencode.v19.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/MAPK1.gencode.v19.pc_transcripts.fa"
         base_output_filename = "out/test_variant_classification"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
@@ -123,8 +123,8 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         self.assertTrue(guess == gt, "Did not transform genomic to exon space properly: " + str(exons) +  "   pos: " + str(s) + "  strand: " + strand + "  guess/gt: " + str(guess) + "/" + str(gt))
 
     def _create_ensembl_ds_from_testdata(self, gene):
-        gencode_input_gtf = "testdata/gencode/" + gene + ".gencode.v18.annotation.gtf"
-        gencode_input_fasta = "testdata/gencode/" + gene + ".gencode.v18.pc_transcripts.fa"
+        gencode_input_gtf = "testdata/gencode/" + gene + ".gencode.v19.annotation.gtf"
+        gencode_input_fasta = "testdata/gencode/" + gene + ".gencode.v19.pc_transcripts.fa"
         base_output_filename = "out/test_variant_classification"
         shutil.rmtree(base_output_filename + ".transcript.idx", ignore_errors=True)
         shutil.rmtree(base_output_filename + ".transcript_by_gene.idx", ignore_errors=True)
@@ -241,6 +241,24 @@ class TranscriptProviderUtilsTest(unittest.TestCase):
         # Right in exon 1
         left_diff, right_diff = TranscriptProviderUtils.determine_closest_distance_from_exon(22162000, 22162005, 1,  tx)
         self.assertTrue(left_diff < 0 and right_diff > 0, "left distance should be negative while right distance should be positive.")
+
+    variant_type_examples = lambda: (
+        ("A","G", VariantClassification.VT_SNP),
+        ("TG","-", VariantClassification.VT_DEL),
+        ("TC","CT", VariantClassification.VT_DNP),
+        ("","A", VariantClassification.VT_INS),
+        ("ACA","TCG", VariantClassification.VT_TNP),
+        ("TTTTT","AAAAA", VariantClassification.VT_ONP)
+    )
+    @data_provider_decorator(variant_type_examples)
+    def test_infer_variant_type(self,ref,alt,vt_gt):
+        """test that we can tell a snp from an indel"""
+        self.assertEqual(TranscriptProviderUtils.infer_variant_type(ref, alt), vt_gt)
+
+    def test_variant_type_of_non_variant_is_Exception(self):
+        """check that empty variants raise an exception"""
+        self.assertRaises(Exception, TranscriptProviderUtils.infer_variant_type, "-","-")
+        self.assertRaises(Exception, TranscriptProviderUtils.infer_variant_type, "","")
 
 if __name__ == '__main__':
     unittest.main()

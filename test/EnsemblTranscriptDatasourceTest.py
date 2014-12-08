@@ -66,7 +66,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        pass
+        self.config = TestUtils.createUnitTestConfig()
 
     def tearDown(self):
         pass
@@ -102,7 +102,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         for r in recs:
             ids.add(r.get_transcript_id())
 
-        self.assertTrue(len(ids - set(['YAL069W', 'YAL068W-A'])) == 0)
+        self.assertTrue(len(ids - {'YAL069W', 'YAL068W-A'}) == 0)
 
     def test_overlapping_multiple_transcripts_indel(self):
         base_config_location = "testdata/ensembl/saccer/"
@@ -114,7 +114,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         for r in recs:
             ids.add(r.get_transcript_id())
 
-        self.assertTrue(len(ids - set(['YAL067W-A', 'YAL067C'])) == 0)
+        self.assertTrue(len(ids - {'YAL067W-A', 'YAL067C'}) == 0)
 
     def _create_ensembl_ds_from_saccer(self):
         gencode_input_gtf = "testdata/Saccharomyces_cerevisiae.EF4.71_trim.gtf"
@@ -166,19 +166,55 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_overlapping_multiple_genes(self):
         """Test that we can collect multiple overlapping genes """
-        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_multiple_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/overlapping_genes_multiple_")
         genes = ds.get_overlapping_genes("22", 22080000, 22120000)
-        self.assertTrue(len(set(["MAPK1", "YPEL1"]) - genes) ==0 )
+        self.assertTrue(len({"MAPK1", "YPEL1"} - genes) ==0 )
 
     def test_overlapping_gene(self):
         """Test that we can collect an overlapping gene """
-        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/overlapping_genes_")
         genes = ds.get_overlapping_genes("22", 22115000, 22120000)
-        self.assertTrue(len(set(["MAPK1"]) - genes) == 0)
+        self.assertTrue(len({"MAPK1"} - genes) == 0)
+
+    def test_check_for_appris_tag(self):
+        """Test that a transcript with an appris tag returns the right rank"""
+        ds = TestUtils._create_test_gencode_v19_ds("out/appris_tag",)
+        txs = ds.get_overlapping_transcripts("22", 22222050, 22222050, padding=100)
+        self.assertTrue( len(txs) == 1)
+        self.assertEquals(ds._get_appris_rank(txs[0]),0)
+
+    def test_check_for_missing_appris_tag(self):
+        """Check that the correct value is returned for a site with no appris tag """
+        ds = TestUtils._create_test_gencode_v19_ds("out/appris_no_tag",)
+        txs = ds.get_overlapping_transcripts("16", 61556, 61556, padding=100)
+        self.assertTrue( len(txs) > 0)
+        self.assertEquals(ds._get_appris_rank(txs[0]), TranscriptProviderUtils.NO_APPRIS_VALUE)
+
+    @TestUtils.requiresDefaultDB()
+    def test_appris_selects_transcript(self):
+        m = MutationData(chr="2", start="201722365", end="201722366", ref_allele="AC", alt_allele="-", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        tx = transcript_ds.get_transcript(m['annotation_transcript'])
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
+        self.assertEqual(tx._transcript_id,'ENST00000321356.4')
+
+    @TestUtils.requiresDefaultDB()
+    def test_appris_overruled_by_effect(self):
+        m = MutationData(chr="2", start="201722365", end="201722366", ref_allele="AC", alt_allele="-", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config, tx_mode="EFFECT")
+        m = transcript_ds.annotate_mutation(m)
+        tx = transcript_ds.get_transcript(m['annotation_transcript'])
+        self.assertEqual(tx._transcript_id,'ENST00000434813.2')
+
+
+
+
+
 
     def test_overlapping_gene_5flank(self):
         """Test that we can collect an overlapping gene on its 5' Flank """
-        ds = TestUtils._create_test_gencode_ds("out/overlapping_genes_flank")
+        ds = TestUtils._create_test_gencode_v19_ds("out/overlapping_genes_flank")
         txs = ds.get_overlapping_transcripts("22", 22222050, 22222050, padding=100)
         self.assertTrue( len(txs) == 1)
         self.assertTrue(txs[0].get_transcript_id() == "ENST00000398822.3")
@@ -189,7 +225,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_small_positive_strand_transcript_change(self):
         """Test one location on a transcript and make sure that the transcript change rendered properly """
-        ds = TestUtils._create_test_gencode_ds("out/small_positive_strand_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/small_positive_strand_")
 
         # Now for a negative strand
         m = MutationData()
@@ -213,7 +249,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_hgvs_annotations_simple_SNP(self):
         """Test that HGVS annotations appear (incl. protein change) in a mutation, so we believe that the Transcript objects are populated properly."""
-        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_hgvs_annotations_SNP_")
 
         # Now for a negative strand
         m = MutationData()
@@ -230,7 +266,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_hgvs_annotations_IGR(self):
         """Test that the HGVS annotations appear for IGR"""
-        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_IGR_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_hgvs_annotations_IGR_")
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
@@ -248,7 +284,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_no_mapping_file(self):
         """Test that we can still create (from scratch) and instantiate a EnsemblDatasource when no protein mapping is specified (i.e. limited HGVS support)"""
         """Test that HGVS annotations appear (incl. protein change) in a mutation, so we believe that the Transcript objects are populated properly."""
-        ds = TestUtils._create_test_gencode_ds("out/test_hgvs_annotations_no_mapping_", protein_id_mapping_file=None)
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_hgvs_annotations_no_mapping_file_", protein_id_mapping_file=None)
 
         # Now for a negative strand
         m = MutationData()
@@ -419,7 +455,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         """Simple test of retrieve_transcript_by_gene """
         gene = "MAPK1"
 
-        ds = TestUtils._create_test_gencode_ds("out/test_retrieve_transcript_by_gene_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_retrieve_transcript_by_gene_")
         txs = ds.retrieve_transcripts_by_gene(gene)
 
         self.assertTrue(len(txs) > 2)

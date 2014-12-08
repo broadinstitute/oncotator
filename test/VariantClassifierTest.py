@@ -69,7 +69,7 @@ class VariantClassifierTest(unittest.TestCase):
     GLOBAL_DS_BASENAME = "out/test_variant_classification_"
 
     def setUp(self):
-        ensembl_ds = TestUtils._create_test_gencode_ds(VariantClassifierTest.GLOBAL_DS_BASENAME)
+        ensembl_ds = TestUtils._create_test_gencode_v19_ds(VariantClassifierTest.GLOBAL_DS_BASENAME)
         self.ds = ensembl_ds
 
     def _create_ensembl_ds_trimmed(self):

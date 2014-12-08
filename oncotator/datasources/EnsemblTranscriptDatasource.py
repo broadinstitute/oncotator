@@ -55,11 +55,9 @@ from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
-from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.utils.txfilter.TranscriptFilterFactory import TranscriptFilterFactory
-
 
 
 class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasource):
@@ -70,7 +68,14 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             "basic"
     """
     """This is the list of annotations that get populated by this datasource"""
-    POPULATED_ANNOTATION_NAMES = set(['transcript_exon', 'variant_type', 'variant_classification', 'other_transcripts', 'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand', 'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change', 'transcript_change', 'transcript_strand', 'gene', 'gene_type', 'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript', 'ccds_id', 'gencode_transcript_type', 'transcript_position', 'gencode_transcript_name'])
+    POPULATED_ANNOTATION_NAMES = {'transcript_exon', 'variant_type', 'variant_classification', 'other_transcripts',
+                                  'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand',
+                                  'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change',
+                                  'transcript_change', 'transcript_strand', 'gene', 'gene_type',
+                                  'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript',
+                                  'ccds_id', 'gencode_transcript_type', 'transcript_position',
+                                  'gencode_transcript_name'}
+
     def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy"):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
@@ -238,62 +243,31 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             return self._choose_canonical_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
         return self._choose_best_effect_transcript(txs, variant_type, ref_allele, alt_allele, start, end)
 
-    def _choose_best_effect_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
-        """Choose the transcript with the most detrimental effect.
-         The rankings are in TranscriptProviderUtils.
-         Ties are broken by which transcript has the longer coding length.
+    @staticmethod
+    def _get_best_scores(txs, scoring_function, comparator):
+        scores = {tx: scoring_function(tx) for tx in txs}
+        best = comparator(scores.itervalues())
+        return [k for (k, v) in scores.iteritems() if v == best]
 
-        :param list txs: list of Transcript
-        :param str variant_type:
-        :param str ref_allele:
-        :param str alt_allele:
-        :param str start:
-        :param str end:
-        :return Transcript:
-         """
-        vcer = VariantClassifier()
-        effect_dict = TranscriptProviderUtils.retrieve_effect_dict()
-        best_effect_score = 100000000 # lower score is more likely to get picked
-        best_effect_tx = None
-        for tx in txs:
-            if (ref_allele == "" or ref_allele == "-") and (alt_allele == "" or alt_allele == "-"):
-                vc = VariantClassification.SILENT
-            else:
-                vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
-            effect_score = effect_dict.get(vc, 25)
-            if effect_score < best_effect_score:
-                best_effect_score = effect_score
-                best_effect_tx = tx
-            elif (effect_score == best_effect_score) and (len(best_effect_tx.get_seq()) < len(tx.get_seq())):
-                best_effect_score = effect_score
-                best_effect_tx = tx
+    @staticmethod
+    def _sort_by_multiple_criteria(txs, scoring_functions):
+        """Sort using multiple scoring functions
+        :param txs: transcripts to sort
+        :param scoring_functions: a tuple of the form ( tx -> B, [B] -> B)
 
-        return best_effect_tx
-
-    def _choose_canonical_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
-        """Use the level tag to choose canonical transcript.
-
-        Choose highest canonical score.
-
-        Ties are broken by whichever transcript has the most detrimental effect.
+        an example is (lambda x: x.seq_len(), min)
+        which will apply seq_len to each transcript, and then use the minimum resulting length
         """
-        if len(txs) == 0:
-            return None
-        scores = dict()
-        for tx in txs:
-            score = self._calculate_canonical_score(tx)
-            if score not in scores.keys():
-                scores[score] = set()
-            scores[score].add(tx)
+        best_txs = txs
+        for (f, cmp) in scoring_functions:
+            if len(best_txs) == 1:
+                return best_txs
+            else:
+                best_txs = EnsemblTranscriptDatasource._get_best_scores(best_txs, f, cmp)
+        return best_txs
 
-        highest_score = max(scores.keys())
-        highest_scoring_txs = scores[highest_score]
-        if len(highest_scoring_txs) == 1:
-            return list(highest_scoring_txs)[0]
-        else:
-            return self._choose_best_effect_transcript(highest_scoring_txs, variant_type, ref_allele, alt_allele, start, end)
-
-    def _calculate_canonical_score(self, tx):
+    @staticmethod
+    def _calculate_canonical_score(tx):
         """
         Level 1 is validated
         Level 2 is manual annotation
@@ -315,6 +289,76 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             type_score = 1
 
         return (lvl_score << lvl_rank) + (type_score << type_rank)
+
+    @staticmethod
+    def _get_appris_rank(tx):
+        """Get the appris ranking from the transcript's tag field"""
+        appris_ranks = TranscriptProviderUtils.APPRIS_RANKING_DICT
+        tags =  set(tx.get_other_attributes().get('tag', "").split("|"))
+        for tag in TranscriptProviderUtils.APPRIS_TAGS:
+            if tag in tags:
+                return appris_ranks[tag]
+        else:
+            return TranscriptProviderUtils.NO_APPRIS_VALUE
+
+    @staticmethod
+    def _calculate_effect_score(tx, start, end, alt_allele, ref_allele, variant_type):
+        """Compute the effect score"""
+        effect_dict = TranscriptProviderUtils.retrieve_effect_dict()
+        vcer = VariantClassifier()
+        if (ref_allele == "" or ref_allele == "-") and (alt_allele == "" or alt_allele == "-"):
+            vc = VariantClassification.SILENT
+        else:
+            vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, variant_type).get_vc()
+        effect_score = effect_dict.get(vc, 25)
+        return effect_score
+
+    def _choose_best_effect_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
+        """Choose the transcript with the most detrimental effect.
+         The rankings are in TranscriptProviderUtils.
+         Ties are broken by which transcript has the longer coding length.
+         Additional ties are broken with appris rank
+
+        :param list txs: list of Transcript
+        :param str variant_type:
+        :param str ref_allele:
+        :param str alt_allele:
+        :param str start:
+        :param str end:
+        :return Transcript:
+         """
+        if len(txs) == 0:
+            return None
+        best_effect_txs = EnsemblTranscriptDatasource._sort_by_multiple_criteria(txs,
+                        [(lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
+                        (lambda x: len(x.get_seq()), max),
+                        (self._get_appris_rank, min)])
+        return best_effect_txs[0]
+
+    def _choose_canonical_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
+        """Use the level tag to choose canonical transcript.
+        Choose highest canonical score.
+        The following order of preference is used:
+        1.  curation level
+        2.  appris rank
+        3.  most detrimental effect
+        4.  longest protein change
+        :param list txs: list of Transcript
+        :param str variant_type:
+        :param str ref_allele:
+        :param str alt_allele:
+        :param str start:
+        :param str end:
+        :return Transcript:
+        """
+        if len(txs) == 0:
+            return None
+        highest_scoring_tx = EnsemblTranscriptDatasource._sort_by_multiple_criteria(txs, [
+            (self._calculate_canonical_score, max),
+            (self._get_appris_rank, min),
+            (lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
+            (lambda x: len(x.get_seq()), max)])
+        return highest_scoring_tx[0]
 
     def get_overlapping_transcripts(self, chr, start, end, padding=0):
         new_start = str(int(start) - padding)
