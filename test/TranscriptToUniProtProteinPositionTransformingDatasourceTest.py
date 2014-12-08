@@ -46,12 +46,15 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-
+from oncotator.Annotator import Annotator
 
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
+from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import TranscriptToUniProtProteinPositionTransformingDatasource
 from TestUtils import TestUtils
+from oncotator.utils.GenericTsvReader import GenericTsvReader
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 __author__ = 'lichtens'
 
@@ -129,6 +132,26 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         m.createAnnotation('protein_change', 'p.S178S')
         m = tDS.annotate_mutation(m)
         self.assertTrue(m[outputAnnotation] == "293", "Did not get proper value (293): " + m[outputAnnotation])
+
+    @TestUtils.requiresDefaultDB()
+    def test_annotating_uniprot_test_file(self):
+        """Test variants with known issues with older version of UniProt datasource. This test will fail if using older version of uniprot datasource (pre-2014) """
+        db_dir = TestUtils.createUnitTestConfig().get('DEFAULT',"dbDir")
+        annotator = Annotator()
+        out_file_name = "out/uniprot_recovery.maf.annotated"
+        runSpec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", "testdata/maflite/uniprot_recovery.maflite",
+                                                          out_file_name, datasourceDir=db_dir, tx_mode=TranscriptProvider.TX_MODE_BEST_EFFECT)
+        annotator.initialize(runSpec)
+        annotator.annotate()
+
+        out_file_reader = GenericTsvReader(out_file_name)
+        for i,line_dict in enumerate(out_file_reader):
+            self.assertTrue(line_dict['UniProt_AApos'] != "0")
+
+            #TODO: The fourth entry is currently not picking up the uniprot entry for this.  Remove the "if" statement once issue #253 is addressed
+            if i != 4:
+                self.assertTrue(line_dict['SwissProt_entry_Id'].endswith("HUMAN"))
+
 
 
 if __name__ == '__main__':
