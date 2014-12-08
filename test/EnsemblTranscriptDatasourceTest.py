@@ -191,6 +191,16 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertEquals(ds._get_appris_rank(txs[0]), TranscriptProviderUtils.NO_APPRIS_VALUE)
 
     @TestUtils.requiresDefaultDB()
+    def test_appris_ccds_tag(self):
+        m = MutationData(chr="1", start="200818757", end="200818757", ref_allele="C", alt_allele="A", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        tx = transcript_ds.get_transcript(m['annotation_transcript'])
+        self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
+        self.assertEqual(tx._transcript_id,'ENST00000358823.2')
+
+
+    @TestUtils.requiresDefaultDB()
     def test_appris_selects_transcript(self):
         m = MutationData(chr="2", start="201722365", end="201722366", ref_allele="AC", alt_allele="-", build="hg19")
         transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
