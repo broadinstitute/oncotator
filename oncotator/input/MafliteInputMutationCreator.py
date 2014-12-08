@@ -135,7 +135,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
         list_alternates = self._alternativeDict.get("alt_allele", [])
 
         for candidate_field in list_alternates:
-            candidate_value = raw_line_dict.get(candidate_field, "")
+            candidate_value = raw_line_dict.get(candidate_field, "").strip() #remove any trailing whitespace if present
             if candidate_value != "" and candidate_value != ref_allele:
                 return candidate_value
         return ref_allele
@@ -171,6 +171,8 @@ class MafliteInputMutationCreator(InputMutationCreator):
                     if col == "chr":
                         val = MutUtils.convertChromosomeStringToMutationDataFormat(line[col])
                     mut.createAnnotation(col, val, 'INPUT') 
+
+            mut.ref_allele, mut.alt_allele = mut.ref_allele.strip(), mut.alt_allele.strip() #remove any trailing whitespace if present
 
             # if the alt allele == ref_allele, check that this is not a case where there is an alt_allele2 that is different.
             if mut.alt_allele == mut.ref_allele:
