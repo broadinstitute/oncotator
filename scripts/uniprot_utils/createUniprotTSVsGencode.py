@@ -78,9 +78,8 @@ from Bio import SeqIO
 def parseOptions():
     
     # Process arguments
-    desc = ''' Create two tsv files with basic uniprot data.
-    The first is a simple uniprot tsv indexed by gene (HUGO symbol).
-    The second is a simple uniprot tsv indexed by gene and AA position.  This file is for the natural variations annotation.
+    desc = ''' Create one tsv files with basic uniprot data.
+    Creates the simple uniprot tsv indexed by gene (HUGO symbol).
     This script requires 3GB RAM.'''
     epilog = ''' 
     '''
@@ -93,7 +92,6 @@ def parseOptions():
     args = parser.parse_args()
     return args
 
-# gaf_fname = '/xchip/cga1/aramos/oncotator/dev/0.4/db_construct/src/GAF.hg19.June2011.bundle/outputs/TCGA.hg19.June2011.gaf'
 
 def get_feature_type(feature):
     if feature[0] in ['INIT_MET', 'SIGNAL', 'TRANSIT', 'PROPEP', 'CHAIN', 'PEPTIDE']:
@@ -388,7 +386,6 @@ def renderSimpleUniprotTSV(gene_dict, outputFilename):
 
 if __name__ == '__main__':
 
-    print("This script requires biopython 1.65 or greater.")
 
     args = parseOptions()
     uniprot_swiss_fname = args.swiss_file
@@ -403,8 +400,6 @@ if __name__ == '__main__':
     gene_ids = gencode_ds.get_gene_symbols()
     print(str(len(gene_ids)) + " genes in datasource.")
 
-    #tmp = createUniProtRecordDict([trembl_data,swiss_data])
-    #renderUniProtRecordDict(tmp, "simple_uniprot.out.2011_09.tsv")
     print "Adding uniprot IDs to genes..."
     genesDict = add_uniprot_ids_to_Genes(gene_ids, swiss_data, trembl_data)
     print "Adding uniprot data to genes..."

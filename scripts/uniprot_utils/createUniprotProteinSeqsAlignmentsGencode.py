@@ -60,7 +60,7 @@ from argparse import RawDescriptionHelpFormatter
 import os
 import re
 from oncotator.MutationData import MutationData
-from createUniprotTSVs import parse_uniprot_data
+from createUniprotTSVsGencode import parse_uniprot_data
 import tempfile
 import subprocess
 

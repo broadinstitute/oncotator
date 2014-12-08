@@ -53,7 +53,7 @@ import csv
 import os
 import shutil
 from os.path import expanduser
-from createUniprotTSVs import parse_uniprot_data
+from createUniprotTSVsGencode import parse_uniprot_data
 from createUniprotProteinSeqsAlignments import parseWithShove,generateTranscriptMuts
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
