@@ -121,7 +121,7 @@ def parseOptions():
 
    Example usages:
    # Create the abridged cancer gene census datasource as a generic tsv, using the Symbol column as the gene column 
-   python initializeDataSource.py --ds_type gene_tsv --ds_file CancerGeneCensus_Table_1_full_2012-03-15_trim.txt --name CGC --version full_2012_03_15 --dbDir ~/oncotest cgc --genome_build hg19 --index_columns Symbol
+   python initializeDataSource.py --ds_type gene_tsv --ds_file CancerGeneCensus_Table_1_full_2012-03-15_trim.txt --name CGC --version full_2012_03_15 --dbDir ~/oncotest --ds_foldername cgc --genome_build hg19 --index_columns Symbol
 
    # Create a datasource for ORegAnno (a generic genome position tsv)
    python initializeDataSource.py --ds_type gp_tsv --ds_file oreganno_trim.hg19.txt --name ORegAnno --version "UCSC Track" --dbDir ~/oncotest oreganno --genome_build hg19 --index_columns hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd

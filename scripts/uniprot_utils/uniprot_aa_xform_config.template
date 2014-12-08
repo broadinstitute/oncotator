@@ -1,0 +1,36 @@
+[general]
+# Version and title represent the datasource itself, independent of Oncotator.  No checking is performed of these fields.
+#	For example: if downloading Gaf 3.0, title=Gaf and version = 3.0.
+version: ___VERSION___
+title: ___TITLE___
+
+# type must also include information about whether it is genome vs. position for tsv, vcf, and other easy types.
+# Supported types:
+#	gene_tsv -- Generic gene indexed datasource from a tsv
+#	genomic_position_tsv -- Generic genomic position indexed datasource from a tsv
+#	transcript_tsv -- Generic transcript indexed datasource
+#
+#	cosmic -- Custom datasource class for COSMIC
+#	dbSNP -- Custom datasource class for dbSNP
+#	gaf -- Custom datasource class for GAF
+
+type: transcript_to_uniprot_aa
+
+# Required for genomic_position_tsv, MUST be chr, start, and end in order.  If not a genomic_position_tsv, then this field is ignored:
+genomic_position_cols:
+
+# Required for gene_tsv, otherwise ignored:
+gene_col:
+
+# Required for transcript_tsv, otherwise ignored:
+transcript_col:
+
+# Required for gene_protein_position_tsv
+gene_protein_position_cols:
+
+# Required for most datasources (except possibly for certain custom ones):
+src_file:___SRC_FILE___
+
+# Required for TranscriptToUniProtProteinPositionTransformingDatasource
+inputPositionAnnotationName: protein_change
+outputPositionAnnotationName: aapos
