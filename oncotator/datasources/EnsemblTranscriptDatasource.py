@@ -297,6 +297,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         tags =  set(tx.get_other_attributes().get('tag', "").split("|"))
         for tag in TranscriptProviderUtils.APPRIS_TAGS:
             if tag in tags:
+                if "CCDS" in tags:
+                    if tag == "appris_candidate":
+                        return appris_ranks["appris_candidate_ccds"]
+                    elif tag in {'appris_candidate_longest_seq', 'appris_candidate_longest'}:
+                        return appris_ranks["appris_candidate_longest_ccds"]
                 return appris_ranks[tag]
         else:
             return TranscriptProviderUtils.NO_APPRIS_VALUE
