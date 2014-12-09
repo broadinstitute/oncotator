@@ -193,13 +193,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
         """
         row = self._createMutationRow(m, fieldMapKeys, fieldMap)
 
+        # Use HGNC Entrez Gene ID, if available and nothing else has populated it.,
         if row['Entrez_Gene_Id'] == "" and m.get('HGNC_Entrez Gene ID(supplied by NCBI)', "") != "":
             row['Entrez_Gene_Id'] = m.get('HGNC_Entrez Gene ID(supplied by NCBI)')
 
         if row['Entrez_Gene_Id'] == "":
             row['Entrez_Gene_Id'] = "0"
 
-        if row['Entrez_Gene_Id'] == "0" and row['Hugo_Symbol'] != "Unknown" and not self._is_entrez_id_message_logged:
+        if not self._is_entrez_id_message_logged and row['Entrez_Gene_Id'] == "0" and row['Hugo_Symbol'] != "Unknown":
             logging.getLogger(__name__).warn("Entrez Gene ID was zero, but Hugo Symbol was not Unknown.  Is the HGNC and/or Transcript datasource complete?")
             self._is_entrez_id_message_logged = True
         self._update_validation_values(row)
