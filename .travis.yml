@@ -16,10 +16,12 @@ install:
   # install your own package into the environment
   - python setup.py install
   - pip install coverage
-  - pip install coveralls
 script:
   - mkdir dbdir
   - sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
   - /home/travis/virtualenv/python2.7.8/bin/nosetests --all-modules --exe --with-xunit --xunit-file=${PWD}/nosetests.xml -w test -v --with-coverage --cover-package=oncotator,test --cover-inclusive --cover-erase --cover-branches --cover-tests
   - oncotator --help
-after_success: coveralls
+after_success:
+  - pip install -U distribute
+  - pip install -U coveralls
+  - coveralls
