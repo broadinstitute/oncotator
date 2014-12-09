@@ -446,7 +446,10 @@ class Annotator(object):
 
         datasourceStrings = []
         for ds in self._datasources:
-            datasourceStrings.append(" " + ds.title + " " + ds.version + " ")
+            tx_mode_str = ""
+            if isinstance(ds,TranscriptProvider):
+                tx_mode_str = ds.get_tx_mode() + " "
+            datasourceStrings.append(" " + ds.title + " " + ds.version + " " + tx_mode_str)
         
         return onco_string + "|".join(datasourceStrings)
     
