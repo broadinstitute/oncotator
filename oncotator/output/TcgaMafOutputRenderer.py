@@ -98,6 +98,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
             self._prepend = ""
 
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
+
+        self._is_entrez_id_message_logged = False
     
     def lookupNCBI_Build(self, build):
         """ If a build number exists in the config file, use that.  Otherwise, use the name specified. """
@@ -197,9 +199,9 @@ class TcgaMafOutputRenderer(OutputRenderer):
         if row['Entrez_Gene_Id'] == "":
             row['Entrez_Gene_Id'] = "0"
 
-        if row['Entrez_Gene_Id'] == "0" and row['Hugo_Symbol'] != "Unknown":
+        if row['Entrez_Gene_Id'] == "0" and row['Hugo_Symbol'] != "Unknown" and not self._is_entrez_id_message_logged:
             logging.getLogger(__name__).warn("Entrez Gene ID was zero, but Hugo Symbol was not Unknown.  Is the HGNC and/or Transcript datasource complete?")
-
+            self._is_entrez_id_message_logged = True
         self._update_validation_values(row)
 
         dw.writerow(row)
@@ -280,5 +282,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
             raise e
         
         fp.close()
+        if self._is_entrez_id_message_logged:
+            logging.getLogger(__name__).warn("Some Entrez_Gene_IDs may be missing for valid Hugo Symbols in this TCGA MAF.")
         self.logger.info("Rendered all " + str(ctr) + " mutations.")
         return self._filename
