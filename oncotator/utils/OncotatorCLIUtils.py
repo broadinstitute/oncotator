@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import os
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
+from oncotator.input.OnpCombiner import OnpCombiner
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.output.GeneListOutputRenderer import GeneListOutputRenderer
 from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
@@ -62,6 +63,7 @@ from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.output.SimpleBedOutputRenderer import SimpleBedOutputRenderer
 from oncotator.output.TcgaVcfOutputRenderer import TcgaVcfOutputRenderer
+from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecification import RunSpecification
 
 
@@ -130,6 +132,8 @@ class OncotatorCLIUtils(object):
         else:
             inputConfig = inputCreatorDict[inputFormat][1]
             inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig, genome_build, input_creator_options)
+            if input_creator_options.get(OptionConstants.INFER_ONPS):  #If we're combinging ONPs, wrap the input creater
+                inputCreator = OnpCombiner(inputCreator)
         return inputCreator
 
     @staticmethod

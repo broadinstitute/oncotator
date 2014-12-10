@@ -82,6 +82,7 @@ class VariantClassification(object):
     VT_DNP = "DNP"
     VT_TNP = "TNP"
     VT_ONP = "ONP"
+    VT_MNP = "ONP" #alias for ONP
     VT_xNP = "NP" # used for .endswith()
 
     def __init__(self, vc_primary, vt, transcript_id="", vc_secondary="", alt_codon="", alt_codon_start_in_exon="",

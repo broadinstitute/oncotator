@@ -76,7 +76,7 @@ class Annotation(object):
     
     def setDatasource(self, ds):
         self.datasourceName = ds
-    
+
     def setDataType(self, dt):
         self.dataType = dt
     
@@ -121,3 +121,12 @@ class Annotation(object):
         if len(set(self.tags).symmetric_difference(set(annot.getTags()))) != 0:
             return False
         return True
+
+    def __eq__(self,other):
+        if type(other) is type(self):
+            return self.isEqual(other)
+        else:
+            return False
+
+    def __ne__(self,other):
+        return not self.__eq__(other)

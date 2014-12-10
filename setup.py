@@ -126,7 +126,7 @@ setup(
 #''',
   long_description=open('README.rst').read(),
   
-  install_requires=['bcbio-gff', 'pyvcf >= 0.6.3', 'pysam == 0.7.5', 'pandas', 'biopython', 'numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached', 'natsort'],
+  install_requires=['bcbio-gff', 'pyvcf >= 0.6.3', 'pysam == 0.7.5', 'pandas', 'biopython', 'numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached', 'natsort', 'more-itertools', 'enum34'],
   
   # For future reference... how to specify required libraries.
     #  scripts=['scripts/vcf_melt', 'scripts/vcf_filter.py'],

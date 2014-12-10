@@ -61,6 +61,7 @@ from oncotator.utils.TsvFileSorter import TsvFileSorter
 from oncotator.output.VcfOutputAnnotation import VcfOutputAnnotation
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.MutUtils import MutUtils
+from oncotator.utils.SampleNameSelector import SampleNameSelector
 
 
 class OutputDataManager:
@@ -120,6 +121,7 @@ class OutputDataManager:
         tsvFileSorter = TsvFileSorter(self.filename)
         sortedTempTsvFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
         func = lambda val: (chrom2HashCode[val["chr"]], int(val["start"]), val["alt_allele"])
+        self.logger.debug("Sorting tmp tsv %s->%s", self.filename, sortedTempTsvFile.name)
         tsvFileSorter.sortFile(sortedTempTsvFile.name, func)
         os.remove(self.filename)
 
@@ -132,7 +134,7 @@ class OutputDataManager:
         missing sample name annotation. It also computes a list of all chromosomes and sample names contained within
         the generator.
 
-        :param filename: temporary filename
+        :param path: temporary filename
         :param muts: generator object with mutations
         """
 
@@ -143,57 +145,26 @@ class OutputDataManager:
 
         # create a temporary file to write tab-separated file
         tempTsvFile = tempfile.NamedTemporaryFile(dir=path, delete=False)
-        self.logger.info("Creating intermediate tsv file...")
-
-        sampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_NAME")
-        tumorSampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_TUMOR_NAME")
-        normalSampleNameAnnotationNames = self.getAnnotationNames("SAMPLE_NORMAL_NAME")
+        self.logger.debug("Creating intermediate tsv file at %s" % tempTsvFile.name)
 
         mutAttributeNames = []
+        sampleNameSelector = SampleNameSelector(self.mutation,
+                                                configFile=self.configTable.getConfigFilename(),
+                                                section="OTHER")
 
         with open(tempTsvFile.name, 'w') as fptr:
             ctr = 0
+            sampleNameAnnotationName = sampleNameSelector.getOutputAnnotationName()
+            sampleNameSource = sampleNameSelector.getAnnotationSource()
+
             for mut in muts:
-
-                sampleName = None
-                sampleNameAnnotationName = None
-
                 if len(mutAttributeNames) == 0:
                     mutAttributeNames = mut.getAttributeNames()
 
-                # Sample name annotation is present
-                if len(sampleNameAnnotationNames) != 0:
-                    sampleNameAnnotationName = sampleNameAnnotationNames[0]
-                    sampleName = mut[sampleNameAnnotationName]
-                # Both, tumor and normal sample name annotations are present
-                elif len(tumorSampleNameAnnotationNames) != 0 and len(normalSampleNameAnnotationNames) != 0:
-                    tumorSampleNameAnnotationName = tumorSampleNameAnnotationNames[0]
-                    normalSampleNameAnnotationName = normalSampleNameAnnotationNames[0]
-                    sampleName = string.join([mut[normalSampleNameAnnotationName],
-                                              mut[tumorSampleNameAnnotationName]], sep="-")
-                    sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
-                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "OUTPUT")
-                    if ctr == 0:
-                        self.logger.info("Sample name is the concatenation of %s and %s columns."
-                                         % (normalSampleNameAnnotationName, tumorSampleNameAnnotationName))
-                # Only tumor sample name is present
-                elif len(tumorSampleNameAnnotationNames) != 0:
-                    tumorSampleNameAnnotationName = tumorSampleNameAnnotationNames[0]
-                    sampleName = mut[tumorSampleNameAnnotationName]
-                    sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
-                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "INPUT")
-                    if ctr == 0:
-                        self.logger.info("Sample name is %s column." % tumorSampleNameAnnotationName)
-                # Only normal sample name is present
-                elif len(normalSampleNameAnnotationNames) != 0:
-                    normalSampleNameAnnotationName = normalSampleNameAnnotationNames[0]
-                    sampleName = mut[normalSampleNameAnnotationName]
-                    sampleNameAnnotationName = MutUtils.SAMPLE_NAME_ANNOTATION_NAME
-                    mut.createAnnotation(sampleNameAnnotationName, sampleName, "INPUT")
-                    if ctr == 0:
-                        self.logger.info("Sample name is %s column." % normalSampleNameAnnotationName)
-
+                sampleName = sampleNameSelector.getSampleName(mut)
                 if sampleName is not None:
+                    if mut.get(sampleNameAnnotationName, None) is None:
+                        mut.createAnnotation(sampleNameAnnotationName, sampleName, sampleNameSource)
                     sampleNames.add(sampleName)
 
                 # Parse chromosome
