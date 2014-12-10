@@ -49,12 +49,12 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import logging
 
 import Bio
-from Bio import Seq
 import itertools
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.InvalidVariantException import InvalidVariantException
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.gaf_annotation import chop
+from oncotator.utils.MutUtils import MutUtils
 
 
 class VariantClassifier(object):
@@ -310,9 +310,9 @@ class VariantClassifier(object):
             mutated_codon_seq = TranscriptProviderUtils.mutate_reference_sequence(reference_codon_seq.lower(), cds_codon_start, transcript_position_start, transcript_position_end, observed_allele_stranded, variant_type)
 
 
-        observed_aa = Bio.Seq.translate(mutated_codon_seq)
+        observed_aa = MutUtils.translate_sequence(mutated_codon_seq)
         if ref_tx_seq_has_been_changed:
-            reference_aa = Bio.Seq.translate(reference_codon_seq)
+            reference_aa = MutUtils.translate_sequence(reference_codon_seq)
         else:
             reference_aa = protein_seq[protein_position_start-1:protein_position_end]
 
