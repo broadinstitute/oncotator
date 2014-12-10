@@ -125,6 +125,7 @@ def parseOptions():
     parser.add_argument("gencode_ds", type=str, help="Location of the GENCODE datasource config file-- E.g. /bulk/dbDir/gencode_ds/hg19/gencode_ds.config")
     parser.add_argument("uniprot_tsv", type=str, help="Location of the simple uniprot datasource tsv-- E.g. /bulk/dbDir/simple_uniprot/hg19/simple_uniprot.tsv")
     parser.add_argument("blast_exe", type=str, help="Location of blast executable")
+    parser.add_argument("out_tx_matches", type=str, help="Output file for perfect match transcripts -- where uniprot and tx match exactly on protein seq.")
     parser.add_argument("--temp_pickle_store", type=str, help="Store uniprot pickles in the given directory.  Good if you want to run this utility multiple times -- effectively caches some intermediate files")
     parser.add_argument("output_file", type=str, help="TSV filename for output.  File will be overwritten if it already exists.")
 
@@ -188,26 +189,26 @@ def get_uni_pos(fh, AA):
 def runAlignment(seq1_name, seq2_name,NP_seq,uni_seq,tmp_dir,bl2seq_path, db):
     alignment_key = '%s' % (seq1_name)
 
-    temp_refseq_fasta_fh,temp_refseq_fasta_fname = tempfile.mkstemp(suffix='.tmp',prefix='annotation.',dir=tmp_dir,text=True)
+    temp_gencode_fasta_fh,temp_gencode_fasta_fname = tempfile.mkstemp(suffix='.tmp',prefix='annotation.',dir=tmp_dir,text=True)
     temp_uniprot_fasta_fh,temp_uniprot_fasta_fname = tempfile.mkstemp(suffix='.tmp',prefix='annotation.',dir=tmp_dir,text=True)
     temp_align_results_fname = os.path.join(tmp_dir, '%s_%s.alignment' % (seq1_name, seq2_name))
-    write_fasta(temp_refseq_fasta_fname, 't1', NP_seq)
+    write_fasta(temp_gencode_fasta_fname, 't1', NP_seq)
     write_fasta(temp_uniprot_fasta_fname, 't2', uni_seq)
     if bl2seq_path.endswith('bl2seq'):
-        cmd = [bl2seq_path, '-p', 'blastp', '-F', 'F', '-i', temp_refseq_fasta_fname, '-j',
+        cmd = [bl2seq_path, '-p', 'blastp', '-F', 'F', '-i', temp_gencode_fasta_fname, '-j',
                temp_uniprot_fasta_fname, '-o', temp_align_results_fname]
     else:
-        cmd = [bl2seq_path, '-query', temp_refseq_fasta_fname, '-subject', temp_uniprot_fasta_fname,
-               '-out', temp_align_results_fname, '-seg', 'no', '-num_threads', '2']
+        cmd = [bl2seq_path, '-query', temp_gencode_fasta_fname, '-subject', temp_uniprot_fasta_fname,
+               '-out', temp_align_results_fname, '-seg', 'no']
     subprocess.check_output(cmd, close_fds=True)
     ff = open(temp_align_results_fname)
     alignment_data = ff.readlines()
     ff.close()
     db[alignment_key] = alignment_data
     ##cleanup
-    os.close(temp_refseq_fasta_fh)
+    os.close(temp_gencode_fasta_fh)
     os.close(temp_uniprot_fasta_fh)
-    for t in [temp_refseq_fasta_fname, temp_uniprot_fasta_fname]: #, temp_align_results_fname]:
+    for t in [temp_gencode_fasta_fname, temp_uniprot_fasta_fname]: #, temp_align_results_fname]:
         os.remove(t)
 
 def write_fasta(fname, header, seq):
@@ -231,6 +232,9 @@ if __name__ == '__main__':
     uniprot_trembl_fname = expanduser(args.trembl_file)
     output_file = args.output_file
     gencode_ds_loc = expanduser(args.gencode_ds)
+
+    out_tx_matches = args.out_tx_matches
+    out_tx_matches_fp = file(out_tx_matches, 'w')
 
     uniprot_tsv = expanduser(args.uniprot_tsv)
     blast_exe = args.blast_exe
@@ -286,6 +290,11 @@ if __name__ == '__main__':
 
         # print(m['transcript_id'] + " " + m[uniprotEntryNameKey])
         # "/bulk/blast-2.2.26/bin/bl2seq" is blast_exe for Lee's laptop VM
+
+        # When doing the comparison, tx protein includes stop codon at the end, uniprot does not.
+        if tx_protein_seq[0:-1] == uniprot_seq:
+            out_tx_matches_fp.write(tx_id + "\n")
+
         runAlignment(tx_id, uniprot_entry_key, tx_protein_seq, uniprot_seq, tmp_dir, blast_exe, alignmentDB)
 
     print("Could not get protein seq for " + str(numNotInProteinSeqs) + " transcripts.")

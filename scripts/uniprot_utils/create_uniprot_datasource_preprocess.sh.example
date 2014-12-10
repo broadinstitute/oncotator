@@ -38,6 +38,9 @@ OUT_AA_ANNOTATIONS=/home/lichtens/uniprot/uniprot_aa_annotations.tsv
 # output location for shove datasource for uniprot_aa_xform datasource (this will be a directory)
 OUT_AA_XFORM=/home/lichtens/uniprot/uniprot_aa_xform.alignments
 
+# output location for text file that lists exact match transcripts.
+OUT_AA_XFORM_TX_EXACT_MATCH=/home/lichtens/uniprot/uniprot_aa_xform_exact_tx_matches.txt
+
 ## END CHANGE PARAMETERS -- you should not have to touch anything below this line. #######
 
 
@@ -48,6 +51,6 @@ python createUniprotTSVsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_C
 python createUniprotProteinSeqTSVsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_CONFIG_FILE} ${OUT_SIMPLE_UNIPROT_TSV_FILE} ${OUT_AA_ANNOTATIONS}
 
 # uniprot_aa_xform preprocess
-python createUniprotProteinSeqsAlignmentsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_CONFIG_FILE} ${OUT_SIMPLE_UNIPROT_TSV_FILE} ${BLAST_EXE} ${OUT_AA_XFORM}
+python createUniprotProteinSeqsAlignmentsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_CONFIG_FILE} ${OUT_SIMPLE_UNIPROT_TSV_FILE} ${BLAST_EXE} ${OUT_AA_XFORM_TX_EXACT_MATCH} ${OUT_AA_XFORM}
 
 echo "Preprocessing complete... now see the example in create_uniprot_datasource.sh.example"
