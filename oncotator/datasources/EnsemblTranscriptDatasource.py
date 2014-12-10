@@ -250,7 +250,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         return [k for (k, v) in scores.iteritems() if v == best]
 
     @staticmethod
-    def _sort_by_multiple_criteria(txs, scoring_functions):
+    def _select_best_with_multiple_criteria(txs, scoring_functions):
         """Sort using multiple scoring functions
         :param txs: transcripts to sort
         :param scoring_functions: a tuple of the form ( tx -> B, [B] -> B)
@@ -324,6 +324,12 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
          Ties are broken by which transcript has the longer coding length.
          Additional ties are broken with appris rank
 
+        1.  most detrimental effect
+        2.  curation level
+        3.  appris rank
+        4.  longest protein change
+        5.  lexicographical sort on transcript ID
+
         :param list txs: list of Transcript
         :param str variant_type:
         :param str ref_allele:
@@ -334,10 +340,13 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
          """
         if len(txs) == 0:
             return None
-        best_effect_txs = EnsemblTranscriptDatasource._sort_by_multiple_criteria(txs,
+        best_effect_txs = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(txs,
                         [(lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
+                        (self._calculate_canonical_score, max),
+                        (self._get_appris_rank, min),
                         (lambda x: len(x.get_seq()), max),
-                        (self._get_appris_rank, min)])
+                        (lambda x: x.get_transcript_id(), min)]
+                    )
         return best_effect_txs[0]
 
     def _choose_canonical_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
@@ -348,6 +357,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         2.  appris rank
         3.  most detrimental effect
         4.  longest protein change
+        5.  lexicographical on transcript ID
+
         :param list txs: list of Transcript
         :param str variant_type:
         :param str ref_allele:
@@ -358,11 +369,12 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         """
         if len(txs) == 0:
             return None
-        highest_scoring_tx = EnsemblTranscriptDatasource._sort_by_multiple_criteria(txs, [
+        highest_scoring_tx = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(txs, [
             (self._calculate_canonical_score, max),
             (self._get_appris_rank, min),
             (lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
-            (lambda x: len(x.get_seq()), max)])
+            (lambda x: len(x.get_seq()), max),
+            (lambda x: x.get_transcript_id(), min)])
         return highest_scoring_tx[0]
 
     def get_overlapping_transcripts(self, chr, start, end, padding=0):
