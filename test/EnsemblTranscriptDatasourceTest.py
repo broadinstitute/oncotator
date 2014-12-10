@@ -199,7 +199,6 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(tx._transcript_id,'ENST00000358823.2')
 
-
     @TestUtils.requiresDefaultDB()
     def test_appris_selects_transcript(self):
         m = MutationData(chr="2", start="201722365", end="201722366", ref_allele="AC", alt_allele="-", build="hg19")
@@ -208,19 +207,6 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m['annotation_transcript'])
         self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(tx._transcript_id,'ENST00000321356.4')
-
-    @TestUtils.requiresDefaultDB()
-    def test_appris_overruled_by_effect(self):
-        m = MutationData(chr="2", start="201722365", end="201722366", ref_allele="AC", alt_allele="-", build="hg19")
-        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config, tx_mode="EFFECT")
-        m = transcript_ds.annotate_mutation(m)
-        tx = transcript_ds.get_transcript(m['annotation_transcript'])
-        self.assertEqual(tx._transcript_id,'ENST00000434813.2')
-
-
-
-
-
 
     def test_overlapping_gene_5flank(self):
         """Test that we can collect an overlapping gene on its 5' Flank """
@@ -477,6 +463,45 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         for tx in txs:
             self.assertTrue(tx.get_gene() == gene)
+
+    def test_arbitrary_rankings(self):
+        """test that _select_best_with_multiple_criteria can sort with mutliple criteria and get the right answer"""
+        a = (0,1)
+        b = (1,1)
+        c = (1,2)
+        d = (2,1)
+        e = (2,2)
+        f = (0,4)
+        g = (-1,5)
+        input = [a,b,c,d,e,f,g]
+        #sort by left minimum, right minimum
+        result = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(input, [(lambda x: x[0], min),(lambda x: x[1], min)])
+        self.assertEqual(result[0], g)
+
+        #sort by right minimum, left minimum
+        result = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(input,[(lambda x: x[1], min),(lambda x: x[0], min)])
+        self.assertEqual(result[0], a)
+
+        #sort by left maximum, right minimum
+        result = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(input, [(lambda x: x[0], max),(lambda x: x[0], min)])
+        self.assertEqual(result[0], d)
+
+        #sort by sum, then right maximum
+        result = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(input,[(sum, max), (lambda x: x[1],max)])
+        self.assertEqual(result[0], g)
+
+    def test_tie_breaking_rankings(self):
+        """test that _select_best_with_multiple_criteria works with ties"""
+        a = (0,0,1)
+        b = (0,0,2)
+        c = (0,0,3)
+        input =[a,b,c]
+        result = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(input, [(lambda x: x[0], max),
+                                                                                (lambda x: 3,min),
+                                                                                (lambda x: x[1], max),
+                                                                                (lambda x: x[2],max)])
+        self.assertEqual(result[0],c)
+
 
 
 if __name__ == '__main__':
