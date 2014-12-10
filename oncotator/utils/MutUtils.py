@@ -47,6 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 import logging
+from Bio import Seq
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
 from oncotator.utils.VariantClassification import VariantClassification
@@ -479,3 +480,22 @@ class MutUtils(object):
             updated_start = str(int(m.start) - 1)
 
         return ref_allele, alt_allele, updated_start
+
+    @staticmethod
+    def translate_sequence(input_seq):
+        """Wrapper for Biopython translate function.  Bio.Seq.translate will complain if input sequence is 
+        not a mulitple of 3.  This wrapper function passes an acceptable input to Bio.Seq.translate in order to
+        avoid this warning."""
+    
+        trailing_bases = len(input_seq) % 3
+    
+        if trailing_bases:
+            input_seq = ''.join([input_seq, 'NN']) if trailing_bases == 1 else ''.join([input_seq, 'N'])
+    
+        output_seq = Seq.translate(input_seq)
+    
+        if trailing_bases:
+            #remove last residue if input needed to be extended because of trailing bases
+            output_seq = output_seq[:-1]
+    
+        return output_seq

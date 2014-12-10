@@ -58,7 +58,6 @@ from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils
 from BCBio import GFF
 from Bio import SeqIO
-from Bio import Seq
 
 class GenomeBuildFactory(object):
     """ Responsible for creating indices for genome builds (through ENSEMBL) and creating a set of datasource files.
@@ -98,7 +97,7 @@ class GenomeBuildFactory(object):
     def _calculate_protein_sequence(self, exons, seq, cds_start_genomic_space, cds_stop_genomic_space, strand):
         cds_start_exon_space, cds_stop_exon_space = TranscriptProviderUtils._convert_genomic_space_to_feature_space(int(cds_start_genomic_space), int(cds_stop_genomic_space), exons, strand)
 
-        prot_seq = Seq.translate(seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
+        prot_seq = MutUtils.translate_sequence(seq[int(cds_start_exon_space):int(cds_stop_exon_space)])
         if len(prot_seq) > 0 and prot_seq[-1] == '*':
             prot_seq = prot_seq[:-1]
 
