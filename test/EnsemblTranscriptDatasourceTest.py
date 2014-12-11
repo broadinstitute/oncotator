@@ -545,6 +545,25 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertTrue(m2['variant_classification'] == VariantClassification.MISSENSE)
         self.assertFalse(m2['annotation_transcript'].startswith("ENST00000544786"))
 
+    def test_canonical_tx_list_empty(self):
+        """Test that not specifying the canonical list will do nothing."""
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_")
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22142650"
+        m.end = "22142650"
+        m.ref_allele = "T"
+        m.alt_allele = "A"
+
+        m2 = ds.annotate_mutation(m)
+        self.assertFalse(m2['annotation_transcript'].startswith("ENST00000544786"))
+        self.assertFalse(m2['variant_classification'] == VariantClassification.INTRON)
+
+        ds.set_custom_canonical_txs([])
+        m2 = ds.annotate_mutation(m)
+        self.assertTrue(m2['variant_classification'] == VariantClassification.MISSENSE)
+        self.assertFalse(m2['annotation_transcript'].startswith("ENST00000544786"))
+
     def test_hashcode_changes_when_tx_mode_changes(self):
         """Test that a call to set_tx_mode will change the md5 hash for the datasource"""
         ds = TestUtils._create_test_gencode_v19_ds("out/test_hashcode_changes_when_tx_mode_changes_")
