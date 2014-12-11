@@ -125,6 +125,15 @@ class RunSpecificationFactory(object):
                 logging.getLogger(__name__).info("Setting %s %s to tx-mode of %s..." % (ds.title, ds.version, tx_mode))
                 ds.set_tx_mode(tx_mode)
 
+                if other_opts.get(OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE, None) is not None:
+                    cc_txs_fp = file(other_opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE], 'r')
+                    cc_txs = [tx.rsplit(".", 1)[0] for tx in cc_txs_fp]
+                    cc_txs_fp.close()
+                    ds.set_custom_canonical_txs(cc_txs)
+                    logging.getLogger(__name__).info(str(len(cc_txs)) + " custom canonical transcripts specified.")
+                else:
+                    logging.getLogger(__name__).info("No custom canonical transcripts specified.")
+
         result = RunSpecification()
         result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasource_list,
                           isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations,

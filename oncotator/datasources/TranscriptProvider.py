@@ -81,7 +81,6 @@ class TranscriptProvider(object):
 
     @abc.abstractmethod
     def set_tx_mode(self, tx_mode):
-        # TODO: Throw exception if not in TX_MODE_CHOICES
         return
 
     @abc.abstractmethod
@@ -90,4 +89,12 @@ class TranscriptProvider(object):
 
     @abc.abstractmethod
     def retrieve_transcripts_by_gene(self, gene):
+        return
+
+    @abc.abstractmethod
+    def set_custom_canonical_txs(self, tx_list):
+        return
+
+    @abc.abstractmethod
+    def get_custom_canonical_txs(self):
         return
