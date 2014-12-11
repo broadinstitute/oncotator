@@ -502,6 +502,82 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
                                                                                 (lambda x: x[2],max)])
         self.assertEqual(result[0],c)
 
+    def test_canonical_tx_list(self):
+        """Test that specifying the canonical list will actually change the transcript selected. """
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_")
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22142650"
+        m.end = "22142650"
+        m.ref_allele = "T"
+        m.alt_allele = "A"
+        ds.set_custom_canonical_txs(["ENST00000544786"])
+        ds.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+
+        # NOTE: tx list overrides best effect
+        m2 = ds.annotate_mutation(m)
+        self.assertTrue(m2['annotation_transcript'].startswith("ENST00000544786"))
+        self.assertTrue(m2['variant_classification'] == VariantClassification.INTRON)
+
+        ds.set_custom_canonical_txs([])
+        m2 = ds.annotate_mutation(m)
+        self.assertTrue(m2['variant_classification'] == VariantClassification.MISSENSE)
+        self.assertFalse(m2['annotation_transcript'].startswith("ENST00000544786"))
+
+
+    def test_canonical_tx_list_miss(self):
+        """Test that specifying the canonical list will do nothing otherwise."""
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_")
+        m = MutationData()
+        m.chr = "22"
+        m.start = "22142650"
+        m.end = "22142650"
+        m.ref_allele = "T"
+        m.alt_allele = "A"
+        ds.set_custom_canonical_txs(["ENST00000123456"])
+
+        m2 = ds.annotate_mutation(m)
+        self.assertFalse(m2['annotation_transcript'].startswith("ENST00000544786"))
+        self.assertFalse(m2['variant_classification'] == VariantClassification.INTRON)
+
+        ds.set_custom_canonical_txs([])
+        m2 = ds.annotate_mutation(m)
+        self.assertTrue(m2['variant_classification'] == VariantClassification.MISSENSE)
+        self.assertFalse(m2['annotation_transcript'].startswith("ENST00000544786"))
+
+    def test_hashcode_changes_when_tx_mode_changes(self):
+        """Test that a call to set_tx_mode will change the md5 hash for the datasource"""
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_hashcode_changes_when_tx_mode_changes_")
+        ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        dummy_seed = "dummy"
+        ds.set_hashcode(dummy_seed)
+
+        initial_hash = ds.get_hashcode()
+        self.assertTrue(initial_hash != dummy_seed)
+
+        ds.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+        be_hash = ds.get_hashcode()
+        self.assertTrue(initial_hash != be_hash)
+
+        ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        test_hash = ds.get_hashcode()
+        self.assertTrue(test_hash == initial_hash)
+
+        new_dummy_seed = "new_dummy"
+        ds.set_hashcode(new_dummy_seed)
+
+        # MAke sure new_dummy changes the hash.
+        initial_hash2 = ds.get_hashcode()
+        self.assertTrue(initial_hash2 != initial_hash)
+
+        ds.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
+        be_hash2 = ds.get_hashcode()
+        self.assertTrue(initial_hash2 != be_hash2)
+        self.assertTrue(be_hash != be_hash2)
+
+        ds.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
+        test_hash = ds.get_hashcode()
+        self.assertTrue(test_hash == initial_hash2)
 
 
 if __name__ == '__main__':

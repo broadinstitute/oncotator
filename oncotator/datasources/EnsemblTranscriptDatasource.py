@@ -54,6 +54,7 @@ from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.index.gaf import region2bins
+from oncotator.utils.Hasher import Hasher
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
@@ -66,6 +67,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
         Though all transcripts for GENCODE can be loaded, it is currently set to ignore any transcripts that are not
             "basic"
+
+
+        Any transcripts in the custom canonical transcript list will be selected before the tx-mode parameter.
     """
     """This is the list of annotations that get populated by this datasource"""
     POPULATED_ANNOTATION_NAMES = {'transcript_exon', 'variant_type', 'variant_classification', 'other_transcripts',
@@ -76,7 +80,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
                                   'ccds_id', 'gencode_transcript_type', 'transcript_position',
                                   'gencode_transcript_name'}
 
-    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy"):
+    def __init__(self,  src_file, title='ENSEMBL', version='', tx_mode=TranscriptProvider.TX_MODE_CANONICAL, protocol="file", is_thread_safe=False, tx_filter="dummy", custom_canonical_txs=None):
         super(EnsemblTranscriptDatasource, self).__init__(src_file=src_file, title=title, version=version)
 
         ensembl_index_fname = src_file + ".transcript.idx"
@@ -106,6 +110,16 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         self._tx_filter = TranscriptFilterFactory.create_instance(tx_filter)
 
         self._hgvs_xformer = HgvsChangeTransformer()
+
+        # Store a list of the custom canonical transcripts
+        if custom_canonical_txs is None:
+            self._custom_canonical_txs = []
+        else:
+            self._custom_canonical_txs = custom_canonical_txs
+
+        # IMPORTANT: Any new attributes that can change the results of annotations and, therefore, should invalidate the
+        #  cache, should be added to the list in get_hashcode.  There should be a way to do this dynamically, but that
+        # has not been implemented yet.
 
     def set_tx_mode(self, tx_mode):
         if tx_mode == TranscriptProvider.TX_MODE_CANONICAL:
@@ -269,11 +283,19 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
     @staticmethod
     def _calculate_canonical_score(tx):
         """
+
+        For score, higher is better.
+
+        "Protein coding" is worth four points.
+        4 - (gencode transcript level) are added.
+
+        For example, a protein coding level 2 (automatic curation) transcript will score 6.
+        For example, a protein coding level 1 (automatic and manual curation) transcript will score 7.
         Level 1 is validated
         Level 2 is manual annotation
         Level 3 is automated annotation.
         :param tx: Transcript
-        :return:
+        :return int: score as described above
         """
         # higher ranks are more important.
         lvl_rank = 0
@@ -318,12 +340,28 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         effect_score = effect_dict.get(vc, 25)
         return effect_score
 
+    @staticmethod
+    def _is_tx_in_tx_list(tx, tx_id_list):
+        """
+        Check if a transcript ID (with or without version number) is in the given list of transcripts.
+
+        NOTE: The tx_id_list is assumed to not include version numbers.
+        :param tx:
+        :param tx_id_list:
+        :return bool:
+        """
+        tx_id = tx.get_transcript_id()
+        if tx_id.rsplit('.', 1)[0] in tx_id_list:
+            return True
+        return False
+
     def _choose_best_effect_transcript(self, txs, variant_type, ref_allele, alt_allele, start, end):
         """Choose the transcript with the most detrimental effect.
          The rankings are in TranscriptProviderUtils.
          Ties are broken by which transcript has the longer coding length.
          Additional ties are broken with appris rank
 
+        0.  membership in custom canonical transcript list
         1.  most detrimental effect
         2.  curation level
         3.  appris rank
@@ -341,7 +379,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         if len(txs) == 0:
             return None
         best_effect_txs = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(txs,
-                        [(lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
+                        [(lambda x: self._is_tx_in_tx_list(x, self._custom_canonical_txs), max),
+                        (lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
                         (self._calculate_canonical_score, max),
                         (self._get_appris_rank, min),
                         (lambda x: len(x.get_seq()), max),
@@ -353,6 +392,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         """Use the level tag to choose canonical transcript.
         Choose highest canonical score.
         The following order of preference is used:
+        0.  membership in custom canonical transcript list
         1.  curation level
         2.  appris rank
         3.  most detrimental effect
@@ -370,6 +410,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         if len(txs) == 0:
             return None
         highest_scoring_tx = EnsemblTranscriptDatasource._select_best_with_multiple_criteria(txs, [
+            (lambda x: self._is_tx_in_tx_list(x, self._custom_canonical_txs), max),
             (self._calculate_canonical_score, max),
             (self._get_appris_rank, min),
             (lambda x: self._calculate_effect_score(x, start, end, alt_allele, ref_allele, variant_type), min),
@@ -716,3 +757,29 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         """Return all of the gene symbols recognized by this datasource.
                 """
         return self.gene_db.keys()
+
+    def set_custom_canonical_txs(self, tx_list):
+        """
+
+        :param tx_list: list of transcript IDs, with or without version numbers.
+        :return:
+        """
+        self._custom_canonical_txs = tx_list
+
+    def get_custom_canonical_txs(self):
+        return self._custom_canonical_txs
+
+    def get_hashcode(self):
+        """ Since this class can change annotation values depending on certain state attributes (e.g. tx-mode), we need the
+        hashcode to change.  The super class hashcode attribute is treated like an initial hashcode here.
+
+        In other words, hashcode is not a simple attribute for this datasource class.
+
+
+        :return: hashcode including state information
+        """
+        hasher = Hasher()
+        attrs_relevant_for_caching = [self.hashcode, self.get_tx_mode(), str(self._custom_canonical_txs)]
+        for attr in attrs_relevant_for_caching:
+            hasher.update(attr)
+        return Hasher.md5_hash(hasher.hexdigest())
