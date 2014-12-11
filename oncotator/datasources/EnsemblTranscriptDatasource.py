@@ -112,10 +112,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         self._hgvs_xformer = HgvsChangeTransformer()
 
         # Store a list of the custom canonical transcripts
-        if custom_canonical_txs is None:
-            self._custom_canonical_txs = []
-        else:
-            self._custom_canonical_txs = custom_canonical_txs
+        self._custom_canonical_txs = custom_canonical_txs or []
 
         # IMPORTANT: Any new attributes that can change the results of annotations and, therefore, should invalidate the
         #  cache, should be added to the list in get_hashcode.  There should be a way to do this dynamically, but that
