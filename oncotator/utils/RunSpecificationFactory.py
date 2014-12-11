@@ -125,7 +125,7 @@ class RunSpecificationFactory(object):
                 logging.getLogger(__name__).info("Setting %s %s to tx-mode of %s..." % (ds.title, ds.version, tx_mode))
                 ds.set_tx_mode(tx_mode)
 
-                if other_opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE] is not None:
+                if other_opts.get(OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE, None) is not None:
                     cc_txs_fp = file(other_opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE], 'r')
                     cc_txs = [tx.rsplit(".", 1)[0] for tx in cc_txs_fp]
                     cc_txs_fp.close()
