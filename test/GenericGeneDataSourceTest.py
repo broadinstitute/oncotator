@@ -88,14 +88,14 @@ class GenericGeneDataSourceTest(unittest.TestCase):
         
         # We need a gaf data source to annotate gene
 
-        gafDatasource = TestUtils.createTranscriptProviderDatasource(config=self.config)
+        transcriptDS = TestUtils.createTranscriptProviderDatasource(config=self.config)
         geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         outputFilename = 'out/genericGeneTest.out.tsv'
         
         annotator = Annotator()
         annotator.setInputCreator(MafliteInputMutationCreator('testdata/maflite/Patient0.snp.maf.txt'))
         annotator.setOutputRenderer(SimpleOutputRenderer(outputFilename))
-        annotator.addDatasource(gafDatasource)
+        annotator.addDatasource(transcriptDS)
         annotator.addDatasource(geneDS)
         annotator.annotate()
         

@@ -49,11 +49,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import logging
 import shove
 from oncotator.Annotation import Annotation
-from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils, region2bins
 from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.SegmentDatasource import SegmentDatasource
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
-from oncotator.index.gaf import region2bins
 from oncotator.utils.Hasher import Hasher
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
 from oncotator.utils.VariantClassification import VariantClassification

@@ -79,10 +79,6 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _createGafDataSource(self):
-        self.logger.info("Initializing gaf 3.0")
-        return TestUtils.createTranscriptProviderDatasource(self.config)
-
     def testBasicCreationWithExampleVcf(self):
         """
         Tests the ability to parse an input VCF file can be parsed without any errors.

@@ -126,7 +126,7 @@ class CosmicDatasourceTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def testRealWorld(self):
         """Test that the full COSMIC datasource can retrieve entries by both gp and gpp."""
-        gafDS = TestUtils.createTranscriptProviderDatasource(self.config)
+        transcriptDS = TestUtils.createTranscriptProviderDatasource(self.config)
         cosmicDS = TestUtils.createCosmicDatasource(self.config)
 
         # These values are not taken from a real world scenario, but are cooked for this test.
@@ -137,7 +137,7 @@ class CosmicDatasourceTest(unittest.TestCase):
         m.end = '12941796'
         m.ref_allele = "G"
         m.alt_allele = "T"
-        m = gafDS.annotate_mutation(m)
+        m = transcriptDS.annotate_mutation(m)
         m = cosmicDS.annotate_mutation(m)
 
         self.assertTrue(m['COSMIC_n_overlapping_mutations'] == '0')
@@ -149,7 +149,7 @@ class CosmicDatasourceTest(unittest.TestCase):
         m.end = '150483621'
         m.ref_allele = "G"
         m.alt_allele = "T"
-        m = gafDS.annotate_mutation(m)
+        m = transcriptDS.annotate_mutation(m)
         m = cosmicDS.annotate_mutation(m)
 
 if __name__ == '__main__':

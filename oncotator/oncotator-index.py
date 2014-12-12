@@ -50,12 +50,11 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import sys
 from oncotator.index.TabixIndexer import TabixIndexer
-from oncotator.index.gaf import index_gaf, index_gaf_fastas
 import pysam
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
-        print "Usage: oncotator-index <gaf|gaf-seqs|cosmic> <input_file>"
+        print "Usage: oncotator-index <cosmic> <input_file>"
         sys.exit(1)
 
     datasource_type, input_fname = sys.argv[1:]
@@ -63,18 +62,14 @@ if __name__ == '__main__':
     if datasource_type == 'cosmic':
         output_fname = input_fname + '.tbi'
 
-    if datasource_type not in ['gaf', 'gaf-seqs', 'cosmic']:
+    if datasource_type not in ['cosmic']:
         print "%s is not a valid datasource type." % datasource_type
         sys.exit(1)
 
     print "Input datasource: %s" % input_fname
     print "Output indexed file: %s" % output_fname
 
-    if datasource_type == 'gaf':
-        index_gaf(input_fname, output_fname)
-    elif datasource_type == 'gaf-seqs':
-        index_gaf_fastas(input_fname, output_fname, protocol="file")
-    elif datasource_type == 'cosmic':
+    if datasource_type == 'cosmic':
 
         ###This code needs to go in a separate module
         # TODO: Leverage TabixIndexer class

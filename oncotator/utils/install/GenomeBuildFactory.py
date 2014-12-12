@@ -51,8 +51,7 @@ from copy import deepcopy
 import logging
 from shove.core import Shove
 from oncotator.Transcript import Transcript
-from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
-from oncotator.index.gaf import region2bin
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils, region2bin
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.utils.install.GenomeBuildInstallUtils import GenomeBuildInstallUtils

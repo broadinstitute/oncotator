@@ -78,10 +78,6 @@ class VcfOutputRendererTest(unittest.TestCase):
 
     def tearDown(self):
         pass
-    
-    def _createGafDataSource(self):   
-        self.logger.info("Initializing gaf 3.0")
-        return TestUtils.createTranscriptProviderDatasource(self.config)
 
     def testRemoveAnnotationsThatBeginWithUnderscore(self):
         """

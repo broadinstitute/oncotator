@@ -54,7 +54,6 @@ from ConfigParser import SafeConfigParser
 import os
 import unittest
 from oncotator.DatasourceFactory import DatasourceFactory
-from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.dbSNP import dbSNP
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
 import logging
@@ -106,39 +105,19 @@ class TestUtils(object):
     
     @staticmethod
     def createTranscriptProviderDatasource(config, tx_mode="CANONICAL", protocol="file"):
-        """ Creates a GENCODE or Gaf 3.0 datasource from a config file.  Determines which is available automatically,
-            For GAF 3.0, assumes a gaf3.0 section with keys: gaf_fname and gaf_transcript_seqs_fname
-
+        """ Creates a GENCODE datasource from a config file.  Determines which is available automatically,
             """
         if os.path.exists(config.get("gencode", "gencodeDir")):
             gencode_dir = config.get("gencode", "gencodeDir")
             result_ds = EnsemblTranscriptDatasource(gencode_dir + "/gencode.v19.annotation.gtf", title="GENCODE", version="TEST v19", tx_filter="basic", tx_mode=tx_mode)
         else:
-            try:
-                gaf_fname = config.get("gaf3.0", "gaf_fname")
-                gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
-                result_ds = Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol=protocol)
-            except Exception as gaf_failure_reason:
-                raise Exception("Couldn't create a transcript provider datasource, no gencode dir found and %s" % gaf_failure_reason)
+            raise Exception("Couldn't create a transcript provider datasource, no gencode dir found")
         return result_ds
 
     @staticmethod
     def createReferenceDatasource(config):
         refFilename = config.get("ref_hg", "refDir")
         return ReferenceDatasource(refFilename)
-
-    @staticmethod
-    def createGafDatasourceProxy(config, tx_mode="CANONICAL", protocol="file"):
-        """ Creates a Gaf 3.0 datasource from a config file and make a proxy.
-            Assumes a gaf3.0 section with keys: gaf_fname and gaf_transcript_seqs_fname
-            """
-        MyManager.register('Gaf', Gaf)
-        manager = MyManager()
-        manager.start()
-        gaf_fname = config.get("gaf3.0", "gaf_fname")
-        gaf_transcripts_fname = config.get("gaf3.0", "gaf_transcript_seqs_fname")
-        gafDatasource = manager.Gaf(gaf_fname, gaf_transcripts_fname, tx_mode=tx_mode, protocol="file")
-        return gafDatasource
 
     @staticmethod
     def createDbSnpDatasource(config):

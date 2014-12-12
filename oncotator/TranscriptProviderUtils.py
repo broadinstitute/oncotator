@@ -576,3 +576,21 @@ class TranscriptProviderUtils(object):
             return TranscriptProviderUtils.test_feature_overlap(s, e, tx.get_exons())
         else:
             return TranscriptProviderUtils.test_feature_overlap(s, s, tx.get_exons())
+
+
+def region2bins(beg, end):
+    bins = [0]
+    bins.extend(range(1 + (beg >> 26), 1 + (end >> 26) + 1))
+    bins.extend(range(9 + (beg >> 23), 9 + (end >> 23) + 1))
+    bins.extend(range(73 + (beg >> 20), 73 + (end >> 20) + 1))
+    bins.extend(range(585 + (beg >> 17), 585 + (end >> 17) + 1))
+    return bins
+
+
+def region2bin(beg, end):
+    end = end - 1
+    if beg >> 17 == end >> 17: return ((1 << 12) - 1) / 7 + (beg >> 17)
+    if beg >> 20 == end >> 20: return ((1 << 9) - 1) / 7 + (beg >> 20)
+    if beg >> 23 == end >> 23: return ((1 << 6) - 1) / 7 + (beg >> 23)
+    if beg >> 26 == end >> 26: return ((1 << 3) - 1) / 7 + (beg >> 26)
+    return 0

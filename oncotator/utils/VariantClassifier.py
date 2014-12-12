@@ -53,8 +53,8 @@ import itertools
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.InvalidVariantException import InvalidVariantException
 from oncotator.utils.VariantClassification import VariantClassification
-from oncotator.utils.gaf_annotation import chop
 from oncotator.utils.MutUtils import MutUtils
+from oncotator.utils.iterutils import chop
 
 
 class VariantClassifier(object):

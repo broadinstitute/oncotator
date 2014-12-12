@@ -49,9 +49,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import Bio
 
-from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils, region2bins, region2bin
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
-from oncotator.index.gaf import region2bin, region2bins
 from oncotator.utils.VariantClassification import VariantClassification
 from test.MUC16ChangeTestdata import change_testdata
 from test.PIK3CATestdata import pik3ca_testdata

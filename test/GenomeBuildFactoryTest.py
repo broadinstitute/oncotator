@@ -50,8 +50,8 @@ import os
 import shutil
 import unittest
 from shove.core import Shove
+from oncotator.TranscriptProviderUtils import region2bins, region2bin
 from oncotator.utils.install.GenomeBuildFactory import GenomeBuildFactory
-from oncotator.index.gaf import region2bin,region2bins
 from oncotator.utils.MutUtils import MutUtils
 
 class GenomeBuildFactoryTest(unittest.TestCase):

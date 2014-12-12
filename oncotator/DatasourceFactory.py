@@ -53,7 +53,6 @@ from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatas
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
 from oncotator.utils.RunSpecification import RunSpecification
 from utils.ConfigUtils import ConfigUtils
-from oncotator.datasources.Gaf import Gaf
 from oncotator.datasources.ReferenceDatasource import ReferenceDatasource
 from oncotator.datasources.dbSNP import dbSNP
 from oncotator.datasources.Cosmic import Cosmic
@@ -135,11 +134,7 @@ class DatasourceFactory(object):
         
         # TODO: Replace these if statements with something a bit more robust, such as a proper dependency injection framework
         filePrefix = leafDir + "/"
-        if dsType == "gaf":
-            gaf_fname = filePrefix + configParser.get('general', 'gaf_fname')
-            gaf_transcript_sequences_fname = filePrefix + configParser.get('general', 'gaf_transcript_seqs_fname')
-            result = Gaf(gaf_fname, gaf_transcript_sequences_fname, title=configParser.get("general", "title"), version=configParser.get("general", "version"), protocol=configParser.get("general", "protocol"))
-        elif dsType == "dbsnp":
+        if dsType == "dbsnp":
             result = dbSNP(filePrefix + configParser.get('general', 'src_file'), title=configParser.get('general', 'title'), version=configParser.get('general', 'version'))
         elif dsType == "ensembl":
             result = EnsemblTranscriptDatasource(filePrefix + configParser.get('general', 'src_file'),
