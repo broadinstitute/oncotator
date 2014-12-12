@@ -120,7 +120,8 @@ class DatasourceFactoryTest(unittest.TestCase):
         m.createAnnotation('gene',"ABL1")
         m = geneDS.annotate_mutation(m)
         self.assertTrue(m['CGC_Abridged_Name'] == "v-abl Abelson murine leukemia viral oncogene homolog 1","Test gene TSV datasource did not annotate properly.")
-    
+
+    @TestUtils.requiresDefaultDB()
     def testBasicDatasourceSorting(self):
         """Test that the GAF datasource is sorted before a gene-based datasource"""
 

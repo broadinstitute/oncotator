@@ -1,3 +1,10 @@
+  .. image:: https://travis-ci.org/broadinstitute/oncotator.svg?branch=develop
+    :target: https://travis-ci.org/broadinstitute/oncotator
+  
+  .. image:: https://coveralls.io/repos/broadinstitute/oncotator/badge.png?branch=issue_211_travis
+    :target: https://coveralls.io/r/broadinstitute/oncotator?branch=issue_211_travis
+
+
 ======================
 Oncotator
 ======================

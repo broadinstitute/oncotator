@@ -49,12 +49,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import unittest
 import logging
-import os.path as op
 
 from oncotator.MutationData import MutationData
 from TestUtils import TestUtils
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
-from oncotator.utils.VariantClassification import VariantClassification
 
 
 TestUtils.setupLogging(__file__, __name__)
@@ -70,6 +68,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     ### TODO need test to assert that all necessary fields are present
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_missense(self):
         #rs80358866
         m = MutationData()
@@ -94,6 +93,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000380152.3:c.6290C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000369497:p.Thr2097Met')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_nonsense(self):
         #rs35229491
         m = MutationData()
@@ -118,6 +118,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000303230.4:c.1510C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000307342:p.Arg504*')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_renders_with_no_build(self):
         #rs148119501
         """If mutation instance being annotated does not have a build value or is '', annotate should
@@ -142,6 +143,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2:g.80529551A>C')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_intron(self):
         #rs148119501
         #+ strand transcript
@@ -193,6 +195,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000277905.2:c.430-5T>C')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_5_utr(self):
         #rs141173433
         #negative strand
@@ -243,6 +246,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000275493.2:c.-7A>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_3_utr(self):
         #rs143436239
         #negative strand
@@ -294,6 +298,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000275493.2:c.*4C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_igr(self):
         #rs112615235
         m = MutationData()
@@ -319,6 +324,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), '')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_silent(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
@@ -342,6 +348,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000477853.1:c.2352C>T')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_splice_site(self):
         #splice site mutation occuring in intron prior to coding start position
         #rs61191258
@@ -393,6 +400,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000264938.3:c.932+1G>A')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_de_novo_start_OutOfFrame(self):
         #rs114472931
         m = MutationData()
@@ -418,6 +426,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000372237.3:c.-19C>A')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_ONP_missense(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DNP')
@@ -442,6 +451,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000215939.2:c.371_372delinsAT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000215939:p.Trp124Tyr')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_1(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -471,6 +481,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000512097.3:c.169_171dupGCC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000427120:p.Ala58dup')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_2(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -497,6 +508,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000423059.4:c.98_103dupCGCTGC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000406482:p.Pro33_Leu34dup')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_3(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -522,6 +534,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000382483.3:c.3978_3979insGAA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000371923:p.Lys1326_Thr1327insGlu')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_4(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -547,6 +560,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000382483.3:c.3979_3980insGGG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000371923:p.Thr1327delinsArgAla')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_5(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -572,6 +586,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000398659.4:c.755_757dupATG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000381652:p.Asn252_Ala253insAsp')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_6(self):
         #This is an insertion of a STOP in between two amino acids
         m = MutationData()
@@ -596,6 +611,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.951_952insTGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Lys318*')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_7(self):
         #This is an insertion of a STOP right before a stop
         m = MutationData()
@@ -620,6 +636,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955insTGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_frameshift(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -647,6 +664,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000324803.4:c.142_143insCG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000323978:p.Met48fs')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_INS_frameshift_2(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -672,6 +690,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000393160.3:c.1832_1835dupAGCG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000376867:p.Arg612fs')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_inframe(self):
         #rs141326765
         m = MutationData()
@@ -699,6 +718,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000603540.1:c.653_655delATG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000474385:p.Asp219del')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_inframe_2(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DEL')
@@ -725,6 +745,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000552699.1:c.868_876delAAGAAGAAA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000446734:p.Lys290_Lys292del')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_inframe_3(self):
         #rs141326765
         m = MutationData()
@@ -752,6 +773,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000324001.7:c.4077_4079delGGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000326018:p.Glu1361del')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_frameshift(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DEL')
@@ -779,6 +801,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000294618.7:c.1664delC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000294618:p.Pro555fs')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_nonstop(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'SNP')
@@ -804,6 +827,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000275493:p.*1211Trpext*6') #6 new amino acids added until another stop codon is encountered
         # "p.*1211Trpext?" would describe a variant in the stop codon at position 1211 changing it to a codon for Tryptophan (Trp, W) and adding a tail of new amino acids of unknown length since the shifted frame does not contain a new stop codon.
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_1(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DEL')
@@ -831,6 +855,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.956delA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.*319Cysext*?')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_2(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DEL')
@@ -858,6 +883,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955delGT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.*319Valext*?')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_3(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DEL')
@@ -880,6 +906,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.957_*2delGTA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_4(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DEL')
@@ -902,6 +929,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.951_*2delAAAGTAGTA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Glu317_*319delinsGluext*?')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_5(self):
         #negative strand transcript
         m = MutationData()
@@ -925,6 +953,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000389048.3:c.4862_4863delGA')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000373700:p.*1621Cysext*53')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_6(self):
         #negative strand transcript
         m = MutationData()
@@ -948,6 +977,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000389048.3:c.4859_4861delCCT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000373700:p.Pro1620_*1621delinsArgext*41')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_7(self):
         #negative strand transcript
         m = MutationData()
@@ -971,6 +1001,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000389048.3:c.4863_*5delAGCTCG')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000373700:p.*1621Trpext*39')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_INS(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'INS')
@@ -993,6 +1024,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.955_956insCAT')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.*319Serext*1')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_ONP(self):
         m = MutationData()
         m.createAnnotation('variant_type', 'DNP')
@@ -1017,6 +1049,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000359594.2:c.954_955delinsCC')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), 'ENSP00000352604:p.Lys318_*319delinsAsnGlnext*1')
 
+    @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_ref_hg(self):
         """Make sure that a simple HGVS annotation run can actually see ref_hg. """
 
@@ -1040,7 +1073,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.201722369_201722370delAC') # NOTE: This is right-shifted in HGVS
-        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000434813.2:c.958+74GT>-')
+        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000321356.4:c.832+74GT>-')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
 

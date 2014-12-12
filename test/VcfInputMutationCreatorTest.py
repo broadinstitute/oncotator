@@ -63,6 +63,8 @@ from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.utils.TagConstants import TagConstants
+from oncotator.utils.RunSpecification import RunSpecification
+from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 
 TestUtils.setupLogging(__file__, __name__)
@@ -105,6 +107,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
             ctr += 1
         self.assertTrue(ctr == 27, "Should have seen 27 called mutations, but saw: " + str(ctr))
 
+    @TestUtils.requiresDefaultDB()
     def testSimpleAnnotationWithExampleVcf(self):
         """
         Tests the ability to do a simple Gaf 3.0 annotation.
@@ -154,6 +157,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         dbDir = self.config.get('DEFAULT', "dbDir")
         return DatasourceFactory.createDatasources(dbDir, "hg19", isMulticore=False)
 
+    @TestUtils.requiresDefaultDB()
     def testTCGAMAFRendering(self):
         """
         Tests the ability to render a germline VCF file as a TCGA MAF file.
@@ -468,6 +472,46 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator.setInputCreator(creator)
         annotator.setOutputRenderer(renderer)
         annotator.annotate()
+
+    def testAnnotationWithDuplicateValuesInVcf(self):
+        """
+        Tests the ability to parse a VCF that contains an INFO, FILTER, and INFO field with the same name.
+        """
+        inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_fields.vcf"])
+        outputFilename = os.path.join("out", "example.duplicate_fields.tsv")
+
+        creator = VcfInputMutationCreator(inputFilename)
+        creator.createMutations()
+        renderer = SimpleOutputRenderer(outputFilename, [])
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+    @TestUtils.requiresDefaultDB()
+    def testAnnotationWithMafliteWithTrailingSpaces(self):
+        """
+        Tests the ability to annotate a VCF file that contains trailing spaces in ref and alt alleles.
+        """
+        db_dir = self.config.get('DEFAULT',"dbDir")
+        inputFilename = os.path.join(*["testdata", "vcf", "example.trailing_whitespace_in_alleles.vcf"])
+        outputFilename = os.path.join("out", "example.trailing_whitespace_in_alleles.vcf")
+
+        annotator = Annotator()
+        from oncotator.utils.RunSpecification import RunSpecification
+        run_spec = RunSpecificationFactory.create_run_spec("VCF", "VCF", inputFilename, outputFilename,
+                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS,
+                                                           other_opts={'vcf_out_infer_genotypes': False})
+        annotator.initialize(run_spec)
+        annotator.annotate()
+
+        #check output
+        vcf_data = open(outputFilename).read()
+        self.assertIn('\n1\t14907\t.\tA\tG\t', vcf_data)
+        self.assertIn('\n1\t14930\trs150145850\tA\tG\t', vcf_data)
+        self.assertIn('\n1\t14933\trs138566748\tG\tA\t', vcf_data)
+        self.assertIn('\n1\t14948\trs148911281\tG\tA\t', vcf_data)
+
 
 if __name__ == "__main__":
     unittest.main()

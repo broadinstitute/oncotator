@@ -50,6 +50,7 @@ from TestUtils import TestUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 """
@@ -116,6 +117,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             
             unknownKeys = []
             self.assertTrue(lineDict["Tumor_Seq_Allele1"] != lineDict["Tumor_Seq_Allele2"], "Reference and alternate were equal in TCGA MAF output on line %d (%s)" % (ctr, lineDict["Tumor_Seq_Allele1"]))
+            self.assertTrue(lineDict["Tumor_Seq_Allele1"] == lineDict["Reference_Allele"], "Reference Allele should match Tumor_Seq_Allele1 on line " + str(ctr))
+            uniprot_aa_xform_counter = 0
             for k in lineDict.keys():
                 if lineDict[k] == "__UNKNOWN__":
                     unknownKeys.append(k)
@@ -127,10 +130,19 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
                 exposedColumns = configFile.get("general", "exposedColumns")
                 if (k not in requiredColumns) and (k not in optionalColumns) and (k not in exposedColumns):
                     self.assertTrue(k.startswith("i_"), "Internal column was not prepended with 'i_'")
-                
+            if lineDict['UniProt_AApos'] == "0":
+                uniprot_aa_xform_counter += 1
+
+            if lineDict["Variant_Type"] == VariantClassification.VT_DEL:
+                self.assertTrue(lineDict["Tumor_Seq_Allele2"] == "-")
+
+            if lineDict["Variant_Type"] == VariantClassification.VT_INS:
+                self.assertTrue(lineDict["Reference_Allele"] == "-")
+
             unknownKeys.sort()
             self.assertTrue(len(unknownKeys) == 0, "__UNKNOWN__ values (" + str(len(unknownKeys)) + ") seen on line " + str(ctr) + ", in fields: " + ", ".join(unknownKeys))
-            
+            self.assertTrue(uniprot_aa_xform_counter < 10, "Too many uniprot aa xform values are zero (" + str(uniprot_aa_xform_counter) + ").  This is probably an error.")
+
             ctr += 1
 
     def _determine_db_dir(self):
@@ -147,7 +159,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
-    
+
+    @TestUtils.requiresDefaultDB()
     def testFullSNPOutput(self):
         """ Create a TCGA MAF from a SNP TSV file."""
         self.logger.info("Initializing Maflite SNP Test...")
@@ -157,6 +170,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
 
+    @TestUtils.requiresDefaultDB()
     def testFullIndelOutput(self):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
@@ -231,6 +245,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testsimpleSNP.maf.tsv", self._determine_db_dir(), outputFormat="SIMPLE_TSV")
         self.assertTrue(os.path.exists(testOutputFilename))
 
+    @TestUtils.requiresDefaultDB()
     def testExposedColumns(self):
         """Test that columns listed in the config file as exposed do not get the i_ prepend"""
         testOutputFilename = self._annotateTest('testdata/maflite/tiny_maflite.maf.txt', "out/testExposedCols.maf.tsv", self._determine_db_dir())
@@ -246,6 +261,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertFalse(("i_" + h) in headers, "i_ was prepended to " + h)
             self.assertTrue(h in headers, h + " not found.")
 
+    @TestUtils.requiresDefaultDB()
     def testProperConversionVcfToMaf(self):
         """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF """
 
@@ -287,6 +303,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         self.assertTrue(ctr == 8, str(ctr) + " mutations found, but should have been 8.")
 
+    @TestUtils.requiresDefaultDB()
     def testProperConversionVcfToMafWithThirdSample(self):
         """Test that ref, alt, and positions are properly populated in a TCGA MAF generated from a VCF, but that the NORMAL is treated as any other sample, since this VCF has three samples in it. """
 

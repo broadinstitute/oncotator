@@ -123,6 +123,7 @@ class CosmicDatasourceTest(unittest.TestCase):
         self.assertTrue(m['COSMIC_overlapping_mutation_AAs'].find('1229') != -1, "Could not find the entry specified by genomic coords.")
         self.assertTrue(m['COSMIC_overlapping_primary_sites'] == "lung(3)", "Did not have the correct primary sites annotation (lung(3)): " + m['COSMIC_overlapping_primary_sites'])
 
+    @TestUtils.requiresDefaultDB()
     def testRealWorld(self):
         """Test that the full COSMIC datasource can retrieve entries by both gp and gpp."""
         gafDS = TestUtils.createTranscriptProviderDatasource(self.config)

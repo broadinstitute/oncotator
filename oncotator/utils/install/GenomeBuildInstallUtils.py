@@ -169,7 +169,7 @@ class GenomeBuildInstallUtils(object):
             fasta_file = [f for f in fnames if f.endswith(ext)][0]
             fasta_version = fasta_file.partition(ext)[0][:-1]
 
-            if fasta_version != gtf_version:
+            if not ( fasta_version.startswith( gtf_version) or gtf_version.startswith(fasta_version)):
                 raise Exception('Fasta file version does not match gtf file version!  ' + fasta_version + ' and ' + gtf_version)
 
             print "Now Downloading {0}...".format(fasta_file)

@@ -55,7 +55,7 @@ import shutil
 import os
 from oncotator.utils.MutUtils import MutUtils
 
-supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv', 'snp_leveldb']
+supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv']
 
 
 def parseOptions():
@@ -100,8 +100,6 @@ def parseOptions():
 
        "indexed_vcf" -- vcf or tabix indexed vcf file referenced by chromosome and position.
 
-       "snp_leveldb" -- tsv file that is for SNP/SNV only.  Matches on chromosome, start, end, ref_allele, and alt_allele.  start will typically equal end.
-            This datasource is good for large TSVs that cannot fit in RAM.
 
    datasource filename -- input data file.  In the case of tabix_gp_tsv, it would be the source tsv file.
    name -- arbitrary name for the datasource.  This will be the folder moved into the the destination db dir.  Must be unique from other datasources.  
@@ -123,7 +121,7 @@ def parseOptions():
 
    Example usages:
    # Create the abridged cancer gene census datasource as a generic tsv, using the Symbol column as the gene column 
-   python initializeDataSource.py --ds_type gene_tsv --ds_file CancerGeneCensus_Table_1_full_2012-03-15_trim.txt --name CGC --version full_2012_03_15 --dbDir ~/oncotest cgc --genome_build hg19 --index_columns Symbol
+   python initializeDataSource.py --ds_type gene_tsv --ds_file CancerGeneCensus_Table_1_full_2012-03-15_trim.txt --name CGC --version full_2012_03_15 --dbDir ~/oncotest --ds_foldername cgc --genome_build hg19 --index_columns Symbol
 
    # Create a datasource for ORegAnno (a generic genome position tsv)
    python initializeDataSource.py --ds_type gp_tsv --ds_file oreganno_trim.hg19.txt --name ORegAnno --version "UCSC Track" --dbDir ~/oncotest oreganno --genome_build hg19 --index_columns hg19.oreganno.chrom,hg19.oreganno.chromStart,hg19.oreganno.chromEnd
@@ -140,8 +138,6 @@ def parseOptions():
    # Create a datasource using Exome Seq. Project (ESP) data that is in variant call format (VCF)
    initializeDatasource --ds_type indexed_vcf --ds_file ESP6500SI-V2.vcf --name ESP --version 6500SI-V2 --dbDir ~/oncotest_ESP6500SI-V2 --genome_build hg19 --match_mode exact --ds_foldername ~/ESP6500SI-V2_exact
 
-   # Create a datasource from a tsv
-   initializeDatasource --ds_type snp_leveldb --ds_file test/testdata/small_tsv_leveldb/dbNSFP2.4_variant.chr1_cut5000.tsv  --name dbNSFP5k --version TEST --dbDir /path/to/test_db_dir/ --index_columns "chr,pos(1-coor),pos(1-coor),ref,alt" --genome_build hg19 --ds_foldername dbNSFP5k
     """
 
     desc = """

@@ -77,7 +77,7 @@ class GenericGeneDataSourceTest(unittest.TestCase):
         pass
 
 
-        
+    @TestUtils.requiresDefaultDB()
     def testBasicAnnotation(self):
         ''' Annotate from a basic tsv gene file.  Use the Gaf to annotate before trying the tsv -- required since the gene annotation must be populated.
         Using trimmed CancerGeneCensus as basis for this test.

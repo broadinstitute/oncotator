@@ -80,10 +80,10 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(hdr.find("broad.mit.edu") <> -1, "Could not find string that should have been in header.")
 
     def testChromRendering(self):
-        """Make sure that the chromosome rendering in TCGA VCF is correct: "1" --> "1"  ,  "GLXXXX.Y" --> <GLXXXX.Y>"""
+        """Make sure that the chromosome rendering in TCGA VCF is correct: "1" --> "1", "GLXXXX.Y" --> GLXXXX.Y, not <GLXXXX.Y>"""
         vcfOR = TcgaVcfOutputRenderer("out/TCGAVCF.empty.out.txt")
         testChrs = ["21", "MT", "GL1234.4", "1"]
-        gt = ["21", "MT", "<GL1234.4>", "1"]
+        gt = ["21", "MT", "GL1234.4", "1"]
         ctr = 0
         for t in testChrs:
             val = vcfOR._renderChrom(t)
@@ -104,6 +104,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
                   'geneAnno':"https://tcga-data.nci.nih.gov/docs/GAF/GAF3.0/"}
         return result
 
+    @TestUtils.requiresDefaultDB()
     def testFullSnpVcf(self):
         """ Perform test of a SNP call stats (maflite) all the way through TCGA VCF creation.  Only checks that a file was created.
         """
@@ -122,6 +123,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
 
         self.assertTrue(os.path.exists(outputFilename))
 
+    @TestUtils.requiresDefaultDB()
     def testFullIndelVcf(self):
         """ Perform test of a Indel maflite all the way through TCGA VCF creation
         """
@@ -192,6 +194,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         self.assertTrue(infoData.find("SOMATIC") <> -1, "SOMATIC not found")
         self.assertTrue(infoData.find("Gene") == -1, "Gene was found when it should have been missing.")
 
+    @TestUtils.requiresDefaultDB()
     def testAnotherFullSNP(self):
         """Test SNP call stats .  Just make sure no exception is thrown."""
         inputFile = "testdata/maflite/Another.call_stats.txt"
