@@ -164,7 +164,25 @@ class OnpCombinerTest(unittest.TestCase):
         results = list(combiner.get_combined_mutations())
         self._assert_mutation_lists_equal(expected_muts, results)
 
+    def test_indels_only_onp_combiner(self):
+        """test indels get output if there are no snps"""
+        inputs = [(12, 102, 103, "C", "-", "hg19"),
+                    (13, 102, 102, "-", "A", "hg19")]
+        self._onp_ordered_combiner_test(inputs, inputs)
 
+    def test_indels_multi_chromosome_ordering(self):
+        """test that indels from multiple chromosome don't get sorted by position together"""
+        inputs = [(12, 102, 102, "C", "-", "hg19"),
+                    (13, 1, 1, "-", "A", "hg19"),
+            (13,2,2,"-","A","hg19"),
+            (14,1,1,"-","G","hg19")]
+        self._onp_ordered_combiner_test(inputs, inputs)
+
+    def test_indels_snps_adjacency_ordering(self):
+        """test that indels and snps don't shift order when next to eachother"""
+        inputs = [(1, 1, 2, "C", "T", "hg19"),
+                    (1, 2, 3, "T", "-", "hg19")]
+        self._onp_ordered_combiner_test(inputs, inputs)
 
     def test_combinatorial_onp_create(self):
         """test that every combination of dnps is created for multiple snps at the same site"""

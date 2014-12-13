@@ -1,4 +1,5 @@
 import collections
+import logging
 import more_itertools
 from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
@@ -23,6 +24,8 @@ class OnpQueue(object):
         self.queue = collections.defaultdict(list)
         self.indel_queue = []
         self.last = 0
+        self.logger = logging.getLogger(__name__)
+        self.warned_about_order = False
 
     @staticmethod
     def _create_start_position_dict(mutations):
@@ -84,44 +87,32 @@ class OnpQueue(object):
         paths = [OnpQueue._combine_mutations(path) for path in paths]
         return paths
 
-    def _add_indels_to_output(self, results):
-        if results:
-            new_results = results + self.indel_queue
-            new_results.sort(key=lambda x: int(x.start))
-            self.indel_queue = []
-            return new_results
-        else:
-            return results
-
     def _dump_all(self):
         results = []
         for (sample, muts) in self.queue.iteritems():
             results += self._walk_mutation_paths(muts)
 
+        #add all stored up indels
+        results += self.indel_queue or []
+        self.indel_queue = []
+        results.sort(key=lambda x: (int(x.start), int(x.end)))
+
         self.queue.clear()
         return results
 
-    def _dump_completed(self, new_mutation):
-        results = []
-        for (sample, muts) in self.queue.items():
-            if not self._is_adjacent(new_mutation, muts):
-                results += self._walk_mutation_paths(muts)
-                del self.queue[sample]
-        return results
 
     def _get_all_values(self):
         return [j for i in self.queue.values() for j in i]
 
-    def _is_adjacent_to_any(self, new_mutation):
+    def _is_adjacent_to_any_xnp(self, new_mutation):
         return self._is_adjacent(new_mutation, self._get_all_values())
 
     def _is_adjacent(self, new_mutation, mutations):
         if mutations:
-            ends = map(lambda x: int(x.end), mutations)
+            ends = [int(x.end) for x in mutations]
             return int(new_mutation.start) <= 1 + max(ends)
         else:
             return False
-
 
     @staticmethod
     def _combine_mutations(mutations):
@@ -173,6 +164,13 @@ class OnpQueue(object):
                                     tags=tags, number=number)
         return newmut
 
+    def _combine_with_indels(self, output):
+        """add the indels to output and sort by start position"""
+        output += self.indel_queue or []
+        self.indel_queue = []
+        output.sort(key=lambda x: int(x.start))
+        return
+
     def get_combined_mutations(self):
         """
         :return: a generator yielding mutations, adjacent SNPs,DNPs, and ONPs will be merged together.
@@ -182,34 +180,36 @@ class OnpQueue(object):
         last_chr = -1
         last_start = -1
         for mut in self.mutations:
-            output_xnps = []
+            output = []
             #if we're on a new chromosome, dump all mutations, then add the new one to the queue
             if mut.chr != last_chr:
-                output_xnps = self._dump_all()
+                output = self._dump_all()
                 self._add(mut)
             #if we're at the same start position, add the new mutation to the queue
             elif mut.start == last_start:
                 self._add(mut)
             #if we are at a new position on the same chromosome
-            elif self._is_adjacent_to_any(mut):
+            elif  self._is_adjacent_to_any_xnp(mut):
                 #  if we are adjacent/overlapping to one of our existing positions
-                #   add the mutation, then check for dumping mutations
+                #   add the mutation
+                if not self.warned_about_order and int(mut.start) < last_start:
+                    self.logger.warn("Mutations are not sorted by start position, this may cause unexpected behavior or "
+                                     "increased memory requirements.  It is recommended that your sort any files that you"
+                                     "using with --infer-onps by position and sample name.")
+                    self.warned_about_order = True
                 self._add(mut)
-                output_xnps = self._dump_completed(mut)
             #  if we are not adjacent to any existing queue position,
             #   dump mutations, then add the mutation
             else:
-                output_xnps = self._dump_all()
+                output = self._dump_all()
                 self._add(mut)
             last_chr = mut.chr
             last_start = mut.start
 
-            if output_xnps:
-                output_xnps.sort(key=lambda x: int(x.start))
-                combined_output = self._add_indels_to_output(output_xnps)
-                for mut in combined_output:
-                    yield mut
+            for mut in output:
+                yield mut
 
         #when we're finished, be sure to dump any last mutations
-        for i in self._add_indels_to_output(self._dump_all()):
-            yield i
+        output = self._dump_all()
+        for mut in output:
+            yield mut
