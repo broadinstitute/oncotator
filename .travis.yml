@@ -7,6 +7,7 @@ python: '2.7'
 env:
   global:
     - DB_DIR=dbdir
+    - LDFLAGS='-Wl,--no-as-needed -lz' # Because ngslib is not including a link to libz in one of its shared libraries without this
     #coveralls repo key
     - secure: lJtUySFLmLPV4csef2XQXqH5ZEMKK6sHkiKeIIFdq0oFUlBk4NA3xVaOnkduBXv0lRQIFp+Bsz/2bCz5YorvA2t8FRU3zjHZMNPMiRSCS95NekayXroDpJRa3nRn14w3xuT9nJ1SncfEsTiE8yKhcESbJQbcJl7nUOCluB+HU+E=
 before_install:
