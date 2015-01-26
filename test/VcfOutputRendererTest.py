@@ -877,6 +877,23 @@ class VcfOutputRendererTest(unittest.TestCase):
         currentVcfReader = vcf.Reader(filename=outputFilename, strict_whitespace=True)
         self._compareVcfs(expectedVcfReader, currentVcfReader)
 
+    def testMaf2VcfInferGenotypesNoFormatFields(self):
+        """
+        Tests that MAF to VCF infer genotypes works when there are no format fields in the input maf
+        """
+        inputFilename = os.path.join(*["testdata", "maflite", "onp_combination.maf.txt"])
+        outputFilename = os.path.join("out", "testMaf2VcfInferGenotypesNoFormatFields.vcf")
+        creator = MafliteInputMutationCreator(inputFilename)
+        renderer = VcfOutputRenderer(outputFilename, otherOptions={OptionConstants.VCF_OUT_INFER_GENOTYPES: True})
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.annotate()
+
+        with open(outputFilename) as file:
+            outfile = "\n".join(file.readlines())
+            self.assertIn("\t0/1\t", outfile)
+
     @TestUtils.requiresDefaultDB()
     def testMaf2Vcf2MafConversions(self):
         """

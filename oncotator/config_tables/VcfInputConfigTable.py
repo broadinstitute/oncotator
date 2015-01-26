@@ -52,12 +52,11 @@ class VcfInputConfigTable():
     """
     Container class that handles parsed input VCF configuration data.
     """
-
-    _infoFieldIDs = dict()
-    _formatFieldIDs = dict()
-
-    _splitSet = dict()
-    _notSplitSet = dict()
+    def __init__(self):
+        self._infoFieldIDs = dict()
+        self._formatFieldIDs = dict()
+        self._splitSet = dict()
+        self._notSplitSet = dict()
 
     def addInfoFieldID(self, ID, name):
         self._infoFieldIDs[ID] = name

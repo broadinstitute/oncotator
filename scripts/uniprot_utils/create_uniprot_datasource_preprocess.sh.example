@@ -1,0 +1,56 @@
+# This script is meant to serve as AN EXAMPLE of running the preprocessing and datasource creation for the 3 uniprot
+#  datasources:
+#
+# simple_uniprot  (gene_tsv)
+# uniprot_aa_annotations  (gene_tsv)
+# uniprot_aa_xform (custom)
+#
+# This script will do the preprocessing and initializeDatasource call for creating the three uniprot datasources.
+# This script is not meant to be run by end users and is meant for upgrading uniprot datasources in conjunction with
+#  GENCODE v19
+#
+#
+# This script takes a long time to run!  (Multiple hours)
+# This script has not been tested thoroughly.  Use at your own risk.
+
+# Interrupt if something fails
+set -e
+
+# This script assumes that you are running from the uniprot_utils dir.
+
+# CHANGE PARAMETERS HERE or generalize for parameters specified on the command line #######
+## These two files were downloaded directly from uniprot.org
+SWISS_PROT_FILE=/home/lichtens/uniprot/uniprot_sprot_human.dat
+TREMBL_FILE=/home/lichtens/uniprot/uniprot_trembl_human.dat
+
+# Location of your GENCODE v19 datasource config file.
+GENCODE_CONFIG_FILE=/home/lichtens/broad_oncotator_configs/oncotator_v1_ds/gencode_out2/hg19/gencode_out2.config
+
+# How to call blast on your command line...
+BLAST_EXE=blastp
+
+# output location for tsv file for simple_uniprot datasource (overwritten if existing)
+OUT_SIMPLE_UNIPROT_TSV_FILE=/home/lichtens/uniprot/simple_uniprot_Dec012014.tsv
+
+# output location for tsv file for uniprot_aa_annotations datasource (overwritten if existing)
+OUT_AA_ANNOTATIONS=/home/lichtens/uniprot/uniprot_aa_annotations.tsv
+
+# output location for shove datasource for uniprot_aa_xform datasource (this will be a directory)
+OUT_AA_XFORM=/home/lichtens/uniprot/uniprot_aa_xform.alignments
+
+# output location for text file that lists exact match transcripts.
+OUT_AA_XFORM_TX_EXACT_MATCH=/home/lichtens/uniprot/uniprot_aa_xform_exact_tx_matches.txt
+
+## END CHANGE PARAMETERS -- you should not have to touch anything below this line. #######
+
+
+# simple_uniprot preprocess
+python createUniprotTSVsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_CONFIG_FILE} ${OUT_SIMPLE_UNIPROT_TSV_FILE}
+
+# uniprot_aa_annotations preprocess
+python createUniprotProteinSeqTSVsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_CONFIG_FILE} ${OUT_SIMPLE_UNIPROT_TSV_FILE} ${OUT_AA_ANNOTATIONS}
+
+# uniprot_aa_xform preprocess
+python createUniprotProteinSeqsAlignmentsGencode.py ${SWISS_PROT_FILE} ${TREMBL_FILE} ${GENCODE_CONFIG_FILE} ${OUT_SIMPLE_UNIPROT_TSV_FILE} ${BLAST_EXE} ${OUT_AA_XFORM_TX_EXACT_MATCH} ${OUT_AA_XFORM}
+
+echo "Preprocessing complete... now see the example in create_uniprot_datasource.sh.example"

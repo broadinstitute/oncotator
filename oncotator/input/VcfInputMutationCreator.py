@@ -200,6 +200,8 @@ class VcfInputMutationCreator(InputMutationCreator):
             else:
                 val = str(val)
 
+            if name in mutation:
+                name = string.join(words=[name, "__INFO__"], sep="")
             mutation.createAnnotation(name, val, "INPUT", dataType, infos_id.desc, tags=tags,
                                       number=num)
 
@@ -309,12 +311,12 @@ class VcfInputMutationCreator(InputMutationCreator):
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
         startPos = int(record.POS)
         endPos = int(record.POS)
-        ref = record.REF
+        ref = record.REF.strip()
         ref = "" if ref == "." else ref
 
         alt = ref
         if not record.is_monomorphic:
-            alt = str(record.ALT[alt_index])
+            alt = str(record.ALT[alt_index]).strip()
 
         mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
         ID = "" if record.ID is None else record.ID

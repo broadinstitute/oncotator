@@ -47,8 +47,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 
+import collections
 import math
-import Bio
 from oncotator.utils.VariantClassification import VariantClassification
 
 
@@ -97,9 +97,12 @@ class TranscriptProviderUtils(object):
     @staticmethod
     def infer_variant_type(reference_allele, observed_allele):
         """ To go completely in annotate method.  Returns variant type string."""
-        if reference_allele == '-': #is insertion
+        if (reference_allele == '-' or reference_allele == '') and (observed_allele == '-' or observed_allele == ''):
+            raise Exception('Variant Type cannot be inferred from reference and observed allele because both are empty: (%s, %s)' % (reference_allele, observed_allele))
+
+        if reference_allele == '-' or reference_allele == "": #is insertion
             return VariantClassification.VT_INS
-        elif observed_allele == '-': #is deletion
+        elif observed_allele == '-' or observed_allele == "": #is deletion
             return VariantClassification.VT_DEL
         else:
             if len(observed_allele) > len(reference_allele):
@@ -150,7 +153,6 @@ class TranscriptProviderUtils(object):
         'Splice_Site_DNP':4,
         'Splice_Site_TNP':4,
         'Splice_Site_ONP':4,
-        'Splice_Site':4,
         'miRNA':4,
         'Silent':5,
         "3'UTR":6,
@@ -162,6 +164,25 @@ class TranscriptProviderUtils(object):
         'IGR':20,
         'TX-REF-MISMATCH':100
         }
+
+
+
+    NO_APPRIS_VALUE = 100
+    #Used for ordering transcripts based on appris values
+    #See http://www.gencodegenes.org/gencode_tags.html
+    APPRIS_TAGS =[ 'appris_principal',
+            'appris_candidate_highest_score',
+            'appris_candidate_longest_ccds',
+            'appris_candidate_ccds',
+            'appris_candidate_longest_seq',
+            'appris_candidate_longest',
+            'appris_candidate',
+            None]
+    APPRIS_RANKING_DICT = collections.OrderedDict()
+    for (i, tag) in enumerate(APPRIS_TAGS):
+        APPRIS_RANKING_DICT[tag] = i
+
+
 
     @staticmethod
     def test_overlap(a_st, a_en, b_st, b_en):
@@ -319,7 +340,6 @@ class TranscriptProviderUtils(object):
     @staticmethod
     def render_codon_change(variant_type, variant_classification, codon_position_start, codon_position_end, ref_codon_seq, alt_codon_seq, dist_from_exon, exon_i, secondary_vc):
         """
-        :param tx:
         :param variant_type:
         :param variant_classification: (str)
         :param codon_position_start:
@@ -467,12 +487,12 @@ class TranscriptProviderUtils(object):
         """
         mutated_seq = list(seq)
         if variant_type == 'DEL':
-            del(mutated_seq[mutation_start_pos - seq_start_pos: \
+            del(mutated_seq[mutation_start_pos - seq_start_pos:
                 mutation_end_pos - seq_start_pos + 1])
         elif variant_type == 'INS':
             mutated_seq.insert(mutation_end_pos - seq_start_pos - 1, observed_allele)
         else: #SNP or ONP
-            mutated_seq[mutation_start_pos - seq_start_pos: \
+            mutated_seq[mutation_start_pos - seq_start_pos:
                 mutation_end_pos - seq_start_pos + 1] = str(observed_allele)
         mutated_seq = ''.join(mutated_seq)
         return mutated_seq

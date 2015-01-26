@@ -1,0 +1,55 @@
+##fileformat=VCFv4.1
+##fileDate=20141204
+##tcgaversion=1.1
+##reference=<ID=hg19,source="http://www.broadinstitute.org/ftp/pub//seq/references/Homo_sapiens_assembly19.fasta">
+##assembly=.
+##center="broad.mit.edu"
+##phasing=none
+##geneAnno=https://tcga-data.nci.nih.gov/docs/GAF/GAF3.0/
+##vcfProcessLog=<InputVCF=<.>,InputVCFSource=<.>,InputVCFVer=<.>,InputVCFParam=<.>,InputVCFgeneAnno=<https://tcga-data.nci.nih.gov/docs/GAF/GAF3.0/>>
+##INDIVIDUAL=TCGA-individual1
+##SAMPLE=<ID=NORMAL,SampleTCGABarcode=TCGA-ind1-N,SampleName=TCGA-ind1-N,Individual=TCGA-individual1,Description="Normal sample",Platform=Illumina,Source=,Accession=accessionN,softwareName=,softwareVer=,softwareParam=,File=.,SampleUUID=uuidN,MetadataResource=https://tcga-data.nci.nih.gov/uuid/uuidws/mapping/xml/uuid/uuidN>
+##SAMPLE=<ID=PRIMARY,SampleTCGABarcode=TCGA-ind1-T,SampleName=TCGA-ind1-T,Individual=TCGA-individual1,Description="Primary Tumor",Platform=Illumina,Source=,Accession=accessionT,softwareName=,softwareVer=,softwareParam=,File=.,SampleUUID=uuidT,MetadataResource=https://tcga-data.nci.nih.gov/uuid/uuidws/mapping/xml/uuid/uuidT>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Depth of reads supporting alleles 0/1/2/3...">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth at this position in the sample">
+##FORMAT=<ID=FA,Number=.,Type=Float,Description="Fractions of reads (excluding MQ0 from both ref and alt) supporting each reported alternative allele, per sample">
+##FORMAT=<ID=MQ0,Number=1,Type=Integer,Description="Number of Mapping Quality Zero Reads per sample">
+##FORMAT=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
+##FORMAT=<ID=BQ,Number=.,Type=Integer,Description="Average base quality for reads supporting alleles">
+##FORMAT=<ID=SSC,Number=1,Type=Integer,Description="Somatic score between 0 and 255">
+##FORMAT=<ID=VT,Number=1,Type=String,Description="Variant type, can be SNP, INS or DEL">
+##INFO=<ID=Gene,Number=1,Type=String,Description="Hugo Gene Symbol">
+##INFO=<ID=VT,Number=1,Type=String,Description="Variant type, can be SNP, INS or DEL">
+##INFO=<ID=VC,Number=1,Type=String,Description="Somatic variant classification">
+##INFO=<ID=SS,Number=1,Type=String,Description="Somatic status of sample">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Indicates if record is a somatic mutation">
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth across samples">
+##INFO=<ID=MQ0,Number=1,Type=Integer,Description="Total Mapping Quality Zero Reads">
+##INFO=<ID=TID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=VLSC,Number=1,Type=Integer,Description="Final somatic score between 0 and 255 when multiple lines of evidence are available">
+##FILTER=<ID=mf1,Description="Filtered out by MuTect v.1">
+##FILTER=<ID=oxoG3,Description="Filtered out by OxoG Artifact Filter v3">
+##FILTER=<ID=VT,Description="FOOBAR">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NORMAL	PRIMARY
+1	14907	.	A	G	6	mf1	DP=27;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC:VT	0/1:9,6:15:0.400:0:38:1:.:1	0/1:10,2:12:0.167:0:38:1:.:1
+1	14930	rs150145850	A	G	17	mf1	DB;DP=36;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:7,10:17:0.588:0:32:1:.	0/1:13,6:19:0.316:0:33:1:.
+1	14933	rs138566748	G	A	0	mf1	DB;DP=34;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:13,2:15:0.133:0:33:1:.	0/1:19,0:19:0.000:0:.:1:.
+1	14948	rs148911281	G	A	25	mf1	DB;DP=49;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:20,4:24:0.167:0:31:1:.	0/1:16,9:25:0.360:0:31:1:.
+1	15211	rs144718396	T	G	4	mf1	DB;DP=2;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:0,1:1:1.000:0:36:1:.	0/1:0,1:1:1.000:0:37:1:.
+1	69270	.	A	G	100	mf1	DP=837;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:705,105:810:0.130:0:34:1:.	0/1:0,27:27:1.000:0:32:1:.
+1	69511	rs75062661	A	G	350	mf1	DB;DP=216;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:0,125:125:1.000:0:34:1:.	0/1:1,90:91:0.989:0:34:1:.
+1	69897	.	T	C	21	mf1	DP=911;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:787,118:905:0.130:0:34:1:.	0/1:0,6:6:1.000:0:30:1:.
+1	809654	rs149167624	T	A	0	mf1	DB;DP=270;MQ0=0;SOMATIC;SS=Somatic;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/0:124,5:129:0.039:0:33:2:.	0/1:141,0:141:0.000:0:.:2:.
+1	809681	rs76484423	G	A	4	mf1	DB;DP=285;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:111,26:137:0.190:0:33:1:.	0/1:145,3:148:0.020:0:30:1:.
+1	809687	rs80351405	G	C	3	mf1	DB;DP=288;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:113,26:139:0.187:0:34:1:.	0/1:146,3:149:0.020:0:29:1:.
+1	809732	rs147199422	T	C	2	mf1	DB;DP=227;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:90,20:110:0.182:0:38:1:.	0/1:115,2:117:0.017:0:28:1:.
+X	32380996	rs1801187	C	T	154	mf1	DB;DP=250;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:62,61:123:0.496:0:32:1:.	0/1:75,52:127:0.409:0:32:1:.
+X	32503194	rs228406	T	C	616	mf1	DB;DP=290;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:0,146:146:1.000:0:38:1:.	0/1:2,142:144:0.986:0:38:1:.
+X	32716007	.	G	A	112	VT	DP=104;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:26,23:49:0.469:0:31:1:.	0/1:19,36:55:0.655:0:30:1:.
+X	34149267	rs1811716	C	A	391	mf1	DB;DP=181;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:0,74:74:1.000:0:31:1:.	0/1:0,107:107:1.000:0:31:1:.
+X	34150365	.	T	C	3	mf1	DP=161;MQ0=0;SOMATIC;SS=Somatic;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/0:57,3:60:0.050:0:9:2:.	0/1:94,7:101:0.069:0:15:2:.
+GL000205.1	116939	.	G	T	6	mf1	DP=2;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:0,0:0:.:0:.:1:.	0/1:0,2:2:1.000:0:29:1:.
+GL000205.1	117012	.	C	A	37	mf1	DP=36;MQ0=0;SS=Germline;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/1:6,5:11:0.455:0:32:1:.	0/1:13,12:25:0.480:0:32:1:.
+GL000205.1	117155	.	C	A	0	mf1	DP=220;MQ0=0;SOMATIC;SS=Somatic;VT=SNP;VLSC=.	GT:AD:DP:FA:MQ0:BQ:SS:SSC	0/0:113,7:120:0.058:0:29:2:.	0/1:100,0:100:0.000:0:.:2:.

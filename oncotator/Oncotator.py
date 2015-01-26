@@ -181,6 +181,8 @@ def parseOptions(program_version_message):
     parser.add_argument('--skip-no-alt', dest="skip_no_alt", action='store_true', help="If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If alt_allele_seen annotation is missing, render the mutation.")
     parser.add_argument('--log_name', dest='log_name', default="oncotator.log", help="Specify log output location.  Default: oncotator.log")
     parser.add_argument('--prepend', dest="prepend", action='store_true', help="If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs")
+    parser.add_argument('--infer-onps', dest="infer_onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
+    parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
 
     # Process arguments
     args = parser.parse_args()
@@ -299,7 +301,8 @@ def determineOtherOptions(args):
     opts = dict()
     opts[OptionConstants.NO_PREPEND] = not args.prepend
     opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
-
+    opts[OptionConstants.INFER_ONPS] = args.infer_onps
+    opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE] = args.canonical_tx_file
     return opts
 
 

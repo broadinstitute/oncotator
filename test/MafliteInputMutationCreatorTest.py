@@ -235,7 +235,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
         segs = ic.createMutations()
 
-        gencode_ds = TestUtils._create_test_gencode_ds("out/seg_file_gencode_ds")
+        gencode_ds = TestUtils._create_test_gencode_v19_ds("out/seg_file_gencode_ds")
         annotator = Annotator()
 
         segs_annotated = []
@@ -290,6 +290,21 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             self.assertTrue(line_dict['end'].strip() != "")
             self.assertTrue("genes" in line_dict.keys())
             self.assertTrue(len(line_dict["genes"].split(",")) > 0)
+
+    @TestUtils.requiresDefaultDB()
+    def testAnnotationWithMafliteWithTrailingSpaces(self):
+        """
+        Tests the ability to annotate a maflite file that contains trailing spaces in ref and alt alleles.
+        """
+        db_dir = self.config.get('DEFAULT',"dbDir")
+        inputFilename = os.path.join(*["testdata", "maflite", "example.trailing_whitespace_in_alleles.maflite"])
+        outputFilename = os.path.join("out", "example.trailing_whitespace_in_alleles.maf.txt")
+
+        annotator = Annotator()
+        run_spec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", inputFilename, outputFilename,
+                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS)
+        annotator.initialize(run_spec)
+        annotator.annotate()
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

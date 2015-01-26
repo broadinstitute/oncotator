@@ -613,9 +613,9 @@ def find_mut_in_gaf(data, gaf):
                                     cds_codon_start, transcript_position_start, transcript_position_end, observed_allele, m)
                             
                             if ref_tx_seq_has_been_changed:
-                                reference_aa = Bio.Seq.translate(reference_codon_seq)
+                                reference_aa = MutUtils.translate_sequence(reference_codon_seq)
                             
-                            observed_aa = Bio.Seq.translate(mutated_codon_seq)
+                            observed_aa = MutUtils.translate_sequence(mutated_codon_seq)
                             
                             variant_classification = infer_variant_classification(m['variant_type'],
                                 reference_aa, observed_aa, reference_allele, observed_allele)

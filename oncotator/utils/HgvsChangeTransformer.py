@@ -54,6 +54,7 @@ from Bio import Seq
 from oncotator.utils.VariantClassification import VariantClassification
 from oncotator.utils.VariantClassifier import VariantClassifier
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.MutUtils import MutUtils
 
 AA_NAME_MAPPING = {
     'A': 'Ala',
@@ -725,7 +726,7 @@ class HgvsChangeTransformer():
             new_stop_codon_seq[variant_codon_pos] = mutation['alt_allele']
             new_stop_codon_seq = ''.join(new_stop_codon_seq)
             new_tx_seq = new_stop_codon_seq + utr_seq
-            new_prot_seq = Seq.translate(new_tx_seq)
+            new_prot_seq = MutUtils.translate_sequence(new_tx_seq)
         elif mutation['variant_type'] == 'DEL':
             overlap_type = self._determine_overlap_type(mutation, tx_stop_codon_genomic_coords)
 
@@ -742,7 +743,7 @@ class HgvsChangeTransformer():
                 new_stop_codon_seq = ''.join(new_stop_codon_seq)
                 new_tx_seq = new_stop_codon_seq + utr_seq
                 new_stop_codon_seq = new_tx_seq[:3]
-                new_prot_seq = Seq.translate(new_tx_seq)
+                new_prot_seq = MutUtils.translate_sequence(new_tx_seq)
 
             elif overlap_type == 'del_extends_into_cds':
                 if mutation['transcript_strand'] == '+':
@@ -776,8 +777,8 @@ class HgvsChangeTransformer():
                 new_alt_codon_seq = new_cds_seq + stop_codon_seq[bases_into_stop_deleted:]
                 new_ref_codon_seq = new_ref_codon_seq + stop_codon_seq
 
-                ref_aa = Seq.translate(new_ref_codon_seq)
-                alt_aa = Seq.translate(new_alt_codon_seq)
+                ref_aa = MutUtils.translate_sequence(new_ref_codon_seq)
+                alt_aa = MutUtils.translate_sequence(new_alt_codon_seq)
 
                 aa_pos_2 = prot_stop_pos
                 aa_pos_1 = aa_pos_2 - n_codons_into_cds
@@ -789,9 +790,9 @@ class HgvsChangeTransformer():
                         AA_NAME_MAPPING[ref_aa[-1]], alt_aa)
                 else:
                     new_tx_seq = new_cds_seq + stop_codon_seq[bases_into_stop_deleted:] + utr_seq[bases_into_utr:]
-                    new_prot_seq = Seq.translate(new_tx_seq)
+                    new_prot_seq = MutUtils.translate_sequence(new_tx_seq)
                     #new_tx_seq = stop_codon_seq[bases_into_stop_deleted:] + utr_seq[bases_into_utr:]
-                    #new_prot_seq = Seq.translate(new_tx_seq[n_bases_into_cds:])
+                    #new_prot_seq = MutUtils.translate_sequence(new_tx_seq[n_bases_into_cds:])
 
                     if new_prot_seq[0] == '*': #no change to stop codon seq
                         if ref_aa == alt_aa + '*':
@@ -830,7 +831,7 @@ class HgvsChangeTransformer():
                 n_bases_into_stop_deleted = 3 - i
                 n_bases_into_utr_deleted = len(del_ref_allele) - n_bases_into_stop_deleted
                 new_tx_seq = stop_codon_seq[:-n_bases_into_stop_deleted] + utr_seq[n_bases_into_utr_deleted:]
-                new_prot_seq = Seq.translate(new_tx_seq)
+                new_prot_seq = MutUtils.translate_sequence(new_tx_seq)
                 if new_prot_seq[0] == '*':
                     return '' #no change on protein sequence
                 elif '*' not in new_prot_seq: # is extension with no new stop codon
@@ -846,7 +847,7 @@ class HgvsChangeTransformer():
                 return '' # we don't care about insertions after stop codon, no change in protein
             else:
                 new_tx_seq = stop_codon_seq[:variant_codon_pos-2] + alt_allele + stop_codon_seq[variant_codon_pos+1:] + utr_seq
-                new_prot_seq = Seq.translate(new_tx_seq)
+                new_prot_seq = MutUtils.translate_sequence(new_tx_seq)
                 alt_aa = new_prot_seq[0]
 
                 if alt_aa == '*':
@@ -862,7 +863,7 @@ class HgvsChangeTransformer():
             aa_pos_1, aa_pos_2, ref_aa, alt_aa = [regx_res.group(i) for i in range(1, 5)]
             aa_pos_1, aa_pos_2 = int(aa_pos_1), int(aa_pos_2)
 
-            new_prot_seq = Seq.translate(utr_seq)
+            new_prot_seq = MutUtils.translate_sequence(utr_seq)
             alt_aa = [AA_NAME_MAPPING[aa] for aa in alt_aa]
             alt_aa = ''.join(alt_aa)
             if alt_aa[0] == '*':
@@ -881,7 +882,7 @@ class HgvsChangeTransformer():
                     AA_NAME_MAPPING[ref_aa[-1]], aa_pos_2, alt_aa, extension_amt)
 
 
-        alt_aa = Seq.translate(new_stop_codon_seq)
+        alt_aa = MutUtils.translate_sequence(new_stop_codon_seq)
         if new_prot_seq[0] == '*': #no change to stop codon seq
             return ''
         elif '*' not in new_prot_seq: # is extension with no new stop codon

@@ -50,7 +50,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import cPickle
 import logging
 import os
-from Bio import Seq
 import shove
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
@@ -417,7 +416,7 @@ class Gaf(Datasource, TranscriptProvider):
         if 'cds_start' not in gaf_record or not gaf_record['cds_start']:
             return None
 
-        prot_seq = Seq.translate(tx_seq[gaf_record['cds_start']-1:gaf_record['cds_stop']])
+        prot_seq = MutUtils.translate_sequence(tx_seq[gaf_record['cds_start']-1:gaf_record['cds_stop']])
         if prot_seq[-1] == '*':
             prot_seq = prot_seq[:-1]
 

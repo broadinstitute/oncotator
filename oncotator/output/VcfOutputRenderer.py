@@ -267,6 +267,8 @@ class VcfOutputRenderer(OutputRenderer):
             val = m.get(name, "")
             recordBuilder.addInfo(sampleName, ID, num, dataType, val, isSplit)
 
+        #add GT field in case it's not in the mutation
+        recordBuilder.addGTField(sampleName, inferGenotype)
         for name in formatAnnotationNames:
             annotation = dataManager.getOutputAnnotation(name)
             ID = annotation.getID()
@@ -279,6 +281,6 @@ class VcfOutputRenderer(OutputRenderer):
                       " in the Format field." % name
                 logging.warn(msg)
             else:
-                recordBuilder.addFormat(sampleName, ID, num, dataType, val, isSplit, inferGenotype)
+                recordBuilder.addFormat(sampleName, ID, num, dataType, val, isSplit)
 
         return recordBuilder

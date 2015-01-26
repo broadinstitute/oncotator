@@ -49,4 +49,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 class OptionConstants(object):
     VCF_OUT_INFER_GENOTYPES = "vcf_out_infer_genotypes"
+    INFER_ONPS = "infer_onps"
     NO_PREPEND = "no_prepend"
+    CUSTOM_CANONICAL_TX_LIST_FILE = "custom_canonical_tx_file"

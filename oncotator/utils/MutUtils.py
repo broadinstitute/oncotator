@@ -47,7 +47,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 import logging
+from Bio import Seq
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 """
@@ -71,50 +74,20 @@ class MutUtils(object):
     SAMPLE_NAME_ANNOTATION_NAME = "sample_name"
     PRECEDING_BASES_ANNOTATION_NAME = "_preceding_bases"
 
-    def __init__(self, params):
+    def __init__(self):
         """
         Constructor -- should never be called.
         """
         pass
 
     @staticmethod
-    def isSNP(m):
-        if len(m.ref_allele) > 1:
-            return False
-        if m.alt_allele not in ["A", "C", "T", "G"]:
-            return False
-        return True
+    def initializeMutFromAttributes(chr, start, end, ref_allele, alt_allele, build):
+        mut = MutationData(str(chr), str(start), str(end), ref_allele, alt_allele, str(build))
+        varType = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
 
-    @staticmethod
-    def isDeletion(m):
-        if len(m.ref_allele) > len(m.alt_allele):
-            return True
-        return False
-
-    @staticmethod
-    def isInsertion(m):
-        if len(m.ref_allele) < len(m.alt_allele):
-            return True
-        return False
-
-    @staticmethod
-    def determineVariantType(m):
-        if MutUtils.isSNP(m):
-            return "snp"
-        elif MutUtils.isDeletion(m):
-            return "del"
-        elif MutUtils.isInsertion(m):
-            return "ins"
-        return "unknown"
-
-    @staticmethod
-    def initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build):
-        mut = MutationData(chrom, startPos, endPos, ref, alt, build)
-        varType = MutUtils.determineVariantType(mut)
-
-        if varType == "snp":  # Snps
+        if TranscriptProviderUtils.is_xnp(varType):  # Snps and other xNPs
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
-        if varType == "del":  # deletion
+        if varType == VariantClassification.VT_DEL:  # deletion
             preceding_bases, updated_ref_allele, updated_start, updated_end =\
                 MutUtils.retrievePrecedingBasesForDeletions(mut)
             mut.ref_allele = updated_ref_allele
@@ -127,7 +100,7 @@ class MutUtils(object):
             mut["end"] = updated_end
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
                                  annotationValue=preceding_bases)
-        elif varType == "ins":  # insertion
+        elif varType == VariantClassification.VT_INS:  # insertion
             preceding_bases, updated_alt_allele, updated_start, updated_end = \
                 MutUtils.retrievePrecedingBasesForInsertions(mut)
             mut.ref_allele = "-"
@@ -507,3 +480,22 @@ class MutUtils(object):
             updated_start = str(int(m.start) - 1)
 
         return ref_allele, alt_allele, updated_start
+
+    @staticmethod
+    def translate_sequence(input_seq):
+        """Wrapper for Biopython translate function.  Bio.Seq.translate will complain if input sequence is 
+        not a mulitple of 3.  This wrapper function passes an acceptable input to Bio.Seq.translate in order to
+        avoid this warning."""
+    
+        trailing_bases = len(input_seq) % 3
+    
+        if trailing_bases:
+            input_seq = ''.join([input_seq, 'NN']) if trailing_bases == 1 else ''.join([input_seq, 'N'])
+    
+        output_seq = Seq.translate(input_seq)
+    
+        if trailing_bases:
+            #remove last residue if input needed to be extended because of trailing bases
+            output_seq = output_seq[:-1]
+    
+        return output_seq
