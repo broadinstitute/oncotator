@@ -50,7 +50,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 from GenericTsvDatasourceCreator import GenericTsvDatasourceCreator
 from TabixIndexedTsvDatasourceCreator import TabixIndexedTsvDatasourceCreator
 from TabixIndexedVcfDatasourceCreator import TabixIndexedVcfDatasourceCreator
-
+from oncotator.index.BigWigDatasourceCreator import BigWigDatasourceCreator
 
 class DatasourceBuilderFactory():
 
@@ -62,4 +62,5 @@ class DatasourceBuilderFactory():
             return TabixIndexedVcfDatasourceCreator()
         elif dsType in ("indexed_tsv",):
             return TabixIndexedTsvDatasourceCreator()
-
+        elif dsType == 'bigwig':
+            return BigWigDatasourceCreator()

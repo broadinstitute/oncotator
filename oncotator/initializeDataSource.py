@@ -55,8 +55,7 @@ import shutil
 import os
 from oncotator.utils.MutUtils import MutUtils
 
-supportedDSTypes = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv']
-
+SUPPORTEDDSTYPES = ['gp_tsv', 'gene_tsv', 'transcript_tsv', 'gpp_tsv', 'indexed_vcf', 'indexed_tsv', 'bigwig']
 
 def parseOptions():
     # Setup argument parser
@@ -154,7 +153,7 @@ def parseOptions():
     """
 
     parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter, epilog=epilog)
-    parser.add_argument("--ds_type", action="store", dest="ds_type", required=True, type=str, choices=supportedDSTypes,
+    parser.add_argument("--ds_type", action="store", dest="ds_type", required=True, type=str, choices=SUPPORTEDDSTYPES,
                         help="datasource type.  Type of datasource to create.")
     parser.add_argument("--ds_file", action="store", dest="ds_file", required=True, type=str,
                         help="datasource filename.  Headers must be on the first line.  This is the source file that contains annotation data.")
@@ -186,8 +185,8 @@ def parseOptions():
 
 def validateArgs(args):
     """ Throw an exception if poor arguments were chosen."""
-    if args.ds_type not in supportedDSTypes:
-        raise ValueError("Unsupported datasource type: " + args.ds_type + ".  Must be one of: " + str(supportedDSTypes))
+    if args.ds_type not in SUPPORTEDDSTYPES:
+        raise ValueError("Unsupported datasource type: " + args.ds_type + ".  Must be one of: " + str(SUPPORTEDDSTYPES))
     if (args.ds_type.endswith('gp_tsv') or args.ds_type.endswith('gpp_tsv')) and \
                     len(args.index_columns.split(',')) != 3:
         raise ValueError("Wrong number of index columns.  Must be a comma separated list of length 3")

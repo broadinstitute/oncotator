@@ -7,13 +7,14 @@ set -e
 # Parsing arguments
 #################################################
 
-while getopts ":e:ckst" option; do
+while getopts ":e:ckstm" option; do
 	case "$option" in
 		e) ENV="$OPTARG" ;;
 		c) FLAGS="archflags" ;;
 		k) COMPIL="skip" ;;
 		s) PYVCF="skip" ;;
 		t) TRAVIS=true ;;
+		m) MAC=true ;;
 	esac
 done
 
@@ -27,7 +28,8 @@ Optional arguments:  \n \
    \t (see documentation for details)  \n \
 -k \t skip packages that require compilation  \n \
 -s \t skip packages that are not available through PyPI \n \
--t \t run in travis installation mode \n" $0
+-t \t run in travis installation mode \n \
+-m \t create venv on Mac (i.e. skip ngslib installation) \n" $0
 
 	exit 1
 fi
@@ -94,14 +96,16 @@ else
 		echo "OK"
 	done
 
-	echo " "
-	echo "pysam ========================="
-	if [ "$FLAGS" == "archflags" ]; then
-		env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install -I --allow-unverified pysam pysam==0.7.5
-	else
-		pip install --no-use-wheel --allow-unverified pysam pysam==0.7.5
-	fi
-	echo "OK"
+	if [ ! $MAC ]; then
+		echo " "
+		echo "ngslib =========================="
+		if [ "$FLAGS" == "archflags" ]; then
+			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install ngslib
+		else
+			pip install --no-use-wheel ngslib
+		fi
+		echo "OK"
+	fi		
 fi
 
 #################################################

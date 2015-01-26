@@ -68,6 +68,7 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 import sys
+from oncotator import NGSLIB_INSTALLED
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.utils.MutUtils import MutUtils
 
@@ -237,6 +238,9 @@ def main(argv=None):  # IGNORE:C0111
         
         if DEBUG:
             logger.setLevel(logging.DEBUG)
+
+        if not NGSLIB_INSTALLED:
+            logger.warn("ngslib module not installed.  Will be unable to annotate with BigWig datasources.")
         
         # Initiate an Oncotator session.
         inputFilename = os.path.expanduser(args.input_file)
