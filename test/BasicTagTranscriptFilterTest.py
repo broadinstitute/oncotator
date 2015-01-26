@@ -58,7 +58,7 @@ class BasicTagTranscriptFilterTest(unittest.TestCase):
         """Test several cases for the BasicTagTranscriptFilter"""
         tx_filter = TranscriptFilterFactory.create_instance("basic")
 
-        ensembl_ds = TestUtils._create_test_gencode_ds("out/basic_tag_filter_ensembl_ds")
+        ensembl_ds = TestUtils._create_test_gencode_v19_ds("out/basic_tag_filter_ensembl_ds")
         tx_dict = ensembl_ds.getTranscriptDict()
 
         tx = tx_dict["ENST00000215832.6"]

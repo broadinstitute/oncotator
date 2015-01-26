@@ -119,7 +119,9 @@ class Annotator(object):
         # 2)  Produce the output
         filePointer = annotator.annotate()
     
-    NOTE:  While multicore information is passed into the Annotator, currently, nothing is implemented that uses multicore.    
+    NOTE:  While multicore information is passed into the Annotator, currently, nothing is implemented that uses multicore.
+
+    NOTE: If we ever change attributes on a TranscriptProvider in the middle of an annotation run, we will need to re-generate the md5
     """
 
     ANNOTATING_FUNC_DICT = {RunSpecification.ANNOTATE_MUTATIONS: _annotate_mut, RunSpecification.ANNOTATE_SEGMENTS: _annotate_seg}
@@ -446,7 +448,10 @@ class Annotator(object):
 
         datasourceStrings = []
         for ds in self._datasources:
-            datasourceStrings.append(" " + ds.title + " " + ds.version + " ")
+            tx_mode_str = ""
+            if isinstance(ds,TranscriptProvider):
+                tx_mode_str = ds.get_tx_mode() + " "
+            datasourceStrings.append(" " + ds.title + " " + ds.version + " " + tx_mode_str)
         
         return onco_string + "|".join(datasourceStrings)
     

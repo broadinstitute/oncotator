@@ -1,0 +1,65 @@
+# This script is meant to serve as AN EXAMPLE of creating the 3 uniprot datasources:
+#
+# simple_uniprot  (gene_tsv)
+# uniprot_aa_annotations  (gene_tsv)
+# uniprot_aa_xform (custom)
+#
+# This script will do the initializeDatasource calls for creating the three uniprot datasources.
+# This script is not meant to be run by end users and is meant for upgrading uniprot datasources in conjunction with
+#  GENCODE v19
+#
+# This script has not been tested thoroughly.  Use at your own risk.
+#
+set -e
+
+# CHANGE PARAMETERS HERE or generalize for parameters specified on the command line #######
+
+# tsv file for simple_uniprot datasource
+# (this is an input and should be the same as what was used in the preprocess example)
+OUT_SIMPLE_UNIPROT_TSV_FILE=/home/lichtens/uniprot/simple_uniprot_Dec012014.tsv
+
+# tsv file for uniprot_aa_annotations datasource
+# (this is an input and should be the same as what was used in the preprocess example)
+OUT_AA_ANNOTATIONS=/home/lichtens/uniprot/uniprot_aa_annotations.tsv
+
+# shove datasource for uniprot_aa_xform datasource (this will be a directory)
+# (this is an input and should be the same as what was used in the preprocess example)
+OUT_AA_XFORM_SHOVE_BASENAME=uniprot_aa_xform.alignments.final
+OUT_AA_XFORM=/home/lichtens/uniprot/${OUT_AA_XFORM_SHOVE_BASENAME}
+
+# db-dir for the datasources to appear
+DB_DIR=/home/lichtens/uniprot/uniprot_db_dir/
+
+# UniProt version used
+UNIPROT_VERSION=2014_12
+
+# Datasource names
+SIMPLE_UNIPROT_NAME=UniProt
+ANNOTATIONS_NAME=UniProt_AA
+XFORM_NAME=UniProt_AAxform
+
+# template config file
+XFORM_CONFIG_TEMPLATE=/home/lichtens/pycharm/oncotator/scripts/uniprot_utils/uniprot_aa_xform_config.template
+
+## END CHANGE PARAMETERS -- you should not have to touch anything below this line. #######
+
+# simple_uniprot
+initializeDatasource --ds_type gene_tsv --ds_file ${OUT_SIMPLE_UNIPROT_TSV_FILE} --name ${SIMPLE_UNIPROT_NAME} --version ${UNIPROT_VERSION} --dbDir ${DB_DIR} --ds_foldername simple_uniprot --genome_build hg19 --index_columns gene
+echo " "
+# uniprot_aa_annotation
+initializeDatasource --ds_type gpp_tsv --ds_file ${OUT_AA_ANNOTATIONS} --name ${ANNOTATIONS_NAME} --version ${UNIPROT_VERSION} --dbDir ${DB_DIR} --ds_foldername uniprot_aa_annotation --genome_build hg19 --index_columns gene,startAA,endAA
+echo " "
+# uniprot_aa_xform is a custom datasource, which cannot use initializeDatasource, so the creation is a bit uglier.
+
+mkdir -p ${DB_DIR}/uniprot_aa_xform
+mkdir -p ${DB_DIR}/uniprot_aa_xform/hg19/
+
+sed -r "s/___VERSION___/${UNIPROT_VERSION}/g" ${XFORM_CONFIG_TEMPLATE} | sed -r "s/___TITLE___/${XFORM_NAME}/g" | sed -r "s/___SRC_FILE___/${OUT_AA_XFORM_SHOVE_BASENAME}/g" > ${DB_DIR}/uniprot_aa_xform/hg19/uniprot_aa_xform.config
+
+echo "Copying the uniprot xform datasource, which may take a while..."
+cp -R ${OUT_AA_XFORM}  ${DB_DIR}/uniprot_aa_xform/hg19/.
+
+echo "Creating md5 for xform"
+addDatasourceMd5 ${DB_DIR}/uniprot_aa_xform/hg19/
+
+echo "Done"

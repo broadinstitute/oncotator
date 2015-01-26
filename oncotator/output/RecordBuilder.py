@@ -305,7 +305,16 @@ class RecordBuilder:
         genotype = string.join(map(str, [0, nalts]), "/")  # unphased genotype
         return genotype
 
-    def addFormat(self, sampleName, field_name, num=None, dataType="String", val=None, isSplit=True, inferGenotype=False):
+    def addGTField(self, sampleName, inferGenotype):
+        if sampleName in self._sampleNames:  # FORMAT fields can never have a value of type flag
+            sampleNameIndex = self._sampleNameIndexes[sampleName]
+            if "GT" not in self._fmt[sampleNameIndex].keys():
+                self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
+                if inferGenotype:
+                    self._fmt[sampleNameIndex]["GT"] = [self._determineGenotype()]
+
+
+    def addFormat(self, sampleName, field_name, num=None, dataType="String", val=None, isSplit=True):
         """
 
         :param sampleName:
@@ -318,12 +327,6 @@ class RecordBuilder:
         """
         if sampleName in self._sampleNames and num != 0:  # FORMAT fields can never have a value of type flag
             sampleNameIndex = self._sampleNameIndexes[sampleName]
-            # GT is always the first field, so create it if it does not already exist.
-
-            if "GT" not in self._fmt[sampleNameIndex].keys():
-                self._fmtFieldProperty["GT"] = self.fieldProperty(1, "String", False)
-                if inferGenotype:
-                    self._fmt[sampleNameIndex]["GT"] = [self._determineGenotype()]
 
             # If GT was specified by the input, then delete the previous copy created in the above few lines.
             if field_name == "GT":
@@ -347,11 +350,6 @@ class RecordBuilder:
                             sample_field_dict[field_name].append(None)
                     this_sample_field_dict = self._fmt[sampleNameIndex]
                     this_sample_field_dict[field_name][-1] = self._fixVal(val, isSplit)[0]
-
-
-            elif num == 0:  # num is either true or false
-                # Do nothing in this case
-                pass
             else:  # num is fixed
                 self._determineVal2FixedNumField(self._fmt[sampleNameIndex], field_name, num, isSplit, val)
 

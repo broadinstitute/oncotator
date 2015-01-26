@@ -49,12 +49,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import unittest
 import logging
-import os.path as op
 
 from oncotator.MutationData import MutationData
 from TestUtils import TestUtils
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
-from oncotator.utils.VariantClassification import VariantClassification
 
 
 TestUtils.setupLogging(__file__, __name__)
@@ -1075,7 +1073,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         self.assertTrue(tx is not None, "Transcript was None when it should have been found.  Does the ground truth transcript above need to be updated?")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr2.hg19:g.201722369_201722370delAC') # NOTE: This is right-shifted in HGVS
-        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000434813.2:c.958+74GT>-')
+        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000321356.4:c.832+74GT>-')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
 

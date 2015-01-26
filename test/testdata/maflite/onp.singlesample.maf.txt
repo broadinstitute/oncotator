@@ -1,0 +1,14 @@
+Chromosome	Start_position	End_position	Reference_Allele	Tumor_Seq_Allele2	Pair_Name
+1	1	1	G	C	P1
+2	3	3	T	A	P1
+2	4	4	T	A	P1
+2	5	6	-	CA	P1
+2	7	7	G	A	P1
+3	12	12	T	-	P1
+3	12	12	G	A	P1
+3	12	12	G	T	P1
+3	13	13	A	G	P1
+3	13	13	A	T	P1
+4	100	102	AAA	TTT	P1
+4	101	101	A	G	P1
+4	102	102	C	T	P1

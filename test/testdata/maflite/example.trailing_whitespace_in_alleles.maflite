@@ -1,0 +1,10 @@
+build	chr	start	end	ref_allele	tum_allele1	tum_allele2	tumor_barcode	normal_barcode	tumor_f	init_t_lod	t_lod_fstar	t_alt_count	t_ref_count	judgement
+37	1	6341290	6341290	 C	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6341291	6341291	C 	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6341292	6341292	C	C	 A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6340841	6340841	C	C	A 	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6340840	6340840	C	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6340839	6340839	C	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6340830	6340850	C	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6340850	6340870	C	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP
+37	1	6340830	6340839	C	C	A	Patient0-Tumor	Patient0-Normal	0.064935	-7.53378	7.579018	5	72	KEEP

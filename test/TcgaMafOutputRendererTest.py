@@ -50,6 +50,7 @@ from TestUtils import TestUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
+from oncotator.utils.VariantClassification import VariantClassification
 
 
 """
@@ -116,6 +117,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             
             unknownKeys = []
             self.assertTrue(lineDict["Tumor_Seq_Allele1"] != lineDict["Tumor_Seq_Allele2"], "Reference and alternate were equal in TCGA MAF output on line %d (%s)" % (ctr, lineDict["Tumor_Seq_Allele1"]))
+            self.assertTrue(lineDict["Tumor_Seq_Allele1"] == lineDict["Reference_Allele"], "Reference Allele should match Tumor_Seq_Allele1 on line " + str(ctr))
+            uniprot_aa_xform_counter = 0
             for k in lineDict.keys():
                 if lineDict[k] == "__UNKNOWN__":
                     unknownKeys.append(k)
@@ -127,10 +130,19 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
                 exposedColumns = configFile.get("general", "exposedColumns")
                 if (k not in requiredColumns) and (k not in optionalColumns) and (k not in exposedColumns):
                     self.assertTrue(k.startswith("i_"), "Internal column was not prepended with 'i_'")
-                
+            if lineDict['UniProt_AApos'] == "0":
+                uniprot_aa_xform_counter += 1
+
+            if lineDict["Variant_Type"] == VariantClassification.VT_DEL:
+                self.assertTrue(lineDict["Tumor_Seq_Allele2"] == "-")
+
+            if lineDict["Variant_Type"] == VariantClassification.VT_INS:
+                self.assertTrue(lineDict["Reference_Allele"] == "-")
+
             unknownKeys.sort()
             self.assertTrue(len(unknownKeys) == 0, "__UNKNOWN__ values (" + str(len(unknownKeys)) + ") seen on line " + str(ctr) + ", in fields: " + ", ".join(unknownKeys))
-            
+            self.assertTrue(uniprot_aa_xform_counter < 10, "Too many uniprot aa xform values are zero (" + str(uniprot_aa_xform_counter) + ").  This is probably an error.")
+
             ctr += 1
 
     def _determine_db_dir(self):

@@ -51,7 +51,6 @@ import logging
 import os
 from oncotator.MockExceptionThrowingDatasource import MockExceptionThrowingDatasource
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
-from oncotator.datasources.SnpOnlyLevelDbDatasource import SnpOnlyLevelDbDatasource
 from oncotator.utils.RunSpecification import RunSpecification
 from utils.ConfigUtils import ConfigUtils
 from oncotator.datasources.Gaf import Gaf
@@ -211,14 +210,7 @@ class DatasourceFactory(object):
                                            indexColNames=indexColumnNames,
                                            match_mode=configParser.get("general", "match_mode"),
                                            colDataTypes=columnDataTypes)
-        elif dsType == "snp_leveldb":
-            annotationColumnNames = configParser.get("general", "annotation_column_names").split(",")
-            indexColumnNames = configParser.get("general", "index_column_names").split(",")
-            result = SnpOnlyLevelDbDatasource(src_file=filePrefix + configParser.get("general", "src_file"),
-                                           title=configParser.get("general", "title"),
-                                           version=configParser.get("general", "version"),
-                                           annotation_columns=annotationColumnNames,
-                                           index_cols=indexColumnNames)
+
         
         elif dsType == 'bigwig':
             if not NGSLIB_INSTALLED:
@@ -226,6 +218,7 @@ class DatasourceFactory(object):
             result = BigWigDatasource(src_file=filePrefix + configParser.get('general', 'src_file'), title=configParser.get("general", "title"), version=configParser.get('general', 'version'))
         else:
             raise RuntimeError('Unknown datasource type: %s' % dsType)
+
 
         hashcode = DatasourceFactory._retrieve_hash_code(leafDir)
         result.set_hashcode(hashcode)

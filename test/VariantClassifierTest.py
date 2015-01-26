@@ -69,7 +69,7 @@ class VariantClassifierTest(unittest.TestCase):
     GLOBAL_DS_BASENAME = "out/test_variant_classification_"
 
     def setUp(self):
-        ensembl_ds = TestUtils._create_test_gencode_ds(VariantClassifierTest.GLOBAL_DS_BASENAME)
+        ensembl_ds = TestUtils._create_test_gencode_v19_ds(VariantClassifierTest.GLOBAL_DS_BASENAME)
         self.ds = ensembl_ds
 
     def _create_ensembl_ds_trimmed(self):
@@ -137,7 +137,7 @@ class VariantClassifierTest(unittest.TestCase):
     )
 
     @data_provider_decorator(frameshift_indels)
-    def test_is_framshift_indel(self, vt, s, e, alt, gt):
+    def test_is_frameshift_indel(self, vt, s, e, alt, gt):
         vcer = VariantClassifier()
         self.assertTrue(vcer.is_frameshift_indel(vt, s, e, alt) == gt)
 
@@ -676,6 +676,32 @@ class VariantClassifierTest(unittest.TestCase):
         tx = self._determine_test_transcript(chr, start, end, alt, ref, VariantClassification.VT_INS)
         vcer = VariantClassifier()
         vc = vcer.variant_classify(tx, ref, alt, start, end, VariantClassification.VT_INS, dist=2)
+
+    dnp_data = lambda : (
+        ("22","22162128","22162129","AA","CC",VariantClassification.VT_DNP,VariantClassification.MISSENSE,"","g.chr22:22162128_22162129AA>CC","c.(124-129)gcTTat>gcGGat","p.Y43D","366_367","c.126_127TT>GG"),
+        ("22","22162129","22162130","AG","CC",VariantClassification.VT_DNP,VariantClassification.MISSENSE,"","g.chr22:22162129_22162130AG>CC","c.(124-126)gCT>gGG","p.A42G","365_366","c.125_126CT>GG"),
+        ("22","22162134","22162135","AG","CC",VariantClassification.VT_DNP,VariantClassification.SPLICE_SITE,VariantClassification.MISSENSE,"g.chr22:22162134_22162135AG>CC","c.(118-123)tgCTct>tgGGct","p.40_41CS>WA","360_361","c.120_121CT>GG"),
+        #TODO This fails due to issues with dnps that straddle splice sites.  See issue #174
+        #("22","22162135","22162136","GC","AA",VariantClassification.VT_DNP,VariantClassification.SPLICE_SITE,VariantClassification.SILENT,"g.chr22:22162135_22162136GC>AA","c.(118-120)tgC>tgT","p.41C>C","360","c.120_121CT>AA"),
+        ("22","22162136","22162137","CT","AA",VariantClassification.VT_DNP,VariantClassification.SPLICE_SITE,VariantClassification.INTRON,"g.chr22:22162136_22162137CT>AA","c.e2-1","","360","c.120_splice"),
+        ("22","22162137","22162138","TT","AA",VariantClassification.VT_DNP,VariantClassification.SPLICE_SITE,VariantClassification.INTRON,"g.chr22:22162137_22162138TT>AA","c.e2-2","","360","c.120_splice"),
+        ("22","22162138","22162139","TA","CC",VariantClassification.VT_DNP,VariantClassification.INTRON,"","g.chr22:22162138_22162139TA>CC","","","","")
+    )
+
+    @data_provider_decorator(dnp_data)
+    def test_dnp_handling(self,chr, start, end, ref, alt, vt_gt, vc_gt, sec_vc_gt, genomic_change_gt, codon_change_gt, protein_change_gt, transcript_position_gt,cdna_change_gt):
+        """Test that we can handle DNPs """
+        tx = self._determine_test_transcript(chr, start, end, alt, ref, vt_gt)
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, ref, alt, start, end, vt_gt, dist=2)
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
+
+        self.assertEqual(vc.get_secondary_vc(),sec_vc_gt)
+        self.assertEqual(vc.get_vc(),vc_gt)
+        self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
+        self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
+
 
 if __name__ == '__main__':
     unittest.main()

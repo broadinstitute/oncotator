@@ -48,20 +48,22 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 class VcfOutputConfigTable():
-    _infoFieldNames = dict()  # info (name, ID) pairs
-    _formatFieldNames = dict()  # format (name, ID) pairs
-    _filterFieldNames = dict()
-    _otherFieldNames = dict()  # ID and QUAL (name, ID) pairs
+    def __init__(self, configFilename):
+        self._infoFieldNames = dict()  # info (name, ID) pairs
+        self._formatFieldNames = dict()  # format (name, ID) pairs
+        self._filterFieldNames = dict()
+        self._otherFieldNames = dict()  # ID and QUAL (name, ID) pairs
 
-    _infoFieldNamesDescriptions = dict()  # info (name, description) pairs
-    _formatFieldNamesDescriptions = dict()  # format (name, description) pairs
-    _filterFieldNamesDescriptions = dict()  # filter (name, description) pairs
+        self._infoFieldNamesDescriptions = dict()  # info (name, description) pairs
+        self._formatFieldNamesDescriptions = dict()  # format (name, description) pairs
+        self._filterFieldNamesDescriptions = dict()  # filter (name, description) pairs
 
-    _splitSet = dict()
-    _notSplitSet = dict()
+        self._splitSet = dict()
+        self._notSplitSet = dict()
+        self._configFilename = configFilename
 
-    def __init__(self):
-        pass
+    def getConfigFilename(self):
+        return self._configFilename
 
     def addInfoFieldName(self, name, ID):
         self._infoFieldNames[name] = ID
