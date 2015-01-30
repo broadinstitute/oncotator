@@ -599,5 +599,31 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertTrue(test_hash == initial_hash2)
 
 
+    protein_pos_off_by_one_snps = lambda: (
+        ("8","48776001", "48776001","C","T", "p.S1902S"), # p.S1903S for non-gencode
+        ("8","48772270", "48772270","T","A", "p.S2036C")
+    )
+    @TestUtils.requiresDefaultDB()
+    @data_provider_decorator(protein_pos_off_by_one_snps)
+    def test_protein_position_off_by_one(self, chrom, start, end, ref, alt, gt_prot_change):
+        config = TestUtils.createUnitTestConfig()
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(config)
+        cc_txs_fp = file("testdata/tx_exact_uniprot_matches.txt", 'r')
+        cc_txs = [tx.rsplit(".", 1)[0] for tx in cc_txs_fp]
+        cc_txs.append("ENST00000338368") # Add a transcript that is not exactly the same, but close
+        cc_txs_fp.close()
+        transcript_ds.set_custom_canonical_txs(cc_txs)
+        m = MutationData()
+        m.chr = chrom
+        m.start = start
+        m.end = end
+        m.ref_allele = ref
+        m.alt_allele = alt
+
+        m2 = transcript_ds.annotate_mutation(m)
+
+        self.assertEqual(m2['protein_change'], gt_prot_change)
+
+
 if __name__ == '__main__':
     unittest.main()
