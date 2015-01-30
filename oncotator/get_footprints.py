@@ -57,6 +57,9 @@ def parseOptions():
 
     Then to merge the exons using bedtools, if you would like:
         mergeBed -nms -i gencode_basic_exons.bed.txt > gencode_basic_exons.merged.txt
+
+
+    IMPORTANT NOTE: This script has an issue with gene names that are on more than one chromosome.
         '''
     desc = ''' Calculate the footprint for each gene in a file.  If more than one file is specified, will output the intersection genes, with the footprints for each.'''
     parser = ArgumentParser(description=desc, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
