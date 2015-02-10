@@ -291,7 +291,7 @@ class RecordBuilder:
             if ID not in self._info:
 
                 if dataType == 'Flag' and val == '':
-                    # This prevents None from being used in self._map call
+                    # This prevents None from being returned by self._map call
                     val = 'false'
 
                 val = self._map(MutUtils.str2bool, self._fixVal(val, isSplit))  # convert the value to boolean
