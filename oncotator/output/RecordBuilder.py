@@ -289,6 +289,11 @@ class RecordBuilder:
             self._determineVal2FixedNumField(self._info, ID, nalts, isSplit, val)
         elif num == 0:  # num is either true or false
             if ID not in self._info:
+
+                if dataType == 'Flag' and val == '':
+                    # This prevents None from being used in self._map call
+                    val = 'false'
+
                 val = self._map(MutUtils.str2bool, self._fixVal(val, isSplit))  # convert the value to boolean
                 self._info[ID] = val[0]
         elif num is None:  # num is unknown
