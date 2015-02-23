@@ -1,0 +1,30 @@
+FROM python:2
+
+MAINTAINER Alex Ramos <aramos@broadinstitute.org>
+
+RUN apt-get update && apt-get install unzip
+
+RUN git clone https://github.com/broadinstitute/oncotator.git
+
+RUN pip install numpy
+
+RUN wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
+
+RUN unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.*
+
+RUN pip install ngslib
+
+WORKDIR /oncotator/
+
+RUN git checkout master && python setup.py install
+
+ENTRYPOINT ["Oncotator"]
+
+CMD ["-h"]
+
+# EXAMPLE BUILD CMD
+# docker build -t oncotator:latest .
+
+# EXAMPLE RUN CMDS
+# docker run -it oncotator -h
+# docker run -v /path/to/data:/data -v /path/to/oncotator_db_dir:/db_dir -it oncotator --db-dir /db_dir /data/in.maflite /data/out.maf.txt hg19
