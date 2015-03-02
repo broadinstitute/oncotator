@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import logging
 import pysam
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
 from oncotator.utils.TagConstants import TagConstants
 import string
@@ -111,17 +112,7 @@ class IndexedTsvDatasource(Datasource):
                 if mut.chr == chrom and int(mut.start) == int(startPos) and int(mut.end) == int(endPos):
                     return True
         else:
-            if mut.chr == chrom and int(mut.start) == int(startPos) and int(mut.end) == int(endPos):
-                return True
-            elif mut.chr == chrom and int(mut.start) >= int(startPos) and int(mut.end) >= int(endPos) \
-                and int(mut.start) <= int(endPos):
-                return True
-            elif mut.chr == chrom and int(mut.start) <= int(startPos) and int(mut.end) >= int(endPos):
-                return True
-            elif mut.chr == chrom and int(mut.start) <= int(startPos) and int(mut.end) <= int(endPos) \
-                and int(mut.end) >= int(startPos):
-                return True
-
+           return TranscriptProviderUtils.test_overlap(int(mut.start), int(mut.end), int(startPos), int(endPos))
         return False
 
     def _create_column_dict_from_tabix_index(self, mutation):
