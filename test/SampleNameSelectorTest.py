@@ -56,6 +56,8 @@ from oncotator.utils.MutUtils import MutUtils
 __author__ = 'louisb'
 
 class SampleNameSelectorTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     def testSampleNameSelectorWithMaf(self):
         input = MafliteInputMutationCreator("testdata/maflite/tiny_maflite.maf.txt")
         first_mut = next(input.createMutations())

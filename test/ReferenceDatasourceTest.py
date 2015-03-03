@@ -63,6 +63,7 @@ from oncotator.MutationData import MutationData
 TestUtils.setupLogging(__file__, __name__)
 class ReferenceDatasourceTest(unittest.TestCase):
 
+    _multiprocess_can_split_ = True
 
     def setUp(self):
         self.logger = logging.getLogger(__name__)

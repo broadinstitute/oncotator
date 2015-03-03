@@ -65,7 +65,7 @@ TestUtils.setupLogging(__file__, __name__)
 
 
 class OnpCombinerTest(unittest.TestCase):
-
+    _multiprocess_can_split_ = True
     def test_output_order(self):
         """Test that indels are not output out of order"""
         inputs = [(1, 1, 1, "C", "G", "hg19"),
