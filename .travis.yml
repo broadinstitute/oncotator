@@ -20,6 +20,7 @@ install:
   # install your own package into the environment
   - python setup.py install
   - pip install coverage
+  - pip uninstall distribute
 script:
   - mkdir dbdir
   - sed -r "s:dbDir=MY_DB_DIR:dbDir=${DB_DIR}:g" test/configs/personal-test.config.template >test/configs/personal-test.config
