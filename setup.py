@@ -48,8 +48,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 
-# import distribute_setup
-# distribute_setup.use_setuptools()
+import distribute_setup
+distribute_setup.use_setuptools()
 
 from setuptools import setup
 from oncotator.utils.version import VERSION 
