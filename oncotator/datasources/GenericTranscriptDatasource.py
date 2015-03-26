@@ -46,14 +46,47 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import logging
 
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
 
 
 class GenericTranscriptDatasource(GenericGeneDatasource):
-    """ Used for generic TSV that is indexed by transcript ID. """
+    """ Used for generic TSV that is indexed by transcript ID.
+
+    IMPORTANT: This class does not assume that the data will have a version number.  Note that queries can (optionally)
+    exclude the version number.
+
+    This class assumes that the right most dot in a transcript name is separating the version number.  This is a good
+    assumption for GENCODE/ENSEMBL and UCSC transcripts.
+    """
     def __init__(self, src_file, title='', version=None, use_binary=True, geneColumnName='transcript_id'):
         super(GenericTranscriptDatasource,self).__init__(src_file, title, version, use_binary, geneColumnName)
 
-    def annotate_mutation(self, mutation):
-        return super(GenericTranscriptDatasource,self).annotate_mutation(mutation,'transcript_id')
+        # Super class creates a self.db_obj
+        tx_ids = self.db_obj.keys()
+
+        # Now let's get the raw names without the version numbers
+        tx_id_name_dict = {tx_id.rsplit(".", 1)[0]:tx_id for tx_id in tx_ids}
+        tx_id_names = tx_id_name_dict.keys()
+
+        # First check if there are duplicates
+        if len(tx_id_names) != len(set(tx_id_names)):
+            logging.getLogger(__name__).warn("Not supported:  There seem to be duplicate transcripts (possibly different version numbers) in this datasource: " + str(self.title) + " " + str(self.version) + ".  Annotation for arbitrary version will be reported."  )
+
+        # Add keys to the data that do not include the version number, but route to the data associated with the versioned transcript.
+        for tx_id_name in tx_id_names:
+            self.db_obj[tx_id_name] = self.db_obj[tx_id_name_dict[tx_id_name]]
+
+    def annotate_mutation(self, mutation, index_field='transcript_id'):
+
+        if index_field not in mutation:
+            logging.warn("Index field (" + index_field + ") not found.  Remember that datasources must be ordered.  Please put a datasource that provides the '" + index_field + "' annotation in front of this datasource, such as any TranscriptProvider.")
+            return mutation
+
+        tx_id = mutation[index_field]
+
+        # Create the tx_id for query by stripping off the version number
+        tx_query = tx_id.rsplit(".", 1)[0]
+
+        return super(GenericTranscriptDatasource,self).annotate_mutation_given_index_value(tx_query, mutation)
