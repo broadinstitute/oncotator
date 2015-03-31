@@ -132,7 +132,7 @@ def get_feature_type(feature):
         return 'secondary_structure'
 
 def parse_uniprot_data(data):
-    return dict((s.entry_name, s) for s in SwissProt.parse(file(uniprot_swiss_fname, 'r')))
+    return dict((s.entry_name, s) for s in SwissProt.parse(data))
     
 def get_uniprot_features_table(record):
     features = record.features
@@ -248,10 +248,29 @@ def create_gene_id_to_uniprot_entry_map(db_names):
     return gene_ids_2_entrynames
 
 
-def add_uniprot_ids_to_tx_ids(all_tx_ids, swiss_data, trembl_data):
+def create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, tx_id, tx_ids_2_entrynames):
+    temp_dict = None
+    if tx_id in tx_ids_2_entrynames['swiss']:
+        data = swiss_data
+        data_id = 'swiss'
+        # #add swiss-prot data to dict
+        temp_dict = create_gene_to_uniprot_dict(data, data_id, tx_id, tx_ids_2_entrynames)
+        temp_dict['uniprot_db_source'] = data_id
+
+    elif tx_id in tx_ids_2_entrynames['trembl']:
+        # #add trembl data to dict if none found in swiss-prot first
+        data = trembl_data
+        data_id = 'trembl'
+        temp_dict = create_gene_to_uniprot_dict(data, data_id, tx_id, tx_ids_2_entrynames)
+        temp_dict['uniprot_db_source'] = data_id
+
+    return temp_dict
+
+
+def add_uniprot_ids_to_tx_ids(all_tx_dict, swiss_data, trembl_data):
     """
 
-    :param tx_ids: gene names used in the transcript datasource
+    :param all_tx_dict: dictionary of tx_id to Transcript instance from transcript datasource
     :param swiss_data:
     :param trembl_data:
     :return:
@@ -270,31 +289,23 @@ def add_uniprot_ids_to_tx_ids(all_tx_ids, swiss_data, trembl_data):
 
     gene_ids_2_entrynames = create_gene_id_to_uniprot_entry_map(db_names)
 
+    all_tx_ids = all_tx_dict.keys()
     found_txs = 0
     unfound_txs = 0
     tx_dict = {}
     for tx_id_with_version in all_tx_ids:
         tx_id = tx_id_with_version.rsplit(".", 1)[0]
-        tx_dict[tx_id] = {}
-        if tx_id in tx_ids_2_entrynames['swiss']:
-            data = swiss_data
-            data_id = 'swiss'
-            ##add swiss-prot data to dict
-            tx_dict[tx_id] = create_gene_to_uniprot_dict(data, data_id, tx_id, tx_ids_2_entrynames)
-            tx_dict[tx_id]['uniprot_db_source'] = data_id
-            found_txs += 1
+        temp_dict = create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, tx_id, tx_ids_2_entrynames)
 
-        elif tx_id in tx_ids_2_entrynames['trembl']:
-            ##add trembl data to dict if none found in swiss-prot first
-            data = trembl_data
-            data_id = 'trembl'
-            tx_dict[tx_id] = create_gene_to_uniprot_dict(data, data_id, tx_id, tx_ids_2_entrynames)
-            tx_dict[tx_id]['uniprot_db_source'] = data_id
-            found_txs += 1
-        else:
+        if temp_dict is None:
             print(tx_id + " not found.  Falling back to gene name...")
+            gene_symbol_for_tx = all_tx_dict[tx_id_with_version].get_gene()
+            temp_dict = create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, gene_symbol_for_tx, gene_ids_2_entrynames)
             unfound_txs += 1
+        else:
+            found_txs += 1
 
+        tx_dict[tx_id] = temp_dict
     print(str(found_txs) + " transcripts were found.")
     print(str(unfound_txs) + " transcripts were not found.")
 
@@ -445,9 +456,9 @@ if __name__ == '__main__':
     print(str(len(gene_ids)) + " genes in datasource.")
 
     print "Adding uniprot IDs to txs..."
-    all_tx_ids = gencode_ds.getTranscriptDict().keys()
-    print("Number of all transcript IDs: " + str(len(all_tx_ids)))
-    genesDict = add_uniprot_ids_to_tx_ids(all_tx_ids, swiss_data, trembl_data)
+    all_tx_dict = gencode_ds.getTranscriptDict()
+    print("Number of all transcript IDs: " + str(len(all_tx_dict.keys())))
+    genesDict = add_uniprot_ids_to_tx_ids(all_tx_dict, swiss_data, trembl_data)
     print "Adding uniprot data to genes..."
     genesDict = add_uniprot_data_to_Genes(genesDict, swiss_data, trembl_data)
 
