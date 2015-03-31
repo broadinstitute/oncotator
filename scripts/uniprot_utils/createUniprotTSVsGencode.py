@@ -244,7 +244,10 @@ def create_gene_id_to_uniprot_entry_map(db_names):
                     genes_names.extend(gene_name_list)
 
             for g in genes_names:
-                gene_ids_2_entrynames[db][g].append(s.entry_name)
+                # For gene names such as: HLA-A {ECO:0000313|EMBL:AFV73981.1}, we combine into one HLA-A with
+                #   multiple entries.
+                g_trimmed = g.split(" ")[0]
+                gene_ids_2_entrynames[db][g_trimmed].append(s.entry_name)
     return gene_ids_2_entrynames
 
 
@@ -290,24 +293,33 @@ def add_uniprot_ids_to_tx_ids(all_tx_dict, swiss_data, trembl_data):
     gene_ids_2_entrynames = create_gene_id_to_uniprot_entry_map(db_names)
 
     all_tx_ids = all_tx_dict.keys()
+    num_all_tx_ids = len(all_tx_ids)
     found_txs = 0
     unfound_txs = 0
+    unfound_txs_with_no_fallback = 0
     tx_dict = {}
-    for tx_id_with_version in all_tx_ids:
+    for i,tx_id_with_version in enumerate(all_tx_ids):
         tx_id = tx_id_with_version.rsplit(".", 1)[0]
         temp_dict = create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, tx_id, tx_ids_2_entrynames)
 
         if temp_dict is None:
-            print(tx_id + " not found.  Falling back to gene name...")
             gene_symbol_for_tx = all_tx_dict[tx_id_with_version].get_gene()
             temp_dict = create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, gene_symbol_for_tx, gene_ids_2_entrynames)
             unfound_txs += 1
+            if temp_dict is None:
+                unfound_txs_with_no_fallback += 1
         else:
             found_txs += 1
 
-        tx_dict[tx_id] = temp_dict
-    print(str(found_txs) + " transcripts were found.")
-    print(str(unfound_txs) + " transcripts were not found.")
+        if temp_dict is not None:
+            tx_dict[tx_id] = temp_dict
+
+        if i % 10000 == 0:
+            logging.getLogger(__name__).info("Processed " + str(i) + " of " + str(num_all_tx_ids) + " transcripts.")
+
+    logging.getLogger(__name__).info(str(found_txs) + " transcripts were found.")
+    logging.getLogger(__name__).info(str(unfound_txs) + " transcripts were not found.")
+    logging.getLogger(__name__).info(str(unfound_txs_with_no_fallback) + " of unfound transcripts could not fall back to gene.")
 
     return tx_dict
 
@@ -349,12 +361,12 @@ def parseWithPickle(fname, callableParsingFunction, pickleDir=""):
     ''' Pickle dir MUST include appended "/" '''
     pickleFilename = pickleDir + os.path.basename(fname) + ".pkl"
     if os.path.exists(pickleFilename):
-        print("Loading pickled structure: " + str(pickleFilename))
+        logging.getLogger(__name__).info("Loading pickled structure: " + str(pickleFilename))
         g = cPickle.load(file(pickleFilename, 'r'))
     else:
-        print("Parsing...")
+        logging.getLogger(__name__).info("Parsing...")
         g = callableParsingFunction(file(fname, 'r'))
-        print("Writing pickle file: " + str(pickleFilename))
+        logging.getLogger(__name__).info("Writing pickle file: " + str(pickleFilename))
         cPickle.dump(g, file(pickleFilename, 'w'), protocol=0)
     return g
 
@@ -432,12 +444,7 @@ def renderSimpleUniprotTSV(gene_dict, outputFilename):
 
 def setup_logging():
     loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(loggingFormat)
-    ch.setFormatter(formatter)
-
-    logging.getLogger().addHandler(ch)
+    logging.basicConfig(level=logging.INFO, format=loggingFormat)
 
 if __name__ == '__main__':
 
@@ -453,13 +460,13 @@ if __name__ == '__main__':
     gencode_ds_loc = expanduser(args.gencode_ds)
     gencode_ds = DatasourceFactory.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
     gene_ids = gencode_ds.get_gene_symbols()
-    print(str(len(gene_ids)) + " genes in datasource.")
+    logging.getLogger(__name__).info(str(len(gene_ids)) + " genes in datasource.")
 
-    print "Adding uniprot IDs to txs..."
+    logging.getLogger(__name__).info("Adding uniprot IDs to txs...")
     all_tx_dict = gencode_ds.getTranscriptDict()
-    print("Number of all transcript IDs: " + str(len(all_tx_dict.keys())))
+    logging.getLogger(__name__).info("Number of all transcript IDs: " + str(len(all_tx_dict.keys())))
     genesDict = add_uniprot_ids_to_tx_ids(all_tx_dict, swiss_data, trembl_data)
-    print "Adding uniprot data to genes..."
+    logging.getLogger(__name__).info("Adding uniprot data to genes...")
     genesDict = add_uniprot_data_to_Genes(genesDict, swiss_data, trembl_data)
 
     del trembl_data
