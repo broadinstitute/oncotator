@@ -123,6 +123,16 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
 
         self.assertTrue(os.path.exists(outputFilename))
 
+        maflite_ic = MafliteInputMutationCreator("testdata/maflite/Patient0.indel.maf.txt")
+        muts = maflite_ic.createMutations()
+        vcf_reader = vcf.Reader(open(outputFilename, 'r'))
+        for i, m in enumerate(muts):
+            rec = vcf_reader.next()
+            qual = rec.QUAL
+
+            # All records should have QUAL with a value (i.e. NOT ".")
+            self.assertIsNotNone(qual)
+
     @TestUtils.requiresDefaultDB()
     def testFullIndelVcf(self):
         """ Perform test of a Indel maflite all the way through TCGA VCF creation
@@ -149,14 +159,20 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         muts = maflite_ic.createMutations()
         vcf_reader = vcf.Reader(open(outputFilename, 'r'))
 
-        vcf_pos = [int(rec.POS) for rec in vcf_reader]
-        for m in muts:
+        for i,m in enumerate(muts):
+            rec = vcf_reader.next()
+            vcf_pos = rec.POS
+            qual = rec.QUAL
+
+            # All records should have QUAL of None (i.e. ".")
+            self.assertIsNone(qual)
+
             # If the variant is a deletion, then the vcf position should be the same as maflite minus one.  Otherwise, the same.
             is_variant_deletion = (m.alt_allele == "") or (m.alt_allele == "-") or (m.alt_allele == ".")
             if is_variant_deletion:
-                self.assertTrue((int(m.start) - 1) in vcf_pos, "Deletion was not correct for " + m.chr + ":" + m.start)
+                self.assertTrue((int(m.start) - 1) == vcf_pos, "Deletion was not correct for " + m.chr + ":" + m.start)
             else:
-                self.assertTrue(int(m.start) in vcf_pos, "Insertion was not correct for " + m.chr + ":" + m.start)
+                self.assertTrue(int(m.start) == vcf_pos, "Insertion was not correct for " + m.chr + ":" + m.start)
 
     def _testInfoField(self, filter):
         outputFilename = "out/TCGAVCFTest.indel.vcf.dummy"
