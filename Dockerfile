@@ -4,8 +4,6 @@ MAINTAINER Alex Ramos <aramos@broadinstitute.org>
 
 RUN apt-get update && apt-get install unzip
 
-RUN git clone https://github.com/broadinstitute/oncotator.git
-
 RUN pip install numpy
 
 RUN wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
@@ -14,16 +12,16 @@ RUN unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && r
 
 RUN pip install ngslib
 
-WORKDIR /oncotator/
+ADD . /oncotator
 
-RUN git checkout master && python setup.py install
+RUN cd oncotator/ && python setup.py install
 
 ENTRYPOINT ["Oncotator"]
 
 CMD ["-h"]
 
 # EXAMPLE BUILD CMD
-# docker build -t oncotator:latest .
+# docker build -t oncotator .
 
 # EXAMPLE RUN CMDS
 # docker run -it oncotator -h
