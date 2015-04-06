@@ -373,7 +373,7 @@ def parseWithPickle(fname, callableParsingFunction, pickleDir=""):
 
 
 def renderUniprotNaturalVariationsTSV(genesDict, outputFilename):
-    headers = ['gene', 'start_AA', 'end_AA','natural_variations']
+    headers = ['transcript_id', 'start_AA', 'end_AA','natural_variations']
     tsvWriter = csv.DictWriter(open(outputFilename, 'w'), headers, extrasaction='ignore', delimiter="\t", lineterminator="\n")
     tsvWriter.writeheader()
 

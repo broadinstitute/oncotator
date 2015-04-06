@@ -46,10 +46,14 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from multiprocessing import Pool
 from os.path import expanduser
 from tempfile import mkdtemp
+from time import sleep
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
+from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
+from createUniprotTSVsGencode import setup_logging
 
 
 '''
@@ -136,12 +140,12 @@ def parseWithShove(fname, callableParsingFunction, pickleDir=""):
     ''' Pickle dir MUST include appended "/" '''
     shoveFilename = pickleDir + "/" + os.path.basename(fname) + ".shv"
     if os.path.exists(shoveFilename):
-        print("Loading shove structure: " + str(shoveFilename))
+        logging.getLogger(__name__).info("Loading shove structure: " + str(shoveFilename))
         g = Shove("file://" + shoveFilename, "simple://")
     else:
-        print("Parsing...")
+        logging.getLogger(__name__).info("Parsing...")
         tmpStruct = callableParsingFunction(file(fname, 'r'))
-        print("Writing shove db: " + str(shoveFilename))
+        logging.getLogger(__name__).info("Writing shove db: " + str(shoveFilename))
         ks = tmpStruct.keys()
         g = Shove("file://" + shoveFilename)
         for k in ks:
@@ -186,7 +190,11 @@ def get_uni_pos(fh, AA):
                 q = 1
     return new_pos, query_AA, uni_AA
 
-def runAlignment(seq1_name, seq2_name,NP_seq,uni_seq,tmp_dir,bl2seq_path, db):
+
+def run_alignment_given_tuple(t):
+    return run_alignment(t[0], t[1], t[2], t[3], t[4], t[5])
+
+def run_alignment(seq1_name, seq2_name,NP_seq,uni_seq,tmp_dir,bl2seq_path):
     alignment_key = '%s' % (seq1_name)
 
     temp_gencode_fasta_fh,temp_gencode_fasta_fname = tempfile.mkstemp(suffix='.tmp',prefix='annotation.',dir=tmp_dir,text=True)
@@ -204,12 +212,13 @@ def runAlignment(seq1_name, seq2_name,NP_seq,uni_seq,tmp_dir,bl2seq_path, db):
     ff = open(temp_align_results_fname)
     alignment_data = ff.readlines()
     ff.close()
-    db[alignment_key] = alignment_data
+
     ##cleanup
     os.close(temp_gencode_fasta_fh)
     os.close(temp_uniprot_fasta_fh)
     for t in [temp_gencode_fasta_fname, temp_uniprot_fasta_fname]: #, temp_align_results_fname]:
         os.remove(t)
+    return alignment_key, alignment_data
 
 def write_fasta(fname, header, seq):
     OUT = open(fname, 'w')
@@ -226,7 +235,7 @@ def generateTranscriptMuts(gafDS,uniprotDS):
         m = uniprotDS.annotate_mutation(m)
         yield m
 
-if __name__ == '__main__':
+def main():
     args = parseOptions()
     uniprot_swiss_fname = expanduser(args.swiss_file)
     uniprot_trembl_fname = expanduser(args.trembl_file)
@@ -236,12 +245,14 @@ if __name__ == '__main__':
     out_tx_matches = args.out_tx_matches
     out_tx_matches_fp = file(out_tx_matches, 'w')
 
+    setup_logging()
+
     uniprot_tsv = expanduser(args.uniprot_tsv)
     blast_exe = args.blast_exe
 
     gencode_ds = DatasourceFactory.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
     #uniprotDS = DatasourceFactory.createDatasource(configFilename=uniprot_ds_loc, leafDir=os.path.dirname(uniprot_ds_loc))
-    uniprotDS = GenericGeneDatasource(src_file=uniprot_tsv, title="UniProt", version="2014_12", geneColumnName="gene")
+    uniprotDS = GenericTranscriptDatasource(src_file=uniprot_tsv, title="UniProt", version="2014_12", geneColumnName="gene")
 
     tmp_dir = args.temp_pickle_store
     if tmp_dir is None:
@@ -262,10 +273,12 @@ if __name__ == '__main__':
     numNotInProteinSeqs = 0
     numTranscriptsNotInUniprot = 0
     ctr = 0
+    process_list = []
+    tpool = Pool(processes=4)
     for tx_id in tx_ids:
         ctr += 1
         if (ctr % 2000) == 0:
-            print(str(ctr) + "/" + str(num_tx_ids))
+            logging.getLogger(__name__).info(str(ctr) + "/" + str(num_tx_ids))
 
         tx_protein_seq = txs[tx_id].get_protein_seq()
         if tx_protein_seq is None or tx_protein_seq.strip() == "" or tx_protein_seq.strip() == "*":
@@ -276,6 +289,7 @@ if __name__ == '__main__':
         # Create a fake dummy mutation and annotate the gene and the simple_uniprot info
         m = MutationData()
         m.createAnnotation('gene', txs[tx_id].get_gene())
+        m.createAnnotation('transcript_id', tx_id)
         m = uniprotDS.annotate_mutation(m)
         uniprot_entry_key = m[uniprotEntryNameKey]
         if uniprot_entry_key in swissKeys:
@@ -295,9 +309,25 @@ if __name__ == '__main__':
         if tx_protein_seq[0:-1] == uniprot_seq:
             out_tx_matches_fp.write(tx_id + "\n")
 
-        runAlignment(tx_id, uniprot_entry_key, tx_protein_seq, uniprot_seq, tmp_dir, blast_exe, alignmentDB)
+        # runAlignment(tx_id, uniprot_entry_key, tx_protein_seq, uniprot_seq, tmp_dir, blast_exe, alignmentDB)
+        p = (tx_id, uniprot_entry_key, tx_protein_seq, uniprot_seq, tmp_dir, blast_exe)
+        process_list.append(p)
 
-    print("Could not get protein seq for " + str(numNotInProteinSeqs) + " transcripts.")
-    print("Could not get uniprot seq for " + str(numTranscriptsNotInUniprot) + " transcripts.")
-    print("Attempted " + str(ctr) + " muts")
+    # # Running all of the processes....
+    logging.getLogger(__name__).info("Running big block of alignments across multicores (" + str(len(process_list)) + " alignments)")
+    alignment_data_tuples = tpool.map(run_alignment_given_tuple, process_list)
+    # logging.getLogger(__name__).info("Running big block of alignments across one core (" + str(len(process_list)) + " alignments)")
+    # alignment_data_tuples = [run_alignment_given_tuple(p) for p in process_list]
 
+
+    logging.getLogger(__name__).info("Storing results")
+    for t in alignment_data_tuples:
+        alignmentDB[t[0]] = t[1]
+
+
+    logging.getLogger(__name__).info("Could not get protein seq for " + str(numNotInProteinSeqs) + " transcripts.")
+    logging.getLogger(__name__).info("Could not get uniprot seq for " + str(numTranscriptsNotInUniprot) + " transcripts.")
+    logging.getLogger(__name__).info("Attempted " + str(ctr) + " muts")
+
+if __name__ == '__main__':
+    main()

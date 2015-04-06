@@ -16,22 +16,22 @@ set -e
 
 # tsv file for simple_uniprot datasource
 # (this is an input and should be the same as what was used in the preprocess example)
-OUT_SIMPLE_UNIPROT_TSV_FILE=/home/lichtens/uniprot/simple_uniprot_Dec012014.tsv
+OUT_SIMPLE_UNIPROT_TSV_FILE=/home/lichtens/uniprot/simple_uniprot_April062015.tsv
 
 # tsv file for uniprot_aa_annotations datasource
 # (this is an input and should be the same as what was used in the preprocess example)
-OUT_AA_ANNOTATIONS=/home/lichtens/uniprot/uniprot_aa_annotations.tsv
+OUT_AA_ANNOTATIONS=/home/lichtens/uniprot/uniprot_aa_annotations_April062015.tsv
 
 # shove datasource for uniprot_aa_xform datasource (this will be a directory)
 # (this is an input and should be the same as what was used in the preprocess example)
-OUT_AA_XFORM_SHOVE_BASENAME=uniprot_aa_xform.alignments.final
+OUT_AA_XFORM_SHOVE_BASENAME=uniprot_aa_xform.alignments.final.April062015
 OUT_AA_XFORM=/home/lichtens/uniprot/${OUT_AA_XFORM_SHOVE_BASENAME}
 
 # db-dir for the datasources to appear
 DB_DIR=/home/lichtens/uniprot/uniprot_db_dir/
 
 # UniProt version used
-UNIPROT_VERSION=2014_12
+UNIPROT_VERSION=2015_03
 
 # Datasource names
 SIMPLE_UNIPROT_NAME=UniProt
@@ -44,7 +44,7 @@ XFORM_CONFIG_TEMPLATE=/home/lichtens/pycharm/oncotator/scripts/uniprot_utils/uni
 ## END CHANGE PARAMETERS -- you should not have to touch anything below this line. #######
 
 # simple_uniprot
-initializeDatasource --ds_type gene_tsv --ds_file ${OUT_SIMPLE_UNIPROT_TSV_FILE} --name ${SIMPLE_UNIPROT_NAME} --version ${UNIPROT_VERSION} --dbDir ${DB_DIR} --ds_foldername simple_uniprot --genome_build hg19 --index_columns gene
+initializeDatasource --ds_type transcript_tsv --ds_file ${OUT_SIMPLE_UNIPROT_TSV_FILE} --name ${SIMPLE_UNIPROT_NAME} --version ${UNIPROT_VERSION} --dbDir ${DB_DIR} --ds_foldername simple_uniprot --genome_build hg19 --index_columns gene
 echo " "
 # uniprot_aa_annotation
 initializeDatasource --ds_type gpp_tsv --ds_file ${OUT_AA_ANNOTATIONS} --name ${ANNOTATIONS_NAME} --version ${UNIPROT_VERSION} --dbDir ${DB_DIR} --ds_foldername uniprot_aa_annotation --genome_build hg19 --index_columns gene,startAA,endAA

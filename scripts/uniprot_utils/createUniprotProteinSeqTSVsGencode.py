@@ -57,6 +57,7 @@ from createUniprotTSVsGencode import parse_uniprot_data
 from createUniprotProteinSeqsAlignments import parseWithShove,generateTranscriptMuts
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
+from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
 from oncotator.utils.TsvFileSorter import TsvFileSorter
 
 __author__ = 'lichtens'
@@ -90,6 +91,7 @@ def parseOptions():
     parser.add_argument("trembl_file", type=str, help="TREMBL file. ")
     parser.add_argument("gencode_ds", type=str, help="GENCODE datasource config file. ")
     parser.add_argument("uniprot_tsv", type=str, help="Uniprot TSV file (used in a simple_uniprot datasource) file. ")
+    parser.add_argument("-p", "--pickles", type=str, default="pickles/", help="Where to place temporary cached files. Default: %(default)s")
     parser.add_argument("output_file", type=str, help="TSV filename for output.  File will be overwritten if it already exists.")
 
     args = parser.parse_args()
@@ -103,24 +105,25 @@ if __name__ == '__main__':
     output_file = args.output_file
     uniprot_tsv = args.uniprot_tsv
 
+    pickles_dir = os.path.abspath(os.path.expanduser(args.pickles))
+
     # Go through every record and create an entry for the
     outputHeaders = ["gene", "startAA", "endAA", "region", "site", "natural_variation","experimental_info"]
     tsvWriter = csv.DictWriter(open(output_file, 'w'), outputHeaders, extrasaction='ignore', delimiter="\t", lineterminator="\n")
     tsvWriter.writeheader()
 
-    # TODO: Remove hardcoded paths
     # TODO: Reduce code duplication
 
-    swiss_data = parseWithShove(uniprot_swiss_fname, parse_uniprot_data, "pickles/")
-    trembl_data = parseWithShove(uniprot_trembl_fname, parse_uniprot_data, "pickles/")
+    swiss_data = parseWithShove(uniprot_swiss_fname, parse_uniprot_data, pickles_dir)
+    trembl_data = parseWithShove(uniprot_trembl_fname, parse_uniprot_data, pickles_dir)
 
     # Use GAF datasource to get list of all possible genes
     gencode_ds_loc = expanduser(args.gencode_ds)
     gencode_ds = DatasourceFactory.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
 
     # Use simple_uniprot TSV to get the uniprot_entry_names
-    # Create the gene to uniprot info mappings.  But take less RAM.  Given a gene, get the uniprot record.
-    uniprotDS = GenericGeneDatasource(src_file=uniprot_tsv, title="UniProt", version="2014_12", geneColumnName="gene")
+    # Create the transcript to uniprot info mappings.  But take less RAM.  Given a gene, get the uniprot record.
+    uniprotDS = GenericTranscriptDatasource(src_file=uniprot_tsv, title="UniProt", version="2014_12", geneColumnName="gene")
 
     # key is the uniprot_entry_name from the uniprotDS
     muts = generateTranscriptMuts(gencode_ds, uniprotDS)
@@ -133,11 +136,11 @@ if __name__ == '__main__':
     ctr = 0
     numTranscriptsNotInUniprot = 0
     uniprotEntryNameKey = 'UniProt_uniprot_entry_name'
-    genes_already_processed = set()
+    txs_already_processed = set()
     for m in muts:
-        if m['gene'] in genes_already_processed:
+        if m['transcript_id'] in txs_already_processed:
             continue
-        genes_already_processed.add(m['gene'])
+        txs_already_processed.add(m['transcript_id'])
         ctr += 1
         if (ctr % 1000) == 0:
             print(str(ctr))
