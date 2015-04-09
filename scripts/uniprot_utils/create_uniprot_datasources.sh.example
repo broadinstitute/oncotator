@@ -24,7 +24,7 @@ OUT_AA_ANNOTATIONS=/home/lichtens/uniprot/uniprot_aa_annotations_April062015.tsv
 
 # shove datasource for uniprot_aa_xform datasource (this will be a directory)
 # (this is an input and should be the same as what was used in the preprocess example)
-OUT_AA_XFORM_SHOVE_BASENAME=uniprot_aa_xform.alignments.final.April062015
+OUT_AA_XFORM_SHOVE_BASENAME=uniprot_aa_xform.alignments.April062015
 OUT_AA_XFORM=/home/lichtens/uniprot/${OUT_AA_XFORM_SHOVE_BASENAME}
 
 # db-dir for the datasources to appear
