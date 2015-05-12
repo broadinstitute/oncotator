@@ -547,7 +547,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
     def test_canonical_tx_list_empty(self):
         """Test that not specifying the canonical list will do nothing."""
-        ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_")
+        ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_empty_")
         m = MutationData()
         m.chr = "22"
         m.start = "22142650"

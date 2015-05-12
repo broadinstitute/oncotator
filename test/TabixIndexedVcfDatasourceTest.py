@@ -61,6 +61,8 @@ TestUtils.setupLogging(__file__, __name__)
 
 class TabixIndexedVcfDatasourceTest(unittest.TestCase):
 
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
