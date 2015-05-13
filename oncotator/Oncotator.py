@@ -303,6 +303,7 @@ def determineOtherOptions(args):
     opts[OptionConstants.VCF_OUT_INFER_GENOTYPES] = MutUtils.str2bool(args.infer_genotypes)
     opts[OptionConstants.INFER_ONPS] = args.infer_onps
     opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE] = args.canonical_tx_file
+    opts[OptionConstants.STACK_FILTER_COLS] = True #TODO expose as option to CLI
     return opts
 
 

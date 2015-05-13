@@ -323,7 +323,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])
         mut.createAnnotation("alt_allele_seen", str(True), "INPUT")
-        mut = self._addFilterData2Mutation(mut, record)
+        #mut = self._addFilterData2Mutation(mut, record)
+        mut = self._add_filter_data_2_mutation_single_field(mut, record)
         mut = self._addInfoData2Mutation(mut, record, alt_index)
         return mut
 
@@ -340,6 +341,23 @@ class VcfInputMutationCreator(InputMutationCreator):
                 mut.createAnnotation(flt, "PASS", "INPUT", annotationDescription=description,
                                      tags=[TagConstants.FILTER])
         return mut
+
+    def _add_filter_data_2_mutation_single_field(self, mut, record):
+        if record.FILTER is None:
+            mut.createAnnotation('filters', '', 'INPUT', tags=[TagConstants.FILTER])
+        else:
+            filters_failed = list()
+            for flt in self.vcf_reader.filters:  # for each filter in the header
+                if flt in record.FILTER:
+                    filters_failed.append(flt)
+    
+            if filters_failed:
+                output_str = '|'.join(filters_failed)
+                mut.createAnnotation('filters', output_str, 'INPUT', tags=[TagConstants.FILTER])
+            else:
+                mut.createAnnotation('filters', 'PASS', 'INPUT', tags=[TagConstants.FILTER])
+
+        return mut        
 
     def reset(self):
         """ Resets the internal state, so that mutations can be generated. """
