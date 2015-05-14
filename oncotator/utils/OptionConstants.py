@@ -52,4 +52,4 @@ class OptionConstants(object):
     INFER_ONPS = "infer_onps"
     NO_PREPEND = "no_prepend"
     CUSTOM_CANONICAL_TX_LIST_FILE = "custom_canonical_tx_file"
-    STACK_FILTER_COLS = 'stack_filter_cols'
+    COLLAPSE_FILTER_COLS = 'collapse_filter_cols'

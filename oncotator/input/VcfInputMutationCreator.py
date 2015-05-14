@@ -60,7 +60,7 @@ from InputMutationCreator import InputMutationCreator
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.Annotation import Annotation
 from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
-
+from oncotator.utils.OptionConstants import OptionConstants
 
 class VcfInputMutationCreator(InputMutationCreator):
     """
@@ -90,6 +90,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         if other_options is None:
             other_options = {}
+        self.collapse_filter_fields = other_options.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
 
         self._is_skipping_no_alts = other_options.get(InputMutationCreatorOptions.IS_SKIP_ALTS, False)
 
@@ -323,8 +324,10 @@ class VcfInputMutationCreator(InputMutationCreator):
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])
         mut.createAnnotation("alt_allele_seen", str(True), "INPUT")
-        #mut = self._addFilterData2Mutation(mut, record)
-        mut = self._add_filter_data_2_mutation_single_field(mut, record)
+        if self.collapse_filter_fields:
+            mut = self._add_filter_data_2_mutation_single_field(mut, record)
+        else:
+            mut = self._addFilterData2Mutation(mut, record)
         mut = self._addInfoData2Mutation(mut, record, alt_index)
         return mut
 
@@ -344,7 +347,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
     def _add_filter_data_2_mutation_single_field(self, mut, record):
         if record.FILTER is None:
-            mut.createAnnotation('filters', '', 'INPUT', tags=[TagConstants.FILTER])
+            mut.createAnnotation('filter', '', 'INPUT', tags=[TagConstants.FILTER])
         else:
             filters_failed = list()
             for flt in self.vcf_reader.filters:  # for each filter in the header
@@ -353,9 +356,9 @@ class VcfInputMutationCreator(InputMutationCreator):
     
             if filters_failed:
                 output_str = '|'.join(filters_failed)
-                mut.createAnnotation('filters', output_str, 'INPUT', tags=[TagConstants.FILTER])
+                mut.createAnnotation('filter', output_str, 'INPUT', tags=[TagConstants.FILTER])
             else:
-                mut.createAnnotation('filters', 'PASS', 'INPUT', tags=[TagConstants.FILTER])
+                mut.createAnnotation('filter', 'PASS', 'INPUT', tags=[TagConstants.FILTER])
 
         return mut        
 
