@@ -183,7 +183,7 @@ def parseOptions(program_version_message):
     parser.add_argument('--prepend', dest="prepend", action='store_true', help="If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs")
     parser.add_argument('--infer-onps', dest="infer_onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
-    parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single filter column when using TCGAMAF ouput option.")
+    parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF ouput option.")
 
     # Process arguments
     args = parser.parse_args()

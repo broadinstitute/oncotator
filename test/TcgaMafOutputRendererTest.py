@@ -329,6 +329,25 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         self.assertTrue(ctr == 24, str(ctr) + " mutations found, but should have been 24." )
 
+
+    def test_proper_conversion_vcf_to_maf_with_collapse_filter_cols(self):
+        """Test FILTER col is properly rendered when using the collapse-filter-cols option."""
+
+        input_fname = 'testdata/vcf/example.vcf'
+        output_fname = 'out/example.one_filter_col.maf.txt'
+        annotator = Annotator()
+        other_opts = {'collapse_filter_cols': True}
+        
+        from oncotator.utils.RunSpecification import RunSpecification
+        run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
+        annotator.initialize(run_spec)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(output_fname)
+        for line_dict in tsv_reader:
+            self.assertIn('i_filter', line_dict)
+            self.assertTrue(line_dict['i_filter'] in ['PASS', 'q10'])
+
     def test_validation_correction(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for invalid mutation.
         """
