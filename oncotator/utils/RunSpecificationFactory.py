@@ -58,6 +58,10 @@ class RunSpecificationFactory(object):
         if outputFormat=="GENE_LIST" and inputFormat != "SEG_FILE":
             result.append(RunSpecificationMessage(logging.ERROR, "Output format of GENE_LIST is only supported when input is SEG_FILE"))
 
+        collapse_filter_cols = other_opts.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
+        if  all([inputFormat == 'VCF', outputFormat != "TCGAMAF", collapse_filter_cols]):
+            result.append(RunSpecificationMessage(logging.ERROR, "collapse-filter-cols flag can only be used with VCF input and TCGAMAF output formats."))
+
         if outputFormat not in ["GENE_LIST", "SIMPLE_TSV"] and inputFormat == "SEG_FILE":
             result.append(RunSpecificationMessage(logging.WARN, "Input format of SEG_FILE is only supported when output is GENE_LIST or SIMPLE_TSV"))
 

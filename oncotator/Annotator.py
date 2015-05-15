@@ -150,7 +150,6 @@ class Annotator(object):
         self._is_skip_no_alts = False
         self._annotating_type = None
         self._annotate_func_ptr = Annotator.ANNOTATING_FUNC_DICT.get(self._annotating_type, _annotate_mut)
-        pass
 
     def getIsMulticore(self):
         return self.__isMulticore
