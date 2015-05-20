@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from collections import defaultdict
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
 from oncotator.cache.CacheManager import CacheManager
@@ -317,6 +318,13 @@ class Annotator(object):
                     m = ds.annotate_mutation(m)
 
     def annotate_genes_given_txs(self, txs):
+        """
+        Given a list of Transcripts, create and annotate dummy mutations that represent only the gene.
+
+        :param txs: list of Transcripts
+        :type txs: list
+        :return:
+        """
         gene_to_tx_dict = {}
         for tx in txs:
             try:
@@ -336,6 +344,29 @@ class Annotator(object):
             endAA = str(max([len(tx.get_protein_seq()) for tx in gene_to_tx_dict[gene]]))
             m.createAnnotation("protein_change", "p.DUMMY1_" + endAA)
             m.createAnnotation("chr", gene_to_tx_dict[gene][0].get_contig())
+
+            # Annotate each transcript and collapse the relevant transcript annotations for each gene.
+            tx_muts_uncollapsed = [self.annotate_transcript(tx) for tx in gene_to_tx_dict[gene]]
+            annotation_vals_collapsed = defaultdict(set)
+            for tx_mut in tx_muts_uncollapsed:
+                for annotation_name in tx_mut.keys():
+
+                    # For every annotation on the dummy transcript (tx_mut), create a dictionary containing a
+                    #  set of values.
+                    # Only consider annotations that are not INPUT and the datasource is known.
+                    invalid_annotation_sources = ["INPUT", "OUTPUT", "Unknown"]
+                    if tx_mut.getAnnotation(annotation_name).getDatasource() not in invalid_annotation_sources:
+                        annotation_vals_collapsed[annotation_name].add(tx_mut[annotation_name])
+
+            # Create a new annotation that encompasses the transcript data for the gene.
+            for new_annotation in annotation_vals_collapsed.keys():
+
+                # Remove blank values from the set
+                annotation_val_collapsed_set = annotation_vals_collapsed[new_annotation] - set([""])
+
+                str_val = "|".join(sorted(list(annotation_val_collapsed_set)))
+                m.createAnnotation(new_annotation, str_val, annotationSource="OUTPUT")
+
             muts_dict[gene] = m
 
         self._annotate_genes(muts_dict.values())
