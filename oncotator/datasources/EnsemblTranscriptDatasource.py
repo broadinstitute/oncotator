@@ -73,7 +73,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
     """
     """This is the list of annotations that get populated by this datasource"""
     POPULATED_ANNOTATION_NAMES = {'transcript_exon', 'variant_type', 'variant_classification', 'other_transcripts',
-                                  'gene', 'gene_id', 'annotation_transcript', 'genome_change', 'strand',
+                                  'gene', 'gene_id', 'annotation_transcript', 'genome_change',
                                   'transcript_id', 'secondary_variant_classification', 'protein_change', 'codon_change',
                                   'transcript_change', 'transcript_strand', 'gene', 'gene_type',
                                   'gencode_transcript_tags', 'gencode_transcript_status', 'havana_transcript',
@@ -197,7 +197,6 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
             final_annotation_dict['annotation_transcript'] = self._create_basic_annotation(chosen_tx.get_transcript_id())
             final_annotation_dict['genome_change'] = self._create_basic_annotation(TranscriptProviderUtils.determine_genome_change(mutation.chr, mutation.start, mutation.end, mutation.ref_allele, mutation.alt_allele, final_annotation_dict['variant_type'].value))
-            final_annotation_dict['strand'] = self._create_basic_annotation(chosen_tx.get_strand())
 
             final_annotation_dict['transcript_position'] = self._create_basic_annotation(TranscriptProviderUtils.render_transcript_position(int(start), int(end), chosen_tx))
 

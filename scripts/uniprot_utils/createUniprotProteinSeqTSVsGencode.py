@@ -50,17 +50,34 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import csv
+import logging
 import os
-import shutil
 from os.path import expanduser
+from shove.core import Shove
 from createUniprotTSVsGencode import parse_uniprot_data
-from createUniprotProteinSeqsAlignments import parseWithShove,generateTranscriptMuts
+from createUniprotProteinSeqsAlignments import generateTranscriptMuts
 from oncotator.DatasourceFactory import DatasourceFactory
-from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
-from oncotator.utils.TsvFileSorter import TsvFileSorter
+from oncotator.datasources.GenericTranscriptDatasource import GenericTranscriptDatasource
+from createUniprotTSVsGencode import setup_logging
 
 __author__ = 'lichtens'
 
+def parse_with_shove(fname, callableParsingFunction, pickleDir=""):
+    ''' Pickle dir MUST include appended "/" '''
+    shoveFilename = pickleDir + os.path.basename(fname) + ".shv"
+    if os.path.exists(shoveFilename):
+        logging.getLogger(__name__).info("Loading shove structure: " + str(shoveFilename))
+        g = Shove("file://" + shoveFilename, "simple://")
+    else:
+        logging.getLogger(__name__).info("Parsing...")
+        tmpStruct = callableParsingFunction(file(fname, 'r'))
+        logging.getLogger(__name__).info("Writing shove db: " + str(shoveFilename))
+        ks = tmpStruct.keys()
+        g = Shove("file://" + shoveFilename)
+        for k in ks:
+            del tmpStruct[k].references # May be causing an error later down the road.
+            g[k] = tmpStruct[k]
+    return g
 
 def parseOptions():
 
@@ -90,6 +107,7 @@ def parseOptions():
     parser.add_argument("trembl_file", type=str, help="TREMBL file. ")
     parser.add_argument("gencode_ds", type=str, help="GENCODE datasource config file. ")
     parser.add_argument("uniprot_tsv", type=str, help="Uniprot TSV file (used in a simple_uniprot datasource) file. ")
+    parser.add_argument("-p", "--pickles", type=str, default="pickles/", help="Where to place temporary cached files. Default: %(default)s")
     parser.add_argument("output_file", type=str, help="TSV filename for output.  File will be overwritten if it already exists.")
 
     args = parser.parse_args()
@@ -97,30 +115,32 @@ def parseOptions():
 
 if __name__ == '__main__':
 
+    setup_logging()
     args = parseOptions()
     uniprot_swiss_fname = args.swiss_file
     uniprot_trembl_fname = args.trembl_file
     output_file = args.output_file
     uniprot_tsv = args.uniprot_tsv
 
+    pickles_dir = os.path.abspath(os.path.expanduser(args.pickles)) + "/"
+
     # Go through every record and create an entry for the
     outputHeaders = ["gene", "startAA", "endAA", "region", "site", "natural_variation","experimental_info"]
     tsvWriter = csv.DictWriter(open(output_file, 'w'), outputHeaders, extrasaction='ignore', delimiter="\t", lineterminator="\n")
     tsvWriter.writeheader()
 
-    # TODO: Remove hardcoded paths
     # TODO: Reduce code duplication
 
-    swiss_data = parseWithShove(uniprot_swiss_fname, parse_uniprot_data, "pickles/")
-    trembl_data = parseWithShove(uniprot_trembl_fname, parse_uniprot_data, "pickles/")
+    swiss_data = parse_with_shove(uniprot_swiss_fname, parse_uniprot_data, pickles_dir)
+    trembl_data = parse_with_shove(uniprot_trembl_fname, parse_uniprot_data, pickles_dir)
 
-    # Use GAF datasource to get list of all possible genes
+    # Use GENCODE datasource to get list of all possible genes
     gencode_ds_loc = expanduser(args.gencode_ds)
     gencode_ds = DatasourceFactory.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
 
     # Use simple_uniprot TSV to get the uniprot_entry_names
-    # Create the gene to uniprot info mappings.  But take less RAM.  Given a gene, get the uniprot record.
-    uniprotDS = GenericGeneDatasource(src_file=uniprot_tsv, title="UniProt", version="2014_12", geneColumnName="gene")
+    # Create the transcript to uniprot info mappings.  But take less RAM.  Given a gene, get the uniprot record.
+    uniprotDS = GenericTranscriptDatasource(src_file=uniprot_tsv, title="UniProt", version="2014_12", geneColumnName="gene")
 
     # key is the uniprot_entry_name from the uniprotDS
     muts = generateTranscriptMuts(gencode_ds, uniprotDS)
@@ -133,20 +153,23 @@ if __name__ == '__main__':
     ctr = 0
     numTranscriptsNotInUniprot = 0
     uniprotEntryNameKey = 'UniProt_uniprot_entry_name'
-    genes_already_processed = set()
+    txs_already_processed = set()
+    records_already_processed = set()
+    num_txs_with_same_data = 0
     for m in muts:
-        if m['gene'] in genes_already_processed:
+        if m['transcript_id'] in txs_already_processed:
             continue
-        genes_already_processed.add(m['gene'])
+        txs_already_processed.add(m['transcript_id'])
         ctr += 1
         if (ctr % 1000) == 0:
-            print(str(ctr))
+            logging.getLogger(__name__).info(str(ctr))
 
-        if m[uniprotEntryNameKey] in swissKeys:
-            uniprot_record = swiss_data[m[uniprotEntryNameKey]]
+        uniprot_entry_name_key = m[uniprotEntryNameKey]
+        if uniprot_entry_name_key in swissKeys:
+            uniprot_record = swiss_data[uniprot_entry_name_key]
 
-        elif m[uniprotEntryNameKey] in tremblKeys:
-            uniprot_record = trembl_data[m[uniprotEntryNameKey]]
+        elif uniprot_entry_name_key in tremblKeys:
+            uniprot_record = trembl_data[uniprot_entry_name_key]
         else:
             numTranscriptsNotInUniprot += 1
             continue
@@ -174,32 +197,19 @@ if __name__ == '__main__':
             except:
                 continue
 
+            if (feature, m['gene']) in records_already_processed:
+                num_txs_with_same_data += 1
+                continue
+
+            records_already_processed.add((feature, m['gene']))
+
             row['startAA'] = feature[1]
             row['endAA'] = feature[2]
             row['gene'] = m['gene']
-
             row[annotation] = feature[3]
             tsvWriter.writerow(row)
 
-    print("Could not get uniprot seq for " + str(numTranscriptsNotInUniprot) + " unique genes.")
-    print("Attempted " + str(ctr) + " unique genes")
+    logging.getLogger(__name__).info("Could not get uniprot seq for " + str(numTranscriptsNotInUniprot) + " unique transcript IDs.")
+    logging.getLogger(__name__).info("Attempted " + str(ctr) + " unique transcripts.")
+    logging.getLogger(__name__).info("Identical feature data for txs with same gene: " + str(num_txs_with_same_data))
 
-    # print("Creating tabix index")
-    # print("Creating copy of tsv file (" + output_file + ") ...")
-    # tabixBasedFilename = output_file + ".copy.tsv"
-    # shutil.copyfile(output_file, tabixBasedFilename)
-
-    # print("Sorting ...")
-    # tsvFileSorter = TsvFileSorter(fieldNames=['gene','startAA', 'endAA'])
-    # tsvFileSorter.sortFile(tabixBasedFilename, tabixBasedFilename + ".sorted")
-    # print("Creating actual index ...")
-
-    # swiss_data[key].features
-    #  For each feature, position 0 is name.
-    #  Look for "SITE" (site), "VARIANT" (natural_variation),
-    # "COMPBIAS" or "REGION" or "DOMAIN"? (region)
-    #   create a line for each entry
-    # Then add trembl, but only if swiss_prot has not already covered it
-    #
-    #   Verify with old oncotator code?
-    pass
