@@ -343,7 +343,6 @@ class AnnotatorTest(unittest.TestCase):
             self.assertTrue(uniprot_go_cellular_components is not None)
             uniprot_go_molecular_functions = mut["UniProt_GO_Molecular_Function"].split("|")
             pass
-        # Now convert
 
     def assertTranscriptsFound(self, txs):
         self.assertTrue(len(txs) > 0,

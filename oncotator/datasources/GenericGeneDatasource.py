@@ -70,24 +70,36 @@ class GenericGeneDatasource(Datasource):
 
         self.db_obj, self.output_headers = get_db_data(src_file, title, use_binary, index_mode,indexColumnNames=geneColumnName)
 
-    def annotate_mutation(self, mutation, index_field='gene'):
+    def annotate_mutation_given_index_value(self, value, mutation):
+        """
+        This method will annotate the mutation with a given key value (rather than extracting it from an annotation)
 
-        if index_field not in mutation:
-            logging.warn("Index field (" + index_field + ") not found.  Remember that datasources must be ordered.  Please put a datasource that provides the '" + index_field + "' annotation in front of this datasource, such as any TranscriptProvider.")
-            return mutation
+        This is useful when trying to annotate based on a value not directly placed in a mutation, such as the trancscript
+               without the version number.
+        :param value:
+        :param mutation:
+        :return:
+        """
 
         #if any([c in mutation for c in self.output_headers]):
         for c in self.output_headers:
             if c in mutation:
                 raise Exception('Error: Non-unique header value in annotation table (%s)' % (c))
 
-        gene = mutation[index_field]
-        if gene in self.db_obj:
-            annotations = self.db_obj[gene]
+        if value in self.db_obj:
+            annotations = self.db_obj[value]
             for k in annotations.keys():
-                mutation.createAnnotation(k, self.db_obj[gene][k], annotationSource=self.title)
+                mutation.createAnnotation(k, self.db_obj[value][k], annotationSource=self.title)
         else:
             for h in self.output_headers:
                 mutation.createAnnotation(h, '', annotationSource=self.title)
-
         return mutation
+
+    def annotate_mutation(self, mutation, index_field='gene'):
+
+        if index_field not in mutation:
+            logging.warn("Index field (" + index_field + ") not found.  Remember that datasources must be ordered.  Please put a datasource that provides the '" + index_field + "' annotation in front of this datasource, such as any TranscriptProvider.")
+            return mutation
+
+        gene = mutation[index_field]
+        return self.annotate_mutation_given_index_value(gene, mutation)

@@ -179,7 +179,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
             gtT = '0/0'
         return gtN, gtT
 
-    def determineSomaticStatus(self, gtN, gtT,qual):
+    def determineSomaticStatus(self, gtN, gtT):
         isSomatic = False
         ss = 'Germline'
         ssCode = '1'
@@ -187,7 +187,6 @@ class TcgaVcfOutputRenderer(OutputRenderer):
             isSomatic= True
             ss='LOH'
             ssCode= '3'
-            qual = -qual
         elif (gtT == '0/1') and (gtN == '0/1'):
             isSomatic = False
             ss = 'Germline'
@@ -348,13 +347,18 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         if (t_lod < 0) and (n_lod < 0):
             return
 
-        qual = max(t_lod, 0)
+        # Set qual to "." if we do not have a t_lod score.
+        raw_t_lod = self._get_annotation_value(m, 't_lod_fstar', '.')
+        if raw_t_lod == "." or raw_t_lod == "":
+            qual = "."
+        else:
+            qual = max(t_lod, 0)
 
         gtN, gtT = self.genotype(n_lod, t_lod)
 
         ref,alt,new_start = MutUtils.retrievePrecedingBaseFromReference(m)
 
-        ss,ssCode = self.determineSomaticStatus(gtN, gtT, qual)
+        ss,ssCode = self.determineSomaticStatus(gtN, gtT)
         if ss is None or ssCode is None:
             return
 
@@ -381,7 +385,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
         mutRow['ID'] = self.renderID(m)
         mutRow['REF'] = ref
         mutRow['ALT'] = alt
-        mutRow['QUAL'] = qual
+        mutRow['QUAL'] = str(qual)
         mutRow['FILTER'] = filterVal
         mutRow['INFO'] = info
         mutRow['FORMAT'] = self._generateFormatField()

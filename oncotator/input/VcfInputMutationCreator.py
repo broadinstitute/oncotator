@@ -50,11 +50,13 @@ import re
 import logging
 import string
 import copy
+import traceback
 
 import vcf
 
 from oncotator.Metadata import Metadata
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
+from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.TagConstants import TagConstants
 from InputMutationCreator import InputMutationCreator
 from oncotator.utils.MutUtils import MutUtils
@@ -83,7 +85,12 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.filename = filename
         self.build = genomeBuild
         self.configFilename = configFile
-        self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
+        try:
+            self.vcf_reader = vcf.Reader(filename=self.filename, strict_whitespace=True)
+        except AttributeError as ae:
+            error_msg = "Could not parse VCF: " + str(self.filename) + ".  This often occurs due to a malformed VCF."
+            logging.error(error_msg)
+            raise OncotatorException(error_msg, str(ae.message), traceback.format_exc())
         self.configTableBuilder = ConfigTableCreatorFactory.getConfigTableCreatorInstance("input_vcf")
         self.isTagSplit = dict()
         self.logger = logging.getLogger(__name__)

@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import logging
 from os.path import expanduser
 from oncotator.DatasourceFactory import DatasourceFactory
 
@@ -73,15 +74,36 @@ from argparse import RawDescriptionHelpFormatter
 import os
 import csv
 import cPickle
-from Bio import SeqIO
 
 def parseOptions():
     
     # Process arguments
     desc = ''' Create one tsv files with basic uniprot data.
-    Creates the simple uniprot tsv indexed by gene (HUGO symbol).
+    Creates the simple uniprot tsv indexed by ENSEMBL transcript IDs..
     This script requires 3GB RAM.'''
-    epilog = ''' 
+    epilog = '''
+
+    What is going on here?
+
+    The goal is to make a simple tsv that simply maps the GENCODE transcripts to uniprot entries.  However, there are
+     several complications:
+     1)  Not all transcripts have a corresponding uniprot entry.  The uniprot entry has a list of transcripts in the
+        cross reference field.
+     2)  Synonyms for gene names are not consistent within uniprot.  For illustration, gene1 can be a synonym for gene2,
+        but that does not imply that gene2 is a synonym for gene1.  For example, CDK3 and CDKN3.  This leaves an
+        ambiguous case and was common enough that we had to move to transcript IDs from gene symbols.
+     3) Some transcripts, even some that have a perfect match on protein sequence to a uniprot entry, are not in the
+        uniprot data.
+
+
+    So here is the approach:
+
+    1)  Map GENCODE transcripts to uniprot entry, using the cross-reference field in the uniprot entry.
+    2)  For remaining GENCODE transcripts, map gene name to a uniprot entry, where possible.  This was the previous
+    approach and has some drawbacks, such as issues with complication #2 above and discrepancies between GENCODE gene
+    names and uniprot gene names.
+
+
     '''
     parser = ArgumentParser(description=desc, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("swiss_file", type=str, help="SwissProt file. ")
@@ -110,7 +132,7 @@ def get_feature_type(feature):
         return 'secondary_structure'
 
 def parse_uniprot_data(data):
-    return dict((s.entry_name, s) for s in SwissProt.parse(file(uniprot_swiss_fname, 'r')))
+    return dict((s.entry_name, s) for s in SwissProt.parse(data))
     
 def get_uniprot_features_table(record):
     features = record.features
@@ -204,22 +226,12 @@ def create_gene_to_uniprot_dict(data, data_id, gene, gene_ids_2_entrynames):
     return g
 
 
-def add_uniprot_ids_to_Genes(genes, swiss_data, trembl_data):
-    """
-
-    :param genes: gene names used in the transcript datasource
-    :param swiss_data:
-    :param trembl_data:
-    :return:
-    """
-
-    ### Map GeneIDs to UniProt entry_names
+def create_gene_id_to_uniprot_entry_map(db_names):
     gene_ids_2_entrynames = {'swiss': collections.defaultdict(list), 'trembl': collections.defaultdict(list)}
-    for db in gene_ids_2_entrynames:
+    for db in db_names:
         for s in eval(db + '_data').values():
-
             # Parse out the gene names (incl. synonyms) and create a dict entry.
-            #  At least one of these should map to something in GENCODE
+            # At least one of these should map to something in GENCODE
             genes_names = []
             gene_name_uniprot_field = s.gene_name
             if gene_name_uniprot_field == "":
@@ -232,37 +244,84 @@ def add_uniprot_ids_to_Genes(genes, swiss_data, trembl_data):
                     genes_names.extend(gene_name_list)
 
             for g in genes_names:
-                gene_ids_2_entrynames[db][g].append(s.entry_name)
+                # For gene names such as: HLA-A {ECO:0000313|EMBL:AFV73981.1}, we combine into one HLA-A with
+                #   multiple entries.
+                g_trimmed = g.split(" ")[0]
+                gene_ids_2_entrynames[db][g_trimmed].append(s.entry_name)
+    return gene_ids_2_entrynames
 
-    found_genes = 0
-    unfound_genes = 0
-    gene_dict = {}
-    for gene in genes:
-        gene_dict[gene] = {}
-        g = gene_dict[gene]
-        if gene in gene_ids_2_entrynames['swiss']:
-            data = swiss_data
-            data_id = 'swiss'
-            ##add swiss-prot data to dict
-            gene_dict[gene] = create_gene_to_uniprot_dict(data, data_id, gene, gene_ids_2_entrynames)
-            gene_dict[gene]['uniprot_db_source'] = data_id
-            found_genes += 1
 
-        elif gene in gene_ids_2_entrynames['trembl']:
-            ##add trembl data to dict if none found in swiss-prot first
-            data = trembl_data
-            data_id = 'trembl'
-            gene_dict[gene] = create_gene_to_uniprot_dict(data, data_id, gene, gene_ids_2_entrynames)
-            gene_dict[gene]['uniprot_db_source'] = data_id
-            g['uniprot_db_source'] = data_id
-            found_genes += 1
+def create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, tx_id, tx_ids_2_entrynames):
+    temp_dict = None
+    if tx_id in tx_ids_2_entrynames['swiss']:
+        data = swiss_data
+        data_id = 'swiss'
+        # #add swiss-prot data to dict
+        temp_dict = create_gene_to_uniprot_dict(data, data_id, tx_id, tx_ids_2_entrynames)
+        temp_dict['uniprot_db_source'] = data_id
+
+    elif tx_id in tx_ids_2_entrynames['trembl']:
+        # #add trembl data to dict if none found in swiss-prot first
+        data = trembl_data
+        data_id = 'trembl'
+        temp_dict = create_gene_to_uniprot_dict(data, data_id, tx_id, tx_ids_2_entrynames)
+        temp_dict['uniprot_db_source'] = data_id
+
+    return temp_dict
+
+
+def add_uniprot_ids_to_tx_ids(all_tx_dict, swiss_data, trembl_data):
+    """
+
+    :param all_tx_dict: dictionary of tx_id to Transcript instance from transcript datasource
+    :param swiss_data:
+    :param trembl_data:
+    :return:
+    """
+
+    ### Map txIDs to UniProt entry_names
+    tx_ids_2_entrynames = {'swiss': collections.defaultdict(list), 'trembl': collections.defaultdict(list)}
+    for db in tx_ids_2_entrynames:
+        for s in eval(db + '_data').values():
+
+            tx_ids = [t[1] for t in s.cross_references if t[0] == 'Ensembl']
+            for tx_id in tx_ids:
+                tx_ids_2_entrynames[db][tx_id].append(s.entry_name)
+
+    db_names = tx_ids_2_entrynames.keys()
+
+    gene_ids_2_entrynames = create_gene_id_to_uniprot_entry_map(db_names)
+
+    all_tx_ids = all_tx_dict.keys()
+    num_all_tx_ids = len(all_tx_ids)
+    found_txs = 0
+    unfound_txs = 0
+    unfound_txs_with_no_fallback = 0
+    tx_dict = {}
+    for i,tx_id_with_version in enumerate(all_tx_ids):
+        tx_id = tx_id_with_version.rsplit(".", 1)[0]
+        temp_dict = create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, tx_id, tx_ids_2_entrynames)
+
+        if temp_dict is None:
+            gene_symbol_for_tx = all_tx_dict[tx_id_with_version].get_gene()
+            temp_dict = create_tx_id_to_full_uniprot_data(swiss_data, trembl_data, gene_symbol_for_tx, gene_ids_2_entrynames)
+            unfound_txs += 1
+            if temp_dict is None:
+                unfound_txs_with_no_fallback += 1
         else:
-            print(gene + " not found.")
-            unfound_genes += 1
+            found_txs += 1
 
-    print(str(found_genes) + " genes were found.")
+        if temp_dict is not None:
+            tx_dict[tx_id] = temp_dict
 
-    return gene_dict
+        if i % 10000 == 0:
+            logging.getLogger(__name__).info("Processed " + str(i) + " of " + str(num_all_tx_ids) + " transcripts.")
+
+    logging.getLogger(__name__).info(str(found_txs) + " transcripts were found.")
+    logging.getLogger(__name__).info(str(unfound_txs) + " transcripts were not found.")
+    logging.getLogger(__name__).info(str(unfound_txs_with_no_fallback) + " of unfound transcripts could not fall back to gene.")
+
+    return tx_dict
 
 def correct_uniprot_ids_hack(gene_dict, swiss_data):
     #replacement_dict = {
@@ -302,19 +361,19 @@ def parseWithPickle(fname, callableParsingFunction, pickleDir=""):
     ''' Pickle dir MUST include appended "/" '''
     pickleFilename = pickleDir + os.path.basename(fname) + ".pkl"
     if os.path.exists(pickleFilename):
-        print("Loading pickled structure: " + str(pickleFilename))
+        logging.getLogger(__name__).info("Loading pickled structure: " + str(pickleFilename))
         g = cPickle.load(file(pickleFilename, 'r'))
     else:
-        print("Parsing...")
+        logging.getLogger(__name__).info("Parsing...")
         g = callableParsingFunction(file(fname, 'r'))
-        print("Writing pickle file: " + str(pickleFilename))
+        logging.getLogger(__name__).info("Writing pickle file: " + str(pickleFilename))
         cPickle.dump(g, file(pickleFilename, 'w'), protocol=0)
     return g
 
 
 
 def renderUniprotNaturalVariationsTSV(genesDict, outputFilename):
-    headers = ['gene', 'start_AA', 'end_AA','natural_variations']
+    headers = ['transcript_id', 'start_AA', 'end_AA','natural_variations']
     tsvWriter = csv.DictWriter(open(outputFilename, 'w'), headers, extrasaction='ignore', delimiter="\t", lineterminator="\n")
     tsvWriter.writeheader()
 
@@ -383,10 +442,13 @@ def renderSimpleUniprotTSV(gene_dict, outputFilename):
 
         tsvWriter.writerow(g)
 
+def setup_logging():
+    loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
+    logging.basicConfig(level=logging.INFO, format=loggingFormat)
 
 if __name__ == '__main__':
 
-
+    setup_logging()
     args = parseOptions()
     uniprot_swiss_fname = args.swiss_file
     uniprot_trembl_fname = args.trembl_file
@@ -398,13 +460,15 @@ if __name__ == '__main__':
     gencode_ds_loc = expanduser(args.gencode_ds)
     gencode_ds = DatasourceFactory.createDatasource(configFilename=gencode_ds_loc, leafDir=os.path.dirname(gencode_ds_loc))
     gene_ids = gencode_ds.get_gene_symbols()
-    print(str(len(gene_ids)) + " genes in datasource.")
+    logging.getLogger(__name__).info(str(len(gene_ids)) + " genes in datasource.")
 
-    print "Adding uniprot IDs to genes..."
-    genesDict = add_uniprot_ids_to_Genes(gene_ids, swiss_data, trembl_data)
-    print "Adding uniprot data to genes..."
+    logging.getLogger(__name__).info("Adding uniprot IDs to txs...")
+    all_tx_dict = gencode_ds.getTranscriptDict()
+    logging.getLogger(__name__).info("Number of all transcript IDs: " + str(len(all_tx_dict.keys())))
+    genesDict = add_uniprot_ids_to_tx_ids(all_tx_dict, swiss_data, trembl_data)
+    logging.getLogger(__name__).info("Adding uniprot data to genes...")
     genesDict = add_uniprot_data_to_Genes(genesDict, swiss_data, trembl_data)
-    
+
     del trembl_data
     
     print "Correcting uniprot ids..."
