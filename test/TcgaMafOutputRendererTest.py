@@ -148,14 +148,17 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def _determine_db_dir(self):
         return self.config.get('DEFAULT',"dbDir")
 
-    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations=None, is_skip_no_alts=False):
+    def _annotateTest(self, inputFilename, outputFilename, datasource_dir, inputFormat="MAFLITE", outputFormat="TCGAMAF", default_annotations=TCGA_MAF_DEFAULTS, override_annotations=None, is_skip_no_alts=False, other_opts=None):
         self.logger.info("Initializing Annotator...")
 
         if override_annotations is None:
             override_annotations = dict()
 
+        if other_opts is None:
+            other_opts = dict()
+
         annotator = Annotator()
-        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts)
+        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts, other_opts=other_opts)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -412,6 +415,43 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertTrue(line_dict['Match_Norm_Validation_Allele1'] == line_dict['Reference_Allele'], "Norm validation alleles did not match reference (norm, reference): (%s, %s)" %(line_dict['Match_Norm_Validation_Allele1'] ,line_dict['Reference_Allele']) )
             self.assertTrue("G" == line_dict['Reference_Allele'], "Reference allele should have been G, but was " + line_dict['Reference_Allele'])
             self.assertTrue("A" == line_dict['Tumor_Seq_Allele2'], "Alt allele should have been A, but was " + line_dict['Tumor_Seq_Allele2'])
+
+    def test_m2_aliases(self):
+        """Test that the aliases are configured properly (issue 313) when the correct command line is specified"""
+        input_vcf_file = "testdata/m2_support/integration_test_example.vcf"
+        output_tcgamaf_file = "out/m2_support/integration_test_example.vcf.maf.annotated"
+
+        if not os.path.exists(os.path.abspath(os.path.dirname(output_tcgamaf_file))):
+            os.makedirs(os.path.abspath(os.path.dirname(output_tcgamaf_file)))
+
+        other_opts = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: True}
+
+        # Use an empty datasource dir in order to speed this up.
+        self._annotateTest(input_vcf_file, output_tcgamaf_file, datasource_dir=None, inputFormat="VCF", is_skip_no_alts=True, other_opts=other_opts)
+
+        tsv_reader = GenericTsvReader(output_tcgamaf_file)
+
+        keys_to_check_existence = ['i_t_ALT_F2R1', 'i_t_REF_F2R1', 'i_t_ALT_F1R2', 'i_t_REF_F1R2', 't_ref_count',
+                                   't_alt_count', 't_lod_fstar', 'tumor_f']
+
+        keys_count = list(set(keys_to_check_existence) - set(['t_lod_fstar', 'tumor_f']))
+        keys_zero_to_one = list(set(keys_to_check_existence) - set(['i_t_ALT_F2R1', 'i_t_REF_F2R1',
+                                                                    'i_t_ALT_F1R2', 'i_t_REF_F1R2', 't_ref_count',
+                                                                    't_alt_count']))
+
+        for line_dict in tsv_reader:
+            self.assertTrue('filter' in line_dict.keys(), "'filter' annotation not found.  Do you need to change the configuration of this unit test to enable collapsing filter columns?")
+
+            for ks in keys_to_check_existence:
+                self.assertTrue(ks in line_dict.keys(), "Key " + ks + " was not rendered.")
+                self.assertTrue(line_dict[ks] != "", "Key " + ks + " had a blank value.")
+
+
+            for ks in keys_count:
+                self.assertTrue(int(line_dict[ks]) >= 0)
+
+            for ks in keys_zero_to_one:
+                self.assertTrue(float(line_dict[ks]) >= 0 and float(line_dict[ks]) <= 1)
 
 
 if __name__ == "__main__":
