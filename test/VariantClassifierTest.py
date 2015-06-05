@@ -625,45 +625,6 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
         self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
 
-    flank_test_mapk1 = lambda : (
-    ("22", "22221919","22221919", "5'UTR", "SNP", "C", "T"),
-    ("22", "22221920","22221920", "5'Flank", "SNP", "G", "T"),
-    ("22", "22224919","22224919", "5'Flank", "SNP", "G", "T"),
-    ("22", "22224920","22224920", "IGR", "SNP", "G", "T"),
-    ("22", "22221919","22221919", "5'UTR", "DEL", "C", "-"),
-    ("22", "22221920","22221920", "5'Flank", "DEL", "G", "-"),
-    ("22", "22221919","22221920", "5'UTR", "DEL", "CG", "-"),
-    ("22", "22224914","22224921", "5'Flank", "DEL", "GGGGGGGG", "-"),
-    ("22", "22224920","22224923", "IGR", "DEL", "GGGG", "-"),
-    ("22", "22224918","22224918", "5'Flank", "SNP", "G", "T"),
-    ("22", "22108700","22108700", "IGR", "SNP", "G", "T")
-    )
-
-    @data_provider_decorator(flank_test_mapk1)
-    def test_flank_test_negative_strand(self, chr, start, end, gt_vc, vt, ref_allele, alt_allele):
-        """Test 5' Flank on a negative strand """
-        tx = self._retrieve_test_transcript_MAPK1()
-        vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
-        self.assertTrue(gt_vc == vc.get_vc(), "Should have been " + gt_vc + ", but saw " + vc.get_vc() + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref_allele, alt_allele]))
-
-    flank_test_pik3ca = lambda : (
-        ("3", "178863311","178863311", "5'Flank", "SNP", "C", "T"),
-        ("3", "178866310","178866310", "5'Flank", "SNP", "C", "T"),
-        ("3", "178866311","178866311", "5'UTR", "SNP", "T", "G"),
-        ("3", "178863310","178863310", "IGR", "SNP", "C", "T"),
-        ("3", "178863309","178863309", "IGR", "SNP", "C", "T"),
-        ("3", "178957900","178957900", "IGR", "SNP", "C", "T")
-    )
-
-    @data_provider_decorator(flank_test_pik3ca)
-    def test_flank_test_positive_strand(self, chr, start, end, gt_vc, vt, ref_allele, alt_allele):
-        """Test 5' Flank on a positive strand """
-        tx = self._retrieve_test_transcript_PIK3CA()
-        vcer = VariantClassifier()
-        vc = vcer.variant_classify(tx, ref_allele, alt_allele, start, end, vt, dist=2)
-        self.assertTrue(gt_vc == vc.get_vc(), "Should have been " + gt_vc + ", but saw " + vc.get_vc() + "  with transcript " + tx.get_transcript_id() + " at " + str([chr, start, end, ref_allele, alt_allele]))
-
     stop_codon_insertion_data = lambda : (
         ("17", "39240781", "39240782", "-", "CTGCTGCCACCCCAGCTGCTGCATCTCCAGCTGCTGTCGCCCCAGCTGCTGTGTGTCCAGGTGCTGCAGGCCCCAGTGCTGCCAGTCTGTGTGCTGCCAGCCAACCTGCTGCCGTCCCAGCTGCTGCATCTCCAGCTGCTGCCGCCCCTCTTGCTGTGAATCCAG"),
         ("17", "39240781", "39240782", "-", "CTGCTGCCGTCCCAGCTGCTGCATCTCCAGCTGCTGCCGCCCCTCTTGCTGTGAATCCAG"),

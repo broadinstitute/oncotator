@@ -218,6 +218,49 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         txs = ds.get_overlapping_transcripts("22", 22224920, 22224920)
         self.assertTrue(len(txs) == 0)
 
+    @TestUtils.requiresDefaultDB()
+    def test_5_prime_flank_annotation_positive_strand(self):
+        m = MutationData(chr="3", start="180628089", end="180628089", ref_allele="C", alt_allele="A", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        self.assertEqual(m['variant_classification'], "5'Flank")
+
+    @TestUtils.requiresDefaultDB()
+    def test_not_5_prime_flank_annotation_positive_strand(self):
+        m = MutationData(chr="3", start="180625088", end="180625088", ref_allele="C", alt_allele="A", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        self.assertEqual(m['variant_classification'], "IGR")
+
+    @TestUtils.requiresDefaultDB()
+    def test_5_prime_flank_annotation_negative_strand(self):
+        m = MutationData(chr="5", start="1295190", end="1295190", ref_allele="G", alt_allele="T", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        self.assertEqual(m['variant_classification'], "5'Flank")
+
+    @TestUtils.requiresDefaultDB()
+    def test_not_5_prime_flank_annotation_negative_strand(self):
+        m = MutationData(chr="5", start="1298190", end="1298190", ref_allele="G", alt_allele="T", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        self.assertEqual(m['variant_classification'], "IGR")
+
+    @unittest.skip("Skipped because 3'Flank padding is hardcoded to 0")
+    @TestUtils.requiresDefaultDB()
+    def test_3_prime_flank_annotation_positive_strand(self):
+        m = MutationData(chr="7", start="55324315", end="55324315", ref_allele="T", alt_allele="A", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        self.assertEqual(m['variant_classification'], "3'Flank")
+
+    @unittest.skip("Skipped because 3'Flank padding is hardcoded to 0")
+    @TestUtils.requiresDefaultDB()
+    def test_3_prime_flank_annotation_negative_strand(self):
+        m = MutationData(chr="5", start="1253255", end="1253255", ref_allele="A", alt_allele="T", build="hg19")
+        transcript_ds = TestUtils.createTranscriptProviderDatasource(self.config)
+        m = transcript_ds.annotate_mutation(m)
+        self.assertEqual(m['variant_classification'], "3'Flank")
 
     def test_small_positive_strand_transcript_change(self):
         """Test one location on a transcript and make sure that the transcript change rendered properly """
