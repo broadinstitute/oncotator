@@ -168,7 +168,7 @@ class HgvsChangeTransformer():
             elif hgvs_protein_change.startswith(':'):
                 hgvs_protein_change = 'unknown_prot_seq_id' + hgvs_protein_change
 
-            if hgvs_coding_dna_change.endswith(':'): # e.g. 'ENST00000602684.1:' if 5'Flank mutation
+            if hgvs_coding_dna_change.endswith(':'): # e.g. Up to here 'ENST00000602684.1:' if 5'Flank mutation, could be generated.  So blank it out.
                 hgvs_coding_dna_change = ''
 
         result = dict()
