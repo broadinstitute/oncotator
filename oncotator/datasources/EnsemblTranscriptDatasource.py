@@ -146,7 +146,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             return ""
         return str(attribute_dict.get(attribute_name, ""))
 
-    def get_transcripts_by_pos(self, chr, start, end):
+    def get_transcripts_by_pos(self, chr, start, end, padding=3000):
         """
         Returns filtered list of transcripts that overlap the given genomic position.
 
@@ -155,7 +155,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         :param str|int start:
         :param str|int end:
         """
-        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end)
+        txs_unfiltered = self.get_overlapping_transcripts(chr, start, end, padding=padding)
         txs = self._filter_transcripts(txs_unfiltered)
         return txs
 

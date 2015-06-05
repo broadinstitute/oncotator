@@ -51,7 +51,7 @@ import unittest
 import logging
 
 from oncotator.MutationData import MutationData
-from TestUtils import TestUtils
+from test.TestUtils import TestUtils
 from oncotator.utils.HgvsChangeTransformer import HgvsChangeTransformer
 
 
@@ -319,9 +319,8 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         tx = transcript_ds.get_transcript(m.get('annotation_transcript', None))
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
-        self.assertTrue(tx is None, "Transcript was not None for an IGR.")
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr15.hg19:g.30938316G>A')
-        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), '')
+        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000602684.1:')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
     @TestUtils.requiresDefaultDB()
