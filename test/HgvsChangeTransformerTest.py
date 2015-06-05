@@ -320,7 +320,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         hgvs_dict = self.hgvs_datasource.hgvs_annotate_mutation_given_tx(m, tx)
 
         self.assertEqual(hgvs_dict.get('HGVS_genomic_change', None), 'chr15.hg19:g.30938316G>A')
-        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), 'ENST00000602684.1:')
+        self.assertEqual(hgvs_dict.get('HGVS_coding_DNA_change', None), '')
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
     @TestUtils.requiresDefaultDB()

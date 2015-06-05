@@ -168,6 +168,9 @@ class HgvsChangeTransformer():
             elif hgvs_protein_change.startswith(':'):
                 hgvs_protein_change = 'unknown_prot_seq_id' + hgvs_protein_change
 
+            if hgvs_coding_dna_change.endswith(':'): # e.g. 'ENST00000602684.1:' if 5'Flank mutation
+                hgvs_coding_dna_change = ''
+
         result = dict()
         result[HgvsChangeTransformer.GENOMIC_CHANGE_OUTPUT_HEADER] = hgvs_genomic_change
         result[HgvsChangeTransformer.DNA_CHANGE_OUTPUT_HEADER]= hgvs_coding_dna_change
