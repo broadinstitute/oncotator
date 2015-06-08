@@ -54,7 +54,10 @@ class OnpQueue(object):
         else:
             # return reduce(operator.concat, lambda mut: OnpCombiner._paths(path + [mut], mut.end+1, muts), [])
             # path =  map(lambda mut: OnpQueue._paths(path + [mut], int(mut.end)+1, muts), muts[start])
+            # TODO: I believe that here would be a good place to check the phasing.
+            # TODO: Add method for checking the phasing.
             for mut in muts[start]:
+                # TODO: An if statement here... continue.  Check phasing of the last mutation in paths so far and mut
                 OnpQueue._paths(finished_paths, path_so_far + [mut], int(mut.end) + 1, muts)
             return finished_paths
             #return reduce(operator.concat, path)

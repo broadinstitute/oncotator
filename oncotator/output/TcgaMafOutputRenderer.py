@@ -79,7 +79,6 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
     def __init__(self, filename, configFile="tcgaMAF2.4_output.config", other_options=None):
         """
-        TODO: Need functionality for not prepending the i_ on internal fields.
         """
         options = dict() if other_options is None else other_options
 

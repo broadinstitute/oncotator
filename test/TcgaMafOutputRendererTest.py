@@ -418,8 +418,8 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
     def test_m2_aliases(self):
         """Test that the aliases are configured properly (issue 313) when the correct command line is specified"""
-        input_vcf_file = "testdata/m2_support/integration_test_example.vcf"
-        output_tcgamaf_file = "out/m2_support/integration_test_example.vcf.maf.annotated"
+        input_vcf_file = "testdata/m2_support/Dream4.chr20.oxoGinfo.vcf"
+        output_tcgamaf_file = "out/m2_support/Dream4.chr20.oxoGinfo.vcf.maf.annotated"
 
         if not os.path.exists(os.path.abspath(os.path.dirname(output_tcgamaf_file))):
             os.makedirs(os.path.abspath(os.path.dirname(output_tcgamaf_file)))

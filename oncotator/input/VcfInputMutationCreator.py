@@ -101,9 +101,11 @@ class VcfInputMutationCreator(InputMutationCreator):
 
         self._is_skipping_no_alts = other_options.get(InputMutationCreatorOptions.IS_SKIP_ALTS, False)
 
-    def _addGenotypeData2Mutation(self, mutation, record, index):
+    def _addFormatData2Mutation(self, mutation, record, index):
         """
+        Appends and renames annotations from the FORMAT field for incoming mutations.
 
+        Does special processing for GT.
 
         :param mutation: input mutation object
         :param record:
@@ -122,17 +124,18 @@ class VcfInputMutationCreator(InputMutationCreator):
                 val = ""
                 dataType = self.vcf_reader.formats[ID].type
 
-                name = self.configTable.getFormatFieldName(ID)
+                # name to use for the annotation
+                annotation_name = self.configTable.getFormatFieldName(ID)
                 num = self.vcf_reader.formats[ID].num
 
                 tags = []
 
                 if (genotypeData is not None) and (hasattr(genotypeData.data, ID)):
-                    if name not in self.isTagSplit:
+                    if annotation_name not in self.isTagSplit:
                         isTagSplit = self._determineIsSplit(ID, num, "FORMAT")
-                        self.isTagSplit[name] = isTagSplit
+                        self.isTagSplit[annotation_name] = isTagSplit
                     else:
-                        isTagSplit = self.isTagSplit[name]
+                        isTagSplit = self.isTagSplit[annotation_name]
 
                     if isTagSplit and isinstance(genotypeData[ID], list):
                         val = genotypeData[ID][index]
@@ -153,9 +156,9 @@ class VcfInputMutationCreator(InputMutationCreator):
                     val = string.join(["" if v is None else str(v) for v in val], ",")
                 else:
                     val = str(val)
-                if name in mutation:
-                    name = string.join(words=[name, "__FORMAT__"], sep="")
-                mutation.createAnnotation(name, val, "INPUT", dataType, self.vcf_reader.formats[ID].desc, tags=tags,
+                if annotation_name in mutation:
+                    annotation_name = string.join(words=[annotation_name, "__FORMAT__"], sep="")
+                mutation.createAnnotation(annotation_name, val, "INPUT", dataType, self.vcf_reader.formats[ID].desc, tags=tags,
                                           number=num)
 
         return mutation
@@ -289,7 +292,6 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         sample_name = sample.sample
 
-                        #TODO: Confirm that alt_allele_seen will be False in all cases of GT = ./.
                         genotype = "GT"
                         is_alt_seen = "True"
                         if genotype in sample.data._fields:
@@ -311,7 +313,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                         sampleMut.createAnnotation(MutUtils.SAMPLE_NAME_ANNOTATION_NAME, sample_name, "INPUT")
 
                         sampleMut["alt_allele_seen"] = is_alt_seen
-                        sampleMut = self._addGenotypeData2Mutation(sampleMut, record, index)
+                        sampleMut = self._addFormatData2Mutation(sampleMut, record, index)
 
                         yield sampleMut
 
