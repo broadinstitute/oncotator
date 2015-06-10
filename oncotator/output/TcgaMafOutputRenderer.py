@@ -59,7 +59,6 @@ from OutputRenderer import OutputRenderer
 import logging
 import csv
 from oncotator.utils.MutUtils import MutUtils
-from oncotator.utils.version import VERSION
 from oncotator.utils.ConfigUtils import ConfigUtils
 from collections import OrderedDict
 
@@ -77,9 +76,11 @@ class TcgaMafOutputRenderer(OutputRenderer):
     def getTcgaMafVersion(self):
         return self.config.get("general", "version")
 
+    OUTPUT_T_REF_COUNT = 't_ref_count'
+    OUTPUT_T_ALT_COUNT = 't_alt_count'
+
     def __init__(self, filename, configFile="tcgaMAF2.4_output.config", other_options=None):
         """
-        TODO: Need functionality for not prepending the i_ on internal fields.
         """
         options = dict() if other_options is None else other_options
 
@@ -96,6 +97,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         self._prepend = self.config.get("general", "prepend")
         if self.options.get(OptionConstants.NO_PREPEND, False):
             self._prepend = ""
+
+        self._is_splitting_allelic_depth = self.options.get(OptionConstants.SPLIT_ALLELIC_DEPTH, True)
 
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
 
@@ -205,6 +208,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
             self._is_entrez_id_message_logged = True
         self._update_validation_values(row)
 
+        # Handle the splitting of allelic depth
+        if row.get('allelic_depth', "").strip() != "" and self._is_splitting_allelic_depth:
+            vals = row.get('allelic_depth', "").split(",")
+            ref_count = vals[0]
+            alt_count = vals[1]
+            row[TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT] = alt_count
+            row[TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT] = ref_count
+
         dw.writerow(row)
 
     def renderMutations(self, mutations, metadata=None, comments=None):
@@ -243,7 +254,12 @@ class TcgaMafOutputRenderer(OutputRenderer):
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
         headers.extend(internalFields)
-        
+
+        # If we are splitting allelic_depth into two fields, add those to the headers
+        if self._is_splitting_allelic_depth and "allelic_depth" in headers:
+            depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
+            [headers.append(df) for df in depth_fields if df not in headers]
+
         # Initialize the output file and write a header.
         fp = file(self._filename, 'w')
         fp.write("#version " + self.getTcgaMafVersion() + "\n")

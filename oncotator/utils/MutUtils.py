@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import logging
 from Bio import Seq
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
 from oncotator.utils.VariantClassification import VariantClassification
 
@@ -359,6 +360,9 @@ class MutUtils(object):
     def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
                             exposedFields=None, prepend="i_"):
         """ Creates a dictionary of the output maf file headers to the annotations.
+
+        This will honor alternatives from the config file, even for fields labeled as "internal"
+
         :param headers:  optional and required fields
         :param annotations: annotations seen on a mutation
         :param alternativeDictionary: mapping from headers to acceptable annotation names.
@@ -391,14 +395,17 @@ class MutUtils(object):
                             break
 
         if isRenderInternalFields:
+            # Create a dict to do a lookup of annotation to the column to use.
+            reverseAlternativeDict = ConfigUtils.buildReverseAlternativeDictionary(alternativeDictionary)
             sAnnotations = set(annotations)
             internalFields = sAnnotations.difference(result.values())
             for i in internalFields:
                 if not i.startswith('_') and i is not "transcripts":
+                    key_to_use = reverseAlternativeDict.get(i,i)
                     if prepend.strip() == "" or i.startswith(prepend) or i in exposedFields:
-                        result[i] = i
+                        result[key_to_use] = i
                     else:
-                        result[prepend + i] = i
+                        result[prepend + key_to_use] = i
 
         return result
 
