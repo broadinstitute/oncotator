@@ -434,10 +434,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         keys_to_check_existence = ['i_t_ALT_F2R1', 'i_t_REF_F2R1', 'i_t_ALT_F1R2', 'i_t_REF_F1R2', 't_ref_count',
                                    't_alt_count', 't_lod_fstar', 'tumor_f', 'i_t_Foxog']
 
-        keys_count = list(set(keys_to_check_existence) - set(['t_lod_fstar', 'tumor_f', 'i_t_Foxog']))
-        keys_zero_to_one = list(set(keys_to_check_existence) - set(['i_t_ALT_F2R1', 'i_t_REF_F2R1',
+        keys_count = list(set(keys_to_check_existence) - {'t_lod_fstar', 'tumor_f', 'i_t_Foxog'})
+        keys_zero_to_one = list(set(keys_to_check_existence) - {'i_t_ALT_F2R1', 'i_t_REF_F2R1',
                                                                     'i_t_ALT_F1R2', 'i_t_REF_F1R2', 't_ref_count',
-                                                                    't_alt_count', 't_lod_fstar']))
+                                                                    't_alt_count', 't_lod_fstar'})
 
         for line_dict in tsv_reader:
             self.assertTrue('filter' in line_dict.keys(), "'filter' annotation not found.  Do you need to change the configuration of this unit test to enable collapsing filter columns?")
