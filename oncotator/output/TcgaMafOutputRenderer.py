@@ -59,7 +59,6 @@ from OutputRenderer import OutputRenderer
 import logging
 import csv
 from oncotator.utils.MutUtils import MutUtils
-from oncotator.utils.version import VERSION
 from oncotator.utils.ConfigUtils import ConfigUtils
 from collections import OrderedDict
 
@@ -210,7 +209,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
         self._update_validation_values(row)
 
         # Handle the splitting of allelic depth
-        if row.get('allelic_depth', "").strip() != "":
+        if row.get('allelic_depth', "").strip() != "" and self._is_splitting_allelic_depth:
             vals = row.get('allelic_depth', "").split(",")
             ref_count = vals[0]
             alt_count = vals[1]
@@ -236,8 +235,6 @@ class TcgaMafOutputRenderer(OutputRenderer):
         # Create the header list, making sure to preserve order.
         headers = requiredColumns
         headers.extend(optionalColumns)
-        if self._is_splitting_allelic_depth:
-            headers.extend([TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT])
 
         # Create a list of annotation names
         try:
@@ -257,7 +254,12 @@ class TcgaMafOutputRenderer(OutputRenderer):
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
         headers.extend(internalFields)
-        
+
+        # If we are splitting allelic_depth into two fields, add those to the headers
+        if self._is_splitting_allelic_depth and "allelic_depth" in headers:
+            depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
+            [headers.append(df) for df in depth_fields if df not in headers]
+
         # Initialize the output file and write a header.
         fp = file(self._filename, 'w')
         fp.write("#version " + self.getTcgaMafVersion() + "\n")

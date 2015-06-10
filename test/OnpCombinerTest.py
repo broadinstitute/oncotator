@@ -299,3 +299,12 @@ class OnpCombinerTest(unittest.TestCase):
         """Combining no mutations should return None"""
         result = OnpQueue._combine_mutations([])
         self.assertIsNone(result)
+
+    def test_m2_phasing(self):
+        """Phasing information should be used when available"""
+
+
+    def test_m2_phasing_from_files(self):
+        """Test the phasing functionality given files"""
+        input_vcf_file = "testdata/m2_support/Dream4.chr20.oxoGinfo.vcf"
+        output_tcgamaf_file = "out/m2_support/Dream4.chr20.oxoGinfo.vcf.maf.annotated"
