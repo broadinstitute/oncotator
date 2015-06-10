@@ -77,6 +77,9 @@ class TcgaMafOutputRenderer(OutputRenderer):
     def getTcgaMafVersion(self):
         return self.config.get("general", "version")
 
+    OUTPUT_T_REF_COUNT = 't_ref_count'
+    OUTPUT_T_ALT_COUNT = 't_alt_count'
+
     def __init__(self, filename, configFile="tcgaMAF2.4_output.config", other_options=None):
         """
         """
@@ -95,6 +98,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         self._prepend = self.config.get("general", "prepend")
         if self.options.get(OptionConstants.NO_PREPEND, False):
             self._prepend = ""
+
+        self._is_splitting_allelic_depth = self.options.get(OptionConstants.SPLIT_ALLELIC_DEPTH, True)
 
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
 
@@ -204,6 +209,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
             self._is_entrez_id_message_logged = True
         self._update_validation_values(row)
 
+        # Handle the splitting of allelic depth
+        if row.get('allelic_depth', "").strip() != "":
+            vals = row.get('allelic_depth', "").split(",")
+            ref_count = vals[0]
+            alt_count = vals[1]
+            row[TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT] = alt_count
+            row[TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT] = ref_count
+
         dw.writerow(row)
 
     def renderMutations(self, mutations, metadata=None, comments=None):
@@ -223,6 +236,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         # Create the header list, making sure to preserve order.
         headers = requiredColumns
         headers.extend(optionalColumns)
+        if self._is_splitting_allelic_depth:
+            headers.extend([TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT])
 
         # Create a list of annotation names
         try:

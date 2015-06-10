@@ -432,26 +432,25 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         tsv_reader = GenericTsvReader(output_tcgamaf_file)
 
         keys_to_check_existence = ['i_t_ALT_F2R1', 'i_t_REF_F2R1', 'i_t_ALT_F1R2', 'i_t_REF_F1R2', 't_ref_count',
-                                   't_alt_count', 't_lod_fstar', 'tumor_f']
+                                   't_alt_count', 't_lod_fstar', 'tumor_f', 'i_t_Foxog']
 
-        keys_count = list(set(keys_to_check_existence) - set(['t_lod_fstar', 'tumor_f']))
+        keys_count = list(set(keys_to_check_existence) - set(['t_lod_fstar', 'tumor_f', 'i_t_Foxog']))
         keys_zero_to_one = list(set(keys_to_check_existence) - set(['i_t_ALT_F2R1', 'i_t_REF_F2R1',
                                                                     'i_t_ALT_F1R2', 'i_t_REF_F1R2', 't_ref_count',
-                                                                    't_alt_count']))
+                                                                    't_alt_count', 't_lod_fstar']))
 
         for line_dict in tsv_reader:
             self.assertTrue('filter' in line_dict.keys(), "'filter' annotation not found.  Do you need to change the configuration of this unit test to enable collapsing filter columns?")
 
             for ks in keys_to_check_existence:
                 self.assertTrue(ks in line_dict.keys(), "Key " + ks + " was not rendered.")
-                self.assertTrue(line_dict[ks] != "", "Key " + ks + " had a blank value.")
-
+                self.assertTrue(line_dict[ks] != "" or (line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ), "Key " + ks + " had a blank value." + str(line_dict))
 
             for ks in keys_count:
-                self.assertTrue(int(line_dict[ks]) >= 0)
+                self.assertTrue((line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ) or int(line_dict[ks]) >= 0 )
 
             for ks in keys_zero_to_one:
-                self.assertTrue(float(line_dict[ks]) >= 0 and float(line_dict[ks]) <= 1)
+                self.assertTrue((line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ) or (float(line_dict[ks]) >= 0 and float(line_dict[ks]) <= 1))
 
 
 if __name__ == "__main__":
