@@ -218,6 +218,17 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
         dw.writerow(row)
 
+    def _add_output_annotations(self, m):
+        m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
+        if self._is_splitting_allelic_depth and m.get('allelic_depth', "").strip() != "":
+            # Handle the splitting of allelic depth
+            vals = m.get('allelic_depth', "").split(",")
+            ref_count = vals[0]
+            alt_count = vals[1]
+            m.createAnnotation(TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, alt_count, "OUTPUT")
+            m.createAnnotation(TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT, ref_count, "OUTPUT")
+
+
     def renderMutations(self, mutations, metadata=None, comments=None):
         """ Returns a file name pointing to the maf file that is generated. """
         if metadata is None:
@@ -247,18 +258,19 @@ class TcgaMafOutputRenderer(OutputRenderer):
             annotations = set(headers).union(metadataAnnotations)
             m = None
 
+        # If we are splitting allelic_depth into two fields, add those to the headers
+        if self._is_splitting_allelic_depth and "allelic_depth" in annotations:
+            depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
+            [annotations.append(df) for df in depth_fields if df not in annotations]
+
         # Create a mapping between column name and annotation name
         fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary,
                                                 self.config.getboolean("general", "displayAnnotations"),
                                                 exposedFields=self.exposedColumns, prepend=self._prepend)
+
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
         headers.extend(internalFields)
-
-        # If we are splitting allelic_depth into two fields, add those to the headers
-        if self._is_splitting_allelic_depth and "allelic_depth" in headers:
-            depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
-            [headers.append(df) for df in depth_fields if df not in headers]
 
         # Initialize the output file and write a header.
         fp = file(self._filename, 'w')
@@ -276,14 +288,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
         try:
             # Add the NCBI build
             if m is not None:
-                m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
+                self._add_output_annotations(m)
                 self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
                 ctr += 1
 
             for m in mutations:
 
                 # Add the NCBI build
-                m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
+                self._add_output_annotations(m)
                 self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
                 
                 # Update mutation count and log every 1000 mutations
