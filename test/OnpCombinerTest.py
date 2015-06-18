@@ -350,3 +350,74 @@ class OnpCombinerTest(unittest.TestCase):
             ctr += 1
 
         self.assertTrue(ctr == 2, "Should have had two mutations, but had " + str(ctr) + " instead.")
+
+    def test_tnp_blank_snp(self):
+        """Test a harder scenario for ONP combination"""
+        mut1 = MutationData(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1.createAnnotation("phasing_id", "value1", "INPUT")
+        mut1.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut2 = MutationData(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2.createAnnotation("phasing_id", "value1", "INPUT")
+        mut2.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut3 = MutationData(chr=1,start=102, end=102, ref_allele="C", alt_allele="T")
+        mut3.createAnnotation("phasing_id", "value1", "INPUT")
+        mut3.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        # Note the differing ID in mut4
+        mut4 = MutationData(chr=1,start=103, end=103, ref_allele="C", alt_allele="T")
+        mut4.createAnnotation("phasing_id", "value2", "INPUT")
+        mut4.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut5 = MutationData(chr=1,start=104, end=104, ref_allele="C", alt_allele="T")
+        mut5.createAnnotation("phasing_id", "value1", "INPUT")
+        mut5.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        # Note separate chromosome for mut6
+        mut6 = MutationData(chr=2,start=105, end=105, ref_allele="C", alt_allele="T")
+        mut6.createAnnotation("phasing_id", "value1", "INPUT")
+        mut6.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        gt_alts = ["ATT", "T", "T", "T"]
+        mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
+        queue = OnpQueue(mutations)
+
+        for i, mut in enumerate(queue.get_combined_mutations()):
+            self.assertTrue(gt_alts[i] == mut.alt_allele)
+
+
+    def test_indel(self):
+        """Test indel not used in onp combination no matter what the phasing info"""
+        mut1 = MutationData(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1.createAnnotation("phasing_id", "value1", "INPUT")
+        mut1.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut2 = MutationData(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2.createAnnotation("phasing_id", "value1", "INPUT")
+        mut2.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut3 = MutationData(chr=1,start=102, end=102, ref_allele="C", alt_allele="T")
+        mut3.createAnnotation("phasing_id", "value1", "INPUT")
+        mut3.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        # Indel
+        mut4 = MutationData(chr=1,start=103, end=104, ref_allele="-", alt_allele="TT")
+        mut4.createAnnotation("phasing_id", "value1", "INPUT")
+        mut4.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut5 = MutationData(chr=1, start=104, end=104, ref_allele="C", alt_allele="T")
+        mut5.createAnnotation("phasing_id", "value1", "INPUT")
+        mut5.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut6 = MutationData(chr=1, start=105, end=105, ref_allele="C", alt_allele="T")
+        mut6.createAnnotation("phasing_id", "value1", "INPUT")
+        mut6.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        gt_alts = ["ATT", "TT", "TT"]
+        mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
+        queue = OnpQueue(mutations)
+
+        for i, mut in enumerate(queue.get_combined_mutations()):
+            self.assertTrue(gt_alts[i] == mut.alt_allele)
+
