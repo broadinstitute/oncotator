@@ -50,6 +50,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import unittest
 import os
 from oncotator.input.OnpQueue import OnpQueue
+from oncotator.utils.GenericTsvReader import GenericTsvReader
 
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 from test.TestUtils import TestUtils
@@ -300,11 +301,52 @@ class OnpCombinerTest(unittest.TestCase):
         result = OnpQueue._combine_mutations([])
         self.assertIsNone(result)
 
-    def test_m2_phasing(self):
-        """Phasing information should be used when available"""
-
+    def _annotate_m2_vcf(self, input_vcf_file, output_tcgamaf_file):
+        # For this conversion, you must specify the barcodes manually
+        override_annotations = dict()
+        override_annotations.update({'tumor_barcode': 'Patient0-Tumor', 'normal_barcode': 'Patient0-Normal'})
+        other_opts = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: True,
+                      OptionConstants.SPLIT_ALLELIC_DEPTH: False, OptionConstants.INFER_ONPS: True}
+        # Use an empty datasource dir in order to speed this up.
+        annotator = Annotator()
+        runSpec = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_vcf_file, output_tcgamaf_file,
+                                                          datasourceDir=".", globalAnnotations=override_annotations,
+                                                          is_skip_no_alts=True, other_opts=other_opts)
+        annotator.initialize(runSpec)
+        annotator.annotate()
 
     def test_m2_phasing_from_files(self):
-        """Test the phasing functionality given files"""
-        input_vcf_file = "testdata/m2_support/Dream4.chr20.oxoGinfo.vcf"
-        output_tcgamaf_file = "out/m2_support/Dream4.chr20.oxoGinfo.vcf.maf.annotated"
+        """Test the phasing ONP combining functionality in file with complex example"""
+        input_vcf_file = "testdata/m2_support/phasingExample.notinphase.vcf"
+        output_tcgamaf_file = "out/phasingExample.notinphase.vcf.maf.annotated"
+
+        self._annotate_m2_vcf(input_vcf_file, output_tcgamaf_file)
+
+        # Check the output MAF
+        tsv_reader = GenericTsvReader(output_tcgamaf_file)
+
+        # Ground truth has four mutations combined into three
+        gt_alts = ['A', 'TT', 'T']
+        ctr = 0
+        for i,line_dict in enumerate(tsv_reader):
+            ctr += 1
+            self.assertTrue(line_dict['Tumor_Seq_Allele2'] == gt_alts[i], "Wrong alt allele (gt: " + gt_alts[i] + "): " + line_dict['Tumor_Seq_Allele2'])
+
+        self.assertTrue(ctr == 3, "Should have had three mutations, but had " + str(ctr) + " instead.")
+
+    def test_m2_phasing_from_file_easy(self):
+        """Test the phasing ONP combining functionality given files -- trivial example"""
+        input_vcf_file = "testdata/m2_support/phasingExample.vcf"
+        output_tcgamaf_file = "out/phasingExample.vcf.maf.annotated"
+
+        self._annotate_m2_vcf(input_vcf_file, output_tcgamaf_file)
+
+        # Check the output MAF
+        tsv_reader = GenericTsvReader(output_tcgamaf_file)
+
+        # Ground truth has three mutations combined into two
+        ctr = 0
+        for i,line_dict in enumerate(tsv_reader):
+            ctr += 1
+
+        self.assertTrue(ctr == 2, "Should have had two mutations, but had " + str(ctr) + " instead.")
