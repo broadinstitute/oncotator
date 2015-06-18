@@ -71,6 +71,9 @@ TestUtils.setupLogging(__file__, __name__)
 
 
 class VcfInputMutationCreatorTest(unittest.TestCase):
+
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         self.logger = logging.getLogger(__name__)
         self.config = TestUtils.createUnitTestConfig()
@@ -226,7 +229,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         Tests whether the switched tags are ignored.
         """
         inputFilename = os.path.join(*["testdata", "vcf", "example.bad.switched.fields.vcf"])
-        outputFilename = os.path.join("out", "example.out.tsv")
+        outputFilename = os.path.join("out", "example.switched.out.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()
@@ -478,7 +481,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         Tests the ability to parse a VCF that contains an INFO, FILTER, and INFO field with the same name.
         """
         inputFilename = os.path.join(*["testdata", "vcf", "example.duplicate_fields.vcf"])
-        outputFilename = os.path.join("out", "example.duplicate_fields.tsv")
+        outputFilename = os.path.join("out", "example.duplicate_fields2.tsv")
 
         creator = VcfInputMutationCreator(inputFilename)
         creator.createMutations()

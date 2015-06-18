@@ -420,4 +420,3 @@ class OnpCombinerTest(unittest.TestCase):
 
         for i, mut in enumerate(queue.get_combined_mutations()):
             self.assertTrue(gt_alts[i] == mut.alt_allele)
-
