@@ -64,7 +64,9 @@ from collections import OrderedDict
 class MutationData(collections.MutableMapping):
     """
     Intermediate class for storing a mutation.
-    
+
+    To get a new instance of a mutation data, you should use
+
     Usage notes:
     
         MutationData classes have set attributes:
@@ -94,9 +96,13 @@ class MutationData(collections.MutableMapping):
     """ internal annotations that will show as both annotations and attributes.   If this changes, updates should probably be made to the maflite config."""
     attributes = {"chr", "start", "end", "ref_allele", "alt_allele", "build"}
 
-    def __init__(self, chr="", start="", end="", ref_allele="", alt_allele="", build=""):
+    @staticmethod
+    def create(allow_overwriting=False):
+        return MutationData(new_required=not allow_overwriting)
+
+    def __init__(self, chr="", start="", end="", ref_allele="", alt_allele="", build="", new_required=True):
         """
-        Constructor
+        Constructor.  Do not call this directly, use the Factory method.
         """
         self.__dict__.update(locals())
         self.annotations = dict()
@@ -104,9 +110,11 @@ class MutationData(collections.MutableMapping):
         for k in MutationData.attributes:
             self.annotations[k] = locals()[k]
 
+        self._new_required = new_required
+
 #        self.lock = Lock()
         
-    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=True, tags=None, number=None):
+    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", tags=None, number=None):
         """
         newRequired implies that this cannot update an existing value.  If a value exists, throw an exception.
         
@@ -116,7 +124,7 @@ class MutationData(collections.MutableMapping):
         tags = [] if tags is None else tags
 
 #        self.lock.acquire()
-        if newRequired and (annotationName in self.annotations.keys()) and (annotationName not in MutationData.attributes):
+        if self._new_required and (annotationName in self.annotations.keys()) and (annotationName not in MutationData.attributes):
 #            self.lock.release()
             if annotationValue == self.annotations[annotationName].value:
                 logging.getLogger(__name__).warn("Attempting to create an annotation multiple times, but with the same value: " + str(annotationName) +  "  :  " + str(annotationValue))

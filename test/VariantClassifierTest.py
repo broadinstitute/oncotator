@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import Bio
+from oncotator.MutationData import MutationData
 
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
@@ -662,6 +663,18 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertEqual(vc.get_vc(),vc_gt)
         self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
         self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
+
+    @TestUtils.requiresDefaultDB()
+    def test_macbeth_issue(self):
+        # ENST00000402929.1
+        m = MutationData("12", str(121434630), str(121434631), "-", "TCATTCAT")
+        tx_ds = TestUtils.createTranscriptProviderDatasource(TestUtils.createUnitTestConfig())
+        tx = tx_ds.get_transcript("ENST00000402929.1")
+        vcer = VariantClassifier()
+        vc = vcer.variant_classify(tx, m.ref_allele, m.alt_allele, m.start, m.end, VariantClassification.VT_INS, dist=2)
+        protein_change = vcer.generate_protein_change_from_vc(vc)
+        # self.assertTrue()
+        pass
 
 
 if __name__ == '__main__':

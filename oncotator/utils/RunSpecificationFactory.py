@@ -59,8 +59,8 @@ class RunSpecificationFactory(object):
             result.append(RunSpecificationMessage(logging.ERROR, "Output format of GENE_LIST is only supported when input is SEG_FILE"))
 
         collapse_filter_cols = other_opts.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
-        if  all([inputFormat == 'VCF', outputFormat != "TCGAMAF", collapse_filter_cols]):
-            result.append(RunSpecificationMessage(logging.ERROR, "collapse-filter-cols flag can only be used with VCF input and TCGAMAF output formats."))
+        if  all([inputFormat == 'VCF', outputFormat == "VCF", collapse_filter_cols]):
+            result.append(RunSpecificationMessage(logging.ERROR, "collapse-filter-cols flag can only be used with VCF input and non-VCF (preferably TCGAMAF/SIMPLE_TSV) output formats."))
 
         if outputFormat not in ["GENE_LIST", "SIMPLE_TSV"] and inputFormat == "SEG_FILE":
             result.append(RunSpecificationMessage(logging.WARN, "Input format of SEG_FILE is only supported when output is GENE_LIST or SIMPLE_TSV"))
@@ -77,6 +77,18 @@ class RunSpecificationFactory(object):
 
         if other_opts.get(OptionConstants.INFER_ONPS):
             result.append(RunSpecificationMessage(logging.INFO,("Output file order may be different than input file because we're combining SNPs into ONPs")))
+
+        if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([inputFormat != "TCGAMAF", inputFormat !="MAFLITE"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Attempting to prune TCGA MAF columns from an input not specified as TCGA MAF (or MAFLITE).  This is will be ignored."))
+
+        if not other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and inputFormat == "TCGAMAF":
+            result.append(RunSpecificationMessage(logging.ERROR, "Internal inconsistency found:  TCGAMAF input, but pruning of columns set to False.  Please contact oncotator@broadinstitute.org"))
+
+        if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([inputFormat != "TCGAMAF", inputFormat !="MAFLITE"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a tCGA MAF on an input that is not specified as a TCGA MAF.  Proceeding, but errors may result."))
+
+        if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a TCGA MAF for an output that is not specified as a TCGA MAF.  This is currently not supported.  Proceeding, but errors are quite likely."))
 
         return result
 
@@ -100,6 +112,9 @@ class RunSpecificationFactory(object):
         globalAnnotations = dict() if globalAnnotations is None else globalAnnotations
         defaultAnnotations = dict() if defaultAnnotations is None else defaultAnnotations
         other_opts = dict() if other_opts is None else other_opts
+
+        if inputFormat == "TCGAMAF" and not other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS]:
+            other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = True
 
         other_opts[InputMutationCreatorOptions.IS_SKIP_ALTS] = is_skip_no_alts
 

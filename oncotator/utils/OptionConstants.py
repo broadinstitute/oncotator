@@ -54,3 +54,4 @@ class OptionConstants(object):
     CUSTOM_CANONICAL_TX_LIST_FILE = "custom_canonical_tx_file"
     COLLAPSE_FILTER_COLS = 'collapse_filter_cols'
     SPLIT_ALLELIC_DEPTH = 'split_allelic_depth'
+    REANNOTATE_TCGA_MAF_COLS = 'reannotate_tcga_maf_cols'

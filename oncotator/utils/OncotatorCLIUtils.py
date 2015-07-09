@@ -98,6 +98,7 @@ class OncotatorCLIUtils(object):
         """ Poor man's dependency injection. Change this method to support 
         more input formats."""
         return {'MAFLITE': (MafliteInputMutationCreator, 'maflite_input.config'),
+                'TCGAMAF': (MafliteInputMutationCreator, 'maflite_input.config'),
                 "VCF": (VcfInputMutationCreator, 'vcf.in.config'),
                 "SEG_FILE": (MafliteInputMutationCreator, 'seg_file_input.config')}
 
