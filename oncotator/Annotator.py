@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 from collections import defaultdict
 from oncotator.Annotation import Annotation
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.cache.CacheManager import CacheManager
 from oncotator.datasources.Datasource import Datasource
 from oncotator.datasources.GenericGeneDatasource import GenericGeneDatasource
@@ -151,6 +152,7 @@ class Annotator(object):
         self._is_skip_no_alts = False
         self._annotating_type = None
         self._annotate_func_ptr = Annotator.ANNOTATING_FUNC_DICT.get(self._annotating_type, _annotate_mut)
+        self._is_allow_annotation_overwriting = None
 
     def getIsMulticore(self):
         return self.__isMulticore
@@ -221,6 +223,8 @@ class Annotator(object):
         self.initialize_cache_manager(run_spec)
         self.set_annotating_type(run_spec.annotating_type)
         self._annotate_func_ptr = Annotator.ANNOTATING_FUNC_DICT.get(self._annotating_type, _annotate_mut)
+        self._allow_annotation_overwriting = run_spec.is_allow_annotation_overwriting
+        self._mutation_data_factory = MutationDataFactory(allow_overwriting=self._allow_annotation_overwriting)
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)
@@ -290,7 +294,7 @@ class Annotator(object):
         :param Transcript tx: transcript to annotate
         :returns MutationData: mutation with annotations generated from the given transcript
         """
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m['transcript_id'] = tx.get_transcript_id()
 
         for ds in self._datasources:
@@ -335,7 +339,7 @@ class Annotator(object):
         genes = sorted(list(genes))
         muts_dict = {}
         for gene in genes:
-            m = MutationData.create()
+            m = MutationDataFactory.default_create()
             m.createAnnotation("gene", gene)
             m.createAnnotation("transcripts", ",".join(sorted([tx.get_transcript_id() for tx in gene_to_tx_dict[gene]])))
             m.createAnnotation("strand", gene_to_tx_dict[gene][0].get_strand())

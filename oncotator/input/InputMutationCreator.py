@@ -66,7 +66,7 @@ class InputMutationCreator(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, sourceFilename, configFile="", genomeBuild="hg19", other_options=None):
+    def __init__(self, sourceFilename, mutation_data_factory, configFile="", genomeBuild="hg19", other_options=None):
         """
         Constructor
         """

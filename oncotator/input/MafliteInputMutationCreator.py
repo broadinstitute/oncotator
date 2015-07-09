@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from oncotator.Annotation import Annotation
 from oncotator.Metadata import Metadata
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.utils.OptionConstants import OptionConstants
 
 
@@ -77,7 +78,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
     IMPORTANT NOTE: maflite will look at all aliases for alt_allele (see maflite_input.config) and choose the first that does not match the ref_allele
     """
 
-    def __init__(self, filename, configFile='maflite_input.config', genomeBuild="hg19", other_options=None):
+    def __init__(self, filename, mutation_data_factory=None, configFile='maflite_input.config', genomeBuild="hg19", other_options=None):
         """
         Constructor
 
@@ -116,7 +117,11 @@ class MafliteInputMutationCreator(InputMutationCreator):
                     if col != "build":
                         missingRequiredHeaders.append(col)
         missingRequiredHeaders.sort()
-        
+
+        if mutation_data_factory is None:
+            self.logger.info("No mutation data factory provided, using default settings.")
+        self._mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
+
         if len(missingRequiredHeaders) > 0:
             raise MafliteMissingRequiredHeaderException("Specified maflite file (" + filename + ") missing required headers: " + ",".join(missingRequiredHeaders)  )
 
@@ -154,7 +159,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
         for line in self._tsvReader:
 
             # We only need to assign fields that are mutation attributes and have a different name in the maflite file.
-            mut = MutationData(build=self._build)
+            mut = self._mutation_data_factory.create()
 
             for col in allColumns:
                 # Three scenarios:

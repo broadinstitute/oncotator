@@ -54,6 +54,7 @@ import unittest
 from oncotator.Annotator import Annotator
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.output.TcgaVcfOutputRenderer import TcgaVcfOutputRenderer
 from TestUtils import TestUtils
@@ -72,7 +73,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
     def testHeaderCreation(self):
         """Test that a tcga vcf header can be generated, even from a blank mutation. """
         vcfOR = TcgaVcfOutputRenderer("out/TCGAVCFHeader.out.txt")
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('center', "broad.mit.edu")
         hdr = vcfOR.createVcfHeader(m)
         self.assertTrue(hdr is not None)
@@ -179,7 +180,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
         vcfOR = TcgaVcfOutputRenderer(outputFilename)
         mq0 = "0"
         ss = "Somatic"
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('t_ref_count', '20')
         m.createAnnotation('t_alt_count', '25')
         m.createAnnotation('n_ref_count', '100')
@@ -233,7 +234,7 @@ class TcgaVcfOutputRendererTest(unittest.TestCase):
 
     def testPopulatedButNullValuesInInitNLod(self):
         """Test that if init_n_lod is "." or "", there is no error """
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("init_n_lod", "")
         outputFilename = "out/blank.vcf"
         vcfOR = TcgaVcfOutputRenderer(outputFilename)

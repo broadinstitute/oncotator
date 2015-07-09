@@ -47,6 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from TestUtils import TestUtils
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
@@ -194,7 +195,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testInternalFields(self):
         """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
         outputFilename = "out/testInternalFields_v2.4.maf.tsv"
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
         
         # The next annotation is real and should not be considered internal.
@@ -219,7 +220,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testInternalFieldsSkipPrepend(self):
         """ Test that no prepending of "i_" is honored."""
         outputFilename = "out/testInternalFields_v2.4.maf.tsv"
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
 
         # The next annotation is real and should not be considered internal.
@@ -354,7 +355,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def test_validation_correction(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for invalid mutation.
         """
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = "3"
         m.start = "178948145"
         m.end = "178948145"
@@ -386,7 +387,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def test_validation_correction_valid(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for a valid mutation.
         """
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = "3"
         m.start = "178948145"
         m.end = "178948145"

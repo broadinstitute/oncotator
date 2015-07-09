@@ -76,7 +76,7 @@ class VcfInputMutationCreator(InputMutationCreator):
     
     """
 
-    def __init__(self, filename, configFile='vcf.in.config', genomeBuild="hg19", other_options=None):
+    def __init__(self, filename, mutation_data_factory, configFile='vcf.in.config', genomeBuild="hg19", other_options=None):
         """
 
         :param filename:
@@ -100,6 +100,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.collapse_filter_fields = other_options.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
 
         self._is_skipping_no_alts = other_options.get(InputMutationCreatorOptions.IS_SKIP_ALTS, False)
+        self._mutation_data_factory = mutation_data_factory
+
 
     def _addFormatData2Mutation(self, mutation, record, index):
         """

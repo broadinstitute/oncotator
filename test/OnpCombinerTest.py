@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import unittest
 import os
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.input.OnpQueue import OnpQueue
 
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
@@ -282,14 +283,14 @@ class OnpCombinerTest(unittest.TestCase):
 
     def test_mutation_combiner(self):
         """Test that attributes and annotations are set properly with combine mutations"""
-        mut1 = MutationData(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1 = MutationDataFactory.default_create(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
         mut1.createAnnotation("SomeValue", "value1", "INPUT", "STRING", "a value")
-        mut2 = MutationData(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2 = MutationDataFactory.default_create(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
         mut2.createAnnotation("SomeValue", "value2", tags=["IT"])
         mut2.createAnnotation("AnotherValue","5")
         result = OnpQueue._combine_mutations([mut1, mut2])
 
-        expected = MutationData(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
+        expected = MutationDataFactory.default_create(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
         expected.createAnnotation("SomeValue", "value1|value2", "INPUT", "STRING", "a value", tags=["IT"])
         expected.createAnnotation("AnotherValue", "5")
         self.assertTrue(result.attributesEqual(expected))

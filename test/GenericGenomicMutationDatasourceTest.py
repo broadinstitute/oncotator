@@ -47,6 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from TestUtils import TestUtils
+from oncotator.MutationDataFactory import MutationDataFactory
 
 
 '''
@@ -79,7 +80,7 @@ class GenericGenomicMutationDatasourceTest(unittest.TestCase):
     def testBasicAnnotation(self):
         ds = GenericGenomicMutationDatasource('testdata/small_cosmic_2/cosmic_v65_chr18.tsv')
     
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = '18'
         m.start = '48604683'
         m.end = '48604683'

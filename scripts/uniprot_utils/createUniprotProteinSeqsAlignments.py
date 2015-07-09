@@ -267,7 +267,7 @@ def generateTranscriptMuts(tx_dict, uniprotDS):
     tDict = tx_dict.getTranscriptDict()
     tx_ids = tDict.keys()
     for tx_id in tx_ids:
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('gene', tDict[tx_id].get_gene())
         m.createAnnotation('transcript_id', tx_id)
         m = uniprotDS.annotate_mutation(m)

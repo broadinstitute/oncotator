@@ -90,13 +90,16 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
         self.logger.info("Building alternative keys dictionary...")
         self.alternativeDictionary = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config)
-        
-        #TODO: Read missing options from the config file or specify that error should be thrown.
+
         self.options = options
 
         self._prepend = self.config.get("general", "prepend")
         if self.options.get(OptionConstants.NO_PREPEND, False):
             self._prepend = ""
+
+        # _is_reannotating is a flag to determine whether we should give precendence to annotations that were not
+        #   annotated as part of the INPUT.
+        self._is_reannotating = other_options.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS, False)
 
         self._is_splitting_allelic_depth = self.options.get(OptionConstants.SPLIT_ALLELIC_DEPTH, True)
 

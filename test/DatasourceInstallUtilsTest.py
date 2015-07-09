@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import tempfile
 import unittest
 import logging
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.install.DatasourceInstallUtils import DatasourceInstallUtils
 import os
@@ -184,7 +185,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
 
         datasource = DatasourceFactory.createDatasource(configFilename, destDir)
 
-        m1 = MutationData.create()
+        m1 = MutationDataFactory.default_create()
         m1.chr = "1"
         m1.start = "802177"
         m1.end = "802177"

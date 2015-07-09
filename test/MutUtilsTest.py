@@ -50,6 +50,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import unittest
 
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.utils.MutUtils import MutUtils
 from TestUtils import TestUtils
 import vcf
@@ -85,7 +86,7 @@ class MutUtilsTest(unittest.TestCase):
     def testRetrieveMissingAnnotations(self):
         """ Test simple case.
         """
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("a1", "1")
         m.createAnnotation("a2", "1")
         m.createAnnotation("a3", "1")
@@ -135,7 +136,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "G"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForDeletions(mut)
         mut.ref_allele = updated_ref_allele
@@ -155,7 +156,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTCT"
         alt_allele = "GTC"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForDeletions(mut)
         mut.ref_allele = updated_ref_allele
@@ -175,7 +176,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "CCCGAGCTGCTTACGATAGCCTTCTT"
         alt_allele = "C"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForDeletions(mut)
         mut.ref_allele = updated_ref_allele
@@ -197,7 +198,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCT"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForInsertions(mut)
         mut.ref_allele = "-"
@@ -217,7 +218,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCTT"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForInsertions(mut)
         mut.ref_allele = "-"
@@ -238,7 +239,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "G"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForDeletions(mut)
         mut.ref_allele = updated_ref_allele
@@ -259,7 +260,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTCT"
         alt_allele = "GTC"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForDeletions(mut)
         mut.ref_allele = updated_ref_allele
@@ -281,7 +282,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "CCCGAGCTGCTTACGATAGCCTTCTT"
         alt_allele = "C"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForDeletions(mut)
         mut.ref_allele = updated_ref_allele
@@ -304,7 +305,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCT"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForInsertions(mut)
         mut.ref_allele = "-"
@@ -326,7 +327,7 @@ class MutUtilsTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCTT"
         build = "19"
-        mut = MutationData(chrom, start, end, ref_allele, alt_allele, build)
+        mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
             MutUtils.retrievePrecedingBasesForInsertions(mut)
         mut.ref_allele = "-"

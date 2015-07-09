@@ -96,10 +96,6 @@ class MutationData(collections.MutableMapping):
     """ internal annotations that will show as both annotations and attributes.   If this changes, updates should probably be made to the maflite config."""
     attributes = {"chr", "start", "end", "ref_allele", "alt_allele", "build"}
 
-    @staticmethod
-    def create(allow_overwriting=False):
-        return MutationData(new_required=not allow_overwriting)
-
     def __init__(self, chr="", start="", end="", ref_allele="", alt_allele="", build="", new_required=True):
         """
         Constructor.  Do not call this directly, use the Factory method.

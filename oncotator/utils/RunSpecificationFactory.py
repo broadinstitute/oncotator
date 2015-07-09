@@ -1,5 +1,6 @@
 import logging
 from oncotator.DatasourceFactory import DatasourceFactory
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
@@ -129,7 +130,10 @@ class RunSpecificationFactory(object):
                 raise RunSpecificationException(msg.message)
 
         # Step 1 Initialize input and output
-        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild, other_opts)
+        is_allow_annotation_overwriting = other_opts.get(OptionConstants.ALLOW_ANNOTATION_OVERWRITING, False)
+        mutation_data_factory = MutationDataFactory(is_allow_annotation_overwriting)
+
+        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, mutation_data_factory, genomeBuild, other_opts)
         outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat, other_opts)
 
         # Step 2 Datasources
@@ -157,5 +161,6 @@ class RunSpecificationFactory(object):
         result = RunSpecification()
         result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasource_list,
                           isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations,
-                          cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts, annotating_type=annotating_type)
+                          cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts, annotating_type=annotating_type,
+                          is_allow_annotation_overwriting=is_allow_annotation_overwriting)
         return result

@@ -48,7 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import Bio
-from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
@@ -667,7 +667,7 @@ class VariantClassifierTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_macbeth_issue(self):
         # ENST00000402929.1
-        m = MutationData("12", str(121434630), str(121434631), "-", "TCATTCAT")
+        m = MutationDataFactory.default_create("12", str(121434630), str(121434631), "-", "TCATTCAT")
         tx_ds = TestUtils.createTranscriptProviderDatasource(TestUtils.createUnitTestConfig())
         tx = tx_ds.get_transcript("ENST00000402929.1")
         vcer = VariantClassifier()

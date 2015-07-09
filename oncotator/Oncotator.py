@@ -185,6 +185,7 @@ def parseOptions(program_version_message):
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
     parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF ouput option.")
     parser.add_argument('--prune-tcga-maf-cols', action='store_true', help="Automatically remove TCGA MAF columns that will need to be re-annotated.")
+    parser.add_argument('--allow_overwriting', action='store_true', help="Allow annotations to be overwritten.  This should only be used in rare cases and user should know when that is.")
 
     # Process arguments
     args = parser.parse_args()
@@ -266,6 +267,7 @@ def main(argv=None):  # IGNORE:C0111
             inputFormat = "MAFLITE"
             is_prune_tcga_maf_cols = True
             other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = True
+            other_opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = True
 
         outputFormat = args.output_format.upper()
 

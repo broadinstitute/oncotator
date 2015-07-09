@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 import logging
 from Bio import Seq
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
@@ -82,8 +83,9 @@ class MutUtils(object):
         pass
 
     @staticmethod
-    def initializeMutFromAttributes(chr, start, end, ref_allele, alt_allele, build):
-        mut = MutationData(str(chr), str(start), str(end), ref_allele, alt_allele, str(build))
+    def initializeMutFromAttributes(chr, start, end, ref_allele, alt_allele, build, mutation_data_factory=None):
+        mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
+        mut = mutation_data_factory.create(str(chr), str(start), str(end), ref_allele, alt_allele, str(build))
         varType = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
 
         if TranscriptProviderUtils.is_xnp(varType):  # Snps and other xNPs

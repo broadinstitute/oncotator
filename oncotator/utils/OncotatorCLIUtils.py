@@ -126,13 +126,13 @@ class OncotatorCLIUtils(object):
         return tmp.keys()
 
     @staticmethod
-    def create_input_creator(inputFilename, inputFormat, genome_build="hg19", input_creator_options=None):
+    def create_input_creator(inputFilename, inputFormat, mutation_data_factory, genome_build="hg19", input_creator_options=None):
         inputCreatorDict = OncotatorCLIUtils.createInputFormatNameToClassDict()
         if inputFormat not in inputCreatorDict.keys():
             raise NotImplementedError("The inputFormat specified: " + inputFormat + " is not supported.")
         else:
             inputConfig = inputCreatorDict[inputFormat][1]
-            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, inputConfig, genome_build, input_creator_options)
+            inputCreator = inputCreatorDict[inputFormat][0](inputFilename, mutation_data_factory, inputConfig, genome_build, input_creator_options)
             if input_creator_options.get(OptionConstants.INFER_ONPS):  #If we're combinging ONPs, wrap the input creater
                 inputCreator = OnpCombiner(inputCreator)
         return inputCreator

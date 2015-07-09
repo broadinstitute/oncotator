@@ -100,6 +100,8 @@ class IndexedTsvDatasource(Datasource):
                 ref = tsv_record[self.tsv_index["ref"]]
                 alt = tsv_record[self.tsv_index["alt"]]
                 if ref == "-" or alt == "-":  # addresses Mutation Annotation Format based tsv records
+
+                    # TODO: This looks risky to be calling the MutationData constructor directly
                     ds_mut = MutationData(chrom, startPos, endPos, ref, alt, build)
                 else:  # addresses tsv records where the input isn't a Mutation Annotation Format file
                     ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)

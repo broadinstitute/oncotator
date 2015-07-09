@@ -55,6 +55,7 @@ from cPickle import dump
 
 from oncotator.Metadata import Metadata
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.datasources.Gaf import Gaf
@@ -163,7 +164,7 @@ class GafDatasourceTest(unittest.TestCase):
     @unittest.skipIf(not os.path.exists(globalConfig.get("gaf3.0", "gafDir")), "Default Datasource, with GAF 3.0, corpus is needed to run this test")
     def testMC1R(self):
         """Test that this version of the GAF produces a MC1R, instead of TUBB gene"""
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = '16'
         m.start = '89985913'
         m.end = '89985913'
@@ -180,7 +181,7 @@ class GafDatasourceTest(unittest.TestCase):
     def testAKT1(self):
         """ Test that this version of the GAF produces the up to date gene for a position given from a website user.
         """
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = '14'
         m.start = '105246407'
         m.end = '105246407'
@@ -196,7 +197,7 @@ class GafDatasourceTest(unittest.TestCase):
         gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_BEST_EFFECT)
 
         # Canonical mutation was Intron
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = '2'
         m.start = '219137340'
         m.end = '219137340'
@@ -207,7 +208,7 @@ class GafDatasourceTest(unittest.TestCase):
         self.assertTrue(m['variant_classification'] == "Missense_Mutation")
 
         gafDatasource.set_tx_mode(TranscriptProvider.TX_MODE_CANONICAL)
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.chr = '2'
         m.start = '219137340'
         m.end = '219137340'
@@ -229,7 +230,7 @@ class GafDatasourceTest(unittest.TestCase):
         gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
         vcs = []
         for s in range(10998326, 10998347):
-            m = MutationData.create()
+            m = MutationDataFactory.default_create()
             m.start = str(s)
             m.end = str(s)
             m.chr = "21"
@@ -263,7 +264,7 @@ class GafDatasourceTest(unittest.TestCase):
         numSilent = 0
         startWindow = 28233780
         for s in range(startWindow, 28233806):
-            m = MutationData.create()
+            m = MutationDataFactory.default_create()
             m.start = str(s)
             m.end = str(s)
             m.chr = "1"
@@ -300,7 +301,7 @@ class GafDatasourceTest(unittest.TestCase):
         numSilent = 0
         startWindow = 11042200
         for s in range(startWindow, startWindow+len(refs)):
-            m = MutationData.create()
+            m = MutationDataFactory.default_create()
             m.start = str(s)
             m.end = str(s)
             m.chr="1"
@@ -322,7 +323,7 @@ class GafDatasourceTest(unittest.TestCase):
         gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
         # 1	228646357 nearest Gene=HIST3H2A C>T
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.start = str(228646357)
         m.end = str(228646357)
         m.chr="1"
@@ -339,7 +340,7 @@ class GafDatasourceTest(unittest.TestCase):
         """
         #uc021qwk.1	chr12:31379258-31379277:-	hsa-miR-3194-3p|?	chr12:31379258-31379277:-		Confidence=100
         gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.start = 31379268
         m.end = 31379268
         m.chr= "12"
@@ -384,7 +385,7 @@ class GafDatasourceTest(unittest.TestCase):
         # Test pickling
         dump(gafDatasource, file('out/testGAFPickle.pkl','w'))
 
-        m1 = MutationData.create()
+        m1 = MutationDataFactory.default_create()
         m1.chr = '3'
         m1.start = '178866811'
         m1.end = '178866811'
@@ -392,7 +393,7 @@ class GafDatasourceTest(unittest.TestCase):
         m1.alt_allele = "C"
         m1.build = "hg19"
 
-        m2 = MutationData.create()
+        m2 = MutationDataFactory.default_create()
         m2.chr = '3'
         m2.start = '178866812'
         m2.end = '178866812'
@@ -474,7 +475,7 @@ class GafDatasourceTest(unittest.TestCase):
         """Test a start codon hit in a GAF datasource"""
         gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.start = str(22221729)
         m.end = str(22221729)
         m.chr="22"
@@ -488,7 +489,7 @@ class GafDatasourceTest(unittest.TestCase):
         """GAF de novo test """
         gafDatasource = TestUtils.createTranscriptProviderDatasource(self.config)
 
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.start = str(22221735)
         m.end = str(22221737)
         m.chr="22"
@@ -497,7 +498,7 @@ class GafDatasourceTest(unittest.TestCase):
         m = gafDatasource.annotate_mutation(m)
         self.assertTrue(m['variant_classification'] == 'De_novo_Start_OutOfFrame')
 
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.start = str(22221735)
         m.end = str(22221740)
         m.chr="22"
@@ -506,7 +507,7 @@ class GafDatasourceTest(unittest.TestCase):
         m = gafDatasource.annotate_mutation(m)
         self.assertTrue(m['variant_classification'] == 'De_novo_Start_OutOfFrame')
 
-        m = MutationData.create()
+        m = MutationDataFactory.default_create()
         m.start = str(22221735)
         m.end = str(22221739)
         m.chr="22"
