@@ -290,7 +290,7 @@ class Annotator(object):
         :param Transcript tx: transcript to annotate
         :returns MutationData: mutation with annotations generated from the given transcript
         """
-        m = MutationData()
+        m = MutationData.create()
         m['transcript_id'] = tx.get_transcript_id()
 
         for ds in self._datasources:
@@ -335,7 +335,7 @@ class Annotator(object):
         genes = sorted(list(genes))
         muts_dict = {}
         for gene in genes:
-            m = MutationData()
+            m = MutationData.create()
             m.createAnnotation("gene", gene)
             m.createAnnotation("transcripts", ",".join(sorted([tx.get_transcript_id() for tx in gene_to_tx_dict[gene]])))
             m.createAnnotation("strand", gene_to_tx_dict[gene][0].get_strand())

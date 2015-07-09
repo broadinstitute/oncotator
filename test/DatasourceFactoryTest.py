@@ -83,7 +83,7 @@ class DatasourceFactoryTest(unittest.TestCase):
         """
         ds = DatasourceFactory.createDatasource('testdata/small_cosmic/small_cosmic.config', "testdata/small_cosmic")
         
-        m = MutationData()
+        m = MutationData.create()
         m.chr = 19
         m.start = 58858921
         m.end = 58858921
@@ -98,7 +98,7 @@ class DatasourceFactoryTest(unittest.TestCase):
         """
         ds = DatasourceFactory.createDatasource('testdata/reference_ds/reference_ds.config', "testdata/reference_ds")
         
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "11"
         m.end = "11"
@@ -116,7 +116,7 @@ class DatasourceFactoryTest(unittest.TestCase):
         geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
         
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('gene',"ABL1")
         m = geneDS.annotate_mutation(m)
         self.assertTrue(m['CGC_Abridged_Name'] == "v-abl Abelson murine leukemia viral oncogene homolog 1","Test gene TSV datasource did not annotate properly.")

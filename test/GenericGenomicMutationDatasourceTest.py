@@ -79,7 +79,7 @@ class GenericGenomicMutationDatasourceTest(unittest.TestCase):
     def testBasicAnnotation(self):
         ds = GenericGenomicMutationDatasource('testdata/small_cosmic_2/cosmic_v65_chr18.tsv')
     
-        m = MutationData()
+        m = MutationData.create()
         m.chr = '18'
         m.start = '48604683'
         m.end = '48604683'

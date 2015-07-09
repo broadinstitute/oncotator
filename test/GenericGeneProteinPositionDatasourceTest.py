@@ -78,7 +78,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
 
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation("gene", "TP53")
         m.createAnnotation("protein_change", "p.S376C")
 
@@ -92,7 +92,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
 
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation("gene", "TP53")
         m.createAnnotation("protein_change", "p.SLEELEE370_376del") # This is not valid, but does the test.
 
@@ -134,7 +134,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="SmallNatVar", version="test")
 
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation("gene", "TP53")
         #m.createAnnotation("protein_change", "p.S376C")
 

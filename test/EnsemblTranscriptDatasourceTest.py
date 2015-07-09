@@ -132,7 +132,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         """Test a very simple annotation with a nonhuman genome (saccer)"""
         ensembl_ds = self._create_ensembl_ds_from_saccer()
 
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "I"
         m.start = "500"
         m.end = "500"
@@ -155,7 +155,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
 
         ensembl_ds = EnsemblTranscriptDatasource(title=title, version=version, src_file=src_file)
 
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22161963"
         m.end = "22161963"
@@ -267,7 +267,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ds = TestUtils._create_test_gencode_v19_ds("out/small_positive_strand_")
 
         # Now for a negative strand
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22221730"
         m.end = "22221730"
@@ -277,7 +277,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         self.assertTrue(m2['transcript_change'] == "c.1A>C", "Incorrect transcript change: " + m2['transcript_change'])
 
         # positive strand
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "3"
         m.start = "178916614"
         m.end = "178916614"
@@ -291,7 +291,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ds = TestUtils._create_test_gencode_v19_ds("out/test_hgvs_annotations_SNP_")
 
         # Now for a negative strand
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22221730"
         m.end = "22221730"
@@ -306,7 +306,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_hgvs_annotations_IGR(self):
         """Test that the HGVS annotations appear for IGR"""
         ds = TestUtils._create_test_gencode_v19_ds("out/test_hgvs_annotations_IGR_")
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('variant_classification', 'IGR')
@@ -326,7 +326,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         ds = TestUtils._create_test_gencode_v19_ds("out/test_hgvs_annotations_no_mapping_file_", protein_id_mapping_file=None)
 
         # Now for a negative strand
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22221730"
         m.end = "22221730"
@@ -469,12 +469,12 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         # SPECC1L 8-	    22	16282318	POTEH	2-	24730543	SPECC1L	8-	433.0	-0.00781166374668759		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
         # SPECC1L-ADORA2A	22	24734447	SPECC1L	10+	41783674	TEF	1-	1215.0	-0.04975556624325125		hg19	CESC.TCGA.BI.A0VR.Tumor.SM.1RACM
 
-        seg1 = MutationData()
+        seg1 = MutationData.create()
         seg1.chr = "22"
         seg1.start = "24734447" # Just passed the exon 9 (0-based)
         seg1.end = "41783674"
 
-        seg2 = MutationData()
+        seg2 = MutationData.create()
         seg2.chr = "22"
         seg2.start = "16282318"
         seg2.end = "24730543" # Just passed the exon 8 (0-based)
@@ -548,7 +548,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_canonical_tx_list(self):
         """Test that specifying the canonical list will actually change the transcript selected. """
         ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_")
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22142650"
         m.end = "22142650"
@@ -571,7 +571,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_canonical_tx_list_miss(self):
         """Test that specifying the canonical list will do nothing otherwise."""
         ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_")
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22142650"
         m.end = "22142650"
@@ -591,7 +591,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
     def test_canonical_tx_list_empty(self):
         """Test that not specifying the canonical list will do nothing."""
         ds = TestUtils._create_test_gencode_v19_ds("out/test_canonical_tx_list_empty_")
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "22142650"
         m.end = "22142650"
@@ -656,7 +656,7 @@ class EnsemblTranscriptDatasourceTest(unittest.TestCase):
         cc_txs.append("ENST00000338368") # Add a transcript that is not exactly the same, but close
         cc_txs_fp.close()
         transcript_ds.set_custom_canonical_txs(cc_txs)
-        m = MutationData()
+        m = MutationData.create()
         m.chr = chrom
         m.start = start
         m.end = end

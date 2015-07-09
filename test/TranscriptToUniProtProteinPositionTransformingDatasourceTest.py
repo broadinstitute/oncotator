@@ -75,7 +75,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         # Must correspond to what the datasource is going to generate
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc003tqk.3')
         m.createAnnotation('protein_change', 'p.S50T')
         m = tDS.annotate_mutation(m)
@@ -88,7 +88,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         # Must correspond to what the datasource is going to generate.
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc009vvt.1')
         m.createAnnotation('protein_change', 'p.T1105A')
         m = tDS.annotate_mutation(m)
@@ -100,7 +100,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         tDS = DatasourceFactory.createDatasource("testdata/small_uniprot_prot_seq_ds/small_uniprot_prot_seq_ds.config", "testdata/small_uniprot_prot_seq_ds/")
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc009vvt.1')
         m.createAnnotation('protein_change', 'p.T1105A')
         m = tDS.annotate_mutation(m)
@@ -113,7 +113,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         # Must correspond to what the datasource is going to generate
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'ENST00000264990.6')
         m.createAnnotation('protein_change', 'p.S50T')
         m = tDS.annotate_mutation(m)
@@ -127,7 +127,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         # Must correspond to what the datasource is going to generate.
         #ENST00000545482.1_Silent_p.S178S
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'ENST00000545482.1')
         m.createAnnotation('protein_change', 'p.S178S')
         m = tDS.annotate_mutation(m)

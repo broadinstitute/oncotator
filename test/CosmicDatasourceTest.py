@@ -91,7 +91,7 @@ class CosmicDatasourceTest(unittest.TestCase):
         cosmicDS = Cosmic(src_file=tabixDir + "small_cosmic_trimmed_for_sorting.txt.tbi.gz", title="Cosmic", version="test", gpp_tabix_file= tabixDir + "small_cosmic_trimmed_for_sorting.txt.tbi.byAA.sorted.tsv.gz")
 
         # These values are not taken from a real world scenario, but are cooked for this test.
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation("gene", "EGFR")
         m.createAnnotation("transcript_protein_position_start", "747")
         m.createAnnotation("transcript_protein_position_end", "747")
@@ -110,7 +110,7 @@ class CosmicDatasourceTest(unittest.TestCase):
         # These values are not taken from a real world scenario, but are cooked for this test.
         # Line 9 should get picked up genomic coords
         # Lines 7,8 should get picked up by the protein position
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation("gene", "A2M")
         m.createAnnotation("transcript_protein_position_start", "1300")
         m.createAnnotation("transcript_protein_position_end", "1400")
@@ -131,7 +131,7 @@ class CosmicDatasourceTest(unittest.TestCase):
 
         # These values are not taken from a real world scenario, but are cooked for this test.
 
-        m = MutationData()
+        m = MutationData.create()
         m.chr = '1'
         m.start = '12941796'
         m.end = '12941796'
@@ -143,7 +143,7 @@ class CosmicDatasourceTest(unittest.TestCase):
         self.assertTrue(m['COSMIC_n_overlapping_mutations'] == '0')
 
         #1	150483621	150483621
-        m = MutationData()
+        m = MutationData.create()
         m.chr = '1'
         m.start = '150483621'
         m.end = '150483621'

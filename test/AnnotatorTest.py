@@ -161,15 +161,15 @@ class AnnotatorTest(unittest.TestCase):
         default_annotations = {"test2": "foo2", "test3": "Should not be seen"}
         overrides = {'test3': 'foo3'}
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.createAnnotation("test1", "foo1")
         m1.createAnnotation("test2", "")
 
-        m2 = MutationData()
+        m2 = MutationData.create()
         m2.createAnnotation("test1", "")
 
 
-        m3 = MutationData()
+        m3 = MutationData.create()
         m3.createAnnotation("test1", "")
         m3.createAnnotation("test2", "foo2-original")
 
@@ -210,7 +210,7 @@ class AnnotatorTest(unittest.TestCase):
         annotator = Annotator()
         annotator.initialize(runSpec)
 
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "1"
         m.start = "12941796"
         m.end = "12941796"
@@ -233,7 +233,7 @@ class AnnotatorTest(unittest.TestCase):
         annotator = Annotator()
         annotator.initialize(runSpec)
 
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "1"
         m.start = "12941796"
         m.end = "12941796"
@@ -252,14 +252,14 @@ class AnnotatorTest(unittest.TestCase):
         # Initialize the annotator with the runspec
         annotator = Annotator()
         annotator.initialize(runSpec)
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "1"
         m.start = "12941796"
         m.end = "12941796"
         m.alt_allele = "G"
         m.ref_allele = "T"
         m.createAnnotation("alt_allele_seen", "False")
-        m2 = MutationData()
+        m2 = MutationData.create()
         m2.chr = "1"
         m2.start = "12941796"
         m2.end = "12941796"

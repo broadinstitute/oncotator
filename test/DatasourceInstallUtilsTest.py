@@ -184,7 +184,7 @@ class DatasourceInstallUtilsTest(unittest.TestCase):
 
         datasource = DatasourceFactory.createDatasource(configFilename, destDir)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "802177"
         m1.end = "802177"

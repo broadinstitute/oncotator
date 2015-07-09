@@ -114,7 +114,7 @@ class MutationData(collections.MutableMapping):
 
 #        self.lock = Lock()
         
-    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", tags=None, number=None):
+    def createAnnotation(self, annotationName, annotationValue, annotationSource="Unknown", annotationDataType="String", annotationDescription="", newRequired=None, tags=None, number=None):
         """
         newRequired implies that this cannot update an existing value.  If a value exists, throw an exception.
         
@@ -122,9 +122,10 @@ class MutationData(collections.MutableMapping):
         
         """
         tags = [] if tags is None else tags
-
+        is_new_required = self._new_required if newRequired is None else newRequired
 #        self.lock.acquire()
-        if self._new_required and (annotationName in self.annotations.keys()) and (annotationName not in MutationData.attributes):
+
+        if is_new_required and (annotationName in self.annotations.keys()) and (annotationName not in MutationData.attributes):
 #            self.lock.release()
             if annotationValue == self.annotations[annotationName].value:
                 logging.getLogger(__name__).warn("Attempting to create an annotation multiple times, but with the same value: " + str(annotationName) +  "  :  " + str(annotationValue))

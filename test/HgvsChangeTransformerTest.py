@@ -71,7 +71,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_missense(self):
         #rs80358866
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '13')
@@ -96,7 +96,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_nonsense(self):
         #rs35229491
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '5')
@@ -123,7 +123,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         #rs148119501
         """If mutation instance being annotated does not have a build value or is '', annotate should
         return a genome_change value with just chr. i.e. chr2:g.80529551A>C vs. chr2.hg19:g.80529551A>C"""
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('chr', 'chr2')
         m.createAnnotation('start', 80529551)
@@ -147,7 +147,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     def test_annotate_SNP_intron(self):
         #rs148119501
         #+ strand transcript
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '2')
@@ -172,7 +172,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #- strand transcript
         #rs78420771
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '10')
@@ -199,7 +199,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     def test_annotate_SNP_5_utr(self):
         #rs141173433
         #negative strand
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '7')
@@ -223,7 +223,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
         #positive strand
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '7')
@@ -250,7 +250,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     def test_annotate_SNP_3_utr(self):
         #rs143436239
         #negative strand
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '8')
@@ -274,7 +274,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
         self.assertEqual(hgvs_dict.get('HGVS_protein_change', None), '')
 
         #positive strand
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '7')
@@ -301,7 +301,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_igr(self):
         #rs112615235
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('variant_classification', 'IGR')
@@ -325,7 +325,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_silent(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('variant_classification', 'Silent')
@@ -351,7 +351,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     def test_annotate_SNP_splice_site(self):
         #splice site mutation occuring in intron prior to coding start position
         #rs61191258
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('variant_classification', 'Splice_Site')
@@ -376,7 +376,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
         #splice site mutation occuring in intron after coding start position
         #rs144524702
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('variant_classification', 'Splice_Site')
@@ -402,7 +402,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_de_novo_start_OutOfFrame(self):
         #rs114472931
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -427,7 +427,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_ONP_missense(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '22')
@@ -452,7 +452,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_1(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '5')
@@ -482,7 +482,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_2(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '7')
@@ -509,7 +509,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_3(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '8')
@@ -535,7 +535,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_4(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '8')
@@ -561,7 +561,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_5(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '2')
@@ -588,7 +588,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_6(self):
         #This is an insertion of a STOP in between two amino acids
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -613,7 +613,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_inframe_7(self):
         #This is an insertion of a STOP right before a stop
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -637,7 +637,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_frameshift(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '4')
@@ -665,7 +665,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_INS_frameshift_2(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '9')
@@ -692,7 +692,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_inframe(self):
         #rs141326765
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '14')
@@ -719,7 +719,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_inframe_2(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '12')
@@ -747,7 +747,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_inframe_3(self):
         #rs141326765
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '19')
@@ -774,7 +774,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_DEL_frameshift(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '19')
@@ -802,7 +802,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_SNP_nonstop(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'SNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('variant_classification', 'Nonstop_Mutation')
@@ -828,7 +828,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_1(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -856,7 +856,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_2(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -884,7 +884,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_3(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -907,7 +907,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_4(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -931,7 +931,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_5(self):
         #negative strand transcript
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '2')
@@ -955,7 +955,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_6(self):
         #negative strand transcript
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '2')
@@ -979,7 +979,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_DEL_7(self):
         #negative strand transcript
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DEL')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '2')
@@ -1002,7 +1002,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_INS(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'INS')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -1025,7 +1025,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_annotate_stop_codon_ONP(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('variant_type', 'DNP')
         m.createAnnotation('build', 'hg19')
         m.createAnnotation('chr', '1')
@@ -1052,7 +1052,7 @@ class HgvsChangeTransformerTest(unittest.TestCase):
     def test_annotate_DEL_ref_hg(self):
         """Make sure that a simple HGVS annotation run can actually see ref_hg. """
 
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "2"
         m.start = "201722365"
         m.end = "201722366"

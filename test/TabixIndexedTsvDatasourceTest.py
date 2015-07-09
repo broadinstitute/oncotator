@@ -74,7 +74,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075334"
         m1.end = "100075334"
@@ -103,7 +103,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075334"
         m1.end = "100075334"
@@ -133,7 +133,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075334"
         m1.end = "100075334"
@@ -163,7 +163,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075333"
         m1.end = "100075333"
@@ -193,7 +193,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075333"
         m1.end = "100075333"
@@ -222,7 +222,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075333"
         m1.end = "100075333"
@@ -252,7 +252,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075337"
         m1.end = "100075340"
@@ -282,7 +282,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075337"
         m1.end = "100075340"
@@ -312,7 +312,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075337"
         m1.end = "100075340"
@@ -343,7 +343,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_exact_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075300"
         m1.end = "100075336"
@@ -374,7 +374,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075300"
         m1.end = "100075336"
@@ -405,7 +405,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_overlap_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075300"
         m1.end = "100075336"
@@ -435,7 +435,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "small_esp_coverage_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "X"
         m1.start = "100075350"
         m1.end = "100075356"
@@ -455,7 +455,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_6vars_exact_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35138"
         m1.end = "35138"
@@ -487,7 +487,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_6vars_exact_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35138"
         m1.end = "35138"
@@ -519,7 +519,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35138"
         m1.end = "35139"
@@ -549,7 +549,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_avg_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35137"
         m1.end = "35137"
@@ -579,7 +579,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_overlap_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35138"
         m1.end = "35139"
@@ -609,7 +609,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
         tabixIndexedTsvDatasource = DatasourceFactory.createDatasource(
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_overlap_ds.config"), tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35136"
         m1.end = "35137"
@@ -640,7 +640,7 @@ class TabixIndexedTsvDatasourceTest(unittest.TestCase):
             os.path.join(tabixIndexedTsvDirName, "dbNSFP_chr1_chr3_100vars_exact_no_ref_alt_ds.config"),
             tabixIndexedTsvDirName)
 
-        m1 = MutationData()
+        m1 = MutationData.create()
         m1.chr = "1"
         m1.start = "35140"
         m1.end = "35140"

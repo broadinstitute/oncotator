@@ -101,7 +101,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
 
     def testSimpleAnnotation(self):
         ''' Create a dummy mutation and make sure it gets annotated properly '''
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc001hms.3')
         transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
         m = transcriptDS.annotate_mutation(m)
@@ -110,7 +110,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
 
     def test_simple_annotation_with_version_number_in_data_but_not_query(self):
         ''' Create a dummy mutation and make sure it gets annotated properly with version num in data, but not query '''
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc001hms')
         transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds/")
         m = transcriptDS.annotate_mutation(m)
@@ -120,7 +120,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
 
     def test_simple_annotation_without_version_number_in_data(self):
         ''' Create a dummy mutation and make sure it gets annotated properly when there is a version number in the query, but version number is not in the datasource.'''
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc001hms.3')
         transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds_no_version_number/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds_no_version_number/")
         m = transcriptDS.annotate_mutation(m)
@@ -129,7 +129,7 @@ class GenericTranscriptDatasourceTest(unittest.TestCase):
 
     def test_simple_annotation_without_version_number_in_data_nor_query(self):
         ''' Create a dummy mutation and make sure it gets annotated properly when there is a version number in the query, but version number is not in the datasource.'''
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('transcript_id', 'uc001hms')
         transcriptDS = DatasourceFactory.createDatasource("testdata/small_transcript_tsv_ds_no_version_number/small_transcript_tsv_ds.config", "testdata/small_transcript_tsv_ds_no_version_number/")
         m = transcriptDS.annotate_mutation(m)

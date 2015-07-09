@@ -76,7 +76,7 @@ class ReferenceDatasourceTest(unittest.TestCase):
     def testSimpleGLAnnotate(self):
         ''' Test a simple annotation case.  Make sure that the ref_context and gc_content annotations are correct. '''
         ds = ReferenceDatasource('testdata/reference_ds', windowSizeGCContent=5)
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "GL000211.1"
         m.start = "11"
         m.end = "11"
@@ -94,7 +94,7 @@ class ReferenceDatasourceTest(unittest.TestCase):
         ''' If a window is specified that extends beyond the beginning or end of a file, truncate the ref_context.  
         Use what is left for gc_content as well.'''
         ds = ReferenceDatasource('testdata/reference_ds', windowSizeRef=6, windowSizeGCContent=5)
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "4"
         m.end = "4"
@@ -113,7 +113,7 @@ class ReferenceDatasourceTest(unittest.TestCase):
         ''' Perform a simple test of one of the aligned chromosomes (chr22) and make sure that we get a reasonable answer.
         '''
         ds = ReferenceDatasource('testdata/reference_ds', windowSizeGCContent=5)
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "22"
         m.start = "11"
         m.end = "11"
@@ -139,7 +139,7 @@ class ReferenceDatasourceTest(unittest.TestCase):
         Note: A log entry should also be written, but this is not tested. '''
         self.logger.info("Please ignore the next logging warning: testdata/reference_ds/chrTHIS_DOES_NOT_EXIST.txt not found.  Please add it.")
         ds = ReferenceDatasource('testdata/reference_ds')
-        m = MutationData()
+        m = MutationData.create()
         m.chr = "THIS_DOES_NOT_EXIST"
         m.start = "11"
         m.end = "11"

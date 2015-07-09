@@ -27,7 +27,7 @@ class BigWigDatasourceTest(unittest.TestCase):
 
     @unittest.skipIf(not NGSLIB_INSTALLED, 'ngslib not installed, skipping test')
     def test_basic_fetch(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('chr', '1')
         m.createAnnotation('start', 78978)
         m.createAnnotation('end', 78978)
@@ -37,7 +37,7 @@ class BigWigDatasourceTest(unittest.TestCase):
 
     @unittest.skipIf(not NGSLIB_INSTALLED, 'ngslib not installed, skipping test')
     def test_range_fetch(self):
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('chr', '1')
         m.createAnnotation('start', 78978)
         m.createAnnotation('end', 79000)
@@ -50,7 +50,7 @@ class BigWigDatasourceTest(unittest.TestCase):
         """Test for value not found in bigwig.  In this case, our test bigwig only has data for 
         chr1 so None is expected return value.
         """
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation('chr', '13')
         m.createAnnotation('start', 78978)
         m.createAnnotation('end', 79000)

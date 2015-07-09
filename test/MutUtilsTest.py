@@ -85,7 +85,7 @@ class MutUtilsTest(unittest.TestCase):
     def testRetrieveMissingAnnotations(self):
         """ Test simple case.
         """
-        m = MutationData()
+        m = MutationData.create()
         m.createAnnotation("a1", "1")
         m.createAnnotation("a2", "1")
         m.createAnnotation("a3", "1")
