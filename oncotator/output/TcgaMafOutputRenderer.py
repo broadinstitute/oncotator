@@ -107,7 +107,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
 
         self._is_entrez_id_message_logged = False
-    
+
     def lookupNCBI_Build(self, build):
         """ If a build number exists in the config file, use that.  Otherwise, use the name specified. """
         if not self.config.has_option("genomeBuild", build):

@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from TestUtils import TestUtils
 from oncotator.MutationDataFactory import MutationDataFactory
+from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 from oncotator.utils.VariantClassification import VariantClassification
@@ -495,10 +496,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             for ks in keys_to_check_non_existence:
                 self.assertTrue(ks not in line_dict.keys())
 
-    def test_reannotation(self):
-        """Test that we can immediately reannotate a TCGA MAF, if the right options are specified."""
-        # TODO: Need test data for this.
-        input_filename = ""
 
     def test_splitting_allelic_depth_with_prepend(self):
         """Make sure that allelic depth is not split when told"""
@@ -528,7 +525,25 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
                 self.assertTrue(ks in line_dict.keys(), "Key " + ks + " was not rendered.")
                 self.assertTrue(line_dict[ks] != "" or (line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ), "Key " + ks + " had a blank value." + str(line_dict))
 
+    def test_reannotating_with_prepends(self):
+        """Test that we will disregard the prepend when looking for fields to write"""
+        m = MutationDataFactory.default_create()
+        m.createAnnotation('i_foo', "blah", "INPUT")
+        m.createAnnotation('foo', "bloop", "some datasource")
 
+        headers = ['i_foo']
+        alt_dict = {'i_foo': ['i_i_foo', 'foo']}
+        mapping = FieldMapCreator.create_field_map(headers, m, alt_dict, is_render_internal_fields=True,deprioritize_input_annotations=True)
+        self.assertTrue(mapping['i_foo'] == 'foo')
+
+        mapping = FieldMapCreator.create_field_map(headers, m, alt_dict, is_render_internal_fields=True,deprioritize_input_annotations=False)
+        self.assertTrue(mapping['i_foo'] == 'i_foo')
+
+    def test_reannotating_actual_file(self):
+        """Test that we can take in a file, annotate, similar to M2 process (VCF to TCGA MAF no ONPs, then TCGA MAF to TCGA MAF with ONPs)"""
+        self.assertTrue(False, "Not implemented, but necessary")
+        # TODO: test that nothing gets created as i_i_
+        # TODO: make sure to have to overwrite vaues in an annotation with i_
 
 if __name__ == "__main__":
     unittest.main()
