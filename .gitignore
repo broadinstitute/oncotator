@@ -16,6 +16,7 @@ venv/
 /test/testdata/Saccharomyces_cerevisiae.EF4.71.cdna.all.fa
 /oncotator.log
 /profile_stats.txt
+/profile_stats.txt.200k
 /tmp*
 /distribute*.tar.gz
 /distribute*.egg
