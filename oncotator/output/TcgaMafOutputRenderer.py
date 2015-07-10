@@ -268,14 +268,16 @@ class TcgaMafOutputRenderer(OutputRenderer):
             depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
             headers.extend(depth_fields)
 
-        fieldMap = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
+        if m is not None:
+
+            fieldMap = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
                                                     self.config.getboolean("general", "displayAnnotations"),
                                                     exposed_fields=self.exposedColumns, prepend=self._prepend,
                                                     deprioritize_input_annotations=self._is_reannotating)
 
-        fieldMapKeys = fieldMap.keys()
-        internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
-        headers.extend(internalFields)
+            fieldMapKeys = fieldMap.keys()
+            internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
+            headers.extend(internalFields)
 
         # Initialize the output file and write a header.
         fp = file(self._filename, 'w')
