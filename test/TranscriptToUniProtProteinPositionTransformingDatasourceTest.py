@@ -141,7 +141,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         annotator = Annotator()
         out_file_name = "out/uniprot_recovery.maf.annotated"
         runSpec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", "testdata/maflite/uniprot_recovery.maflite",
-                                                          out_file_name, datasourceDir=db_dir, tx_mode=TranscriptProvider.TX_MODE_BEST_EFFECT)
+                                                          out_file_name, datasource_dir=db_dir, tx_mode=TranscriptProvider.TX_MODE_BEST_EFFECT)
         annotator.initialize(runSpec)
         annotator.annotate()
 

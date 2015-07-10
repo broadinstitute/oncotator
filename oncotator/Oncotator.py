@@ -296,9 +296,9 @@ def main(argv=None):  # IGNORE:C0111
             annotating_type = RunSpecification.ANNOTATE_SEGMENTS
 
         runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
-                                                      globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
-                                                      isMulticore=(not args.noMulticore),
-                                                      defaultAnnotations=defaultValues, cacheUrl=cache_url,
+                                                      global_annotations=manualOverrides, datasource_dir=datasourceDir,
+                                                      is_multicore=(not args.noMulticore),
+                                                      default_annotations=defaultValues, cache_url=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
                                                       is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
                                                       other_opts=other_opts, annotating_type=annotating_type)

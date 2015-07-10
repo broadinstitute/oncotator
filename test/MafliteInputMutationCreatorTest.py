@@ -271,7 +271,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("SEG_FILE", "SIMPLE_TSV", inputFilename, output_filename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
         annotator.initialize(run_spec)
         annotator.annotate()
 
@@ -302,7 +302,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", inputFilename, outputFilename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS)
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS)
         annotator.initialize(run_spec)
         annotator.annotate()
 

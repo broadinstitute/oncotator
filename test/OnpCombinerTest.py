@@ -278,7 +278,8 @@ class OnpCombinerTest(unittest.TestCase):
         output_filename = 'out/testSingleSampleOnpCombiner.maf'
         config = TestUtils.createUnitTestConfig()
         defaultdb = config.get('DEFAULT',"dbDir")
-        spec = RunSpecificationFactory.create_run_spec("MAFLITE","TCGAMAF", input_filename, output_filename,datasourceDir=defaultdb,
+        spec = RunSpecificationFactory.create_run_spec("MAFLITE","TCGAMAF", input_filename, output_filename,
+                                                       datasource_dir=defaultdb,
                                                 other_opts={OptionConstants.INFER_ONPS: True})
         annotator = Annotator()
         annotator.initialize(spec)
@@ -315,7 +316,7 @@ class OnpCombinerTest(unittest.TestCase):
         # Use an empty datasource dir in order to speed this up.
         annotator = Annotator()
         runSpec = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_vcf_file, output_tcgamaf_file,
-                                                          datasourceDir=".", globalAnnotations=override_annotations,
+                                                          datasource_dir=".", global_annotations=override_annotations,
                                                           is_skip_no_alts=True, other_opts=other_opts)
         annotator.initialize(runSpec)
         annotator.annotate()
@@ -386,7 +387,8 @@ class OnpCombinerTest(unittest.TestCase):
 
         gt_alts = ["ATT", "T", "T", "T"]
         mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
-        queue = OnpQueue(mutations)
+        mdf = MutationDataFactory()
+        queue = OnpQueue(mutations, mdf)
 
         for i, mut in enumerate(queue.get_combined_mutations()):
             self.assertTrue(gt_alts[i] == mut.alt_allele)
@@ -421,7 +423,8 @@ class OnpCombinerTest(unittest.TestCase):
 
         gt_alts = ["ATT", "TT", "TT"]
         mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
-        queue = OnpQueue(mutations)
+        mdf = MutationDataFactory()
+        queue = OnpQueue(mutations, mdf)
 
         for i, mut in enumerate(queue.get_combined_mutations()):
             self.assertTrue(gt_alts[i] == mut.alt_allele)

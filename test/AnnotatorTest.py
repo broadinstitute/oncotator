@@ -49,10 +49,12 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 import itertools
 from TestUtils import TestUtils
 from oncotator.DatasourceFactory import DatasourceFactory
+from oncotator.DuplicateAnnotationException import DuplicateAnnotationException
 from oncotator.MutationData import MutationData
 from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
+from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 """
@@ -424,6 +426,48 @@ class AnnotatorTest(unittest.TestCase):
             self.assertTrue(refseq_mRNA_id is not None)
             self.assertTrue(refseq_prot_id is not None)
             self.assertTrue(len(transcript_coords) == n_exons)
+
+    def test_overwriting_muts(self):
+        """Ensure that (given correct configuration) we can annotate from a datasource, even if the datasource will overwrite an existing mutation."""
+        # We will have an input with a "Who" annotation that this datasource will try to write.
+        gene_ds = DatasourceFactory.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
+        input_filename = "testdata/maflite/who_alt1_vs_alt2.maflite"
+        output_filename = "out/who_alt1_vs_alt2.maf.annotated"
+        input_format = "MAFLITE"
+        output_format = "TCGAMAF"
+
+        other_opts = {OptionConstants.ALLOW_ANNOTATION_OVERWRITING: True, OptionConstants.NO_PREPEND: True}
+
+        run_spec = RunSpecificationFactory.create_run_spec_given_datasources(input_format, output_format, input_filename, output_filename,
+                        datasource_list=[gene_ds], other_opts=other_opts)
+        annotator = Annotator()
+        annotator.initialize(run_spec)
+
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(output_filename)
+
+        for i, line_dict in enumerate(tsv_reader):
+            self.assertTrue(line_dict.get('TJ_Data_Who', "") != "Tromokratis")
+
+    def test_no_overwriting_muts(self):
+        """Ensure that (given configuration that disallows) we cannot annotate from a datasource when a value was specified in the input."""
+        # We will have an input with a "Who" annotation that this datasource will try to write.
+        gene_ds = DatasourceFactory.createDatasource("testdata/thaga_janakari_gene_ds/hg19/tj_data.config", "testdata/thaga_janakari_gene_ds/hg19/")
+        input_filename = "testdata/maflite/who_alt1_vs_alt2.maflite"
+        output_filename = "out/who_alt1_vs_alt2.maf.annotated"
+        input_format = "MAFLITE"
+        output_format = "TCGAMAF"
+
+        other_opts = {OptionConstants.ALLOW_ANNOTATION_OVERWRITING: False, OptionConstants.NO_PREPEND: True}
+
+        run_spec = RunSpecificationFactory.create_run_spec_given_datasources(input_format, output_format, input_filename, output_filename,
+                        datasource_list=[gene_ds], other_opts=other_opts)
+        annotator = Annotator()
+        annotator.initialize(run_spec)
+
+        self.assertRaises(DuplicateAnnotationException, annotator.annotate)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testBasicAnnotatorInit']

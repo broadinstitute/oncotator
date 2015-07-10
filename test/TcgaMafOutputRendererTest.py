@@ -158,7 +158,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             other_opts = dict()
 
         annotator = Annotator()
-        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts, other_opts=other_opts)
+        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, default_annotations=default_annotations, datasource_dir=datasource_dir, global_annotations=override_annotations, is_skip_no_alts=is_skip_no_alts, other_opts=other_opts)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -497,6 +497,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
     def test_reannotation(self):
         """Test that we can immediately reannotate a TCGA MAF, if the right options are specified."""
+        # TODO: Need test data for this.
         input_filename = ""
 
     def test_splitting_allelic_depth_with_prepend(self):

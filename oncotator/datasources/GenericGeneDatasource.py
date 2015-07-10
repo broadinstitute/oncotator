@@ -84,7 +84,7 @@ class GenericGeneDatasource(Datasource):
         #if any([c in mutation for c in self.output_headers]):
         for c in self.output_headers:
             if c in mutation:
-                raise Exception('Error: Non-unique header value in annotation table (%s)' % (c))
+                logging.warn('WARNING: Non-unique header value in annotation table (%s)' % (c))
 
         if value in self.db_obj:
             annotations = self.db_obj[value]
