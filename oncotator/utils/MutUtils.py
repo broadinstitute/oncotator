@@ -367,7 +367,7 @@ class MutUtils(object):
 
         :param headers:  optional and required fields
         :param annotations: annotations seen on a mutation
-        :param alternativeDictionary: mapping from headers to acceptable annotation names.
+        :param alternativeDictionary: mapping from headers to ordered lists of acceptable annotation names.
         :param isRenderInternalFields: should the resulting dictionary include
                 unused annotations (as [prepend]annotation_name)?
         :param exposedFields: These are fields that, if seen, should not be treated as internal.
@@ -397,18 +397,21 @@ class MutUtils(object):
                             break
 
         if isRenderInternalFields:
+            annotation_names_used = result.values()
+
+            internal_field_dict = dict()
             # Create a dict to do a lookup of annotation to the column to use.
             reverseAlternativeDict = ConfigUtils.buildReverseAlternativeDictionary(alternativeDictionary)
             sAnnotations = set(annotations)
-            internalFields = sAnnotations.difference(result.values())
+            internalFields = sAnnotations.difference(annotation_names_used)
             for i in internalFields:
                 if not i.startswith('_') and i is not "transcripts":
                     key_to_use = reverseAlternativeDict.get(i,i)
                     if prepend.strip() == "" or i.startswith(prepend) or i in exposedFields:
-                        result[key_to_use] = i
+                        internal_field_dict[key_to_use] = i
                     else:
-                        result[prepend + key_to_use] = i
-
+                        internal_field_dict[prepend + key_to_use] = i
+            result.update(internal_field_dict)
         return result
 
     @staticmethod
