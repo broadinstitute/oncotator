@@ -104,9 +104,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         configFile = ConfigUtils.createConfigParser(os.path.join("configs", "tcgaMAF2.4_output.config"))
         statinfo = os.stat(filename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + filename + ") is empty.")
-        
+
         tsvReader = GenericTsvReader(filename)
-        
+
         self.assertTrue(tsvReader.getComments().find('#version') != -1, "First line did not specify a version number")
 
         ctr = 1
@@ -115,7 +115,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             # TODO: Re-enable when GENCODE and HGNC datasources are concordant (or Entrez_Gene_ID is in the gencode gtf)
             # if lineDict['Entrez_Gene_Id'] == "0":
             #     self.assertTrue(lineDict['Hugo_Symbol'] == "Unknown", "Entrez_Gene_Id was zero, but Hugo Symbol was not 'Unknown'.  Line: " + str(ctr))
-            
+
             unknownKeys = []
             self.assertTrue(lineDict["Tumor_Seq_Allele1"] != lineDict["Tumor_Seq_Allele2"], "Reference and alternate were equal in TCGA MAF output on line %d (%s)" % (ctr, lineDict["Tumor_Seq_Allele1"]))
             self.assertTrue(lineDict["Tumor_Seq_Allele1"] == lineDict["Reference_Allele"], "Reference Allele should match Tumor_Seq_Allele1 on line " + str(ctr))
@@ -168,7 +168,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testFullSNPOutput(self):
         """ Create a TCGA MAF from a SNP TSV file."""
         self.logger.info("Initializing Maflite SNP Test...")
-        
+
         testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testSNP_v2.4.maf.tsv", self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
@@ -178,9 +178,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testFullIndelOutput(self):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
-        
+
         testOutputFilename = self._annotateTest('testdata/maflite/Patient0.indel.maf.txt', "out/testIndel_v2.4.maf.tsv", self._determine_db_dir())
-        
+
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
 
@@ -197,20 +197,20 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         outputFilename = "out/testInternalFields_v2.4.maf.tsv"
         m = MutationDataFactory.default_create()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
-        
+
         # The next annotation is real and should not be considered internal.
         m.createAnnotation("gene", "EGFR")
-        
+
         outputRenderer = TcgaMafOutputRenderer(outputFilename, configFile='configs/tcgaMAF2.4_output.config')
         outputRenderer.renderMutations(iter([m]), ['No comments'])
-        
+
         configFile = ConfigUtils.createConfigParser('configs/tcgaMAF2.4_output.config')
         requiredColumns = configFile.get("general", "requiredColumns")
         self.assertTrue("Hugo_Symbol" in requiredColumns, " This test assumes that Hugo_Symbol is a required column in the TCGA MAF.  If not, the test must be modified.")
 
         statinfo = os.stat(outputFilename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + outputFilename + ") is empty.")
-        
+
         tsvReader = GenericTsvReader(outputFilename)
         headers = tsvReader.getFieldNames()
         self.assertTrue("Hugo_Symbol" in headers, "Hugo_Symbol not found in output headers")
@@ -341,7 +341,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         output_fname = 'out/example.one_filter_col.maf.txt'
         annotator = Annotator()
         other_opts = {'collapse_filter_cols': True}
-        
+
         from oncotator.utils.RunSpecification import RunSpecification
         run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
         annotator.initialize(run_spec)
@@ -495,6 +495,10 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
             for ks in keys_to_check_non_existence:
                 self.assertTrue(ks not in line_dict.keys())
+
+    def test_reannotation(self):
+        """Test that we can immediately reannotate a TCGA MAF, if the right options are specified."""
+        input_filename = ""
 
 
 if __name__ == "__main__":
