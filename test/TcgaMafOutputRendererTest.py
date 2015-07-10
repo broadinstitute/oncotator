@@ -48,7 +48,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from TestUtils import TestUtils
 from oncotator.MutationDataFactory import MutationDataFactory
-from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 from oncotator.utils.VariantClassification import VariantClassification
@@ -499,6 +498,35 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def test_reannotation(self):
         """Test that we can immediately reannotate a TCGA MAF, if the right options are specified."""
         input_filename = ""
+
+    def test_splitting_allelic_depth_with_prepend(self):
+        """Make sure that allelic depth is not split when told"""
+        input_vcf_file = "testdata/m2_support/Dream4.chr20.oxoGinfo.vcf"
+        output_tcgamaf_file = "out/m2_support/Dream4.chr20.oxoGinfo.vcf.prepend.maf.annotated"
+
+        if not os.path.exists(os.path.abspath(os.path.dirname(output_tcgamaf_file))):
+            os.makedirs(os.path.abspath(os.path.dirname(output_tcgamaf_file)))
+
+        # For this conversion, you must specify the barcodes manually
+        override_annotations = TcgaMafOutputRendererTest.TCGA_MAF_DEFAULTS
+        override_annotations.update({'tumor_barcode':'Patient0-Tumor', 'normal_barcode':'Patient0-Normal'})
+
+        other_opts = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: False, OptionConstants.SPLIT_ALLELIC_DEPTH: True}
+
+        # Use an empty datasource dir in order to speed this up.
+        self._annotateTest(input_vcf_file, output_tcgamaf_file, datasource_dir=None, inputFormat="VCF", is_skip_no_alts=True, other_opts=other_opts, override_annotations=override_annotations)
+
+        # Check the output MAF
+        tsv_reader = GenericTsvReader(output_tcgamaf_file)
+
+        keys_to_check_existence = ['i_allelic_depth', 't_ref_count', 't_alt_count']
+
+        for line_dict in tsv_reader:
+
+            for ks in keys_to_check_existence:
+                self.assertTrue(ks in line_dict.keys(), "Key " + ks + " was not rendered.")
+                self.assertTrue(line_dict[ks] != "" or (line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ), "Key " + ks + " had a blank value." + str(line_dict))
+
 
 
 if __name__ == "__main__":

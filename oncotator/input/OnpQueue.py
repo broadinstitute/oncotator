@@ -3,6 +3,7 @@ import logging
 import more_itertools
 from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.PhasingUtils import PhasingUtils
 from oncotator.utils.SampleNameSelector import SampleNameSelector
 from oncotator.utils.iterutils import flatmap
 
@@ -53,15 +54,19 @@ class OnpQueue(object):
         :return: All paths through adjacent mutations starting with mutations at chromosome position start
         """
         if muts == [] or start not in muts:
+
+            # No mutations available to continue this chain
             finished_paths.append(path_so_far)
         else:
             # return reduce(operator.concat, lambda mut: OnpCombiner._paths(path + [mut], mut.end+1, muts), [])
             # path =  map(lambda mut: OnpQueue._paths(path + [mut], int(mut.end)+1, muts), muts[start])
-            # TODO: I believe that here would be a good place to check the phasing.
-            # TODO: Add method for checking the phasing.
             for mut in muts[start]:
-                # TODO: An if statement here... continue.  Check phasing of the last mutation in paths so far and mut
-                OnpQueue._paths(finished_paths, path_so_far + [mut], int(mut.end) + 1, muts)
+                if len(path_so_far) > 0 and not PhasingUtils.is_in_phase(path_so_far[-1], mut):
+
+                    # Next mutation not in phase, so stop this path here.
+                    finished_paths.append(path_so_far)
+                else:
+                    OnpQueue._paths(finished_paths, path_so_far + [mut], int(mut.end) + 1, muts)
             return finished_paths
             #return reduce(operator.concat, path)
 

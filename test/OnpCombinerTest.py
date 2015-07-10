@@ -51,6 +51,7 @@ import unittest
 import os
 from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.input.OnpQueue import OnpQueue
+from oncotator.utils.GenericTsvReader import GenericTsvReader
 
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 from test.TestUtils import TestUtils
@@ -305,11 +306,122 @@ class OnpCombinerTest(unittest.TestCase):
         result = OnpQueue._combine_mutations([], mdf)
         self.assertIsNone(result)
 
-    def test_m2_phasing(self):
-        """Phasing information should be used when available"""
-
+    def _annotate_m2_vcf(self, input_vcf_file, output_tcgamaf_file):
+        # For this conversion, you must specify the barcodes manually
+        override_annotations = dict()
+        override_annotations.update({'tumor_barcode': 'Patient0-Tumor', 'normal_barcode': 'Patient0-Normal'})
+        other_opts = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: True,
+                      OptionConstants.SPLIT_ALLELIC_DEPTH: False, OptionConstants.INFER_ONPS: True}
+        # Use an empty datasource dir in order to speed this up.
+        annotator = Annotator()
+        runSpec = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_vcf_file, output_tcgamaf_file,
+                                                          datasourceDir=".", globalAnnotations=override_annotations,
+                                                          is_skip_no_alts=True, other_opts=other_opts)
+        annotator.initialize(runSpec)
+        annotator.annotate()
 
     def test_m2_phasing_from_files(self):
-        """Test the phasing functionality given files"""
-        input_vcf_file = "testdata/m2_support/Dream4.chr20.oxoGinfo.vcf"
-        output_tcgamaf_file = "out/m2_support/Dream4.chr20.oxoGinfo.vcf.maf.annotated"
+        """Test the phasing ONP combining functionality in file with complex example"""
+        input_vcf_file = "testdata/m2_support/phasingExample.notinphase.vcf"
+        output_tcgamaf_file = "out/phasingExample.notinphase.vcf.maf.annotated"
+
+        self._annotate_m2_vcf(input_vcf_file, output_tcgamaf_file)
+
+        # Check the output MAF
+        tsv_reader = GenericTsvReader(output_tcgamaf_file)
+
+        # Ground truth has four mutations combined into three
+        gt_alts = ['A', 'TT', 'T']
+        ctr = 0
+        for i,line_dict in enumerate(tsv_reader):
+            ctr += 1
+            self.assertTrue(line_dict['Tumor_Seq_Allele2'] == gt_alts[i], "Wrong alt allele (gt: " + gt_alts[i] + "): " + line_dict['Tumor_Seq_Allele2'])
+
+        self.assertTrue(ctr == 3, "Should have had three mutations, but had " + str(ctr) + " instead.")
+
+    def test_m2_phasing_from_file_easy(self):
+        """Test the phasing ONP combining functionality given files -- trivial example"""
+        input_vcf_file = "testdata/m2_support/phasingExample.vcf"
+        output_tcgamaf_file = "out/phasingExample.vcf.maf.annotated"
+
+        self._annotate_m2_vcf(input_vcf_file, output_tcgamaf_file)
+
+        # Check the output MAF
+        tsv_reader = GenericTsvReader(output_tcgamaf_file)
+
+        # Ground truth has three mutations combined into two
+        ctr = 0
+        for i,line_dict in enumerate(tsv_reader):
+            ctr += 1
+
+        self.assertTrue(ctr == 2, "Should have had two mutations, but had " + str(ctr) + " instead.")
+
+    def test_tnp_blank_snp(self):
+        """Test a harder scenario for ONP combination"""
+        mut1 = MutationData(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1.createAnnotation("phasing_id", "value1", "INPUT")
+        mut1.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut2 = MutationData(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2.createAnnotation("phasing_id", "value1", "INPUT")
+        mut2.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut3 = MutationData(chr=1,start=102, end=102, ref_allele="C", alt_allele="T")
+        mut3.createAnnotation("phasing_id", "value1", "INPUT")
+        mut3.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        # Note the differing ID in mut4
+        mut4 = MutationData(chr=1,start=103, end=103, ref_allele="C", alt_allele="T")
+        mut4.createAnnotation("phasing_id", "value2", "INPUT")
+        mut4.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut5 = MutationData(chr=1,start=104, end=104, ref_allele="C", alt_allele="T")
+        mut5.createAnnotation("phasing_id", "value1", "INPUT")
+        mut5.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        # Note separate chromosome for mut6
+        mut6 = MutationData(chr=2,start=105, end=105, ref_allele="C", alt_allele="T")
+        mut6.createAnnotation("phasing_id", "value1", "INPUT")
+        mut6.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        gt_alts = ["ATT", "T", "T", "T"]
+        mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
+        queue = OnpQueue(mutations)
+
+        for i, mut in enumerate(queue.get_combined_mutations()):
+            self.assertTrue(gt_alts[i] == mut.alt_allele)
+
+
+    def test_indel(self):
+        """Test indel not used in onp combination no matter what the phasing info"""
+        mut1 = MutationData(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1.createAnnotation("phasing_id", "value1", "INPUT")
+        mut1.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut2 = MutationData(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2.createAnnotation("phasing_id", "value1", "INPUT")
+        mut2.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut3 = MutationData(chr=1,start=102, end=102, ref_allele="C", alt_allele="T")
+        mut3.createAnnotation("phasing_id", "value1", "INPUT")
+        mut3.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        # Indel
+        mut4 = MutationData(chr=1,start=103, end=104, ref_allele="-", alt_allele="TT")
+        mut4.createAnnotation("phasing_id", "value1", "INPUT")
+        mut4.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut5 = MutationData(chr=1, start=104, end=104, ref_allele="C", alt_allele="T")
+        mut5.createAnnotation("phasing_id", "value1", "INPUT")
+        mut5.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        mut6 = MutationData(chr=1, start=105, end=105, ref_allele="C", alt_allele="T")
+        mut6.createAnnotation("phasing_id", "value1", "INPUT")
+        mut6.createAnnotation("phasing_genotype", "0|1", "INPUT")
+
+        gt_alts = ["ATT", "TT", "TT"]
+        mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
+        queue = OnpQueue(mutations)
+
+        for i, mut in enumerate(queue.get_combined_mutations()):
+            self.assertTrue(gt_alts[i] == mut.alt_allele)
