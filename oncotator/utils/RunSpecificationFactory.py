@@ -82,14 +82,17 @@ class RunSpecificationFactory(object):
         if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([inputFormat != "TCGAMAF", inputFormat !="MAFLITE"]):
             result.append(RunSpecificationMessage(logging.WARN, "Attempting to prune TCGA MAF columns from an input not specified as TCGA MAF (or MAFLITE).  This is will be ignored."))
 
-        if not other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and inputFormat == "TCGAMAF":
-            result.append(RunSpecificationMessage(logging.ERROR, "Internal inconsistency found:  TCGAMAF input, but pruning of columns set to False.  Please contact oncotator@broadinstitute.org"))
+        if (not other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) or not OptionConstants.ALLOW_ANNOTATION_OVERWRITING) and inputFormat == "TCGAMAF":
+            result.append(RunSpecificationMessage(logging.ERROR, "Internal inconsistency found:  TCGAMAF input, but pruning of columns set to False or allow annotation overwriting set to false.  Please contact oncotator@broadinstitute.org"))
 
         if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([inputFormat != "TCGAMAF", inputFormat !="MAFLITE"]):
             result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a tCGA MAF on an input that is not specified as a TCGA MAF.  Proceeding, but errors may result."))
 
         if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
             result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a TCGA MAF for an output that is not specified as a TCGA MAF.  This is currently not supported.  Proceeding, but errors are quite likely."))
+
+        if other_opts.get(OptionConstants.ALLOW_ANNOTATION_OVERWRITING) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to overwrite annotations for output format that is not TCGAMAF nor SIMPLE_TSV.  This is currently not supported.  Proceeding, but errors (or inconsistent annotations) are quite likely."))
 
         return result
 

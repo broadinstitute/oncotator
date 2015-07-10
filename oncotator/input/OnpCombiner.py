@@ -47,6 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 import logging
+from oncotator.MutationDataFactory import MutationDataFactory
 
 from oncotator.input.InputMutationCreator import InputMutationCreator
 from oncotator.input.OnpQueue import OnpQueue
@@ -70,11 +71,19 @@ class OnpCombiner(InputMutationCreator):
         to larger numbers of mutations
     """
 
-    def __init__(self, input_creator):
-        super(OnpCombiner, self).__init__("ONP_Combiner")
+    def __init__(self, input_creator, mutation_data_factory=None):
+
         self.logger = logging.getLogger(__name__)
+
+        # set up the mutation data factory if one was specified, otherwise, just use default instance.
+        if mutation_data_factory is None:
+            self.logger.info("No mutation data factory provided, using default settings.")
+        self._mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
+
+        super(OnpCombiner, self).__init__("ONP_Combiner", mutation_data_factory)
         self.input_creator = input_creator
         self.logger.info("Merging adjacent snps from the same samples into ONPs")
+
 
     def getComments(self):
         return self.input_creator.getComments()
@@ -84,7 +93,7 @@ class OnpCombiner(InputMutationCreator):
 
     def createMutations(self):
         mutations = self.input_creator.createMutations()
-        queue = OnpQueue(mutations)
+        queue = OnpQueue(mutations, self._mutation_data_factory)
 
         for mut in queue.get_combined_mutations():
             yield mut

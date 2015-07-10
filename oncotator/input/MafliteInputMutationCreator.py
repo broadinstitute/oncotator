@@ -159,7 +159,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
         for line in self._tsvReader:
 
             # We only need to assign fields that are mutation attributes and have a different name in the maflite file.
-            mut = self._mutation_data_factory.create()
+            mut = self._mutation_data_factory.create(build=self._build)
 
             for col in allColumns:
                 # Three scenarios:

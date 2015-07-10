@@ -99,7 +99,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
         # _is_reannotating is a flag to determine whether we should give precendence to annotations that were not
         #   annotated as part of the INPUT.
-        self._is_reannotating = other_options.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS, False)
+        self._is_reannotating = options.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS, False)
 
         self._is_splitting_allelic_depth = self.options.get(OptionConstants.SPLIT_ALLELIC_DEPTH, True)
 

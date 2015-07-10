@@ -145,7 +145,8 @@ class OnpCombinerTest(unittest.TestCase):
         the inputs and compare to the expected"""
         input_muts = iter(self._tuples_to_MutationData(inputs))
         expected = self._tuples_to_MutationData(expected)
-        combiner = OnpQueue(input_muts)
+        mdf = MutationDataFactory()
+        combiner = OnpQueue(input_muts, mdf)
         results = list(combiner.get_combined_mutations())
         self.assert_mutations_match_expected(expected, results)
 
@@ -161,7 +162,8 @@ class OnpCombinerTest(unittest.TestCase):
     def _onp_ordered_combiner_test(self,inputs, expected):
         input_muts = iter(self._tuples_to_MutationData(inputs))
         expected_muts = self._tuples_to_MutationData(expected)
-        combiner = OnpQueue(input_muts)
+        mut_factory = MutationDataFactory()
+        combiner = OnpQueue(input_muts, mut_factory)
         results = list(combiner.get_combined_mutations())
         self._assert_mutation_lists_equal(expected_muts, results)
 
@@ -288,7 +290,8 @@ class OnpCombinerTest(unittest.TestCase):
         mut2 = MutationDataFactory.default_create(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
         mut2.createAnnotation("SomeValue", "value2", tags=["IT"])
         mut2.createAnnotation("AnotherValue","5")
-        result = OnpQueue._combine_mutations([mut1, mut2])
+        mdf = MutationDataFactory()
+        result = OnpQueue._combine_mutations([mut1, mut2], mdf)
 
         expected = MutationDataFactory.default_create(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
         expected.createAnnotation("SomeValue", "value1|value2", "INPUT", "STRING", "a value", tags=["IT"])
@@ -298,7 +301,8 @@ class OnpCombinerTest(unittest.TestCase):
 
     def test_mutation_combiner_no_mut(self):
         """Combining no mutations should return None"""
-        result = OnpQueue._combine_mutations([])
+        mdf = MutationDataFactory()
+        result = OnpQueue._combine_mutations([], mdf)
         self.assertIsNone(result)
 
     def test_m2_phasing(self):

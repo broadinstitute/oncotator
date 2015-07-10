@@ -14,10 +14,12 @@ class OnpQueue(object):
     Bookkeeping class to maintain the mutations waiting to be combined
     """
 
-    def __init__(self, mutation_data_factory, mutations):
+    def __init__(self, mutations, mutation_data_factory):
         """
         Initialize an new queue with a MutationData iterator
+
         :param mutations: any MutationData producing Iterator
+        :param mutation_data_factory: a MutationDataFactory to be used to produce new mutations for the ONPs
         """
         self.mutations = more_itertools.peekable(mutations)
         self.sns = SampleNameSelector(self.mutations.peek())
@@ -88,7 +90,7 @@ class OnpQueue(object):
             reached = [mut for path in paths for mut in path]
             unreached = [mut for mut in muts if mut not in reached]
 
-        paths = [OnpQueue._combine_mutations(path) for path in paths]
+        paths = [OnpQueue._combine_mutations(path, self._mutation_data_factory) for path in paths]
         return paths
 
     def _dump_all(self):

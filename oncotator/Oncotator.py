@@ -159,7 +159,7 @@ def parseOptions(program_version_message):
     parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 5]", default=5)
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
-    parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  Note that "-i TCGAMAF" is the same as specifying "-i MAFLITE --prune-tcga-maf-cols" [default: %s]' % "MAFLITE")
+    parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  Note that "-i TCGAMAF" is the same as specifying "-i MAFLITE --prune-tcga-maf-cols --allow-overwriting" [default: %s]' % "MAFLITE")
     parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR,
                         help='Main annotation database directory. [default: %s]' % DEFAULT_DB_DIR)
     parser.add_argument('-o', '--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(), help='Output format. [default: %s]' % "TCGAMAF")
@@ -184,8 +184,8 @@ def parseOptions(program_version_message):
     parser.add_argument('--infer-onps', dest="infer_onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
     parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF ouput option.")
-    parser.add_argument('--prune-tcga-maf-cols', action='store_true', help="Automatically remove TCGA MAF columns that will need to be re-annotated.")
-    parser.add_argument('--allow_overwriting', action='store_true', help="Allow annotations to be overwritten.  This should only be used in rare cases and user should know when that is.")
+    parser.add_argument('--prune-tcga-maf-cols', action='store_true', help="Prefer new, annotated values to those specified by the input file.  Only useful when output is TCGA MAF and when --allow-overwriting is specified.")
+    parser.add_argument('-w', '--allow-overwriting', action='store_true', help="Allow annotations to be overwritten.  This should only be used in rare cases and user should know when that is.")
 
     # Process arguments
     args = parser.parse_args()
@@ -262,7 +262,7 @@ def main(argv=None):  # IGNORE:C0111
 
         inputFormat = args.input_format.upper()
 
-        # -i TCGAMAF is the same as -i MAFLITE --prune-tcga-maf-cols
+        # -i TCGAMAF is the same as -i MAFLITE --prune-tcga-maf-cols --allow-overwriting
         if inputFormat == "TCGAMAF":
             inputFormat = "MAFLITE"
             is_prune_tcga_maf_cols = True
@@ -321,6 +321,7 @@ def determineOtherOptions(args):
     opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE] = args.canonical_tx_file
     opts[OptionConstants.COLLAPSE_FILTER_COLS] = args.collapse_filter_cols
     opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = args.prune_tcga_maf_cols
+    opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = args.allow_overwriting
     return opts
 
 
