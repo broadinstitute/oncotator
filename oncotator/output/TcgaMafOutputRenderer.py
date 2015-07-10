@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 
 
@@ -261,15 +262,16 @@ class TcgaMafOutputRenderer(OutputRenderer):
             annotations = set(headers).union(metadataAnnotations)
             m = None
 
-        # If we are splitting allelic_depth into two fields, add those to the headers
+        # If we are splitting allelic_depth into two fields, add those to the headers.  Note that the mutations will
+        #  be annotated properly later.
         if self._is_splitting_allelic_depth and "allelic_depth" in annotations:
             depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
-            [annotations.append(df) for df in depth_fields if df not in annotations]
+            headers.extend(depth_fields)
 
-        # Create a mapping between column name and annotation name
-        fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary,
-                                                self.config.getboolean("general", "displayAnnotations"),
-                                                exposedFields=self.exposedColumns, prepend=self._prepend)
+        fieldMap = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
+                                                    self.config.getboolean("general", "displayAnnotations"),
+                                                    exposed_fields=self.exposedColumns, prepend=self._prepend,
+                                                    deprioritize_input_annotations=self._is_reannotating)
 
         fieldMapKeys = fieldMap.keys()
         internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
