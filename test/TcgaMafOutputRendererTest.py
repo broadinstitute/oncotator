@@ -539,11 +539,52 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         mapping = FieldMapCreator.create_field_map(headers, m, alt_dict, is_render_internal_fields=True,deprioritize_input_annotations=False)
         self.assertTrue(mapping['i_foo'] == 'i_foo')
 
+    @TestUtils.requiresDefaultDB()
     def test_reannotating_actual_file(self):
         """Test that we can take in a file, annotate, similar to M2 process (VCF to TCGA MAF no ONPs, then TCGA MAF to TCGA MAF with ONPs)"""
-        self.assertTrue(False, "Not implemented, but necessary")
-        # TODO: test that nothing gets created as i_i_
-        # TODO: make sure to have to overwrite vaues in an annotation with i_
+        # This test assumes that the numeric values are not being collapsed.
+        input_filename = "testdata/m2_support/phasingExample.vcf"
+        midpoint_output_filename = "out/m2_support/reannotating_tcga_maf_midpoint.maf.annotated"
+        output_filename = "out/m2_support/reannotating_tcga_maf.maf.annotated"
+
+        options_step1 = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: False,
+                         OptionConstants.SPLIT_ALLELIC_DEPTH: True, OptionConstants.INFER_ONPS: False}
+
+        options_step2 = {OptionConstants.REANNOTATE_TCGA_MAF_COLS: True, OptionConstants.INFER_ONPS: True,
+                   OptionConstants.ALLOW_ANNOTATION_OVERWRITING: True, OptionConstants.NO_PREPEND: False}
+
+        run_spec_step1 = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_filename, midpoint_output_filename,
+                                                                 cache_url="file://out/m2_support/tmp.cache", is_skip_no_alts=True,
+                                                                 other_opts=options_step1, datasource_dir=self._determine_db_dir())
+
+        annotator = Annotator()
+        annotator.initialize(run_spec_step1)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(midpoint_output_filename)
+        i = -1
+        for i, line in enumerate(tsv_reader):
+            self.assertTrue(line["i_QSS"].find("|") == -1, "i_QSS annotation should not have a '|' in it in mutation: " + str(i+1))
+        self.assertTrue(i == 2, 'Mutation count flawed... should have been three mutations: ' + str(i+1))
+
+
+        run_spec_step2 = RunSpecificationFactory.create_run_spec("TCGAMAF", "TCGAMAF", midpoint_output_filename, output_filename,
+                                                                 cache_url="file://out/m2_support/tmp.cache",
+                                                                 other_opts=options_step2, datasource_dir=self._determine_db_dir(),
+                                                                 read_only_cache=True)
+
+        annotator.initialize(run_spec_step2)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(output_filename)
+        i = -1
+        for i, line in enumerate(tsv_reader):
+            is_good_prefix = [not ks.startswith('i_i_') for ks in line.keys()]
+            self.assertTrue(all(is_good_prefix), "i_i_ prefix found.")
+            if i == 0:
+                self.assertTrue(line["i_QSS"].find("|") != -1, "i_QSS tag should have a '|' in it for the first mutation")
+        self.assertTrue(i == 1, 'Mutation count flawed... should have been two mutations: ' + str(i+1))
+
 
 if __name__ == "__main__":
     unittest.main()

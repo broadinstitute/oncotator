@@ -155,7 +155,7 @@ class RunSpecification(object):
     def set_is_allow_annotation_overwriting(self, value):
         self._is_allow_annotation_overwriting = value
 
-    def del_(self):
+    def del_is_allow_annotation_overwriting(self):
         del self._is_allow_annotation_overwriting
 
     def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False, annotating_type=None, is_allow_annotation_overwriting=False):
@@ -183,4 +183,4 @@ class RunSpecification(object):
     isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
     isSkipNoAlts = property(get_is_skip_no_alts, set_is_skip_no_alts, del_is_skip_no_alts, "isSkipNoAlts's docstring")
     annotating_type = property(get_annotating_type, set_annotating_type, del_annotating_type, "annotating type is static value indicating what type of mutation to annotate.")
-    is_allow_annotation_overwriting = property(get_annotating_type, set_annotating_type, del_annotating_type, "Whether this run spec allows overwriting annotations by default or should it throw a DuplicateAnnotationException.")
+    is_allow_annotation_overwriting = property(get_is_allow_annotation_overwriting, set_is_allow_annotation_overwriting, del_is_allow_annotation_overwriting, "Whether this run spec allows overwriting annotations by default or should it throw a DuplicateAnnotationException.")

@@ -223,8 +223,8 @@ class Annotator(object):
         self.initialize_cache_manager(run_spec)
         self.set_annotating_type(run_spec.annotating_type)
         self._annotate_func_ptr = Annotator.ANNOTATING_FUNC_DICT.get(self._annotating_type, _annotate_mut)
-        self._allow_annotation_overwriting = run_spec.is_allow_annotation_overwriting
-        self._mutation_data_factory = MutationDataFactory(allow_overwriting=self._allow_annotation_overwriting)
+        self._is_allow_annotation_overwriting = run_spec.is_allow_annotation_overwriting
+        self._mutation_data_factory = MutationDataFactory(allow_overwriting=self._is_allow_annotation_overwriting)
 
     def addDatasource(self, datasource):
         self._datasources.append(datasource)

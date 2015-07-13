@@ -134,7 +134,7 @@ class OncotatorCLIUtils(object):
             inputConfig = inputCreatorDict[inputFormat][1]
             inputCreator = inputCreatorDict[inputFormat][0](inputFilename, mutation_data_factory, inputConfig, genome_build, input_creator_options)
             if input_creator_options.get(OptionConstants.INFER_ONPS):  #If we're combinging ONPs, wrap the input creater
-                inputCreator = OnpCombiner(inputCreator)
+                inputCreator = OnpCombiner(inputCreator, mutation_data_factory=mutation_data_factory)
         return inputCreator
 
     @staticmethod

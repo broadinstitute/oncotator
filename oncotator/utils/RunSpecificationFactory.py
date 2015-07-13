@@ -92,7 +92,7 @@ class RunSpecificationFactory(object):
             result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a TCGA MAF for an output that is not specified as a TCGA MAF.  This is currently not supported.  Proceeding, but errors are quite likely."))
 
         if other_opts.get(OptionConstants.ALLOW_ANNOTATION_OVERWRITING) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
-            result.append(RunSpecificationMessage(logging.WARN, "Asking to overwrite annotations for output format that is not TCGAMAF nor SIMPLE_TSV.  This is currently not supported.  Proceeding, but errors (or inconsistent annotations) are quite likely."))
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to overwrite annotations for output format that is not TCGAMAF nor SIMPLE_TSV.  This is currently not supported.  Proceeding, but errors (or inconsistent annotations) are possible."))
 
         return result
 
@@ -151,7 +151,7 @@ class RunSpecificationFactory(object):
 
         other_opts = dict() if other_opts is None else other_opts
 
-        if input_format == "TCGAMAF" and not other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS]:
+        if input_format == "TCGAMAF" and not other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS, False):
             other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = True
 
         other_opts[InputMutationCreatorOptions.IS_SKIP_ALTS] = is_skip_no_alts
