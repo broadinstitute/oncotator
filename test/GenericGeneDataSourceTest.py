@@ -47,6 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from TestUtils import TestUtils
+from oncotator.MutationDataFactory import MutationDataFactory
 
 
 '''
@@ -121,7 +122,7 @@ class GenericGeneDataSourceTest(unittest.TestCase):
         geneDS = DatasourceFactory.createDatasource("testdata/small_tsv_ds/small_tsv_ds.config", "testdata/small_tsv_ds/")
         self.assertTrue(geneDS <> None, "gene indexed datasource was None.")
         
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('gene',"ABL1")
         m = geneDS.annotate_mutation(m)
         self.assertTrue(m['CGC_Abridged_Name'] == "v-abl Abelson murine leukemia viral oncogene homolog 1","Test gene TSV datasource did not annotate properly.")

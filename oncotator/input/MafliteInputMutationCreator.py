@@ -48,6 +48,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from oncotator.Annotation import Annotation
 from oncotator.Metadata import Metadata
+from oncotator.MutationDataFactory import MutationDataFactory
+from oncotator.utils.OptionConstants import OptionConstants
 
 
 """
@@ -76,13 +78,14 @@ class MafliteInputMutationCreator(InputMutationCreator):
     IMPORTANT NOTE: maflite will look at all aliases for alt_allele (see maflite_input.config) and choose the first that does not match the ref_allele
     """
 
-    def __init__(self, filename, configFile='maflite_input.config', genomeBuild="hg19", other_options=None):
+    def __init__(self, filename, mutation_data_factory=None, configFile='maflite_input.config', genomeBuild="hg19", other_options=None):
         """
         Constructor
 
-        Currently, this InputCreator does not support any other options.  The parameter is ignored.
-
         """
+
+        super(MafliteInputMutationCreator, self).__init__(filename, mutation_data_factory, configFile, genomeBuild, other_options)
+
         self.logger = logging.getLogger(__name__)
 
         self.config = ConfigUtils.createConfigParser(configFile)
@@ -94,15 +97,19 @@ class MafliteInputMutationCreator(InputMutationCreator):
         self._reverseAlternativeDict = ConfigUtils.buildReverseAlternativeDictionary(self._alternativeDict)
         
         missingRequiredHeaders = []
-        specifiedFields = self._tsvReader.getFieldNames()
         required_columns = sorted(self.config.get("general", "required_headers").split(","))
         self._build = genomeBuild
 
+        self.logger.info("Initializing a maflite file with the following header: " + str(self._tsvReader.getFieldNames()))
+
+        # The specified fields are those that were given in the input.
+        self._specified_fields = self._tsvReader.getFieldNames()
+
         for col in required_columns:
-            if col not in specifiedFields:
+            if col not in self._specified_fields:
                 isAltFound = False
                 for alt in self._alternativeDict.get(col, []):
-                    if alt in specifiedFields:
+                    if alt in self._specified_fields:
                         isAltFound = True
                         break
                 if not isAltFound:
@@ -111,8 +118,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
                     if col != "build":
                         missingRequiredHeaders.append(col)
         missingRequiredHeaders.sort()
-        
-        self.logger.info("Initializing a maflite file with the following header: " + str(self._tsvReader.getFieldNames()))
+
         if len(missingRequiredHeaders) > 0:
             raise MafliteMissingRequiredHeaderException("Specified maflite file (" + filename + ") missing required headers: " + ",".join(missingRequiredHeaders)  )
 
@@ -121,7 +127,7 @@ class MafliteInputMutationCreator(InputMutationCreator):
 
     def getMetadata(self):
         result = Metadata()
-        fieldNames = self._tsvReader.getFieldNames()
+        fieldNames = self._specified_fields
         fieldNameAliases = self._reverseAlternativeDict.keys()
         for fieldName in fieldNames:
             if fieldName in fieldNameAliases:
@@ -145,12 +151,12 @@ class MafliteInputMutationCreator(InputMutationCreator):
         Returns a generator of mutations built from the specified maflite file. """
 
         aliasKeys = self._reverseAlternativeDict.keys()
-        allColumns = self._tsvReader.getFieldNames()
+        allColumns = self._specified_fields
 
         for line in self._tsvReader:
 
             # We only need to assign fields that are mutation attributes and have a different name in the maflite file.
-            mut = MutationData(build=self._build)
+            mut = self._mutation_data_factory.create(build=self._build)
 
             for col in allColumns:
                 # Three scenarios:

@@ -24,7 +24,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
 
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("SEG_FILE", "GENE_LIST", inputFilename, output_filename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
         annotator.initialize(run_spec)
         annotator.annotate()
 
@@ -54,7 +54,7 @@ class GeneListOutputRendererTest(unittest.TestCase):
 
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("SEG_FILE", "GENE_LIST", inputFilename, output_filename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
         annotator.initialize(run_spec)
         annotator.annotate()
 

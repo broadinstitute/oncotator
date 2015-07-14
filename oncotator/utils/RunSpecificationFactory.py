@@ -1,5 +1,6 @@
 import logging
 from oncotator.DatasourceFactory import DatasourceFactory
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
@@ -18,7 +19,7 @@ class RunSpecificationFactory(object):
 
     @staticmethod
     def _validate_run_spec_parameters(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations,
-                        datasourceDir, genomeBuild, isMulticore, numCores,
+                        datasource_list, genomeBuild, isMulticore, numCores,
                         defaultAnnotations, cacheUrl, read_only_cache,
                         tx_mode, is_skip_no_alts, other_opts, annotating_type):
         """
@@ -29,7 +30,7 @@ class RunSpecificationFactory(object):
         :param inputFilename:
         :param outputFilename:
         :param globalAnnotations:
-        :param datasourceDir:
+        :param datasource_list:
         :param genomeBuild:
         :param isMulticore:
         :param numCores:
@@ -59,8 +60,8 @@ class RunSpecificationFactory(object):
             result.append(RunSpecificationMessage(logging.ERROR, "Output format of GENE_LIST is only supported when input is SEG_FILE"))
 
         collapse_filter_cols = other_opts.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
-        if  all([inputFormat == 'VCF', outputFormat != "TCGAMAF", collapse_filter_cols]):
-            result.append(RunSpecificationMessage(logging.ERROR, "collapse-filter-cols flag can only be used with VCF input and TCGAMAF output formats."))
+        if  all([inputFormat == 'VCF', outputFormat == "VCF", collapse_filter_cols]):
+            result.append(RunSpecificationMessage(logging.ERROR, "collapse-filter-cols flag can only be used with VCF input and non-VCF (preferably TCGAMAF/SIMPLE_TSV) output formats."))
 
         if outputFormat not in ["GENE_LIST", "SIMPLE_TSV"] and inputFormat == "SEG_FILE":
             result.append(RunSpecificationMessage(logging.WARN, "Input format of SEG_FILE is only supported when output is GENE_LIST or SIMPLE_TSV"))
@@ -78,50 +79,41 @@ class RunSpecificationFactory(object):
         if other_opts.get(OptionConstants.INFER_ONPS):
             result.append(RunSpecificationMessage(logging.INFO,("Output file order may be different than input file because we're combining SNPs into ONPs")))
 
+        if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([inputFormat != "TCGAMAF", inputFormat !="MAFLITE"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Attempting to prune TCGA MAF columns from an input not specified as TCGA MAF (or MAFLITE).  This is will be ignored."))
+
+        if (not other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) or not OptionConstants.ALLOW_ANNOTATION_OVERWRITING) and inputFormat == "TCGAMAF":
+            result.append(RunSpecificationMessage(logging.ERROR, "Internal inconsistency found:  TCGAMAF input, but pruning of columns set to False or allow annotation overwriting set to false.  Please contact oncotator@broadinstitute.org"))
+
+        if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([inputFormat != "TCGAMAF", inputFormat !="MAFLITE"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a tCGA MAF on an input that is not specified as a TCGA MAF.  Proceeding, but errors may result."))
+
+        if other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to reannotate a TCGA MAF for an output that is not specified as a TCGA MAF.  This is currently not supported.  Proceeding, but errors are quite likely."))
+
+        if other_opts.get(OptionConstants.ALLOW_ANNOTATION_OVERWRITING) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to overwrite annotations for output format that is not TCGAMAF nor SIMPLE_TSV.  This is currently not supported.  Proceeding, but errors (or inconsistent annotations) are possible."))
+
         return result
 
     @staticmethod
-    def create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations=None,
-                        datasourceDir=None, genomeBuild="hg19", isMulticore=False, numCores=4,
-                        defaultAnnotations=None, cacheUrl=None, read_only_cache=True,
+    def create_run_spec(input_format, output_format, input_filename, output_filename, global_annotations=None,
+                        datasource_dir=None, genomeBuild="hg19", is_multicore=False, num_cores=4,
+                        default_annotations=None, cache_url=None, read_only_cache=True,
                         tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False, other_opts=None, annotating_type=None):
         """ This is a very simple interface to start an Oncotator session.  As a warning, this interface may notbe supported in future versions.
 
-        If datasourceDir is None, then the default location is used.  TODO: Define default location.
+        If datasourceDir is None, then no datasources are used
 
-        IMPORTANT: Current implementation attempts to annotate using a default set of datasources.
-
-        TODO: Make sure that this note above is no longer the case.  Current implementation attempts to annotate using a default set of datasources
-        TODO: This method may get refactored into a separate class that handles RunConfigutaion objects.
         """
-        # TODO: Use dependency injection for list of name value pairs?  Otherwise, set it up as an attribute on this class.
-        # TODO: Use dependency injection to return instance of the input/output classes
-
-        globalAnnotations = dict() if globalAnnotations is None else globalAnnotations
-        defaultAnnotations = dict() if defaultAnnotations is None else defaultAnnotations
-        other_opts = dict() if other_opts is None else other_opts
-
-        other_opts[InputMutationCreatorOptions.IS_SKIP_ALTS] = is_skip_no_alts
-
-        # Step 0 Validate given parameters and log messages.  If an error or critical is found, throw an exception.
-        validation_messages = RunSpecificationFactory._validate_run_spec_parameters(inputFormat, outputFormat, inputFilename, outputFilename, globalAnnotations,
-                        datasourceDir, genomeBuild, isMulticore, numCores,
-                        defaultAnnotations, cacheUrl, read_only_cache,
-                        tx_mode, is_skip_no_alts, other_opts, annotating_type)
-        for msg in validation_messages:
-            logging.getLogger(__name__).log(msg.level, msg.message)
-            if (msg.level == logging.ERROR) or (msg.level == logging.CRITICAL):
-                raise RunSpecificationException(msg.message)
-
-        # Step 1 Initialize input and output
-        inputCreator = OncotatorCLIUtils.create_input_creator(inputFilename, inputFormat, genomeBuild, other_opts)
-        outputRenderer = OncotatorCLIUtils.create_output_renderer(outputFilename, outputFormat, other_opts)
-
-        # Step 2 Datasources
-        if datasourceDir:
-            datasource_list = DatasourceFactory.createDatasources(datasourceDir, genomeBuild, isMulticore=isMulticore, numCores=numCores, tx_mode=tx_mode)
+        if datasource_dir:
+            datasource_list = DatasourceFactory.createDatasources(datasource_dir, genomeBuild, isMulticore=is_multicore, numCores=num_cores, tx_mode=tx_mode)
         else:
             datasource_list = []
+
+        global_annotations = dict() if global_annotations is None else global_annotations
+        default_annotations = dict() if default_annotations is None else default_annotations
+        other_opts = dict() if other_opts is None else other_opts
 
         #TODO: Refactoring needed here to specify tx-mode (or any option not in a config file) in a cleaner way.
         for ds in datasource_list:
@@ -139,8 +131,51 @@ class RunSpecificationFactory(object):
                 else:
                     logging.getLogger(__name__).info("No custom canonical transcripts specified.")
 
+        return RunSpecificationFactory.create_run_spec_given_datasources(input_format, output_format, input_filename, output_filename, global_annotations,
+                        datasource_list, genomeBuild, is_multicore, num_cores,
+                        default_annotations, cache_url, read_only_cache,
+                        tx_mode, is_skip_no_alts, other_opts, annotating_type)
+
+    @staticmethod
+    def create_run_spec_given_datasources(input_format, output_format, input_filename, output_filename, global_annotations=None,
+                        datasource_list=None, genomeBuild="hg19", is_multicore=False, num_cores=4,
+                        default_annotations=None, cache_url=None, read_only_cache=True,
+                        tx_mode=TranscriptProvider.TX_MODE_CANONICAL, is_skip_no_alts=False, other_opts=None, annotating_type=None):
+        """Same as create_run_spec, but a list of datasource instances can be used.  Typically, this method is only called
+        by automated tests."""
+
+
+        global_annotations = dict() if global_annotations is None else global_annotations
+        default_annotations = dict() if default_annotations is None else default_annotations
+        datasource_list = [] if datasource_list is None else datasource_list
+
+        other_opts = dict() if other_opts is None else other_opts
+
+        if input_format == "TCGAMAF" and not other_opts.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS, False):
+            other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = True
+
+        other_opts[InputMutationCreatorOptions.IS_SKIP_ALTS] = is_skip_no_alts
+
+        # Step 0 Validate given parameters and log messages.  If an error or critical is found, throw an exception.
+        validation_messages = RunSpecificationFactory._validate_run_spec_parameters(input_format, output_format, input_filename, output_filename, global_annotations,
+                        datasource_list, genomeBuild, is_multicore, num_cores,
+                        default_annotations, cache_url, read_only_cache,
+                        tx_mode, is_skip_no_alts, other_opts, annotating_type)
+        for msg in validation_messages:
+            logging.getLogger(__name__).log(msg.level, msg.message)
+            if (msg.level == logging.ERROR) or (msg.level == logging.CRITICAL):
+                raise RunSpecificationException(msg.message)
+
+        # Step 1 Initialize input and output
+        is_allow_annotation_overwriting = other_opts.get(OptionConstants.ALLOW_ANNOTATION_OVERWRITING, False)
+        mutation_data_factory = MutationDataFactory(is_allow_annotation_overwriting)
+
+        inputCreator = OncotatorCLIUtils.create_input_creator(input_filename, input_format, mutation_data_factory, genomeBuild, other_opts)
+        outputRenderer = OncotatorCLIUtils.create_output_renderer(output_filename, output_format, other_opts)
+
         result = RunSpecification()
-        result.initialize(inputCreator, outputRenderer, manualAnnotations=globalAnnotations, datasources=datasource_list,
-                          isMulticore=isMulticore, numCores=numCores, defaultAnnotations=defaultAnnotations,
-                          cacheUrl=cacheUrl, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts, annotating_type=annotating_type)
+        result.initialize(inputCreator, outputRenderer, manualAnnotations=global_annotations, datasources=datasource_list,
+                          isMulticore=is_multicore, numCores=num_cores, defaultAnnotations=default_annotations,
+                          cacheUrl=cache_url, read_only_cache=read_only_cache, is_skip_no_alts=is_skip_no_alts, annotating_type=annotating_type,
+                          is_allow_annotation_overwriting=is_allow_annotation_overwriting)
         return result

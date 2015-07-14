@@ -55,6 +55,7 @@ import traceback
 import vcf
 
 from oncotator.Metadata import Metadata
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.TagConstants import TagConstants
@@ -76,12 +77,13 @@ class VcfInputMutationCreator(InputMutationCreator):
     
     """
 
-    def __init__(self, filename, configFile='vcf.in.config', genomeBuild="hg19", other_options=None):
+    def __init__(self, filename, mutation_data_factory=None, configFile='vcf.in.config', genomeBuild="hg19", other_options=None):
         """
 
         :param filename:
         :param configFile:
         """
+        super(VcfInputMutationCreator, self).__init__(filename, mutation_data_factory, configFile, genomeBuild, other_options)
         self.filename = filename
         self.build = genomeBuild
         self.configFilename = configFile
@@ -100,6 +102,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.collapse_filter_fields = other_options.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
 
         self._is_skipping_no_alts = other_options.get(InputMutationCreatorOptions.IS_SKIP_ALTS, False)
+
+
 
     def _addFormatData2Mutation(self, mutation, record, index):
         """

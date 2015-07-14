@@ -50,6 +50,7 @@ from oncotator.Annotator import Annotator
 
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.datasources.TranscriptProvider import TranscriptProvider
 from oncotator.datasources.TranscriptToUniProtProteinPositionTransformingDatasource import TranscriptToUniProtProteinPositionTransformingDatasource
 from TestUtils import TestUtils
@@ -75,7 +76,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         # Must correspond to what the datasource is going to generate
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('transcript_id', 'uc003tqk.3')
         m.createAnnotation('protein_change', 'p.S50T')
         m = tDS.annotate_mutation(m)
@@ -88,7 +89,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         # Must correspond to what the datasource is going to generate.
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('transcript_id', 'uc009vvt.1')
         m.createAnnotation('protein_change', 'p.T1105A')
         m = tDS.annotate_mutation(m)
@@ -100,7 +101,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         tDS = DatasourceFactory.createDatasource("testdata/small_uniprot_prot_seq_ds/small_uniprot_prot_seq_ds.config", "testdata/small_uniprot_prot_seq_ds/")
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('transcript_id', 'uc009vvt.1')
         m.createAnnotation('protein_change', 'p.T1105A')
         m = tDS.annotate_mutation(m)
@@ -113,7 +114,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
 
         # Must correspond to what the datasource is going to generate
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('transcript_id', 'ENST00000264990.6')
         m.createAnnotation('protein_change', 'p.S50T')
         m = tDS.annotate_mutation(m)
@@ -127,7 +128,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         # Must correspond to what the datasource is going to generate.
         #ENST00000545482.1_Silent_p.S178S
         outputAnnotation = "UniProt_aapos"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('transcript_id', 'ENST00000545482.1')
         m.createAnnotation('protein_change', 'p.S178S')
         m = tDS.annotate_mutation(m)
@@ -140,7 +141,7 @@ class TranscriptToUniProtProteinPositionTransformingDatasourceTest(unittest.Test
         annotator = Annotator()
         out_file_name = "out/uniprot_recovery.maf.annotated"
         runSpec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", "testdata/maflite/uniprot_recovery.maflite",
-                                                          out_file_name, datasourceDir=db_dir, tx_mode=TranscriptProvider.TX_MODE_BEST_EFFECT)
+                                                          out_file_name, datasource_dir=db_dir, tx_mode=TranscriptProvider.TX_MODE_BEST_EFFECT)
         annotator.initialize(runSpec)
         annotator.annotate()
 

@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from oncotator.Metadata import Metadata
 from TestUtils import TestUtils
+from oncotator.MutationDataFactory import MutationDataFactory
 
 
 '''
@@ -72,7 +73,7 @@ class SimpleBedOutputRendererTest(unittest.TestCase):
 
 
     def testSimpleRendering(self):
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.chr = '1'
         m.start = 1000000
         m.end = 1000000

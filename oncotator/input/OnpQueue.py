@@ -15,10 +15,12 @@ class OnpQueue(object):
     Bookkeeping class to maintain the mutations waiting to be combined
     """
 
-    def __init__(self, mutations):
+    def __init__(self, mutations, mutation_data_factory):
         """
         Initialize an new queue with a MutationData iterator
+
         :param mutations: any MutationData producing Iterator
+        :param mutation_data_factory: a MutationDataFactory to be used to produce new mutations for the ONPs
         """
         self.mutations = more_itertools.peekable(mutations)
         self.sns = SampleNameSelector(self.mutations.peek())
@@ -27,6 +29,7 @@ class OnpQueue(object):
         self.last = 0
         self.logger = logging.getLogger(__name__)
         self.warned_about_order = False
+        self._mutation_data_factory = mutation_data_factory
 
     @staticmethod
     def _create_start_position_dict(mutations):
@@ -92,7 +95,7 @@ class OnpQueue(object):
             reached = [mut for path in paths for mut in path]
             unreached = [mut for mut in muts if mut not in reached]
 
-        paths = [OnpQueue._combine_mutations(path) for path in paths]
+        paths = [OnpQueue._combine_mutations(path, self._mutation_data_factory) for path in paths]
         return paths
 
     def _dump_all(self):
@@ -123,7 +126,7 @@ class OnpQueue(object):
             return False
 
     @staticmethod
-    def _combine_mutations(mutations):
+    def _combine_mutations(mutations, mutation_data_factory):
         """
         Merge multiple adjacent mutations into a single new mutation.
 
@@ -147,7 +150,7 @@ class OnpQueue(object):
         build = "|".join(set([x.build for x in mutations]))
 
         #create the new mutation
-        newmut = MutationData(chr=chr, start=start, end=end, ref_allele=ref, alt_allele=alt, build=build)
+        newmut = mutation_data_factory.create(chr=chr, start=start, end=end, ref_allele=ref, alt_allele=alt, build=build)
 
         #add annotations to the mutation
         allAnnotations = set(flatmap(lambda x: x.keys(), mutations))

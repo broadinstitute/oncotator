@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import unittest
 import os
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.input.OnpQueue import OnpQueue
 from oncotator.utils.GenericTsvReader import GenericTsvReader
 
@@ -145,7 +146,8 @@ class OnpCombinerTest(unittest.TestCase):
         the inputs and compare to the expected"""
         input_muts = iter(self._tuples_to_MutationData(inputs))
         expected = self._tuples_to_MutationData(expected)
-        combiner = OnpQueue(input_muts)
+        mdf = MutationDataFactory()
+        combiner = OnpQueue(input_muts, mdf)
         results = list(combiner.get_combined_mutations())
         self.assert_mutations_match_expected(expected, results)
 
@@ -161,7 +163,8 @@ class OnpCombinerTest(unittest.TestCase):
     def _onp_ordered_combiner_test(self,inputs, expected):
         input_muts = iter(self._tuples_to_MutationData(inputs))
         expected_muts = self._tuples_to_MutationData(expected)
-        combiner = OnpQueue(input_muts)
+        mut_factory = MutationDataFactory()
+        combiner = OnpQueue(input_muts, mut_factory)
         results = list(combiner.get_combined_mutations())
         self._assert_mutation_lists_equal(expected_muts, results)
 
@@ -275,7 +278,8 @@ class OnpCombinerTest(unittest.TestCase):
         output_filename = 'out/testSingleSampleOnpCombiner.maf'
         config = TestUtils.createUnitTestConfig()
         defaultdb = config.get('DEFAULT',"dbDir")
-        spec = RunSpecificationFactory.create_run_spec("MAFLITE","TCGAMAF", input_filename, output_filename,datasourceDir=defaultdb,
+        spec = RunSpecificationFactory.create_run_spec("MAFLITE","TCGAMAF", input_filename, output_filename,
+                                                       datasource_dir=defaultdb,
                                                 other_opts={OptionConstants.INFER_ONPS: True})
         annotator = Annotator()
         annotator.initialize(spec)
@@ -283,14 +287,15 @@ class OnpCombinerTest(unittest.TestCase):
 
     def test_mutation_combiner(self):
         """Test that attributes and annotations are set properly with combine mutations"""
-        mut1 = MutationData(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1 = MutationDataFactory.default_create(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
         mut1.createAnnotation("SomeValue", "value1", "INPUT", "STRING", "a value")
-        mut2 = MutationData(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2 = MutationDataFactory.default_create(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
         mut2.createAnnotation("SomeValue", "value2", tags=["IT"])
         mut2.createAnnotation("AnotherValue","5")
-        result = OnpQueue._combine_mutations([mut1, mut2])
+        mdf = MutationDataFactory()
+        result = OnpQueue._combine_mutations([mut1, mut2], mdf)
 
-        expected = MutationData(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
+        expected = MutationDataFactory.default_create(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
         expected.createAnnotation("SomeValue", "value1|value2", "INPUT", "STRING", "a value", tags=["IT"])
         expected.createAnnotation("AnotherValue", "5")
         self.assertTrue(result.attributesEqual(expected))
@@ -298,7 +303,8 @@ class OnpCombinerTest(unittest.TestCase):
 
     def test_mutation_combiner_no_mut(self):
         """Combining no mutations should return None"""
-        result = OnpQueue._combine_mutations([])
+        mdf = MutationDataFactory()
+        result = OnpQueue._combine_mutations([], mdf)
         self.assertIsNone(result)
 
     def _annotate_m2_vcf(self, input_vcf_file, output_tcgamaf_file):
@@ -310,7 +316,7 @@ class OnpCombinerTest(unittest.TestCase):
         # Use an empty datasource dir in order to speed this up.
         annotator = Annotator()
         runSpec = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_vcf_file, output_tcgamaf_file,
-                                                          datasourceDir=".", globalAnnotations=override_annotations,
+                                                          datasource_dir=".", global_annotations=override_annotations,
                                                           is_skip_no_alts=True, other_opts=other_opts)
         annotator.initialize(runSpec)
         annotator.annotate()
@@ -381,7 +387,8 @@ class OnpCombinerTest(unittest.TestCase):
 
         gt_alts = ["ATT", "T", "T", "T"]
         mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
-        queue = OnpQueue(mutations)
+        mdf = MutationDataFactory()
+        queue = OnpQueue(mutations, mdf)
 
         for i, mut in enumerate(queue.get_combined_mutations()):
             self.assertTrue(gt_alts[i] == mut.alt_allele)
@@ -416,7 +423,8 @@ class OnpCombinerTest(unittest.TestCase):
 
         gt_alts = ["ATT", "TT", "TT"]
         mutations = [mut1, mut2, mut3, mut4, mut5, mut6]
-        queue = OnpQueue(mutations)
+        mdf = MutationDataFactory()
+        queue = OnpQueue(mutations, mdf)
 
         for i, mut in enumerate(queue.get_combined_mutations()):
             self.assertTrue(gt_alts[i] == mut.alt_allele)

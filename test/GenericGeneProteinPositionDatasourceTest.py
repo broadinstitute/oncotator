@@ -52,6 +52,7 @@ from oncotator.Annotator import Annotator
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.MissingAnnotationException import MissingAnnotationException
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.datasources.GenericGeneProteinPositionDatasource import GenericGeneProteinPositionDatasource
 from oncotator.input.MafliteInputMutationCreator import MafliteInputMutationCreator
 from oncotator.output.SimpleOutputRenderer import SimpleOutputRenderer
@@ -78,7 +79,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
 
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("gene", "TP53")
         m.createAnnotation("protein_change", "p.S376C")
 
@@ -92,7 +93,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="UniProt_NatVar", version="2011_09")
 
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("gene", "TP53")
         m.createAnnotation("protein_change", "p.SLEELEE370_376del") # This is not valid, but does the test.
 
@@ -134,7 +135,7 @@ class GenericGeneProteinPositionDatasourceTest(unittest.TestCase):
         '''
         datasource = GenericGeneProteinPositionDatasource("testdata/simple_uniprot_natvar/simple_uniprot_natvar.tsv", title="SmallNatVar", version="test")
 
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("gene", "TP53")
         #m.createAnnotation("protein_change", "p.S376C")
 

@@ -82,7 +82,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
     def testMissingRequiredHeaders(self):
         try: 
-            tmp = MafliteInputMutationCreator("testdata/maflite/brokenMaflite.tsv", 'configs/maflite_input.config')
+            tmp = MafliteInputMutationCreator("testdata/maflite/brokenMaflite.tsv", None, 'configs/maflite_input.config')
             self.assertFalse(True, " Exception was not thrown")
         except MafliteMissingRequiredHeaderException as e:
             #str(e).find('alt_allele,end,ref_allele')<> -1
@@ -94,7 +94,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
             
     def testSimpleRead(self):
         """ Read a good maflite file and make sure that each mutation validates """
-        tmp = MafliteInputMutationCreator("testdata/maflite/Patient0.indel.maf.txt", 'configs/maflite_input.config')
+        tmp = MafliteInputMutationCreator("testdata/maflite/Patient0.indel.maf.txt", None, 'configs/maflite_input.config')
         muts = tmp.createMutations()
         
         # If no exception is thrown, then this test passes.
@@ -104,7 +104,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
     def testNumberOfMuts(self):
         """ Make sure that the proper number of mutations were generated """
         inputFilename = "testdata/maflite/Patient0.snp.maf.txt"
-        tmp = MafliteInputMutationCreator(inputFilename, 'configs/maflite_input.config')
+        tmp = MafliteInputMutationCreator(inputFilename)
         muts = tmp.createMutations()
         numMutsInput = len(file(inputFilename,'r').readlines()) - 1
         ctr = 0
@@ -114,14 +114,14 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
     
     def testChromosomeM(self):
         """ Make sure that the chromosome created as M, rather than MT."""
-        tmp = MafliteInputMutationCreator("testdata/maflite/chrM.maf.txt", 'configs/maflite_input.config')
+        tmp = MafliteInputMutationCreator("testdata/maflite/chrM.maf.txt")
         muts = tmp.createMutations()
         for m in muts:
             self.assertTrue(m.chr=="M", "mitochondria chromosome should be M, not " + m.chr)
             
     def testTCGAMAFAsInput(self):
         """ Test that we can take in a TCGA MAF (using MAFLITE), do no annotations, and still render it properly """
-        tmp = MafliteInputMutationCreator("testdata/maf/Patient0.maf.annotated", 'configs/maflite_input.config')
+        tmp = MafliteInputMutationCreator("testdata/maf/Patient0.maf.annotated", None, 'configs/maflite_input.config')
         muts = tmp.createMutations()
         
         outputFilename = "out/testTCGAMAFAsInput.tsv"
@@ -131,7 +131,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
     def testTCGAMAFAsInputAndQuickAnnotate(self):
         """ Test that we can take in a TCGA MAF (using MAFLITE), do annotating, and still render it properly """
         inputFilename = "testdata/maf/Patient0.maf.annotated"
-        tmp = MafliteInputMutationCreator(inputFilename, 'configs/maflite_input.config')
+        tmp = MafliteInputMutationCreator(inputFilename)
         outputFilename = "out/testTCGAMAFAsInputAndQuickAnnotate.tsv"
         outputRenderer = TcgaMafOutputRenderer(outputFilename, 'configs/tcgaMAF2.4_output.config')
         annotator = Annotator()
@@ -187,7 +187,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         output_filename = "out/test_simple_seg_file_input.tsv"
         if os.path.exists(output_filename):
             os.remove(output_filename)
-        ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
+        ic = MafliteInputMutationCreator(inputFilename, None, 'configs/seg_file_input.config')
         segs = ic.createMutations()
 
         i = 1
@@ -196,7 +196,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
         self.assertTrue((i+1) == 27, "Found %d segments when there should have been 27." % (i+1))
 
-        ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
+        ic = MafliteInputMutationCreator(inputFilename, None, 'configs/seg_file_input.config')
         segs = ic.createMutations()
 
 
@@ -223,7 +223,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
         output_filename = "out/test_simple_seg_file_annotations.tsv"
         if os.path.exists(output_filename):
             os.remove(output_filename)
-        ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
+        ic = MafliteInputMutationCreator(inputFilename, None, 'configs/seg_file_input.config')
         segs = ic.createMutations()
 
         i = 1
@@ -232,7 +232,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
         self.assertTrue((i+1) == 27, "Found %d segments when there should have been 27." % (i+1))
 
-        ic = MafliteInputMutationCreator(inputFilename, 'configs/seg_file_input.config')
+        ic = MafliteInputMutationCreator(inputFilename, None, 'configs/seg_file_input.config')
         segs = ic.createMutations()
 
         gencode_ds = TestUtils._create_test_gencode_v19_ds("out/seg_file_gencode_ds")
@@ -271,7 +271,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("SEG_FILE", "SIMPLE_TSV", inputFilename, output_filename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_SEGMENTS)
         annotator.initialize(run_spec)
         annotator.annotate()
 
@@ -302,7 +302,7 @@ class MafliteInputMutationCreatorTest(unittest.TestCase):
 
         annotator = Annotator()
         run_spec = RunSpecificationFactory.create_run_spec("MAFLITE", "TCGAMAF", inputFilename, outputFilename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS)
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS)
         annotator.initialize(run_spec)
         annotator.annotate()
 

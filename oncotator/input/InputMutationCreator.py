@@ -46,7 +46,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-
+from oncotator.MutationDataFactory import MutationDataFactory
+import logging
 
 """
 Created on Oct 23, 2012
@@ -66,11 +67,14 @@ class InputMutationCreator(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, sourceFilename, configFile="", genomeBuild="hg19", other_options=None):
+    def __init__(self, sourceFilename, mutation_data_factory, configFile="", genomeBuild="hg19", other_options=None):
         """
         Constructor
         """
-        pass
+        if mutation_data_factory is None:
+            logging.getLogger(__name__).info("No mutation data factory provided, using default settings.")
+        self._mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
+
     
     @abstractmethod
     def createMutations(self):
