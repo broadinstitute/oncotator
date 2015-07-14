@@ -76,15 +76,11 @@ class GenericGeneDatasource(Datasource):
 
         This is useful when trying to annotate based on a value not directly placed in a mutation, such as the trancscript
                without the version number.
-        :param value:
-        :param mutation:
-        :return:
+        :param value: typically, a gene name
+        :param mutation: the mutation to annotate
+        :type mutation MutationData
+        :return: MutationData with input + new annotations
         """
-
-        #if any([c in mutation for c in self.output_headers]):
-        for c in self.output_headers:
-            if c in mutation:
-                logging.warn('WARNING: Non-unique header value in annotation table (%s)' % (c))
 
         if value in self.db_obj:
             annotations = self.db_obj[value]

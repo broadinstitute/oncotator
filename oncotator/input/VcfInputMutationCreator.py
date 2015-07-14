@@ -83,6 +83,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         :param filename:
         :param configFile:
         """
+        super(VcfInputMutationCreator, self).__init__(filename, mutation_data_factory, configFile, genomeBuild, other_options)
         self.filename = filename
         self.build = genomeBuild
         self.configFilename = configFile
@@ -101,10 +102,6 @@ class VcfInputMutationCreator(InputMutationCreator):
         self.collapse_filter_fields = other_options.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
 
         self._is_skipping_no_alts = other_options.get(InputMutationCreatorOptions.IS_SKIP_ALTS, False)
-
-        if mutation_data_factory is None:
-            self.logger.info("No mutation data factory provided, using default settings.")
-        self._mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
 
 
 

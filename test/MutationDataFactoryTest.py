@@ -1,5 +1,6 @@
 import unittest
 from oncotator.DuplicateAnnotationException import DuplicateAnnotationException
+from oncotator.MutationData import MutationData
 from oncotator.MutationDataFactory import MutationDataFactory
 from test.TestUtils import TestUtils
 
@@ -22,7 +23,7 @@ class MutationFactoryTest(unittest.TestCase):
         self.assertTrue(mut['blah'] == "456")
 
     def test_annotation_overwriting_off(self):
-        """Test that the factory can produce a mutation that allows overwriting.  Just need to make sure no exception thrown."""
+        """Test that the factory can produce a mutation that does not allow overwriting.  Make sure DuplicateAnnotationException is thrown."""
         mdf = MutationDataFactory(allow_overwriting=False)
         mut = mdf.create()
 
@@ -36,3 +37,9 @@ class MutationFactoryTest(unittest.TestCase):
             is_exception_raised = True
 
         self.assertTrue(is_exception_raised, "DuplicateAnnotationException should have been seen, but wasn't")
+
+    def test_default_create(self):
+        """Create a MutationData without an instance of MutationDataFactory """
+        m = MutationDataFactory.default_create()
+        self.assertTrue(isinstance(m, MutationData))
+        self.assertTrue(m.chr == "")

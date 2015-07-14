@@ -1,4 +1,5 @@
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.MutUtils import MutUtils
 
 
 class FieldMapCreator(object):
@@ -8,10 +9,11 @@ class FieldMapCreator(object):
     @staticmethod
     def choose_best_annotation(header, m, alternative_dict, deprioritize_input_annotations):
         """  Choose the best annotation in mut for the given header.
-        :param header:
-        :param m:
-        :param alternative_dict:
-        :param deprioritize_input_annotations:
+        :param header: header in the output.  For example, a column in a TCGA MAF
+        :param m: mutation -- for reference into available annotations
+        :param alternative_dict: dict with mapping from column names to acceptable annotations.
+        :param deprioritize_input_annotations: If an annotation has been sourced as "INPUT", whether we should try to
+            choose another alias?
         :return: if no suitable annotation, None
         """
 
@@ -28,17 +30,13 @@ class FieldMapCreator(object):
                     break
         else:
             second_choice = None
-            is_choosing_second_choice = True
             for p in full_possibilities:
                 if p in annotation_names and m.getAnnotation(p).getDatasource() != "INPUT":
-                    result = p
-                    is_choosing_second_choice = False
-                    break
+                    return p
                 if second_choice is None and p in annotation_names:
                     second_choice = p
 
-            if is_choosing_second_choice:
-                result = second_choice
+            result = second_choice
 
         return result
 
@@ -71,7 +69,7 @@ class FieldMapCreator(object):
 
         # Process each header and find the first alias.  If an annotation exists with the exact same name as the header
         #   use that unless deprioritization is in effect.
-        annotation_names = sorted(list(set(m.keys() + m.getAttributeNames())))
+        annotation_names = MutUtils.get_all_annotation_names(m)
 
         for h in headers:
             choice = FieldMapCreator.choose_best_annotation(h, m, alternative_dict, deprioritize_input_annotations)

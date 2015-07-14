@@ -192,6 +192,15 @@ class MutUtils(object):
         return attrs
 
     @staticmethod
+    def get_all_annotation_names(mut):
+        """
+        :param mut: mutation object
+        :return: set of annotation names that are in the mutation (list of string)
+        """
+        return sorted(list(set(mut.keys() + mut.getAttributeNames())))
+
+
+    @staticmethod
     def str2bool(v):
         """ Given an input string, v, returns whether the input string is a boolean 
             or not. """
@@ -357,62 +366,6 @@ class MutUtils(object):
     @staticmethod
     def create_variant_key(chrom, start, end, ref_allele, alt_allele, other_info=""):
         return "%s_%s_%s_%s_%s_%s" % (chrom, start, end, ref_allele, alt_allele, other_info)
-
-    @staticmethod
-    def createFieldsMapping(headers, annotations, alternativeDictionary, isRenderInternalFields=True,
-                            exposedFields=None, prepend="i_"):
-        """ Creates a dictionary of the output maf file headers to the annotations.
-
-        This will honor alternatives from the config file, even for fields labeled as "internal"
-
-        :param headers:  optional and required fields
-        :param annotations: annotations seen on a mutation
-        :param alternativeDictionary: mapping from headers to ordered lists of acceptable annotation names.
-        :param isRenderInternalFields: should the resulting dictionary include
-                unused annotations (as [prepend]annotation_name)?
-        :param exposedFields: These are fields that, if seen, should not be treated as internal.
-        :param prepend: prepend to use for internal annotations (i.e. ones that are not seen in the required or optional fields)
-
-
-        Output:
-        Final headers that should be used
-         """
-
-        if prepend is None:
-            prepend = ""
-
-        if exposedFields is None:
-            exposedFields = set()
-
-        result = dict()
-        for h in headers:
-            hdr = h.lower()
-            result[h] = h
-            if h not in annotations:
-                if hdr in alternativeDictionary.keys():
-                    alternatives = alternativeDictionary[hdr]
-                    for alternative in alternatives:
-                        if alternative in annotations:
-                            result[h] = alternative
-                            break
-
-        if isRenderInternalFields:
-            annotation_names_used = result.values()
-
-            internal_field_dict = dict()
-            # Create a dict to do a lookup of annotation to the column to use.
-            reverseAlternativeDict = ConfigUtils.buildReverseAlternativeDictionary(alternativeDictionary)
-            sAnnotations = set(annotations)
-            internalFields = sAnnotations.difference(annotation_names_used)
-            for i in internalFields:
-                if not i.startswith('_') and i is not "transcripts":
-                    key_to_use = reverseAlternativeDict.get(i,i)
-                    if prepend.strip() == "" or i.startswith(prepend) or i in exposedFields:
-                        internal_field_dict[key_to_use] = i
-                    else:
-                        internal_field_dict[prepend + key_to_use] = i
-            result.update(internal_field_dict)
-        return result
 
     @staticmethod
     def retrieveMutCoordinatesForRendering(mut):

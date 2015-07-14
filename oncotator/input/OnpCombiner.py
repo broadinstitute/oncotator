@@ -73,15 +73,9 @@ class OnpCombiner(InputMutationCreator):
 
     def __init__(self, input_creator, mutation_data_factory=None):
 
-        self.logger = logging.getLogger(__name__)
-
-        # set up the mutation data factory if one was specified, otherwise, just use default instance.
-        if mutation_data_factory is None:
-            self.logger.info("No mutation data factory provided, using default settings.")
-        self._mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
-
         super(OnpCombiner, self).__init__("ONP_Combiner", mutation_data_factory)
         self.input_creator = input_creator
+        self.logger = logging.getLogger(__name__)
         self.logger.info("Merging adjacent snps from the same samples into ONPs")
 
 

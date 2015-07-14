@@ -270,14 +270,15 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
         if m is not None:
 
-            fieldMap = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
+            # Create a mapping between column name and annotation name
+            field_map = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
                                                     self.config.getboolean("general", "displayAnnotations"),
                                                     exposed_fields=self.exposedColumns, prepend=self._prepend,
                                                     deprioritize_input_annotations=self._is_reannotating)
 
-            fieldMapKeys = fieldMap.keys()
-            internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
-            headers.extend(internalFields)
+            field_map_keys = field_map.keys()
+            internal_fields = sorted(list(set(field_map_keys).difference(headers)))
+            headers.extend(internal_fields)
 
         # Initialize the output file and write a header.
         fp = file(self._filename, 'w')
@@ -296,14 +297,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
             # Add the NCBI build
             if m is not None:
                 self._add_output_annotations(m)
-                self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
+                self._writeMutationRow(dw, field_map, field_map_keys, m)
                 ctr += 1
 
             for m in mutations:
 
                 # Add the NCBI build
                 self._add_output_annotations(m)
-                self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
+                self._writeMutationRow(dw, field_map, field_map_keys, m)
                 
                 # Update mutation count and log every 1000 mutations
                 ctr += 1

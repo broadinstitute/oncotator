@@ -525,20 +525,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
                 self.assertTrue(ks in line_dict.keys(), "Key " + ks + " was not rendered.")
                 self.assertTrue(line_dict[ks] != "" or (line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ), "Key " + ks + " had a blank value." + str(line_dict))
 
-    def test_reannotating_with_prepends(self):
-        """Test that we will disregard the prepend when looking for fields to write"""
-        m = MutationDataFactory.default_create()
-        m.createAnnotation('i_foo', "blah", "INPUT")
-        m.createAnnotation('foo', "bloop", "some datasource")
-
-        headers = ['i_foo']
-        alt_dict = {'i_foo': ['i_i_foo', 'foo']}
-        mapping = FieldMapCreator.create_field_map(headers, m, alt_dict, is_render_internal_fields=True,deprioritize_input_annotations=True)
-        self.assertTrue(mapping['i_foo'] == 'foo')
-
-        mapping = FieldMapCreator.create_field_map(headers, m, alt_dict, is_render_internal_fields=True,deprioritize_input_annotations=False)
-        self.assertTrue(mapping['i_foo'] == 'i_foo')
-
     @TestUtils.requiresDefaultDB()
     def test_reannotating_actual_file(self):
         """Test that we can take in a file, annotate, similar to M2 process (VCF to TCGA MAF no ONPs, then TCGA MAF to TCGA MAF with ONPs)"""

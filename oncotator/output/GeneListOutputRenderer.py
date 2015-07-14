@@ -3,6 +3,7 @@ import csv
 import logging
 from oncotator.output.OutputRenderer import OutputRenderer
 from oncotator.utils.ConfigUtils import ConfigUtils
+from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.MutUtils import MutUtils
 
 
@@ -71,7 +72,7 @@ class GeneListOutputRenderer(OutputRenderer):
         for i, seg in enumerate(segments):
             if annotations is None:
                 annotations = seg.keys()
-                field_mapping = MutUtils.createFieldsMapping(headers, annotations, self._alternativeDictionary, isRenderInternalFields=True, prepend="")
+                field_mapping = FieldMapCreator.create_field_map(headers, seg, self._alternativeDictionary, is_render_internal_fields=True, prepend="")
 
             gene_list = seg['genes'].split(",")
             for g in gene_list:

@@ -82,9 +82,10 @@ class MafliteInputMutationCreator(InputMutationCreator):
         """
         Constructor
 
-        Currently, this InputCreator does not support any other options.  The parameter is ignored.
-
         """
+
+        super(MafliteInputMutationCreator, self).__init__(filename, mutation_data_factory, configFile, genomeBuild, other_options)
+
         self.logger = logging.getLogger(__name__)
 
         self.config = ConfigUtils.createConfigParser(configFile)
@@ -117,10 +118,6 @@ class MafliteInputMutationCreator(InputMutationCreator):
                     if col != "build":
                         missingRequiredHeaders.append(col)
         missingRequiredHeaders.sort()
-
-        if mutation_data_factory is None:
-            self.logger.info("No mutation data factory provided, using default settings.")
-        self._mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
 
         if len(missingRequiredHeaders) > 0:
             raise MafliteMissingRequiredHeaderException("Specified maflite file (" + filename + ") missing required headers: " + ",".join(missingRequiredHeaders)  )
