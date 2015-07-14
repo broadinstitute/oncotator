@@ -65,7 +65,7 @@ class MutationData(collections.MutableMapping):
     """
     Intermediate class for storing a mutation.
 
-    To get a new instance of a mutation data, you should use
+    To get a new instance of a mutation data, you should use MutationDataFactory.
 
     Usage notes:
     
