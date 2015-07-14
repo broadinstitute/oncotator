@@ -58,7 +58,7 @@ Oncotator is a description
 
 It defines classes_and_methods
 
-@author:     aramos, mgupta, and lichtens
+@author:     aramos, lbergelson, mgupta, and lichtens
         
 @copyright:  2012 Broad Institute. All rights reserved.
         
