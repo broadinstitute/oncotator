@@ -122,6 +122,13 @@ class MutationDataTest(unittest.TestCase):
         import cPickle
         cPickle.dump(m, open("out/testMDPickle.pkl", 'w'))
 
+    def test_copy(self):
+        """Test annotation copy """
+        m = MutationData()
+        m.createAnnotation("foo", "3", "blah_source", annotationDescription="testing", tags=["superblah"], number="A")
+        m.createCopyAnnotation(m.getAnnotation("foo"), "bar")
+        self.assertEqual(m.getAnnotation("foo"), m.getAnnotation("bar"))
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testSetValues']
     unittest.main()

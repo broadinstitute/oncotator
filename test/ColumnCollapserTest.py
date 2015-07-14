@@ -65,6 +65,7 @@ class ColumnCollapserTest(unittest.TestCase):
 
     def test_updating_annotation_source(self):
         """Test that a String can be passed in to update the annotation source if columns are collapsed"""
+        # m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
         m1 = MutationData()
         m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
         cc = ColumnCollapser()
@@ -73,11 +74,24 @@ class ColumnCollapserTest(unittest.TestCase):
 
     def test_not_updating_annotation_source(self):
         """Test that do not have to update annotation source if columns are collapsed"""
+        # m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
         m1 = MutationData()
         m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
         cc = ColumnCollapser()
         cc.update_mutation(m1)
         self.assertEqual(m1.getAnnotation("ALT_F2R1").getDatasource(), "TEST")
+
+    def test_annotation_copy(self):
+        """Test that we can create a backup annotation with the old values after collapsing, if requested."""
+        # m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
+        m1 = MutationData()
+        m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
+        cc = ColumnCollapser()
+        cc.update_mutation(m1, new_annotation_source="foo", copy_old_suffix="_full")
+        self.assertEqual(m1["ALT_F2R1_full"], "|36")
+        self.assertEqual(m1["ALT_F2R1"], "36")
+        self.assertEqual(m1.getAnnotation("ALT_F2R1_full").getDatasource(), "TEST")
+        self.assertTrue(m1.getAnnotation("ALT_F2R1").getDatasource() != m1.getAnnotation("ALT_F2R1_full").getDatasource())
 
 
 if __name__ == '__main__':

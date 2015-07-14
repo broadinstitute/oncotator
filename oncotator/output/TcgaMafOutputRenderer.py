@@ -219,6 +219,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         dw.writerow(row)
 
     def _add_output_annotations(self, m):
+        """Add annotations specific to the TCGA MAF
+        """
         m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
         if self._is_splitting_allelic_depth and m.get('allelic_depth', "").strip() != "":
             # Handle the splitting of allelic depth

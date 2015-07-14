@@ -85,8 +85,9 @@ class ColumnCollapser(object):
             result[annot] = self._collapse_column(annot, mut[annot])
         return result
 
-    def update_mutation(self, mut, new_annotation_source=None):
+    def update_mutation(self, mut, new_annotation_source=None, copy_old_suffix=None):
         """ Given a mutation, update the relevant annotations with new values.  Please note that this
+        :param copy_old_suffix: Create another annotation with the old value in it.  Use this suffix  If None, do not create the annotation.
         :param new_annotation_source: string giving the annotation source that should be used for this updating of the mutation
             If set to None, leave the old annotation source in place (use sparingly).
         :param mut:
@@ -95,6 +96,8 @@ class ColumnCollapser(object):
         update_dict = self._collapse_columns(mut)
         for u in update_dict.keys():
             annotation = mut.getAnnotation(u)
+            if copy_old_suffix is not None:
+                mut.createCopyAnnotation(annotation, u + copy_old_suffix)
             if new_annotation_source is not None:
                 annotation.setDatasource(new_annotation_source)
             annotation.setValue(update_dict[u])
