@@ -24,6 +24,7 @@ class ColumnCollapserTest(unittest.TestCase):
         m2.createAnnotation('i_t_Foxog', ".500|.510")
         m2.createAnnotation('i_tumor_f', ".100|.110")
         m2.createAnnotation('hamilcar', "0.01|0")
+        m2.createAnnotation('barca', "0.02|0")
         m2.createAnnotation('donotcollapse', "100|4500")
 
         cc = ColumnCollapser()
@@ -39,6 +40,7 @@ class ColumnCollapserTest(unittest.TestCase):
         self.assertEqual(float(m2['i_t_Foxog']), float(".505"))
         self.assertEqual(float(m2['i_tumor_f']), float(".105"))
         self.assertEqual(float(m2['hamilcar']), float("0.005"))
+        self.assertEqual(float(m2['barca']), float("0.01"))
         self.assertEqual(m2['donotcollapse'], "100|4500")
 
     def test_cannot_collapse(self):
