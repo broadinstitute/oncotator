@@ -503,7 +503,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         annotator = Annotator()
         from oncotator.utils.RunSpecification import RunSpecification
         run_spec = RunSpecificationFactory.create_run_spec("VCF", "VCF", inputFilename, outputFilename,
-                                                           datasourceDir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS,
+                                                           datasource_dir=db_dir, annotating_type=RunSpecification.ANNOTATE_MUTATIONS,
                                                            other_opts={'vcf_out_infer_genotypes': False})
         annotator.initialize(run_spec)
         annotator.annotate()

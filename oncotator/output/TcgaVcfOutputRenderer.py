@@ -55,6 +55,7 @@ from oncotator.MissingAnnotationException import MissingAnnotationException
 from oncotator.output.OutputRenderer import OutputRenderer
 from oncotator.utils.ConfigUtils import ConfigUtils
 import logging
+from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.MutUtils import MutUtils
 
 
@@ -453,9 +454,7 @@ class TcgaVcfOutputRenderer(OutputRenderer):
 
         if m is not None:
             fieldsUsed = self.alternativeDictionary.keys()
-
-            annotations = MutUtils.getAllAttributeNames(m)
-            self.fieldMap = MutUtils.createFieldsMapping(fieldsUsed, annotations, self.alternativeDictionary, True)
+            self.fieldMap = FieldMapCreator.create_field_map(fieldsUsed, m, self.alternativeDictionary, True)
 
         # Write each row:
         ctr = 0

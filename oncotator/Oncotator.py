@@ -159,7 +159,7 @@ def parseOptions(program_version_message):
     parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 5]", default=5)
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
-    parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
+    parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=OncotatorCLIUtils.getSupportedInputFormats(), help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  Note that "-i TCGAMAF" is the same as specifying "-i MAFLITE --prune-tcga-maf-cols --allow-overwriting" [default: %s]' % "MAFLITE")
     parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR,
                         help='Main annotation database directory. [default: %s]' % DEFAULT_DB_DIR)
     parser.add_argument('-o', '--output_format', type=str, default="TCGAMAF",choices=OncotatorCLIUtils.getSupportedOutputFormats(), help='Output format. [default: %s]' % "TCGAMAF")
@@ -184,6 +184,8 @@ def parseOptions(program_version_message):
     parser.add_argument('--infer-onps', dest="infer_onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
     parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF ouput option.")
+    parser.add_argument('--reannotate-tcga-maf-cols', action='store_true', help="Prefer new, annotated values to those specified by the input file.  Only useful when output is TCGA MAF and when --allow-overwriting is specified.  Automatically turned on with -i TCGAMAF")
+    parser.add_argument('-w', '--allow-overwriting', action='store_true', help="Allow annotations to be overwritten (no DuplicateAnnotationException errors).  This should only be used in rare cases and user should know when that is.  Automatically turned on with -i TCGAMAF")
 
     # Process arguments
     args = parser.parse_args()
@@ -242,12 +244,6 @@ def main(argv=None):  # IGNORE:C0111
 
         if not NGSLIB_INSTALLED:
             logger.warn("ngslib module not installed.  Will be unable to annotate with BigWig datasources.")
-        
-        # Initiate an Oncotator session.
-        inputFilename = os.path.expanduser(args.input_file)
-        outputFilename = os.path.expanduser(args.output_file)
-        inputFormat = args.input_format.upper()
-        outputFormat = args.output_format.upper()
 
         datasourceDir = os.path.expanduser(args.dbDir)
         cache_url = args.cache_url
@@ -256,6 +252,24 @@ def main(argv=None):  # IGNORE:C0111
         is_skip_no_alts = args.skip_no_alt
         genome_build = args.genome_build
         is_no_prepend = not args.prepend
+        is_prune_tcga_maf_cols = args.reannotate_tcga_maf_cols
+
+        # Initiate an Oncotator session.
+        inputFilename = os.path.expanduser(args.input_file)
+        outputFilename = os.path.expanduser(args.output_file)
+
+        other_opts=determineOtherOptions(args)
+
+        inputFormat = args.input_format.upper()
+
+        # -i TCGAMAF is the same as -i MAFLITE --prune-tcga-maf-cols --allow-overwriting
+        if inputFormat == "TCGAMAF":
+            inputFormat = "MAFLITE"
+            is_prune_tcga_maf_cols = True
+            other_opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = True
+            other_opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = True
+
+        outputFormat = args.output_format.upper()
 
         # Parse annotation overrides
         commandLineManualOverrides = args.override_cli
@@ -280,13 +294,14 @@ def main(argv=None):  # IGNORE:C0111
         annotating_type = None
         if inputFormat == "SEG_FILE":
             annotating_type = RunSpecification.ANNOTATE_SEGMENTS
+
         runConfig = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename,
-                                                      globalAnnotations=manualOverrides, datasourceDir=datasourceDir,
-                                                      isMulticore=(not args.noMulticore),
-                                                      defaultAnnotations=defaultValues, cacheUrl=cache_url,
+                                                      global_annotations=manualOverrides, datasource_dir=datasourceDir,
+                                                      is_multicore=(not args.noMulticore),
+                                                      default_annotations=defaultValues, cache_url=cache_url,
                                                       read_only_cache=read_only_cache, tx_mode=tx_mode,
                                                       is_skip_no_alts=is_skip_no_alts, genomeBuild=genome_build,
-                                                      other_opts=determineOtherOptions(args), annotating_type=annotating_type)
+                                                      other_opts=other_opts, annotating_type=annotating_type)
 
         annotator = Annotator()
         annotator.initialize(runConfig)
@@ -305,6 +320,8 @@ def determineOtherOptions(args):
     opts[OptionConstants.INFER_ONPS] = args.infer_onps
     opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE] = args.canonical_tx_file
     opts[OptionConstants.COLLAPSE_FILTER_COLS] = args.collapse_filter_cols
+    opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = args.reannotate_tcga_maf_cols
+    opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = args.allow_overwriting
     return opts
 
 

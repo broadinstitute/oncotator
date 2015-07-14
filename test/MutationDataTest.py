@@ -47,6 +47,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from TestUtils import TestUtils
+from oncotator.MutationDataFactory import MutationDataFactory
 
 
 '''
@@ -70,7 +71,7 @@ class MutationDataTest(unittest.TestCase):
         pass
 
     def testSetValues(self):
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("fake1", "1")
         m.createAnnotation("fake2", "blah blah")
         self.assertTrue(m["fake1"] == "1", "Could not properly retrieve annotation using the dictionary interface.  " + str(m["fake1"]))
@@ -81,41 +82,41 @@ class MutationDataTest(unittest.TestCase):
         print(str(m))
         
     def testIter(self):
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("fake1", "1")
         m.createAnnotation("fake2", "blah blah")
         for k in m:
             self.assertTrue((k in ["fake1", "fake2"]) or (k in MutationData.attributes), "Key not present: " + k)
 
     def testKeys(self):
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("fake1", "1")
         m.createAnnotation("fake2", "blah blah")
         self.assertTrue("fake1" in m.keys() and "fake2" in m.keys(), "Could not find annotations added.")
 
     def testDuplicateException(self):
         ''' Check that a Duplicate Exception is raised by default when annotation value is changed through createAnnotation'''
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("fake1", "1")
         with self.assertRaises(DuplicateAnnotationException):
             m.createAnnotation("fake1", "blah blah")
         
     def testDuplicateAnnotationWithSameValue(self):
         ''' Allow a duplicate annotation to be created if the value is the same.  No exception should be thrown.'''
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("fake1", "1")
         m.createAnnotation("fake1", "1")
         
     def testAddTag(self):
         ''' Test adding a tag to an annotation '''
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("fake1", "1")
         m.addTagToAnnotation("fake1", "fakeTag")
         self.assertTrue("fakeTag" in m.getAnnotation("fake1").getTags(), "Tag was not added properly.")
 
     def testPickleable(self):
         """Test that a near-empty MutationData can be pickled"""
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.chr = "2"
         m.createAnnotation("fake1", "1")
         m.addTagToAnnotation("fake1", "fakeTag")

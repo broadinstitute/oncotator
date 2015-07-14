@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 
 
@@ -90,20 +91,23 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
         self.logger.info("Building alternative keys dictionary...")
         self.alternativeDictionary = ConfigUtils.buildAlternateKeyDictionaryFromConfig(self.config)
-        
-        #TODO: Read missing options from the config file or specify that error should be thrown.
+
         self.options = options
 
         self._prepend = self.config.get("general", "prepend")
         if self.options.get(OptionConstants.NO_PREPEND, False):
             self._prepend = ""
 
+        # _is_reannotating is a flag to determine whether we should give precendence to annotations that were not
+        #   annotated as part of the INPUT.
+        self._is_reannotating = options.get(OptionConstants.REANNOTATE_TCGA_MAF_COLS, False)
+
         self._is_splitting_allelic_depth = self.options.get(OptionConstants.SPLIT_ALLELIC_DEPTH, True)
 
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
 
         self._is_entrez_id_message_logged = False
-    
+
     def lookupNCBI_Build(self, build):
         """ If a build number exists in the config file, use that.  Otherwise, use the name specified. """
         if not self.config.has_option("genomeBuild", build):
@@ -258,19 +262,23 @@ class TcgaMafOutputRenderer(OutputRenderer):
             annotations = set(headers).union(metadataAnnotations)
             m = None
 
-        # If we are splitting allelic_depth into two fields, add those to the headers
+        # If we are splitting allelic_depth into two fields, add those to the headers.  Note that the mutations will
+        #  be annotated properly later.
         if self._is_splitting_allelic_depth and "allelic_depth" in annotations:
             depth_fields = [TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT]
-            [annotations.append(df) for df in depth_fields if df not in annotations]
+            headers.extend(depth_fields)
 
-        # Create a mapping between column name and annotation name
-        fieldMap = MutUtils.createFieldsMapping(headers, annotations, self.alternativeDictionary,
-                                                self.config.getboolean("general", "displayAnnotations"),
-                                                exposedFields=self.exposedColumns, prepend=self._prepend)
+        if m is not None:
 
-        fieldMapKeys = fieldMap.keys()
-        internalFields = sorted(list(set(fieldMapKeys).difference(headers)))
-        headers.extend(internalFields)
+            # Create a mapping between column name and annotation name
+            field_map = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
+                                                    self.config.getboolean("general", "displayAnnotations"),
+                                                    exposed_fields=self.exposedColumns, prepend=self._prepend,
+                                                    deprioritize_input_annotations=self._is_reannotating)
+
+            field_map_keys = field_map.keys()
+            internal_fields = sorted(list(set(field_map_keys).difference(headers)))
+            headers.extend(internal_fields)
 
         # Initialize the output file and write a header.
         fp = file(self._filename, 'w')
@@ -289,14 +297,14 @@ class TcgaMafOutputRenderer(OutputRenderer):
             # Add the NCBI build
             if m is not None:
                 self._add_output_annotations(m)
-                self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
+                self._writeMutationRow(dw, field_map, field_map_keys, m)
                 ctr += 1
 
             for m in mutations:
 
                 # Add the NCBI build
                 self._add_output_annotations(m)
-                self._writeMutationRow(dw, fieldMap, fieldMapKeys, m)
+                self._writeMutationRow(dw, field_map, field_map_keys, m)
                 
                 # Update mutation count and log every 1000 mutations
                 ctr += 1

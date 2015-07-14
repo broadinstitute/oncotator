@@ -49,6 +49,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import unittest
 from oncotator.MutationData import MutationData
+from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.cache.CacheManager import CacheManager
 
 class CacheManagerTest(unittest.TestCase):
@@ -59,7 +60,7 @@ class CacheManagerTest(unittest.TestCase):
         cm = CacheManager()
         fake_db_dir_key = "blah"
         cm.initialize("file://" + cache_file, fake_db_dir_key, is_read_only=False)
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("blah1", "val1", annotationSource="INPUT")
         m.createAnnotation("blah2", "val5", annotationSource="some_datasource")
         cm.store_annotations_in_cache(m)
@@ -73,7 +74,7 @@ class CacheManagerTest(unittest.TestCase):
         cm = CacheManager()
         fake_db_dir_key = "blah"
         cm.initialize(None, fake_db_dir_key, is_read_only=False)
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("blah1", "val1", annotationSource="INPUT")
         m.createAnnotation("blah2", "val5", annotationSource="some_datasource")
         cm.store_annotations_in_cache(m)

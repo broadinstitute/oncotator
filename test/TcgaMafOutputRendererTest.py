@@ -47,7 +47,8 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 from TestUtils import TestUtils
-from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
+from oncotator.MutationDataFactory import MutationDataFactory
+from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 from oncotator.utils.VariantClassification import VariantClassification
@@ -103,9 +104,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         configFile = ConfigUtils.createConfigParser(os.path.join("configs", "tcgaMAF2.4_output.config"))
         statinfo = os.stat(filename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + filename + ") is empty.")
-        
+
         tsvReader = GenericTsvReader(filename)
-        
+
         self.assertTrue(tsvReader.getComments().find('#version') != -1, "First line did not specify a version number")
 
         ctr = 1
@@ -114,7 +115,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             # TODO: Re-enable when GENCODE and HGNC datasources are concordant (or Entrez_Gene_ID is in the gencode gtf)
             # if lineDict['Entrez_Gene_Id'] == "0":
             #     self.assertTrue(lineDict['Hugo_Symbol'] == "Unknown", "Entrez_Gene_Id was zero, but Hugo Symbol was not 'Unknown'.  Line: " + str(ctr))
-            
+
             unknownKeys = []
             self.assertTrue(lineDict["Tumor_Seq_Allele1"] != lineDict["Tumor_Seq_Allele2"], "Reference and alternate were equal in TCGA MAF output on line %d (%s)" % (ctr, lineDict["Tumor_Seq_Allele1"]))
             self.assertTrue(lineDict["Tumor_Seq_Allele1"] == lineDict["Reference_Allele"], "Reference Allele should match Tumor_Seq_Allele1 on line " + str(ctr))
@@ -158,7 +159,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             other_opts = dict()
 
         annotator = Annotator()
-        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, defaultAnnotations=default_annotations, datasourceDir=datasource_dir, globalAnnotations=override_annotations, is_skip_no_alts=is_skip_no_alts, other_opts=other_opts)
+        runSpec = RunSpecificationFactory.create_run_spec(inputFormat, outputFormat, inputFilename, outputFilename, default_annotations=default_annotations, datasource_dir=datasource_dir, global_annotations=override_annotations, is_skip_no_alts=is_skip_no_alts, other_opts=other_opts)
         annotator.initialize(runSpec)
         self.logger.info("Annotation starting...")
         return annotator.annotate()
@@ -167,7 +168,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testFullSNPOutput(self):
         """ Create a TCGA MAF from a SNP TSV file."""
         self.logger.info("Initializing Maflite SNP Test...")
-        
+
         testOutputFilename = self._annotateTest('testdata/maflite/Patient0.snp.maf.txt', "out/testSNP_v2.4.maf.tsv", self._determine_db_dir())
 
         # Sanity checks to make sure that the generated maf file is not junk.
@@ -177,9 +178,9 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testFullIndelOutput(self):
         """ Create a TCGA MAF from an Indel TSV file."""
         self.logger.info("Initializing Maflite indel Test...")
-        
+
         testOutputFilename = self._annotateTest('testdata/maflite/Patient0.indel.maf.txt', "out/testIndel_v2.4.maf.tsv", self._determine_db_dir())
-        
+
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
 
@@ -194,22 +195,22 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testInternalFields(self):
         """ Test that an annotation that is not listed explicitly in the required or optional columns is rendered with i_ prepended """
         outputFilename = "out/testInternalFields_v2.4.maf.tsv"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
-        
+
         # The next annotation is real and should not be considered internal.
         m.createAnnotation("gene", "EGFR")
-        
+
         outputRenderer = TcgaMafOutputRenderer(outputFilename, configFile='configs/tcgaMAF2.4_output.config')
         outputRenderer.renderMutations(iter([m]), ['No comments'])
-        
+
         configFile = ConfigUtils.createConfigParser('configs/tcgaMAF2.4_output.config')
         requiredColumns = configFile.get("general", "requiredColumns")
         self.assertTrue("Hugo_Symbol" in requiredColumns, " This test assumes that Hugo_Symbol is a required column in the TCGA MAF.  If not, the test must be modified.")
 
         statinfo = os.stat(outputFilename)
         self.assertTrue(statinfo.st_size > 0, "Generated MAF file (" + outputFilename + ") is empty.")
-        
+
         tsvReader = GenericTsvReader(outputFilename)
         headers = tsvReader.getFieldNames()
         self.assertTrue("Hugo_Symbol" in headers, "Hugo_Symbol not found in output headers")
@@ -219,7 +220,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def testInternalFieldsSkipPrepend(self):
         """ Test that no prepending of "i_" is honored."""
         outputFilename = "out/testInternalFields_v2.4.maf.tsv"
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation("TEST", "THIS IS A TEST", "TESTING")
 
         # The next annotation is real and should not be considered internal.
@@ -340,7 +341,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         output_fname = 'out/example.one_filter_col.maf.txt'
         annotator = Annotator()
         other_opts = {'collapse_filter_cols': True}
-        
+
         from oncotator.utils.RunSpecification import RunSpecification
         run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
         annotator.initialize(run_spec)
@@ -354,7 +355,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def test_validation_correction(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for invalid mutation.
         """
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.chr = "3"
         m.start = "178948145"
         m.end = "178948145"
@@ -386,7 +387,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
     def test_validation_correction_valid(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for a valid mutation.
         """
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.chr = "3"
         m.start = "178948145"
         m.end = "178948145"
@@ -495,6 +496,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             for ks in keys_to_check_non_existence:
                 self.assertTrue(ks not in line_dict.keys())
 
+
     def test_splitting_allelic_depth_with_prepend(self):
         """Make sure that allelic depth is not split when told"""
         input_vcf_file = "testdata/m2_support/Dream4.chr20.oxoGinfo.vcf"
@@ -523,6 +525,51 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
                 self.assertTrue(ks in line_dict.keys(), "Key " + ks + " was not rendered.")
                 self.assertTrue(line_dict[ks] != "" or (line_dict['Reference_Allele'] == "-" or line_dict['Tumor_Seq_Allele2'] == "-" ), "Key " + ks + " had a blank value." + str(line_dict))
 
+    @TestUtils.requiresDefaultDB()
+    def test_reannotating_actual_file(self):
+        """Test that we can take in a file, annotate, similar to M2 process (VCF to TCGA MAF no ONPs, then TCGA MAF to TCGA MAF with ONPs)"""
+        # This test assumes that the numeric values are not being collapsed.
+        input_filename = "testdata/m2_support/phasingExample.vcf"
+        midpoint_output_filename = "out/m2_support/reannotating_tcga_maf_midpoint.maf.annotated"
+        output_filename = "out/m2_support/reannotating_tcga_maf.maf.annotated"
+
+        options_step1 = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: False,
+                         OptionConstants.SPLIT_ALLELIC_DEPTH: True, OptionConstants.INFER_ONPS: False}
+
+        options_step2 = {OptionConstants.REANNOTATE_TCGA_MAF_COLS: True, OptionConstants.INFER_ONPS: True,
+                   OptionConstants.ALLOW_ANNOTATION_OVERWRITING: True, OptionConstants.NO_PREPEND: False}
+
+        run_spec_step1 = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_filename, midpoint_output_filename,
+                                                                 cache_url="file://out/m2_support/tmp.cache", is_skip_no_alts=True,
+                                                                 other_opts=options_step1, datasource_dir=self._determine_db_dir())
+
+        annotator = Annotator()
+        annotator.initialize(run_spec_step1)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(midpoint_output_filename)
+        i = -1
+        for i, line in enumerate(tsv_reader):
+            self.assertTrue(line["i_QSS"].find("|") == -1, "i_QSS annotation should not have a '|' in it in mutation: " + str(i+1))
+        self.assertTrue(i == 2, 'Mutation count flawed... should have been three mutations: ' + str(i+1))
+
+
+        run_spec_step2 = RunSpecificationFactory.create_run_spec("TCGAMAF", "TCGAMAF", midpoint_output_filename, output_filename,
+                                                                 cache_url="file://out/m2_support/tmp.cache",
+                                                                 other_opts=options_step2, datasource_dir=self._determine_db_dir(),
+                                                                 read_only_cache=True)
+
+        annotator.initialize(run_spec_step2)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(output_filename)
+        i = -1
+        for i, line in enumerate(tsv_reader):
+            is_good_prefix = [not ks.startswith('i_i_') for ks in line.keys()]
+            self.assertTrue(all(is_good_prefix), "i_i_ prefix found.")
+            if i == 0:
+                self.assertTrue(line["i_QSS"].find("|") != -1, "i_QSS tag should have a '|' in it for the first mutation")
+        self.assertTrue(i == 1, 'Mutation count flawed... should have been two mutations: ' + str(i+1))
 
 
 if __name__ == "__main__":

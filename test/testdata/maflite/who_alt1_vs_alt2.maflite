@@ -1,0 +1,3 @@
+build	contig	start_position	end_position	ref_allele	alt_allele1	alt_allele2	tumor_name	normal_name	gene	TJ_Data_Who
+37	1	114372254	114372254	T	C	T	TCGA-BL-A0C8-01A-11D-A10S-08	TCGA-BL-A0C8-10A-01D-A10S-08	TP53	Tromokratis
+37	1	114372254	114372254	T	T	C	TCGA-BL-A0C8-01A-11D-A10S-08	TCGA-BL-A0C8-10A-01D-A10S-08	PIK3CAN	Tromokratis

@@ -48,6 +48,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import Bio
+from oncotator.MutationDataFactory import MutationDataFactory
 
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.EnsemblTranscriptDatasource import EnsemblTranscriptDatasource
@@ -662,6 +663,7 @@ class VariantClassifierTest(unittest.TestCase):
         self.assertEqual(vc.get_vc(),vc_gt)
         self.assertTrue(codon_change == codon_change_gt, "GT/Guess: %s/%s" % (codon_change_gt, codon_change))
         self.assertTrue(protein_change == protein_change_gt, "GT/Guess: %s/%s" % (protein_change_gt, protein_change))
+
 
 
 if __name__ == '__main__':

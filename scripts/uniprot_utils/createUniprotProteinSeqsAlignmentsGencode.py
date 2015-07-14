@@ -229,7 +229,7 @@ def write_fasta(fname, header, seq):
 def generateTranscriptMuts(gafDS,uniprotDS):
     tDict = gafDS.getTranscriptDict()
     for transcriptID in tDict.keys():
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('gene', tDict[transcriptID]['gene'])
         m.createAnnotation('transcript_id', transcriptID)
         m = uniprotDS.annotate_mutation(m)
@@ -287,7 +287,7 @@ def main():
 
 
         # Create a fake dummy mutation and annotate the gene and the simple_uniprot info
-        m = MutationData()
+        m = MutationDataFactory.default_create()
         m.createAnnotation('gene', txs[tx_id].get_gene())
         m.createAnnotation('transcript_id', tx_id)
         m = uniprotDS.annotate_mutation(m)

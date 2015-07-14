@@ -34,6 +34,7 @@ class RunSpecification(object):
         self._cache_url = None
         self._isReadOnlyCache=True
         self._isSkipNoAlts = False
+        self._is_allow_annotation_overwriting = None
         pass
 
     def get_cache_url(self):
@@ -148,7 +149,16 @@ class RunSpecification(object):
     def del_annotating_type(self):
         del self._annotating_type
 
-    def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False, annotating_type=None):
+    def get_is_allow_annotation_overwriting(self):
+        return self._is_allow_annotation_overwriting
+
+    def set_is_allow_annotation_overwriting(self, value):
+        self._is_allow_annotation_overwriting = value
+
+    def del_is_allow_annotation_overwriting(self):
+        del self._is_allow_annotation_overwriting
+
+    def initialize(self, inputCreator, outputRenderer, manualAnnotations=None, datasources=None, isMulticore=False, numCores=4, defaultAnnotations=None, cacheUrl=None, read_only_cache=True, is_skip_no_alts=False, annotating_type=None, is_allow_annotation_overwriting=False):
         self._inputCreator = inputCreator
         self._outputRenderer = outputRenderer
         self._manualAnnotations = manualAnnotations if manualAnnotations is not None else dict()
@@ -160,6 +170,7 @@ class RunSpecification(object):
         self._isReadOnlyCache = read_only_cache
         self._isSkipNoAlts = is_skip_no_alts
         self._annotating_type = annotating_type if annotating_type is not None else RunSpecification.ANNOTATE_MUTATIONS
+        self._is_allow_annotation_overwriting = is_allow_annotation_overwriting
 
     inputCreator = property(get_input_creator, set_input_creator, del_input_creator, "inputCreator's docstring")
     outputRenderer = property(get_output_renderer, set_output_renderer, del_output_renderer, "outputRenderer's docstring")
@@ -171,4 +182,5 @@ class RunSpecification(object):
     cacheUrl = property(get_cache_url, set_cache_url, del_cache_url, "cacheUrl's docstring")
     isReadOnlyCache = property(get_is_read_only_cache, set_is_read_only_cache, del_is_read_only_cache, "isReadOnlyCache's docstring")
     isSkipNoAlts = property(get_is_skip_no_alts, set_is_skip_no_alts, del_is_skip_no_alts, "isSkipNoAlts's docstring")
-    annotating_type = property(get_annotating_type, set_annotating_type, del_annotating_type, "annotating type is static value indiciating what type of mutation to annotate.")
+    annotating_type = property(get_annotating_type, set_annotating_type, del_annotating_type, "annotating type is static value indicating what type of mutation to annotate.")
+    is_allow_annotation_overwriting = property(get_is_allow_annotation_overwriting, set_is_allow_annotation_overwriting, del_is_allow_annotation_overwriting, "Whether this run spec allows overwriting annotations by default or should it throw a DuplicateAnnotationException.")
