@@ -95,6 +95,7 @@ class ColumnCollapser(object):
         update_dict = self._collapse_columns(mut)
         for u in update_dict.keys():
             annotation = mut.getAnnotation(u)
-            annotation.setDatasource(new_annotation_source)
+            if new_annotation_source is not None:
+                annotation.setDatasource(new_annotation_source)
             annotation.setValue(update_dict[u])
 

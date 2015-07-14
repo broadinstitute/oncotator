@@ -63,6 +63,22 @@ class ColumnCollapserTest(unittest.TestCase):
         self.assertEqual(m1['barca'], "carthage_rules")
         self.assertEqual(m1['donotcollapse'], "1|45")
 
+    def test_updating_annotation_source(self):
+        """Test that a String can be passed in to update the annotation source if columns are collapsed"""
+        m1 = MutationData()
+        m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
+        cc = ColumnCollapser()
+        cc.update_mutation(m1, "foo")
+        self.assertEqual(m1.getAnnotation("ALT_F2R1").getDatasource(), "foo")
+
+    def test_not_updating_annotation_source(self):
+        """Test that do not have to update annotation source if columns are collapsed"""
+        m1 = MutationData()
+        m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
+        cc = ColumnCollapser()
+        cc.update_mutation(m1)
+        self.assertEqual(m1.getAnnotation("ALT_F2R1").getDatasource(), "TEST")
+
 
 if __name__ == '__main__':
     unittest.main()
