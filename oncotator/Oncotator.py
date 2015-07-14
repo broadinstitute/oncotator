@@ -184,7 +184,7 @@ def parseOptions(program_version_message):
     parser.add_argument('--infer-onps', dest="infer_onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
     parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF ouput option.")
-    parser.add_argument('--prune-tcga-maf-cols', action='store_true', help="Prefer new, annotated values to those specified by the input file.  Only useful when output is TCGA MAF and when --allow-overwriting is specified.  Automatically turned on with -i TCGAMAF")
+    parser.add_argument('--reannotate-tcga-maf-cols', action='store_true', help="Prefer new, annotated values to those specified by the input file.  Only useful when output is TCGA MAF and when --allow-overwriting is specified.  Automatically turned on with -i TCGAMAF")
     parser.add_argument('-w', '--allow-overwriting', action='store_true', help="Allow annotations to be overwritten (no DuplicateAnnotationException errors).  This should only be used in rare cases and user should know when that is.  Automatically turned on with -i TCGAMAF")
 
     # Process arguments
@@ -252,7 +252,7 @@ def main(argv=None):  # IGNORE:C0111
         is_skip_no_alts = args.skip_no_alt
         genome_build = args.genome_build
         is_no_prepend = not args.prepend
-        is_prune_tcga_maf_cols = args.prune_tcga_maf_cols
+        is_prune_tcga_maf_cols = args.reannotate_tcga_maf_cols
 
         # Initiate an Oncotator session.
         inputFilename = os.path.expanduser(args.input_file)
@@ -320,7 +320,7 @@ def determineOtherOptions(args):
     opts[OptionConstants.INFER_ONPS] = args.infer_onps
     opts[OptionConstants.CUSTOM_CANONICAL_TX_LIST_FILE] = args.canonical_tx_file
     opts[OptionConstants.COLLAPSE_FILTER_COLS] = args.collapse_filter_cols
-    opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = args.prune_tcga_maf_cols
+    opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = args.reannotate_tcga_maf_cols
     opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = args.allow_overwriting
     return opts
 
