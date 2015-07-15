@@ -86,12 +86,13 @@ class ColumnCollapser(object):
         return result
 
     def update_mutation(self, mut, new_annotation_source=None, copy_old_suffix=None):
-        """ Given a mutation, update the relevant annotations with new values.  Please note that this
+        """ Given a mutation, update the relevant annotations with new values.  Please note that this updates in place.
+
         :param copy_old_suffix: Create another annotation with the old value in it.  Use this suffix  If None, do not create the annotation.
         :param new_annotation_source: string giving the annotation source that should be used for this updating of the mutation
             If set to None, leave the old annotation source in place (use sparingly).
         :param mut:
-        :return: mutation with updated annotation values
+        :return: None
         """
         update_dict = self._collapse_columns(mut)
         for u in update_dict.keys():
