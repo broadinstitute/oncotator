@@ -163,8 +163,12 @@ class OnpQueue(object):
                 except KeyError:
                     pass
 
-            values = sorted((set([x.getValue() for x in annotations if x.getValue()])))
-            value = "|".join(values)
+            values = [x.getValue() for x in annotations ]
+            if len(set(values)) == 1:
+                value = values[0]   #if all annotations are identical then don't pipe separate them
+            else:
+                value = "|".join(values)
+
             tags = sorted(set(flatmap(lambda x: x.getTags(), annotations)))
             source = annotations[0].getDatasource()
             datatype = annotations[0].getDataType()

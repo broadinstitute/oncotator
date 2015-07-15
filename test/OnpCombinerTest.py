@@ -285,6 +285,8 @@ class OnpCombinerTest(unittest.TestCase):
         annotator.initialize(spec)
         annotator.annotate()
 
+
+
     def test_mutation_combiner(self):
         """Test that attributes and annotations are set properly with combine mutations"""
         mut1 = MutationDataFactory.default_create(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
@@ -298,6 +300,41 @@ class OnpCombinerTest(unittest.TestCase):
         expected = MutationDataFactory.default_create(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
         expected.createAnnotation("SomeValue", "value1|value2", "INPUT", "STRING", "a value", tags=["IT"])
         expected.createAnnotation("AnotherValue", "5")
+        self.assertTrue(result.attributesEqual(expected))
+        self.assertEqual(result, expected)
+
+    def test_mutation_combiner_ordering(self):
+        """Test that ordering of combined attributes makes matches original order"""
+        mut1 = MutationDataFactory.default_create(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1.createAnnotation("SomeDepth", "2")
+        mut1.createAnnotation("AnotherDepth", "1")
+
+        mut2 = MutationDataFactory.default_create(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2.createAnnotation("SomeDepth", "1" )
+        mut2.createAnnotation("AnotherDepth", "2")
+
+        mdf = MutationDataFactory()
+        result = OnpQueue._combine_mutations([mut1, mut2], mdf)
+
+        expected = MutationDataFactory.default_create(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
+        expected.createAnnotation("SomeDepth", "2|1")
+        expected.createAnnotation("AnotherDepth","1|2")
+        self.assertTrue(result.attributesEqual(expected))
+        self.assertEqual(result, expected)
+
+    def test_mutation_combiner_identical_annotation(self):
+        """Test that annotations with all identical values are not repeated with | between them"""
+        mut1 = MutationDataFactory.default_create(chr=1,start=100, end=100, ref_allele="G", alt_allele="A")
+        mut1.createAnnotation("SampleName", "John Doe")
+
+        mut2 = MutationDataFactory.default_create(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
+        mut2.createAnnotation("SampleName", "John Doe" )
+
+        mdf = MutationDataFactory()
+        result = OnpQueue._combine_mutations([mut1, mut2], mdf)
+
+        expected = MutationDataFactory.default_create(chr=1, start=100, end=101, ref_allele="GC", alt_allele="AT")
+        expected.createAnnotation("SampleName", "John Doe")
         self.assertTrue(result.attributesEqual(expected))
         self.assertEqual(result, expected)
 
