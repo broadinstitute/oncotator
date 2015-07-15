@@ -15,7 +15,7 @@ class ColumnCollapser(object):
 
     RENDER_AS_INT_IF_POSSIBLE = [MIN]
 
-    def __init__(self, config_file="configs/column_collapse.config"):
+    def __init__(self, config_file="column_collapse.config"):
         self._config_parser = ConfigUtils.createConfigParser(config_file, ignoreCase=False)
         self._columns_to_collapse = self._config_parser.options("columns_to_collapse")
 
