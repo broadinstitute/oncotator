@@ -43,12 +43,16 @@ class FieldMapCreator(object):
 
     @staticmethod
     def create_field_map(headers, m, alternative_dict, is_render_internal_fields=True,
-                            exposed_fields=None, prepend="i_", deprioritize_input_annotations=False):
+                            exposed_fields=None, prepend="i_", deprioritize_input_annotations=False,
+                            additional_columns=None):
         """
         Create a mapping for output header to the best input annotation.
 
         This can handle prepend fields (attach the prepend to internal fields), exposed fields (ones not in the list of headers, but should not have a prepend),
 
+        :param additional_columns: a list of additional columns not found in the mutation nor the headers.  These will
+        be considered internal fields with annotations of the exact same name.
+        :type additional_columns list
         :param is_render_internal_fields: Whether annotations not assigned to headers (or superseded by other annotations) should be included in this map.
         :type is_render_internal_fields bool
         :param exposed_fields: list of fields that, if found, should never receive a prepend.
@@ -80,10 +84,14 @@ class FieldMapCreator(object):
         # Now populate internal fields, if requested.
         if is_render_internal_fields:
 
+            if additional_columns is None:
+                additional_columns = []
+
             annotation_names_used = result.values()
             internal_field_dict = dict()
             sAnnotations = set(annotation_names)
             internal_fields = sAnnotations.difference(annotation_names_used)
+            internal_fields = internal_fields.union(set(additional_columns))
 
             # Create a dict to do a lookup of annotation to the column to use.
             reverseAlternativeDict = ConfigUtils.buildReverseAlternativeDictionary(alternative_dict)
@@ -98,6 +106,8 @@ class FieldMapCreator(object):
 
                 field_alt_dict = {i: [prepend+i, no_prepend_name]}
                 choice = FieldMapCreator.choose_best_annotation(i, m, field_alt_dict, deprioritize_input_annotations)
+                if choice is None:
+                    choice = i
                 key_to_use = reverseAlternativeDict.get(i,i)
                 if prepend.strip() == "" or i.startswith(prepend) or i in exposed_fields:
                     internal_field_dict[key_to_use] = choice

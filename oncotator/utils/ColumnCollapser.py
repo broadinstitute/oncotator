@@ -80,7 +80,7 @@ class ColumnCollapser(object):
         :return: dict with key value pairs of annotation_name:collapsed value.  This can then be used to update the mutation
         """
         result = dict()
-        relevant_annotations = list(set(mut.keys()).intersection(self._columns_to_collapse))
+        relevant_annotations = self._get_relevant_annotations(mut)
         for annot in relevant_annotations:
             result[annot] = self._collapse_column(annot, mut[annot])
         return result
@@ -102,3 +102,26 @@ class ColumnCollapser(object):
                 annotation.setDatasource(new_annotation_source)
             annotation.setValue(update_dict[u])
 
+    def _get_relevant_annotations(self, mut):
+        """
+
+        :param mut:
+        :return: list of annotations that will be collapsed given the mutation
+        """
+
+        return list(set(mut.keys()).intersection(self._columns_to_collapse))
+
+    def retrieve_new_annotations_added(self, mut, copy_old_suffix=None):
+        """
+        This method simply returns a list of annotations that would be created if run through update_mutation.
+
+        :param mut:annotated mutation with numeric fields to collapse (presumably)
+        :type mut MutationData
+        :param copy_old_suffix: suffix for the new annotations (that will hold the old values).  Please note that
+        this method will return an empty list if None (default) is specified
+        :return: list of str with annotation names.
+        """
+        if copy_old_suffix is None:
+            return []
+        relevant_annotations = self._get_relevant_annotations(mut)
+        return [a + copy_old_suffix for a in relevant_annotations]

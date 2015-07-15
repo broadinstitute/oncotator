@@ -94,6 +94,9 @@ class RunSpecificationFactory(object):
         if other_opts.get(OptionConstants.ALLOW_ANNOTATION_OVERWRITING) and all([outputFormat != "TCGAMAF", outputFormat !="SIMPLE_TSV"]):
             result.append(RunSpecificationMessage(logging.WARN, "Asking to overwrite annotations for output format that is not TCGAMAF nor SIMPLE_TSV.  This is currently not supported.  Proceeding, but errors (or inconsistent annotations) are possible."))
 
+        if other_opts.get(OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS) and all([outputFormat != "TCGAMAF"]):
+            result.append(RunSpecificationMessage(logging.WARN, "Asking to collapse numeric annotations for output format that is not TCGAMAF.  This is currently not supported and is ignored."))
+
         return result
 
     @staticmethod
