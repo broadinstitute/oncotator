@@ -245,3 +245,12 @@ class MutationData(collections.MutableMapping):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def createCopyAnnotation(self, annotation, new_name):
+        """Create a new annotation with exact same information as the old one.  In other words, all attributes will be the same.
+
+        :param annotation: instance of annotation
+        :param new_name: new name to attach to this instance.
+        """
+        self.createAnnotation(new_name, annotation.getValue(), annotation.getDatasource(),
+                                     annotation.getDataType(), annotation.getDescription(), tags=annotation.getTags(),
+                                     number=annotation.getNumber(), newRequired=self._new_required)

@@ -527,7 +527,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
     @TestUtils.requiresDefaultDB()
     def test_reannotating_actual_file(self):
-        """Test that we can take in a file, annotate, similar to M2 process (VCF to TCGA MAF no ONPs, then TCGA MAF to TCGA MAF with ONPs)"""
+        """Test that we can take in a file, annotate, similar to M2 process (VCF to TCGA MAF no ONPs, then TCGA MAF to TCGA MAF with ONPs) and collapse values."""
         # This test assumes that the numeric values are not being collapsed.
         input_filename = "testdata/m2_support/phasingExample.vcf"
         midpoint_output_filename = "out/m2_support/reannotating_tcga_maf_midpoint.maf.annotated"
@@ -536,16 +536,21 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         options_step1 = {OptionConstants.COLLAPSE_FILTER_COLS: True, OptionConstants.NO_PREPEND: False,
                          OptionConstants.SPLIT_ALLELIC_DEPTH: True, OptionConstants.INFER_ONPS: False}
 
+        # Note that this will also test collapsing numeric values.
         options_step2 = {OptionConstants.REANNOTATE_TCGA_MAF_COLS: True, OptionConstants.INFER_ONPS: True,
-                   OptionConstants.ALLOW_ANNOTATION_OVERWRITING: True, OptionConstants.NO_PREPEND: False}
+                   OptionConstants.ALLOW_ANNOTATION_OVERWRITING: True, OptionConstants.NO_PREPEND: False,
+                   OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS: True}
 
         run_spec_step1 = RunSpecificationFactory.create_run_spec("VCF", "TCGAMAF", input_filename, midpoint_output_filename,
-                                                                 cache_url="file://out/m2_support/tmp.cache", is_skip_no_alts=True,
-                                                                 other_opts=options_step1, datasource_dir=self._determine_db_dir())
+                                                                 is_skip_no_alts=True, other_opts=options_step1,
+                                                                 datasource_dir=self._determine_db_dir())
 
         annotator = Annotator()
         annotator.initialize(run_spec_step1)
         annotator.annotate()
+
+        # To speed up this test, use the same datasources from step 1
+        ds_list = run_spec_step1.get_datasources()
 
         tsv_reader = GenericTsvReader(midpoint_output_filename)
         i = -1
@@ -554,13 +559,21 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         self.assertTrue(i == 2, 'Mutation count flawed... should have been three mutations: ' + str(i+1))
 
 
-        run_spec_step2 = RunSpecificationFactory.create_run_spec("TCGAMAF", "TCGAMAF", midpoint_output_filename, output_filename,
-                                                                 cache_url="file://out/m2_support/tmp.cache",
-                                                                 other_opts=options_step2, datasource_dir=self._determine_db_dir(),
-                                                                 read_only_cache=True)
+        run_spec_step2 = RunSpecificationFactory.create_run_spec_given_datasources("TCGAMAF", "TCGAMAF", midpoint_output_filename, output_filename,
+                                                                 other_opts=options_step2, datasource_list=ds_list)
 
         annotator.initialize(run_spec_step2)
         annotator.annotate()
+
+        gt_alt_count = [80, 7]
+        gt_alt_count_full = ["82|80", "7"]
+        gt_ref_count = [68, 151]
+
+        # Please note that this is not "68|68" since these were collapsed by ONP combiner.
+        gt_ref_count_full = ["68", "151"]
+
+        gt_tumor_f = [.5375, .046]
+        gt_tumor_f_full = ["0.538|0.537", "0.046"]
 
         tsv_reader = GenericTsvReader(output_filename)
         i = -1
@@ -569,6 +582,14 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
             self.assertTrue(all(is_good_prefix), "i_i_ prefix found.")
             if i == 0:
                 self.assertTrue(line["i_QSS"].find("|") != -1, "i_QSS tag should have a '|' in it for the first mutation")
+            self.assertEqual(int(line['t_alt_count']), gt_alt_count[i])
+            self.assertEqual(int(line['t_ref_count']), gt_ref_count[i])
+            self.assertEqual(float(line['i_tumor_f']), gt_tumor_f[i])
+
+            self.assertEqual(line['i_t_alt_count_full'], gt_alt_count_full[i])
+            self.assertEqual(line['i_t_ref_count_full'], gt_ref_count_full[i])
+            self.assertEqual(line['i_tumor_f_full'], gt_tumor_f_full[i])
+
         self.assertTrue(i == 1, 'Mutation count flawed... should have been two mutations: ' + str(i+1))
 
 

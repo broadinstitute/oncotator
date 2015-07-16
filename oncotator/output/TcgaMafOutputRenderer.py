@@ -46,6 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+from oncotator.utils.ColumnCollapser import ColumnCollapser
 from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 
@@ -107,6 +108,13 @@ class TcgaMafOutputRenderer(OutputRenderer):
         self.exposedColumns = set(self.config.get("general", "exposedColumns").split(','))
 
         self._is_entrez_id_message_logged = False
+
+        self._is_collapsing_number_cols = options.get(OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS, False)
+        self._column_collapser = None
+        self._column_collapser_suffix = None
+        if self._is_collapsing_number_cols:
+            self._column_collapser = ColumnCollapser()
+            self._column_collapser_suffix = "_full"
 
     def lookupNCBI_Build(self, build):
         """ If a build number exists in the config file, use that.  Otherwise, use the name specified. """
@@ -223,6 +231,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
         dw.writerow(row)
 
     def _add_output_annotations(self, m):
+        """Add annotations specific to the TCGA MAF
+        """
         m.createAnnotation('ncbi_build', self.lookupNCBI_Build(m.build), annotationSource="OUTPUT")
         if self._is_splitting_allelic_depth and m.get('allelic_depth', "").strip() != "":
             # Handle the splitting of allelic depth
@@ -232,6 +242,8 @@ class TcgaMafOutputRenderer(OutputRenderer):
             m.createAnnotation(TcgaMafOutputRenderer.OUTPUT_T_ALT_COUNT, alt_count, "OUTPUT")
             m.createAnnotation(TcgaMafOutputRenderer.OUTPUT_T_REF_COUNT, ref_count, "OUTPUT")
 
+        if self._is_collapsing_number_cols:
+            self._column_collapser.update_mutation(m, "OUTPUT", self._column_collapser_suffix)
 
     def renderMutations(self, mutations, metadata=None, comments=None):
         """ Returns a file name pointing to the maf file that is generated. """
@@ -270,11 +282,17 @@ class TcgaMafOutputRenderer(OutputRenderer):
 
         if m is not None:
 
+            # Add columns for the new annotations created as part of collapsing cols
+            additional_internal_columns = []
+            if self._column_collapser is not None:
+                additional_internal_columns = self._column_collapser.retrieve_new_annotations_added(m, self._column_collapser_suffix)
+
             # Create a mapping between column name and annotation name
             field_map = FieldMapCreator.create_field_map(headers, m, self.alternativeDictionary,
                                                     self.config.getboolean("general", "displayAnnotations"),
                                                     exposed_fields=self.exposedColumns, prepend=self._prepend,
-                                                    deprioritize_input_annotations=self._is_reannotating)
+                                                    deprioritize_input_annotations=self._is_reannotating,
+                                                    additional_columns=additional_internal_columns)
 
             field_map_keys = field_map.keys()
             internal_fields = sorted(list(set(field_map_keys).difference(headers)))
