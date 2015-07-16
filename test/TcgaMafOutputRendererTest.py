@@ -566,7 +566,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         annotator.annotate()
 
         gt_alt_count = [80, 7]
-        gt_alt_count_full = ["80|82", "7"] # See issue #329.  If that is fixed, this test will need to switch 82 and 80
+        gt_alt_count_full = ["82|80", "7"]
         gt_ref_count = [68, 151]
 
         # Please note that this is not "68|68" since these were collapsed by ONP combiner.
