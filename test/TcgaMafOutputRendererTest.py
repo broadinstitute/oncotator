@@ -573,7 +573,7 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         gt_ref_count_full = ["68", "151"]
 
         gt_tumor_f = [.5375, .046]
-        gt_tumor_f_full = ["0.537|0.538", "0.046"]
+        gt_tumor_f_full = ["0.538|0.537", "0.046"]
 
         tsv_reader = GenericTsvReader(output_filename)
         i = -1
