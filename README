@@ -3,6 +3,7 @@ Oncotator requires Python 2.7 and the following python libraries installed
 pyvcf
 pysam
 biopython
+ngslib
 
 Samtools and Tabix are required if you want to create indexed vcf files for use with Oncotator.
 
