@@ -14,7 +14,13 @@ RUN pip install ngslib
 
 ADD . /oncotator
 
-RUN cd oncotator/ && python setup.py install
+RUN cd oncotator/ && \
+# install pysam 0.7.5 manually
+RUN wget https://pysam.googlecode.com/files/pysam-0.7.5.tar.gz && \
+python /oncotator/distribute_setup.py && \
+easy_install -U distribute && \
+pip install pysam-0.7.5.tar.gz && \
+python setup.py install
 
 ENTRYPOINT ["Oncotator"]
 
