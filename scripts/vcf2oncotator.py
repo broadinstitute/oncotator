@@ -35,4 +35,4 @@ with open("%s_snps" % prefix, 'w') as snps, open("%s_ins" % prefix, 'w') as ins,
                 elif not v.is_deletion and v.is_indel: # insertions
                     ins_wrtr.writerow([v.CHROM, v.POS, v.POS + 1, '-', alt])                
                 elif v.is_deletion:
-                    del_wrtr.writerow([v.CHROM, v.POS, v.POS+(len(alt)-1), v.REF, '-']) 
+                    del_wrtr.writerow([v.CHROM, v.POS, v.POS+(len(v.REF)-1), v.REF, '-']) 
