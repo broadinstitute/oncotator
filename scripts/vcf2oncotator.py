@@ -2,7 +2,8 @@
 #
 # This script will parse a VCF file and create three files in
 # oncotator input format: one for SNPs, one for insertions and one for
-# deletions. It will use the name of the VCF input as prefix and
+# deletions. https://www.broadinstitute.org/oncotator/help/#inputformat
+# It will use the name of the VCF input as prefix and
 # output files are created at the current working directory.
 #
 #####################################################################################################################
