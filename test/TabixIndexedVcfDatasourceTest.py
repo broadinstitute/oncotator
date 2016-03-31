@@ -434,7 +434,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         cur_annotation = Annotation(value="0.5|0.5|0.5", datasourceName="ESP", dataType="String",
                                     description="Allele Frequency", tags=[TagConstants.INFO, TagConstants.SPLIT],
                                     number=-1)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match GT: " + cur_annotation.getValue() + "  guess: " + m1_annotation.getValue() )
 
         m1_annotation = m1_annotated.getAnnotation("ESP_AC")
         cur_annotation = Annotation(value="3,3|3,3|3,3", datasourceName="ESP", dataType="String",

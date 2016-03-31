@@ -46,7 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-
+from oncotator.utils.OncotatorException import OncotatorException
 
 '''
 Created on Jan 10, 2013
@@ -100,7 +100,8 @@ class TabixIndexer(object):
             in the tsv file. Typically, this would be [chr,start,end]  or [gene, startAA, endAA]
         :param inputFilename: tsv file input
         :param preset: if preset is provided, the column coordinates are taken from a preset. Valid values for preset
-        are "gff", "bed", "sam", "vcf", "psltbl", and "pileup".
+        are "gff", "bed", "sam", "vcf", "psltbl", and "pileup".  "tsv" is also recognized, but this will use the tabix
+        generic indexing (after commenting out the header line)
         """
         fileColumnNumList = [] if fileColumnNumList is None else fileColumnNumList
         inputFilename = os.path.abspath(inputFilename)
@@ -123,16 +124,41 @@ class TabixIndexer(object):
             return outputFilename
 
         outputFilename = os.path.join(destDir, string.join([fileName, ".tabix_indexed", fileExtension], ""))
-        # Copy the input file to output file.
-        shutil.copyfile(inputFilename, outputFilename)
 
         # Load the file into a tsvReader.
         if preset in ("gff", "bed", "sam", "vcf", "psltbl", "pileup"):
+            # Copy the input file to output file.
+            shutil.copyfile(inputFilename, outputFilename)
             tabix_index = pysam.tabix_index(filename=outputFilename, force=True, preset=preset)
         else:
-            # Have to specify min_size=0 in pysam 0.8.1 to get pysam to correctly output a .tbi file 
+
+            # Need to comment out the header line with a "#", so we cannot simply copy the file.
+            input_reader = GenericTsvReader(inputFilename)
+
+            output_writer = file(outputFilename, 'w')
+            output_writer.writelines(input_reader.getCommentsAsList())
+            # TODO: Add unit test for comments
+
+            # Add "#" for the header line.
+            output_writer.write("#")
+            field_names = input_reader.getFieldNames()
+            output_writer.write("\t".join(field_names))
+            output_writer.write("\n")
+            output_writer.flush()
+
+            # Write the rest of the file
+            # This might be too slow, since a raw reader would be pretty fast.
+            for line_dict in input_reader:
+                line_list = [line_dict[k] for k in field_names]
+                line_rendered = "\t".join(line_list) + "\n"
+                output_writer.write(line_rendered)
+
+            output_writer.close()
             tabix_index = pysam.tabix_index(filename=outputFilename, force=True, seq_col=fileColumnNumList[0],
                                             start_col=fileColumnNumList[1], end_col=fileColumnNumList[2])
+
+        if tabix_index is None:
+            raise OncotatorException("Could not create a tabix index from this input file: " + outputFilename)
 
         return tabix_index
 

@@ -240,7 +240,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testAnnotationWithExampleVcf(self):
         """
-        Tests whether parsed annotations match the actual annotations.
+        Tests whether parsed annotations match the actual annotations in a simple TSV.  Missing format fields yield -->""  ".,." --> ","
         """
         inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
         outputFilename = os.path.join("out", "example.out.tsv")
@@ -274,7 +274,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for colName in currentColNames:
             self.assertTrue(sum((current[colName] == expected[colName]) | (pandas.isnull(current[colName]) &
                                                                            pandas.isnull(expected[colName]))) ==
-                            len(current.index), "Should have the same values in column " + colName)
+                            len(current.index), "Should have the same values in column " + colName + ": \n" +
+                            str(current[colName]) + "\nvs\n" + str(expected[colName]))
 
     def testAnnotationWithNoSampleNameExampleVcf(self):
         """
