@@ -143,15 +143,71 @@ class CosmicDatasourceTest(unittest.TestCase):
 
         self.assertTrue(m['COSMIC_n_overlapping_mutations'] == '0')
 
-        #1	150483621	150483621
+        # # 7:140481411-140481411
         m = MutationDataFactory.default_create()
-        m.chr = '1'
-        m.start = '150483621'
-        m.end = '150483621'
+        m.chr = '7'
+        m.start = '140481411'
+        m.end = '140481411'
         m.ref_allele = "G"
         m.alt_allele = "T"
         m = gafDS.annotate_mutation(m)
         m = cosmicDS.annotate_mutation(m)
+
+        # As a reminder, the COSMIC datasource does not check the ref and alt allele for a match. (14)
+        self.assertTrue(m['COSMIC_n_overlapping_mutations'] == '22')
+
+        # # 7:140481411-140481411
+        m = MutationDataFactory.default_create()
+        m.chr = '7'
+        m.start = '140481411'
+        m.end = '140481411'
+        m.ref_allele = "G"
+        m.alt_allele = "A"
+        m = gafDS.annotate_mutation(m)
+        m = cosmicDS.annotate_mutation(m)
+
+        # As a reminder, the COSMIC datasource does not check the ref and alt allele for a match. (7)
+        self.assertTrue(m['COSMIC_n_overlapping_mutations'] == '22')
+
+        # Test a gpp record
+        m = MutationDataFactory.default_create()
+        m.createAnnotation("gene", "ABL1")
+        m.createAnnotation("transcript_protein_position_start", "255")
+        m.createAnnotation("transcript_protein_position_end", "255")
+
+        # These values (chr, start, and end) are incorrect.  This is by design -- just being used as dummy values.
+        m.chr = '9'
+        m.start = '1'
+        m.end = '1'
+
+        m = cosmicDS.annotate_mutation(m)
+
+        # $ grep -P "^ABL1\t" ~/broad_oncotator_configs/CosmicCompleteTargetedScreensMutantExport.tsv/v76/CosmicCompleteTargetedScreensMutantExport.tsv | cut -f 19,24 | sort | egrep "[A-Z]255[A-Z]" | wc
+        # 157
+        #
+        # The rest:
+        # $ grep -P "^ABL1\t" ~/broad_oncotator_configs/CosmicCompleteTargetedScreensMutantExport.tsv/v76/CosmicCompleteTargetedScreensMutantExport.tsv | cut -f 19,24 | sort | uniq | egrep "_"
+        # p.H295_P296insH	9:133747575-133747576
+        # p.K356_K357insE	9:133748407-133748408
+        # p.K357_N358insK	9:133748407-133748408
+        # p.L184_K274del	9:133738150-133738422
+        # p.L248_K274del
+        #
+        # $ grep -P "^ABL1\t" ~/broad_oncotator_configs/CosmicCompleteTargetedScreensMutantExport.tsv/v76/CosmicCompleteTargetedScreensMutantExport.tsv | cut -f 19,24 | sort | egrep "_K274"
+        # p.L184_K274del	9:133738150-133738422
+        # p.L184_K274del	9:133738150-133738422
+        # p.L248_K274del
+        # p.L248_K274del
+        #
+        # four overlap p.255 + 157 that are exact matches for p.255.
+        # 155 + 4 were hematopoietic_and_lymphoid_tissue
+
+        self.assertTrue(m['COSMIC_n_overlapping_mutations'] == str(157 + 4))
+        self.assertTrue(m['COSMIC_overlapping_mutation_AAs'].find('255') != -1)
+        self.assertTrue(m['COSMIC_overlapping_mutation_AAs'].find('p.L184_K274del') != -1)
+        self.assertTrue(m['COSMIC_overlapping_mutation_AAs'].find('p.L248_K274del') != -1)
+        self.assertTrue(m['COSMIC_overlapping_primary_sites'].find("haematopoietic_and_lymphoid_tissue(159)") != -1, "Did not have the correct primary sites annotation (haematopoietic_and_lymphoid_tissue(159)): " + m['COSMIC_overlapping_primary_sites'])
+
 
 if __name__ == '__main__':
     unittest.main()

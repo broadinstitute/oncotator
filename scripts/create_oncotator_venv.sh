@@ -12,7 +12,6 @@ while getopts ":e:ckstm" option; do
 		e) ENV="$OPTARG" ;;
 		c) FLAGS="archflags" ;;
 		k) COMPIL="skip" ;;
-		s) PYVCF="skip" ;;
 		t) TRAVIS=true ;;
 		m) MAC=true ;;
 	esac
@@ -27,7 +26,6 @@ Optional arguments:  \n \
 -c \t trigger the workaround for the XCode 5.1.1 compilation bug \n \
    \t (see documentation for details)  \n \
 -k \t skip packages that require compilation  \n \
--s \t skip packages that are not available through PyPI \n \
 -t \t run in travis installation mode \n \
 -m \t create venv on Mac (i.e. skip ngslib installation) \n" $0
 
@@ -40,10 +38,6 @@ fi
 
 if [ ! -z "$COMPIL" ]; then
 	printf "Option -k specified -- packages that require compilation will be skipped.\n"
-fi
-
-if [ ! -z "$PYVCF" ]; then
-	printf "Option -s specified -- packages that cannot be obtained through PyPI will be skipped.\n"
 fi
 
 if [ ! -z "$TRAVIS" ]; then
@@ -115,7 +109,7 @@ fi
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in bcbio-gff nose shove python-memcached natsort more-itertools enum34
+for PACKAGE in pyvcf bcbio-gff nose shove python-memcached natsort more-itertools enum34
 do
 	echo " "
 	echo "$PACKAGE =========================="
@@ -123,34 +117,6 @@ do
 	echo "OK"
 done
 
-
-#################################################
-# Tricky installations
-#################################################
-
-echo " "
-echo "pyvcf ========================="
-
-if [ "$PYVCF" == "skip" ];
-then
-	echo $SKIP_MSG
-else
-	echo "Attempting to install a package that cannot be obtained from PyPI. If this fails, you will need to install it manually after the script has run. "
-	# This one is a little complicated
-	echo "Retrieving mgupta (aka elephanthunter) fork of PyVCF"
-	wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
-
-	if [ -f "master" ];
-	then
-	   mv master master.zip
-	else
-	   echo "No master found, assuming master.zip"
-	fi
-
-	unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
-
-	echo "OK."
-fi
 
 #################################################
 # All done!

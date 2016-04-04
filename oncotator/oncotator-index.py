@@ -49,19 +49,21 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import sys
+from natsort import natsort
 from oncotator.index.TabixIndexer import TabixIndexer
 from oncotator.index.gaf import index_gaf, index_gaf_fastas
 import pysam
+import os
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print "Usage: oncotator-index <gaf|gaf-seqs|cosmic> <input_file>"
+    if len(sys.argv) != 4:
+        print "Usage: oncotator-index <gaf|gaf-seqs|cosmic> <input_file> <version>"
         sys.exit(1)
 
-    datasource_type, input_fname = sys.argv[1:]
+    datasource_type, input_fname, input_version = sys.argv[1:]
     output_fname = input_fname + '.idx'
     if datasource_type == 'cosmic':
-        output_fname = input_fname + '.tbi'
+        output_fname = input_fname + '.in'
 
     if datasource_type not in ['gaf', 'gaf-seqs', 'cosmic']:
         print "%s is not a valid datasource type." % datasource_type
@@ -84,7 +86,7 @@ if __name__ == '__main__':
         headers = line.strip('\n').split('\t')
         parse_cosmic_line = lambda input_line: dict(zip(headers, input_line.strip('\n').split('\t')))
 
-        source = 'cosmic_v62' #should not be hardcoded
+        source = 'cosmic_v' + input_version #should not be hardcoded
         feature = 'variation'
         score = '.'
         strand = '.'
@@ -97,7 +99,7 @@ if __name__ == '__main__':
 
             tsv_data = parse_cosmic_line(line)
             try:
-                chromosome, coords = tsv_data['Mutation GRCh37 genome position'].split(':')
+                chromosome, coords = tsv_data['Mutation genome position'].split(':')
             except ValueError:
                 #skip cosmic entries with no position data
                 continue
@@ -112,7 +114,7 @@ if __name__ == '__main__':
         #tabix needs file to be sorted
         new_cosmic_lines.sort(key=lambda x: int(x['end']))
         new_cosmic_lines.sort(key=lambda x: int(x['start']))
-        new_cosmic_lines.sort(key=lambda x: x['chromosome'])
+        new_cosmic_lines = natsort.natsorted(new_cosmic_lines, key=lambda x: x['chromosome'])
 
         headers.extend(['chromosome', 'start', 'end'])
         out = open(output_fname, 'w')
@@ -121,7 +123,7 @@ if __name__ == '__main__':
             out.write('\t'.join([tsv_data[h] for h in headers]) + '\n')
         out.close()
 
-        pysam.tabix_index(filename=output_fname, seq_col=15, start_col=16, end_col=17)
+        pysam.tabix_index(filename=output_fname, seq_col=34, start_col=35, end_col=36)
 
         print("Creating second index for AA position...")
         # Create a second index file by gene and start AA, endAA

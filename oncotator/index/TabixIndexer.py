@@ -137,7 +137,6 @@ class TabixIndexer(object):
 
             output_writer = file(outputFilename, 'w')
             output_writer.writelines(input_reader.getCommentsAsList())
-            # TODO: Add unit test for comments
 
             # Add "#" for the header line.
             output_writer.write("#")
