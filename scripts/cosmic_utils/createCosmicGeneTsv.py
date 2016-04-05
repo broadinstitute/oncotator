@@ -49,8 +49,10 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from collections import defaultdict
 import csv
 from oncotator.utils.GenericTsvReader import GenericTsvReader
+from scripts.cosmic_utils.shared_utils import bufcount
 
 
 def parseOptions():
@@ -65,6 +67,7 @@ def parseOptions():
 
     args = parser.parse_args()
     return args
+
 
 if __name__ == '__main__':
     args = parseOptions()
@@ -84,26 +87,28 @@ if __name__ == '__main__':
 
     # Construct dictionary that is [gene][histology/tissue type] = count, where count is the total for that histology
     #   and that gene
-    geneDictionary = dict()
-    for line in tsvReader:
+    last_i = 0
+    num_lines = bufcount(inputFilename)
+    geneDictionary = defaultdict(dict)
+    for i, line in enumerate(tsvReader):
         gene = line['Gene name']
+
         # Skip blank genes
         if gene is None or gene.strip() == "":
             continue
-
-        # Skip fusion genes
-        if gene.find("/") != -1:
-            continue
-
-        if gene not in geneDictionary.keys():
-            geneDictionary[gene] = dict()
 
         site = line['Primary site']
         if site not in geneDictionary[gene].keys():
             geneDictionary[gene][site] = 0
         geneDictionary[gene][site] += 1
 
+        # Progress...
+        if i - last_i > round(float(num_lines)/100.0):
+            print("{:.0f}% complete".format(100 * float(i)/float(num_lines)))
+            last_i = i
+
     # Write tsv output file.
+    print("Writing output...")
     tsvWriter = csv.DictWriter(file(outputFilename,'w'), outputHeaders, delimiter='\t', lineterminator="\n")
     tsvWriter.fieldnames = outputHeaders
     tsvWriter.writeheader()

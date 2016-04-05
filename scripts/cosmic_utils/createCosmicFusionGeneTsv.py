@@ -46,7 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-
+from scripts.cosmic_utils.shared_utils import bufcount
 
 '''
 Created on Jan 22, 2013
@@ -66,15 +66,17 @@ from argparse import RawDescriptionHelpFormatter
 import csv
 from oncotator.utils.GenericTsvReader import GenericTsvReader 
 from collections import OrderedDict
+import re
 def parseOptions():
     
     # Process arguments
-    desc = ''' '''
+    desc = ''' Create the COSMIC fusion gene Oncotator datasource.'''
     epilog = ''' NOTE: This script will load large portions of the COSMIC input file into RAM.
-    egrep "^[A-Z0-9]+/" CosmicMutantExportIncFus_v62_291112.tsv
+
+    Updated for v76
     '''
     parser = ArgumentParser(description=desc, formatter_class=RawDescriptionHelpFormatter, epilog=epilog)
-    parser.add_argument("ds_file", type=str, help="COSMIC datasource filename. For example, 'CosmicCompleteExport_v62_261112.tsv' ")
+    parser.add_argument("ds_file", type=str, help="COSMIC datasource filename. For example, 'CosmicFusionExport.tsv' ")
     parser.add_argument("output_file", type=str, help="TSV filename for output.  File will be overwritten if it already exists.")
     
     args = parser.parse_args()
@@ -94,36 +96,42 @@ if __name__ == '__main__':
     args = parseOptions()
     inputFilename = args.ds_file
     outputFilename = args.output_file
-    
+    num_lines = bufcount(inputFilename)
     tsvReader = GenericTsvReader(inputFilename)
     headers = tsvReader.getFieldNames()
     print('Found headers (input): ' + str(headers))
-    if "Gene name" not in headers:
-        raise NotImplementedError("Could not find Gene name column in the input file.")
+    if "Translocation Name" not in headers:
+        raise NotImplementedError("Could not find Translocation Name column in the input file.")
     
-    outputHeaders = ['gene', 'fusion_genes']
+    outputHeaders = ['gene', 'fusion_genes', 'fusion_id']
     
     # Create a dictionary where key is the gene and value is another dict: {fusion_gene:count}
     fusionGeneDict = OrderedDict()
-    
-    for line in tsvReader:
-        fusionGene = line['Gene name']
+    last_i = 0
+    for i, line in enumerate(tsvReader):
+        fusion_gene_description = line['Translocation Name']
         
-        if fusionGene.find('/') == -1:
-            # Not a fusion gene
+        if len(fusion_gene_description.strip()) == 0:
+            # blank
             continue
-        
-        geneListKeys = fusionGene.split('/')
-        
-        for k in geneListKeys:
+
+        # geneListKeys = fusionGene.split('/')
+
+        genes_in_this_fusion = re.findall("_*([A-Z0-9\-\.]+)\{", fusion_gene_description)
+
+        for k in genes_in_this_fusion:
             if k not in fusionGeneDict.keys():
                 fusionGeneDict[k] = dict()
-            
-            # Look for the fusion gene
-            if fusionGene not in fusionGeneDict[k].keys():
-                fusionGeneDict[k][fusionGene] = 0
-            
-            fusionGeneDict[k][fusionGene] = fusionGeneDict[k][fusionGene] + 1
+
+            # Look for the fusion
+            if fusion_gene_description not in fusionGeneDict[k].keys():
+                fusionGeneDict[k][fusion_gene_description] = 0
+
+            fusionGeneDict[k][fusion_gene_description] = fusionGeneDict[k][fusion_gene_description] + 1
+
+        if i - last_i > round(float(num_lines)/100.0):
+            print("{:.0f}% complete".format(100 * float(i)/float(num_lines)))
+            last_i = i
         
     # Render the fusionGeneDict
     tsvWriter = csv.DictWriter(file(outputFilename,'w'), outputHeaders, delimiter='\t', lineterminator="\n")
