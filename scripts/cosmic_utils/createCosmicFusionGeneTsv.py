@@ -46,7 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-from scripts.cosmic_utils.shared_utils import bufcount
+from shared_utils import count_lines
 
 '''
 Created on Jan 22, 2013
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     args = parseOptions()
     inputFilename = args.ds_file
     outputFilename = args.output_file
-    num_lines = bufcount(inputFilename)
+    num_lines = count_lines(inputFilename)
     tsvReader = GenericTsvReader(inputFilename)
     headers = tsvReader.getFieldNames()
     print('Found headers (input): ' + str(headers))

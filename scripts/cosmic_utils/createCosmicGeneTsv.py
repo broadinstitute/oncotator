@@ -52,7 +52,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections import defaultdict
 import csv
 from oncotator.utils.GenericTsvReader import GenericTsvReader
-from scripts.cosmic_utils.shared_utils import bufcount
+from shared_utils import count_lines
 
 
 def parseOptions():
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     # Construct dictionary that is [gene][histology/tissue type] = count, where count is the total for that histology
     #   and that gene
     last_i = 0
-    num_lines = bufcount(inputFilename)
+    num_lines = count_lines(inputFilename)
     geneDictionary = defaultdict(dict)
     for i, line in enumerate(tsvReader):
         gene = line['Gene name']
