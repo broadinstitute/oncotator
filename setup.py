@@ -139,7 +139,7 @@ classifiers = [
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Bio-Informatics ',
-        'Topic :: Scientific/Engineering :: Medical Science Apps.',
+        'Topic :: Scientific/Engineering :: Medical Science Apps.'
 
    ],
 )
