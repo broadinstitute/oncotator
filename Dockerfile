@@ -1,6 +1,6 @@
-FROM python:2
+FROM python:2.7.9
 
-MAINTAINER Alex Ramos <aramos@broadinstitute.org>
+MAINTAINER oncotator <oncotator@broadinstitute.org>
 
 RUN apt-get update && apt-get install unzip
 
