@@ -15,7 +15,6 @@ before_install:
   - sudo apt-get install zlibc
 install:
   # install deps
-  # - pip install -U distribute
   - bash scripts/create_oncotator_venv.sh
   # install your own package into the environment
   - python setup.py install
@@ -26,6 +25,5 @@ script:
   - /home/travis/virtualenv/python2.7.9/bin/nosetests --all-modules --exe --with-xunit --xunit-file=${PWD}/nosetests.xml -w test -v --with-coverage --cover-package=oncotator,test --cover-inclusive --cover-erase --cover-branches --cover-tests
   - oncotator --help
 after_success:
-  #- pip install -U distribute
   - pip install -U coveralls
   - coveralls
