@@ -68,6 +68,10 @@ pip --version
 pip install -U pip
 pip --version
 
+#
+# IMPORTANT changes to packages and version numbers must also be reflected in setup.py
+#
+
 #################################################
 # Installations that require compilation
 #################################################
@@ -78,14 +82,14 @@ then
 else
 	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
+	for C_PACKAGE in 'biopython==1.66' 'cython==0.24' 'numpy==1.11.0' 'pandas==0.18.0' 'sqlalchemy==1.0.12'
 	do
 		echo " "
 		echo "$C_PACKAGE =========================="
 		if [ "$FLAGS" == "archflags" ]; then
 			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install $C_PACKAGE
 		else
-			pip install --no-use-wheel $C_PACKAGE
+			pip install --no-binary :all: $C_PACKAGE
 		fi
 		echo "OK"
 	done
@@ -94,9 +98,9 @@ else
 		echo " "
 		echo "ngslib =========================="
 		if [ "$FLAGS" == "archflags" ]; then
-			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install ngslib
+			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install ngslib==1.1.18
 		else
-			pip install --no-use-wheel ngslib
+			pip install --no-binary :all: ngslib==1.1.18
 		fi
 		echo "OK"
 	fi		
@@ -109,11 +113,11 @@ fi
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in pyvcf bcbio-gff nose shove python-memcached natsort more-itertools enum34
+for PACKAGE in 'pyvcf==0.6.8' 'bcbio-gff==0.6.2' 'nose==1.3.7' 'shove==0.6.6' 'python-memcached==1.57' 'natsort==4.0.4' 'more-itertools==2.2' 'enum34==1.1.2'
 do
 	echo " "
 	echo "$PACKAGE =========================="
-	pip install -U --no-use-wheel $PACKAGE
+	pip install -U --no-binary :all: $PACKAGE
 	echo "OK"
 done
 

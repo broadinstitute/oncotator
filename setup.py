@@ -125,8 +125,11 @@ setup(
 # 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 #''',
   long_description=open('README.rst').read(),
-  
-  install_requires=['bcbio-gff', 'pyvcf >= 0.6.8', 'pysam >= 0.9.0', 'pandas', 'biopython', 'numpy', 'cython', 'shove', 'sqlalchemy', 'nose', 'python-memcached', 'natsort', 'more-itertools', 'enum34'],
+
+  # If create_oncotator_venv.sh changes, changes must go here as well...
+  install_requires=['bcbio-gff==0.6.2', 'pyvcf == 0.6.8', 'pysam == 0.9.0', 'pandas==0.18.0', 'biopython==1.66',
+                    'numpy==1.11.0', 'cython==0.24', 'shove==0.6.6', 'sqlalchemy==1.0.12', 'nose==1.3.7',
+                    'python-memcached==1.57', 'natsort==4.0.4', 'more-itertools==2.2', 'enum34==1.1.2'],
   
   # For future reference... how to specify required libraries.
     #  scripts=['scripts/vcf_melt', 'scripts/vcf_filter.py'],
@@ -143,3 +146,11 @@ classifiers = [
 
    ],
 )
+
+# On mac we do not install ngslib.  We do not attempt it in this setup script.  However, we need to alert user if ngslib
+#  is not installed.  This could happen if the user is not installing into an environment where create_oncotator_venv.sh
+#  was run...
+try:
+    import ngslib
+except ImportError:
+    print('ngslib must be installed manually on non-mac: pip install --no-binary :all: ngslib==1.1.18')
