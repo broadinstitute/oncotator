@@ -12,7 +12,6 @@ while getopts ":e:ckstm" option; do
 		e) ENV="$OPTARG" ;;
 		c) FLAGS="archflags" ;;
 		k) COMPIL="skip" ;;
-		s) PYVCF="skip" ;;
 		t) TRAVIS=true ;;
 		m) MAC=true ;;
 	esac
@@ -27,7 +26,6 @@ Optional arguments:  \n \
 -c \t trigger the workaround for the XCode 5.1.1 compilation bug \n \
    \t (see documentation for details)  \n \
 -k \t skip packages that require compilation  \n \
--s \t skip packages that are not available through PyPI \n \
 -t \t run in travis installation mode \n \
 -m \t create venv on Mac (i.e. skip ngslib installation) \n" $0
 
@@ -40,10 +38,6 @@ fi
 
 if [ ! -z "$COMPIL" ]; then
 	printf "Option -k specified -- packages that require compilation will be skipped.\n"
-fi
-
-if [ ! -z "$PYVCF" ]; then
-	printf "Option -s specified -- packages that cannot be obtained through PyPI will be skipped.\n"
 fi
 
 if [ ! -z "$TRAVIS" ]; then
@@ -74,6 +68,10 @@ pip --version
 pip install -U pip
 pip --version
 
+#
+# IMPORTANT changes to packages and version numbers must also be reflected in setup.py
+#
+
 #################################################
 # Installations that require compilation
 #################################################
@@ -84,14 +82,14 @@ then
 else
 	echo "Attempting to install packages that require compilation. If this fails, try again with the flag -c added to the script command. If that still does not work, you will need to install them manually."
 
-	for C_PACKAGE in biopython cython numpy pandas sqlalchemy
+	for C_PACKAGE in 'biopython==1.66' 'cython==0.24' 'numpy==1.11.0' 'pandas==0.18.0' 'sqlalchemy==1.0.12'
 	do
 		echo " "
 		echo "$C_PACKAGE =========================="
 		if [ "$FLAGS" == "archflags" ]; then
 			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install $C_PACKAGE
 		else
-			pip install --no-use-wheel $C_PACKAGE
+			pip install --no-binary :all: $C_PACKAGE
 		fi
 		echo "OK"
 	done
@@ -100,9 +98,9 @@ else
 		echo " "
 		echo "ngslib =========================="
 		if [ "$FLAGS" == "archflags" ]; then
-			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install ngslib
+			env ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future" pip install ngslib==1.1.18
 		else
-			pip install --no-use-wheel ngslib
+			pip install --no-binary :all: ngslib==1.1.18
 		fi
 		echo "OK"
 	fi		
@@ -115,42 +113,14 @@ fi
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in bcbio-gff nose shove python-memcached natsort more-itertools enum34
+for PACKAGE in 'pyvcf==0.6.8' 'bcbio-gff==0.6.2' 'nose==1.3.7' 'shove==0.6.6' 'python-memcached==1.57' 'natsort==4.0.4' 'more-itertools==2.2' 'enum34==1.1.2'
 do
 	echo " "
 	echo "$PACKAGE =========================="
-	pip install -U --no-use-wheel $PACKAGE
+	pip install -U --no-binary :all: $PACKAGE
 	echo "OK"
 done
 
-
-#################################################
-# Tricky installations
-#################################################
-
-echo " "
-echo "pyvcf ========================="
-
-if [ "$PYVCF" == "skip" ];
-then
-	echo $SKIP_MSG
-else
-	echo "Attempting to install a package that cannot be obtained from PyPI. If this fails, you will need to install it manually after the script has run. "
-	# This one is a little complicated
-	echo "Retrieving mgupta (aka elephanthunter) fork of PyVCF"
-	wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
-
-	if [ -f "master" ];
-	then
-	   mv master master.zip
-	else
-	   echo "No master found, assuming master.zip"
-	fi
-
-	unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.* && rm -f master*
-
-	echo "OK."
-fi
 
 #################################################
 # All done!

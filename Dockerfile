@@ -1,14 +1,10 @@
-FROM python:2
+FROM python:2.7.9
 
-MAINTAINER Alex Ramos <aramos@broadinstitute.org>
+MAINTAINER oncotator <oncotator@broadinstitute.org>
 
 RUN apt-get update && apt-get install unzip
 
 RUN pip install numpy
-
-RUN wget --no-check-certificate 'https://github.com/elephanthunter/PyVCF/archive/master.zip'
-
-RUN unzip master.zip && cd PyVCF-master && python setup.py install && cd .. && rm -Rf PyVCF-master && rm -f master.*
 
 RUN pip install ngslib
 

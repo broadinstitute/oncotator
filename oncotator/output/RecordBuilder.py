@@ -178,6 +178,8 @@ class RecordBuilder:
 
                 if ID == "GT":
                     sampleData[i] = val[0]
+                    if sampleData[i] is None:
+                        sampleData[i] = "./."
                 else:
                     sampleData[i] = val
 
@@ -216,7 +218,11 @@ class RecordBuilder:
         filt = self._filt
         info = self._resolveInfo()
         fmt = string.join(self._fmtIDs, ":")
-        record = vcf.model._Record(chrom, pos, ID, refAllele, alts, qual, filt, info, fmt, self._sampleNameIndexes)
+
+        # This needs to fixed for other types of alts (such as SV).  This line ensures that all variants are only
+        #   substitution
+        alt_records = [vcf.model._Substitution(alt) for alt in alts]
+        record = vcf.model._Record(chrom, pos, ID, refAllele, alt_records, qual, filt, info, fmt, self._sampleNameIndexes)
         record.samples = self._resolveSamples(record)
 
         return record

@@ -176,7 +176,7 @@ class ConfigUtils(object):
         configLocalFilename = re.sub(pattern, ".local.config", configBaseFilename)
         
         dirName = os.path.dirname(sourceConfigFile)
-        if dirName <> "":
+        if dirName != "":
             dirName = dirName + '/'
         configLocalSourceFilename = dirName + configLocalFilename
         configLocalSourceFP = ConfigUtils._locateConfigFile(configLocalSourceFilename, isRelaxedLogging=True, additional_config_dir=additional_config_dir)
@@ -194,7 +194,7 @@ class ConfigUtils(object):
         """
         if not os.path.exists(sourceConfigFile):
             if not isRelaxedLogging:
-                logging.getLogger(__name__).debug("Could not find config file (" + sourceConfigFile + ").  Trying configs/ prepend.")
+                logging.getLogger(__name__).info("Could not find config file (" + sourceConfigFile + ").  Trying configs/ prepend.")
             if os.path.exists("configs/"+sourceConfigFile):
                 logging.getLogger(__name__).info("Found config file (" + sourceConfigFile + ") using configs/ prepend.")
                 sourceConfigFile = "configs/" + sourceConfigFile
@@ -207,13 +207,13 @@ class ConfigUtils(object):
                 logging.getLogger(__name__).debug("Attempting to get " + sourceConfigFile + " from package resources")
                 sourceConfigFP = None
                 try:
-                    from pkg_resources import resource_stream
-                    sourceConfigFP = resource_stream("oncotator.configs", sourceConfigFile)
-                except IOError as ioe:
+                    from pkg_resources import resource_filename
+                    sourceConfigFP = file(resource_filename("oncotator.configs", sourceConfigFile), 'r')
+                except (KeyError, IOError) as ioe:
                     if not isRelaxedLogging:
-                        logging.getLogger(__name__).warn("Could not find " + sourceConfigFile + " in installed resources ")   
+                        logging.getLogger(__name__).warn("Could not find " + sourceConfigFile + " in installed resources ")
         else:
-            sourceConfigFP = file(sourceConfigFile,'r')       
+            sourceConfigFP = file(sourceConfigFile,'r')
         return sourceConfigFP
 
     @staticmethod
