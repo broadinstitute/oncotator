@@ -69,8 +69,14 @@ if __name__ == '__main__':
         print "%s is not a valid datasource type." % datasource_type
         sys.exit(1)
 
-    print "Input datasource: %s" % input_fname
-    print "Output indexed file: %s" % output_fname
+    print("Input datasource: %s" % input_fname)
+    print("Output indexed file: %s" % output_fname)
+
+    print("This script is meant for oncotator developers more than end-users....")
+
+    if input_version != "76":
+        print("This script has only been tested with COSMIC v76 and may have issues with later versions.  Please email oncotator@broadinstitute.org if you are using a later version of COSMIC and this script does not behave correctly.")
+
 
     if datasource_type == 'gaf':
         index_gaf(input_fname, output_fname)
@@ -98,6 +104,8 @@ if __name__ == '__main__':
                 continue
 
             tsv_data = parse_cosmic_line(line)
+            if tsv_data.get('Mutation GRCh37 genome position', None) is not None:
+                raise ValueError('This appears to be an old version of COSMIC, please use a newer version (v76 or above).')
             try:
                 chromosome, coords = tsv_data['Mutation genome position'].split(':')
             except ValueError:

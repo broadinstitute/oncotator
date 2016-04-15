@@ -162,17 +162,19 @@ class VcfOutputRenderer(OutputRenderer):
 
     def _renderSortedTsv(self, templateFilename, vcfFilename, tsvFilename, sampleNames, dataManager, inferGenotypes):
         """
+        Turn a sorted tsv into a VCF
 
-
-        :param templateFilename:
-        :param vcfFilename:
-        :param tsvFilename:
-        :param sampleNames:
-        :param dataManager:
+        :param templateFilename: basic VCF to model output VCF.
+        :param vcfFilename: output VCF filename
+        :param tsvFilename: input sorted tsv
+        :param sampleNames: sample names that should be used in output
+        :param dataManager: dataManager instance used in creating pyvcf records.
+        :param inferGenotypes: whether we should try to infer the genotypes, since we may not have add GT explicitly
+        on input
         """
         tempVcfReader = vcf.Reader(filename=templateFilename, strict_whitespace=True)
         pointer = file(vcfFilename, "w")
-        vcfWriter = vcf.Writer(pointer, tempVcfReader, self.lineterminator)
+
         tsvReader = GenericTsvReader(tsvFilename, delimiter=self.delimiter)
         index = 0
         nrecords = 1000
@@ -180,35 +182,31 @@ class VcfOutputRenderer(OutputRenderer):
         pos = None
         refAllele = None
         recordBuilder = None
+        with vcf.Writer(pointer, tempVcfReader, self.lineterminator) as vcfWriter:
+            for ctr, m in enumerate(tsvReader):
+                isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"], refAllele, m["ref_allele"])
+                if isNewRecord:
+                    if recordBuilder is not None:
+                        record = recordBuilder.createRecord()
+                        vcfWriter.write_record(record)
+                        index += 1
+                        if index % nrecords == 0:
+                            self.logger.info("Rendered " + str(index) + " vcf records.")
+                            vcfWriter.flush()
 
-        ctr = 0
-        m = None
+                    chrom = m["chr"]
+                    pos = m["start"]
+                    refAllele = m["ref_allele"]
 
-        for m in tsvReader:
-            ctr += 1
-            isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"], refAllele, m["ref_allele"])
-            if isNewRecord:
-                if recordBuilder is not None:
-                    record = recordBuilder.createRecord()
-                    vcfWriter.write_record(record)
-                    index += 1
-                    if index % nrecords == 0:
-                        self.logger.info("Rendered " + str(index) + " vcf records.")
-                        vcfWriter.flush()
+                    recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
 
-                chrom = m["chr"]
-                pos = m["start"]
-                refAllele = m["ref_allele"]
+                recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager, inferGenotypes)
 
-                recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
+            if recordBuilder is not None:
+                record = recordBuilder.createRecord()
+                vcfWriter.write_record(record)
 
-            recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager, inferGenotypes)
-
-        if recordBuilder is not None:
-            record = recordBuilder.createRecord()
-            vcfWriter.write_record(record)
-        vcfWriter.close()
-
+        tsvReader.close()
         self.logger.info("Rendered all " + str(index) + " vcf records.")
 
     def _parseRecordBuilder(self, m, recordBuilder, dataManager, inferGenotype):

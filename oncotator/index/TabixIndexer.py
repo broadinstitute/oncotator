@@ -94,8 +94,9 @@ class TabixIndexer(object):
         This will overwrite an existing index (since the force parameter is set to True in pysam.tabix_index() call).
         Also, in cases where the inputFilename doesn't end with a ".gz", the a compressed file will be created and indexed.
 
+        If the gz and tbi files already exist, this will simply copy the files to the specified destination.
+
         :param destDir: destination directory
-        :param ds_foldername: destination folder name
         :param fileColumnNumList: ordered list.  This list contains the corresponding entries (column numbers)
             in the tsv file. Typically, this would be [chr,start,end]  or [gene, startAA, endAA]
         :param inputFilename: tsv file input
@@ -135,24 +136,24 @@ class TabixIndexer(object):
             # Need to comment out the header line with a "#", so we cannot simply copy the file.
             input_reader = GenericTsvReader(inputFilename)
 
-            output_writer = file(outputFilename, 'w')
-            output_writer.writelines(input_reader.getCommentsAsList())
+            with file(outputFilename, 'w') as output_writer:
+                output_writer.writelines(input_reader.getCommentsAsList())
 
-            # Add "#" for the header line.
-            output_writer.write("#")
-            field_names = input_reader.getFieldNames()
-            output_writer.write("\t".join(field_names))
-            output_writer.write("\n")
-            output_writer.flush()
+                # Add "#" for the header line.
+                output_writer.write("#")
+                field_names = input_reader.getFieldNames()
+                output_writer.write("\t".join(field_names))
+                output_writer.write("\n")
+                output_writer.flush()
 
-            # Write the rest of the file
-            # This might be too slow, since a raw reader would be pretty fast.
-            for line_dict in input_reader:
-                line_list = [line_dict[k] for k in field_names]
-                line_rendered = "\t".join(line_list) + "\n"
-                output_writer.write(line_rendered)
+                # Write the rest of the file
+                # This might be too slow, since a raw reader would be pretty fast.
+                for line_dict in input_reader:
+                    line_list = [line_dict[k] for k in field_names]
+                    line_rendered = "\t".join(line_list) + "\n"
+                    output_writer.write(line_rendered)
 
-            output_writer.close()
+            input_reader.close()
             tabix_index = pysam.tabix_index(filename=outputFilename, force=True, seq_col=fileColumnNumList[0],
                                             start_col=fileColumnNumList[1], end_col=fileColumnNumList[2])
 

@@ -47,10 +47,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 
-
-# import distribute_setup
-# distribute_setup.use_setuptools()
-
 from setuptools import setup
 from oncotator.utils.version import VERSION 
 setup(

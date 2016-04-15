@@ -209,11 +209,7 @@ class ConfigUtils(object):
                 try:
                     from pkg_resources import resource_filename
                     sourceConfigFP = file(resource_filename("oncotator.configs", sourceConfigFile), 'r')
-                except IOError as ioe:
-                    if not isRelaxedLogging:
-                        logging.getLogger(__name__).warn("Could not find " + sourceConfigFile + " in installed resources ")
-                except KeyError as ke:
-                    # This happens in the resource_filename function when it cannot find a file.
+                except (KeyError, IOError) as ioe:
                     if not isRelaxedLogging:
                         logging.getLogger(__name__).warn("Could not find " + sourceConfigFile + " in installed resources ")
         else:

@@ -121,5 +121,8 @@ class GenericTsvReader(object):
     def getInputContentFP(self):
         return self.inputContentFP
 
+    def close(self):
+        self.inputContentFP.close()
+
     def __iter__(self):
-        return self        
+        return self
