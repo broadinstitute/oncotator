@@ -182,30 +182,32 @@ class VcfOutputRenderer(OutputRenderer):
         pos = None
         refAllele = None
         recordBuilder = None
-        with vcf.Writer(pointer, tempVcfReader, self.lineterminator) as vcfWriter:
-            for ctr, m in enumerate(tsvReader):
-                isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"], refAllele, m["ref_allele"])
-                if isNewRecord:
-                    if recordBuilder is not None:
-                        record = recordBuilder.createRecord()
-                        vcfWriter.write_record(record)
-                        index += 1
-                        if index % nrecords == 0:
-                            self.logger.info("Rendered " + str(index) + " vcf records.")
-                            vcfWriter.flush()
 
-                    chrom = m["chr"]
-                    pos = m["start"]
-                    refAllele = m["ref_allele"]
+        vcfWriter = vcf.Writer(pointer, tempVcfReader, self.lineterminator)
+        for ctr, m in enumerate(tsvReader):
+            isNewRecord = self._isNewVcfRecordNeeded(chrom, m["chr"], pos, m["start"], refAllele, m["ref_allele"])
+            if isNewRecord:
+                if recordBuilder is not None:
+                    record = recordBuilder.createRecord()
+                    vcfWriter.write_record(record)
+                    index += 1
+                    if index % nrecords == 0:
+                        self.logger.info("Rendered " + str(index) + " vcf records.")
+                        vcfWriter.flush()
 
-                    recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
+                chrom = m["chr"]
+                pos = m["start"]
+                refAllele = m["ref_allele"]
 
-                recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager, inferGenotypes)
+                recordBuilder = RecordBuilder(chrom, int(pos), refAllele, sampleNames)
 
-            if recordBuilder is not None:
-                record = recordBuilder.createRecord()
-                vcfWriter.write_record(record)
+            recordBuilder = self._parseRecordBuilder(m, recordBuilder, dataManager, inferGenotypes)
 
+        if recordBuilder is not None:
+            record = recordBuilder.createRecord()
+            vcfWriter.write_record(record)
+
+        vcfWriter.close()
         tsvReader.close()
         self.logger.info("Rendered all " + str(index) + " vcf records.")
 
