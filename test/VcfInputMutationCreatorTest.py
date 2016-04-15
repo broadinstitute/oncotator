@@ -52,6 +52,7 @@ import os
 
 import pandas
 import vcf
+from oncotator.MutationDataFactory import MutationDataFactory
 
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
@@ -240,7 +241,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
 
     def testAnnotationWithExampleVcf(self):
         """
-        Tests whether parsed annotations match the actual annotations.
+        Tests whether parsed annotations match the actual annotations in a simple TSV.  Missing format fields yield -->""  ".,." --> ","
         """
         inputFilename = os.path.join(*["testdata", "vcf", "example.vcf"])
         outputFilename = os.path.join("out", "example.out.tsv")
@@ -274,7 +275,8 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for colName in currentColNames:
             self.assertTrue(sum((current[colName] == expected[colName]) | (pandas.isnull(current[colName]) &
                                                                            pandas.isnull(expected[colName]))) ==
-                            len(current.index), "Should have the same values in column " + colName)
+                            len(current.index), "Should have the same values in column " + colName + ": \n" +
+                            str(current[colName]) + "\nvs\n" + str(expected[colName]))
 
     def testAnnotationWithNoSampleNameExampleVcf(self):
         """
@@ -515,6 +517,21 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         self.assertIn('\n1\t14933\trs138566748\tG\tA\t', vcf_data)
         self.assertIn('\n1\t14948\trs148911281\tG\tA\t', vcf_data)
 
+    def testOverwriteAnnotationsSupported(self):
+        """Test that mutations support overwrite annotation in the VCFInputMutationCreator. (white box testing)"""
+        inputFilename = os.path.join(*["testdata", "vcf", "example.trailing_whitespace_in_alleles.vcf"])
+
+
+        vcf_overwriting_disallowed = VcfInputMutationCreator(inputFilename, MutationDataFactory())
+        vcf_overwriting_allowed = VcfInputMutationCreator(inputFilename, MutationDataFactory(allow_overwriting=True))
+
+        mutations = vcf_overwriting_disallowed.createMutations()
+        for m in mutations:
+            self.assertTrue(m._new_required)
+
+        mutations = vcf_overwriting_allowed.createMutations()
+        for m in mutations:
+            self.assertFalse(m._new_required)
 
 if __name__ == "__main__":
     unittest.main()

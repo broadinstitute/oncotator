@@ -46,7 +46,11 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
+import shutil
+from unittest.case import expectedFailure
 import os
+from oncotator.DatasourceFactory import DatasourceFactory
+from oncotator.MutationData import MutationData
 from oncotator.index.TabixIndexedTsvDatasourceCreator import TabixIndexedTsvDatasourceCreator
 from test.TestUtils import TestUtils
 from oncotator.utils.ConfigUtils import ConfigUtils
@@ -168,7 +172,13 @@ class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
 
         """
         dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
-        destDir = "out"
+
+        # Never specify "out/"
+        destDir = "out/create_ds_test/"
+
+        if os.path.exists(destDir):
+            shutil.rmtree(destDir)
+        os.makedirs(destDir)
         datasourceFilename = "ESP6500SI-V2.chr1.snps_indels.head.25.tabix_indexed.txt.gz"
         indexColumnNames = "CHROM,POS,POS,REF,ALT"
         columnNames = "CHROM,POS,REF,ALT,DBSNP,EA_AC,AA_AC,TAC,MAF,GTS,EA_GTC,AA_GTC,GTC,DP,FG,GM,AA,AAC,PP,CDP,PH,CP,CG,GL,GS,CA,EXOME_CHIP,GWAS_PUBMED"
@@ -184,6 +194,9 @@ class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
                                            dataSourceName, dataSourceVersion, dataSourceMatchMode,
                                            annotationColumnNames, DatasourceInstallUtils.getIndexCols(dataSourceType,
                                                                                                       indexColumnNames))
+
+        self.assertTrue(os.path.exists(destDir + datasourceFilename))
+        self.assertTrue(os.path.exists(destDir + datasourceFilename + ".tbi"))
 
         configParser = ConfigUtils.createConfigParser(configFilename)
         self.assertTrue(configParser.has_section("general"), "general section is missing.")
@@ -234,6 +247,14 @@ class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
                          "Expected DP data type is %s but was %s."
                          % ("Integer", configParser.get("data_types", "DP")))
 
+        ds = DatasourceFactory.createDatasourceFromConfigParser(configParser, "out/create_ds_test/")
+        mut = MutationData(chr="1", start="69428", end="69428", ref_allele="T", alt_allele="G")
+        mut2 = ds.annotate_mutation(mut)
+        self.assertEquals(mut2["ESP_DBSNP"], "dbSNP_134")
+        self.assertEquals(mut2["ESP_EA_GTC"], "92,129,3203")
+        self.assertEquals(mut2["ESP_DP"], "110")
+
+
     def testCreateDatasourceWithMissingValues(self):
         """
 
@@ -247,7 +268,7 @@ class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
         dataSourceVersion = "6500SI-V2"
         dataSourceMatchMode = "overlap"
         annotationColumnNames = "EA_GTC,DP"
-        configFilename = os.path.join("out", "esp_coverage.missing.config")
+        configFilename = os.path.join("out", "esp_coverage.missing_vals.config")
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
         datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename, dataSourceType, dataSourceName,
@@ -266,34 +287,12 @@ class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
                          "Expected DP data type is %s but was %s."
                          % ("Integer", configParser.get("data_types", "DP")))
 
-    def testCreateDatasourceWithMissingColumns(self):
-        """
-
-        """
-        dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
-        destDir = "out"
-        indexColumnNames = "CHROM,POS,POS"
-        dataSourceType = "indexed_tsv"
-        dataSourceName = "ESP"
-        dataSourceVersion = "6500SI-V2"
-        dataSourceMatchMode = "overlap"
-        annotationColumnNames = "EA_GTC,DP"
-        configFilename = os.path.join("out", "esp_coverage.missing.config")
-
-        datasourceBuilder = TabixIndexedTsvDatasourceCreator()
-        try:
-            datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename,
-                                               dataSourceType, dataSourceName, dataSourceVersion, dataSourceMatchMode,
-                                               annotationColumnNames,
-                                               DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
-        except InputMismatchException:
-            pass
 
     def testCreateDatasourceWithMissingAnnotationColumns(self):
         """
 
         """
-        dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.txt")
+        dsFile = os.path.join("testdata", "ESP6500SI-V2.chr1.snps_indels.head.25.missing.txt")
         destDir = "out"
         indexColumnNames = "CHROM,POS,POS"
         dataSourceType = "indexed_tsv"
@@ -301,13 +300,11 @@ class TabixIndexedTsvDatasourceBuilderTest(unittest.TestCase):
         dataSourceVersion = "6500SI-V2"
         dataSourceMatchMode = "overlap"
         annotationColumnNames = "EA_GTC,DP,ESP_DBSNP"
-        configFilename = os.path.join("out", "esp_coverage.missing.config")
+        configFilename = os.path.join("out", "esp_coverage.missing_annotation_cols.config")
 
         datasourceBuilder = TabixIndexedTsvDatasourceCreator()
-        try:
+        with self.assertRaises(ValueError):
             datasourceBuilder.createDatasource(destDir, dsFile, indexColumnNames, configFilename, dataSourceType,
                                                dataSourceName, dataSourceVersion, dataSourceMatchMode,
                                                annotationColumnNames,
                                                DatasourceInstallUtils.getIndexCols(dataSourceType, indexColumnNames))
-        except ValueError:
-            pass

@@ -274,7 +274,7 @@ class VcfInputMutationCreator(InputMutationCreator):
                 isAltAllele
                 allelic_depth -- DP in the vcf
 
-            TODO: Complete documentation
+
         """
         self.configTable = self.configTableBuilder.getConfigTable(filename=self.filename,
                                                                   configFilename=self.configFilename)
@@ -332,7 +332,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         if not record.is_monomorphic:
             alt = str(record.ALT[alt_index]).strip()
 
-        mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+        mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build, self._mutation_data_factory)
         ID = "" if record.ID is None else record.ID
         mut.createAnnotation("id", ID, "INPUT", tags=[TagConstants.ID])
         mut.createAnnotation("qual", str(record.QUAL), "INPUT", tags=[TagConstants.QUAL])

@@ -480,7 +480,7 @@ class VcfOutputRendererTest(unittest.TestCase):
         for record in vcfReader:
             for sampleName in vcfReader.samples:
                 genotypeData = record.genotype(sampleName)
-                self.assertTrue(genotypeData["GT"] is None, "%s must have a missing genotype." % sampleName)
+                self.assertTrue(genotypeData["GT"] is None or genotypeData["GT"] == "./.", "%s must have a missing genotype." % sampleName)
 
     def testMaf2Vcf_PairNameAnnnotationExist(self):
         """

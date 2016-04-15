@@ -412,6 +412,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
                                     number=-1)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
 
+    @unittest.skip("No longer supporting overlap mode for indexed VCFs, due to lack of use.")
     def testExampleVcfDBAnnotationWithIndelOverlapMatch(self):
         """
 
@@ -431,13 +432,13 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
         m1_annotation = m1_annotated.getAnnotation("ESP_AF")
-        cur_annotation = Annotation(value="0.5|0.5|0.5", datasourceName="ESP", dataType="String",
+        cur_annotation = Annotation(value="0.5|0.5", datasourceName="ESP", dataType="String",
                                     description="Allele Frequency", tags=[TagConstants.INFO, TagConstants.SPLIT],
                                     number=-1)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match GT: " + cur_annotation.getValue() + "  guess: " + m1_annotation.getValue() )
 
         m1_annotation = m1_annotated.getAnnotation("ESP_AC")
-        cur_annotation = Annotation(value="3,3|3,3|3,3", datasourceName="ESP", dataType="String",
+        cur_annotation = Annotation(value="3,3|3,3", datasourceName="ESP", dataType="String",
                                     description="Allele Count", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
                                     number=None)
         self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
