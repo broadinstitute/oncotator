@@ -48,11 +48,13 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 import unittest
 import logging
+from numpy.testing.utils import raises
 import os
 
 import pandas
 import vcf
 from oncotator.MutationDataFactory import MutationDataFactory
+from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
 
 from oncotator.utils.MutUtils import MutUtils
 from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
@@ -63,6 +65,7 @@ from oncotator.utils.GenericTsvReader import GenericTsvReader
 from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceFactory import DatasourceFactory
+from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.TagConstants import TagConstants
 from oncotator.utils.RunSpecification import RunSpecification
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
@@ -532,6 +535,31 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         mutations = vcf_overwriting_allowed.createMutations()
         for m in mutations:
             self.assertFalse(m._new_required)
+
+    @raises(OncotatorException)
+    def testFailureWithSpanningDeletion(self):
+        """Fail with a spanning deletion unless alternates are being ignored."""
+        inputFilename = os.path.join(*["testdata", "simple_vcf_spanning_deletion.vcf"])
+        vcf_input = VcfInputMutationCreator(inputFilename, MutationDataFactory(allow_overwriting=True))
+        muts = vcf_input.createMutations()
+        ctr = 0
+
+        for m in muts:
+            ctr += 1
+
+    def testSuccesseWithSpanningDeletion(self):
+        """Succeed with a spanning deletion since alternates are being ignored."""
+        inputFilename = os.path.join(*["testdata", "simple_vcf_spanning_deletion.vcf"])
+
+        other_options = {InputMutationCreatorOptions.IS_SKIP_ALTS: True}
+        vcf_input = VcfInputMutationCreator(inputFilename, MutationDataFactory(allow_overwriting=True),
+                                            other_options=other_options)
+        muts = vcf_input.createMutations()
+        ctr = 0
+
+        for m in muts:
+            ctr += 1
+        self.assertTrue(ctr == 1, "There should only have been one mutation seen, instead saw: " + str(ctr))
 
 if __name__ == "__main__":
     unittest.main()

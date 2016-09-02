@@ -298,6 +298,7 @@ class VcfInputMutationCreator(InputMutationCreator):
 
                         genotype = "GT"
                         is_alt_seen = "True"
+                        is_spanning_deletion = False
                         if genotype in sample.data._fields:
                             is_alt_seen = self._determineAltSeen(sample.data.GT, index + 1)
 
@@ -311,6 +312,21 @@ class VcfInputMutationCreator(InputMutationCreator):
                             continue
 
                         sampleMut = self._createMutation(record, index, build)
+
+
+                        if sampleMut.alt_allele == "*":
+                            is_alt_seen = "False"
+                            is_spanning_deletion = True
+
+                        # Check to see if we should even render this mutation at all (we do this a second time to possibly save a create mutation call)
+                        #  A spanning deletion is okay if we are not rendering non-variants.  For example, the VCF is going to be
+                        #   converted to a MAF.
+                        if self._is_skipping_no_alts and not (is_alt_seen == "True"):
+                            continue
+
+                        if is_spanning_deletion:
+                            logging.getLogger(__name__).error("SPANNING DELETIONS ARE NOT SUPPORTED.  ")
+                            raise OncotatorException("Spanning deletions are not supported at this time.")
 
                         if is_tumor_normal_vcf and sample_name != "NORMAL":
                             sampleMut.createAnnotation("tumor_barcode", sample_name, "INPUT")
