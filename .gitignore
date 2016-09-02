@@ -40,3 +40,4 @@ venv/
 .coverage
 .ds_store
 *.idea
+/oncotator/oncotator_firehose.log
