@@ -51,4 +51,6 @@ RUN ${ONCOTATOR} --help
 WORKDIR /root/
 COPY tx_exact_uniprot_matches.AKT1_CRLF2_FGFR1.txt .
 
+CMD ["/bin/bash"]
+
 # END
