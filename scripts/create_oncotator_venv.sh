@@ -113,11 +113,22 @@ fi
 echo " "
 echo "Installing dependencies that can be obtained from pypi"
 
-for PACKAGE in 'pyvcf==0.6.8' 'bcbio-gff==0.6.2' 'nose==1.3.7' 'shove==0.6.6' 'python-memcached==1.57' 'natsort==4.0.4' 'more-itertools==2.2' 'enum34==1.1.2'
+for PACKAGE in 'bcbio-gff==0.6.2' 'nose==1.3.7' 'shove==0.6.6' 'python-memcached==1.57' 'natsort==4.0.4' 'more-itertools==2.2' 'enum34==1.1.2'
 do
 	echo " "
 	echo "$PACKAGE =========================="
 	pip install -U --no-binary :all: $PACKAGE
+	echo "OK"
+done
+
+echo " "
+echo "Installing dependencies that can be obtained from pypi, but have trouble with the no-binary flag"
+# PyVCF has trouble with the no-binary flag
+for PACKAGE in  'pyvcf==0.6.8'
+do
+	echo " "
+	echo "$PACKAGE =========================="
+	pip install -U $PACKAGE
 	echo "OK"
 done
 
