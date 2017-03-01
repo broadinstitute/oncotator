@@ -1,7 +1,7 @@
 from oncotator.DuplicateAnnotationException import DuplicateAnnotationException
 from oncotator.MutationData import MutationData
 from oncotator.MutationDataFactory import MutationDataFactory
-from oncotator.utils.ColumnCollapser import ColumnCollapser
+from oncotator.utils.NameColumnCollapser import NameColumnCollapser
 from test.TestUtils import TestUtils
 
 __author__ = 'lichtens'
@@ -9,7 +9,9 @@ __author__ = 'lichtens'
 import unittest
 
 TestUtils.setupLogging(__file__, __name__)
-class ColumnCollapserTest(unittest.TestCase):
+
+
+class NameColumnCollapserTest(unittest.TestCase):
     def test_simple_collapse(self):
         """Ensure simple rules for numeric collapsing are honored"""
         m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
@@ -27,7 +29,7 @@ class ColumnCollapserTest(unittest.TestCase):
         m2.createAnnotation('barca', "0.02|0")
         m2.createAnnotation('donotcollapse', "100|4500")
 
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         cc.update_mutation(m1)
         self.assertEqual(m1['ALT_F2R1'], "34")
         self.assertEqual(float(m1['i_t_Foxog']), float(".510"))
@@ -53,7 +55,7 @@ class ColumnCollapserTest(unittest.TestCase):
         m1.createAnnotation('barca', "carthage_rules")
         m1.createAnnotation('donotcollapse', "1|45")
 
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         cc.update_mutation(m1)
         self.assertEqual(m1['ALT_F2R1'], "36")
         self.assertEqual(m1['i_t_Foxog'], "")
@@ -66,7 +68,7 @@ class ColumnCollapserTest(unittest.TestCase):
         """Test that a String can be passed in to update the annotation source if columns are collapsed"""
         m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
         m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         cc.update_mutation(m1, "foo")
         self.assertEqual(m1.getAnnotation("ALT_F2R1").getDatasource(), "foo")
 
@@ -74,7 +76,7 @@ class ColumnCollapserTest(unittest.TestCase):
         """Test that do not have to update annotation source if columns are collapsed"""
         m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
         m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         cc.update_mutation(m1)
         self.assertEqual(m1.getAnnotation("ALT_F2R1").getDatasource(), "TEST")
 
@@ -82,7 +84,7 @@ class ColumnCollapserTest(unittest.TestCase):
         """Test that we can create a backup annotation with the old values after collapsing, if requested."""
         m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000")
         m1.createAnnotation('ALT_F2R1', "|36", annotationSource="TEST")
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         cc.update_mutation(m1, new_annotation_source="foo", copy_old_suffix="_full")
         self.assertEqual(m1["ALT_F2R1_full"], "|36")
         self.assertEqual(m1["ALT_F2R1"], "36")
@@ -96,7 +98,7 @@ class ColumnCollapserTest(unittest.TestCase):
         m1.createAnnotation('ALT_F2R1_full', "going_to_be_overwritten", annotationSource="TEST")
 
         is_exception_seen = False
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         try:
             cc.update_mutation(m1, copy_old_suffix="_full")
         except DuplicateAnnotationException as dae:
@@ -106,7 +108,7 @@ class ColumnCollapserTest(unittest.TestCase):
         m1 = MutationDataFactory.default_create(chr="1", start="10000", end="10000", allow_overwriting=True)
         m1.createAnnotation('ALT_F2R1', "30|36", annotationSource="TEST")
         m1.createAnnotation('ALT_F2R1_full', "going_to_be_overwritten", annotationSource="TEST")
-        cc = ColumnCollapser()
+        cc = NameColumnCollapser()
         cc.update_mutation(m1, copy_old_suffix="_full")
         self.assertEqual(m1['ALT_F2R1_full'], "30|36")
         self.assertEqual(m1['ALT_F2R1'], "30")

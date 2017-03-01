@@ -46,7 +46,7 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-from oncotator.utils.ColumnCollapser import ColumnCollapser
+from oncotator.utils.NameColumnCollapser import NameColumnCollapser
 from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 
@@ -113,7 +113,7 @@ class TcgaMafOutputRenderer(OutputRenderer):
         self._column_collapser = None
         self._column_collapser_suffix = None
         if self._is_collapsing_number_cols:
-            self._column_collapser = ColumnCollapser()
+            self._column_collapser = NameColumnCollapser()
             self._column_collapser_suffix = "_full"
 
     def lookupNCBI_Build(self, build):
