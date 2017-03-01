@@ -50,9 +50,10 @@ import itertools
 from TestUtils import TestUtils
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.DuplicateAnnotationException import DuplicateAnnotationException
-from oncotator.MutationData import MutationData
 from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.input.VcfInputMutationCreator import VcfInputMutationCreator
+from oncotator.output.VcfOutputRenderer import VcfOutputRenderer
 from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils, RunSpecification
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
@@ -467,6 +468,63 @@ class AnnotatorTest(unittest.TestCase):
         annotator.initialize(run_spec)
 
         self.assertRaises(DuplicateAnnotationException, annotator.annotate)
+
+    def testSimpleRoundTripWithoutAnnotating(self):
+        """Read a VCF, write it, and read it again without changes"""
+        other_opts = dict()
+        other_opts[OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS] = True
+        inputFilename = os.path.join(*["testdata", "m2_support", "NA12878.ob_filtered.vcf"])
+        vcf_input = VcfInputMutationCreator(inputFilename, MutationDataFactory(allow_overwriting=True),
+                                            other_options=other_opts)
+        muts = [m for m in vcf_input.createMutations()]
+
+        outputFilename = os.path.join("out", "test_round_trip.vcf")
+        vcf_output = VcfOutputRenderer(outputFilename, otherOptions=other_opts)
+        vcf_output.renderMutations(muts)
+
+        vcf_input2 = VcfInputMutationCreator(outputFilename, MutationDataFactory(allow_overwriting=True),
+                                            other_options=other_opts)
+        muts2 = [m for m in vcf_input2.createMutations()]
+        self.assertTrue(len(muts2) > 0)
+
+    @TestUtils.requiresDefaultDB()
+    def testAnnotationRoundTrip(self):
+        """Read a VCF, annotate it, write it, and read it again without changes"""
+        inputFilename = os.path.join(*["testdata", "m2_support", "NA12878.ob_filtered.vcf"])
+        outputFilename = os.path.join("out", "test_round_trip_annotated.vcf")
+
+        other_opts = dict()
+        other_opts[OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS] = True
+
+        run_spec = RunSpecificationFactory.create_run_spec("VCF", "VCF", inputFilename, outputFilename,
+                        datasource_dir=self.config.get('DEFAULT', "dbDir"), genomeBuild="hg19", other_opts=other_opts)
+        annotator = Annotator()
+        annotator.initialize(run_spec)
+        annotated_filename = annotator.annotate()
+
+        vcf_input2 = VcfInputMutationCreator(annotated_filename, MutationDataFactory(allow_overwriting=True),
+                                            other_options=other_opts)
+        muts2 = [m for m in vcf_input2.createMutations()]
+        self.assertTrue(len(muts2) > 0)
+
+    def testAnnotationRoundTripEmpty(self):
+        """Read a VCF, annotate it with no datasources, write it, and read it again without changes"""
+        inputFilename = os.path.join(*["testdata", "m2_support", "NA12878.ob_filtered.vcf"])
+        outputFilename = os.path.join("out", "test_round_trip_empty_annotated.vcf")
+
+        other_opts = dict()
+        other_opts[OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS] = True
+
+        run_spec = RunSpecificationFactory.create_run_spec("VCF", "VCF", inputFilename, outputFilename,
+                        datasource_dir="THIS_DIR_DOES_NOT_EXIST__", genomeBuild="hg19", other_opts=other_opts)
+        annotator = Annotator()
+        annotator.initialize(run_spec)
+        annotated_filename = annotator.annotate()
+
+        vcf_input2 = VcfInputMutationCreator(annotated_filename, MutationDataFactory(allow_overwriting=True),
+                                            other_options=other_opts)
+        muts2 = [m for m in vcf_input2.createMutations()]
+        self.assertTrue(len(muts2) > 0)
 
 
 if __name__ == "__main__":

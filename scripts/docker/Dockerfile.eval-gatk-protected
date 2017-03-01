@@ -1,4 +1,4 @@
-FROM broadinstitute/oncotator:1.9.2.0
+FROM broadinstitute/oncotator:1.9.3.0
 
 RUN wget www.broadinstitute.org/~lichtens/ref_hg_gencode.tar.gz
 RUN tar zxvf ref_hg_gencode.tar.gz

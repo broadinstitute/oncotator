@@ -67,7 +67,6 @@ from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
 from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.TagConstants import TagConstants
-from oncotator.utils.RunSpecification import RunSpecification
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 
 
