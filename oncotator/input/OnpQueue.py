@@ -99,17 +99,18 @@ class OnpQueue(object):
         return paths
 
     def _dump_all(self):
-        results = []
+        results = set()
         for (sample, muts) in self.queue.iteritems():
-            results += self._walk_mutation_paths(muts)
+            results.update(self._walk_mutation_paths(muts))
 
+        results_list = list(results)
         #add all stored up indels
-        results += self.indel_queue or []
+        results_list += self.indel_queue or []
         self.indel_queue = []
-        results.sort(key=lambda x: (int(x.start), int(x.end)))
+        results_list.sort(key=lambda x: (int(x.start), int(x.end)))
 
         self.queue.clear()
-        return results
+        return results_list
 
 
     def _get_all_values(self):
@@ -219,7 +220,7 @@ class OnpQueue(object):
                 output = self._dump_all()
                 self._add(mut)
             last_chr = mut.chr
-            last_start = mut.start
+            last_start = int(mut.start)
 
             for mut in output:
                 yield mut

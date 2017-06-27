@@ -132,6 +132,43 @@ class MutationDataTest(unittest.TestCase):
         # Note that getAnnotation returns an instance of Annotation, not simply the value
         self.assertEqual(m.getAnnotation("foo"), m.getAnnotation("bar"))
 
+    def test_hash(self):
+        """Test that hashing works for a mutation data"""
+        m = MutationData()
+        m.start = 1
+        m.createAnnotation("foo", "3", "blah_source", annotationDescription="testing", tags=["superblah"], number="A")
+        m.createCopyAnnotation(m.getAnnotation("foo"), "bar")
+
+        # Not unique
+        m2 = MutationData()
+        m2.start = 1
+        m2.createAnnotation("foo", "3", "blah_source", annotationDescription="testing", tags=["superblah"], number="A")
+        m2.createCopyAnnotation(m.getAnnotation("foo"), "bar")
+
+        m3 = MutationData()
+        m3.start = 1
+        m3.createAnnotation("foo", "3", "blah_source", annotationDescription="testing 2", tags=["superblah"], number="A")
+        m3.createCopyAnnotation(m.getAnnotation("foo"), "bar")
+
+        m4 = MutationData()
+        m4.start = 1
+        m4.createAnnotation("foo", "3", "blah_source", annotationDescription="testing 2", tags=["superblah", "testy blah"], number="A")
+        m4.createCopyAnnotation(m.getAnnotation("foo"), "bar")
+
+        m5 = MutationData()
+        m5.start = 10
+        m5.createAnnotation("foo", "3", "blah_source", annotationDescription="testing 2", tags=["superblah", "testy blah"], number="A")
+        m5.createCopyAnnotation(m.getAnnotation("foo"), "bar")
+
+        result = set()
+        result.add(m)
+        result.add(m2)
+        result.add(m3)
+        result.add(m4)
+        result.add(m5)
+
+        self.assertEqual(len(result), 4)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testSetValues']
