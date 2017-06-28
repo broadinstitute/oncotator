@@ -245,6 +245,15 @@ class MutationData(collections.MutableMapping):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
+    def __hash__(self):
+        """This is expensive to calculate."""
+        hash_val = 0
+        ks = sorted(list(self.keys()))
+        for k in ks:
+            hash_val = 101 * hash_val + hash(self.getAnnotation(k))
+        return hash_val
+
     def createCopyAnnotation(self, annotation, new_name):
         """Create a new annotation with exact same information as the old one.  In other words, all attributes will be the same.
 

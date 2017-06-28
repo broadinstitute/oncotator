@@ -60,15 +60,18 @@ class Annotation(object):
     datasource should be a string
     """
 
-    def __init__(self, value, datasourceName="Unknown", dataType="String", description="", tags=list(), number=None):
+    def __init__(self, value, datasourceName="Unknown", dataType="String", description="", tags=None, number=None):
         """
-        
+        Changes may require additional changes to __hash__()
         """
         self.value = value
         self.datasourceName = datasourceName
         self.dataType = dataType
         self.description = description
-        self.tags = tags
+        if tags is not None:
+            self.tags = tags
+        else:
+            self.tags = []
         self.number = number
 
     def setValue(self, val):
@@ -133,3 +136,16 @@ class Annotation(object):
 
     def __repr__(self):
         return str(self.value)
+
+    def __hash__(self):
+        hash_val = 0
+        for t in self.tags:
+            hash_val = hash_val * 101 + hash(t)
+        for k in self.__dict__.keys():
+            if k == 'tags':
+                continue
+            hash_val = hash_val * 101 + hash(self.__dict__[k])
+
+        return hash_val
+
+

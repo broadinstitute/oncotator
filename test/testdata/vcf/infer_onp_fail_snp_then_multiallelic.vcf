@@ -1,0 +1,153 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=artifact_in_normal,Description="artifact_in_normal">
+##FILTER=<ID=base_quality,Description="ref - alt median base quality">
+##FILTER=<ID=clipping,Description="ref - alt median clipping">
+##FILTER=<ID=clustered_events,Description="Clustered events observed in the tumor">
+##FILTER=<ID=contamination,Description="contamination">
+##FILTER=<ID=fragment_length,Description="abs(ref - alt) median fragment length">
+##FILTER=<ID=germline_risk,Description="Evidence indicates this site is germline, not somatic">
+##FILTER=<ID=mapping_quality,Description="ref - alt median mapping quality">
+##FILTER=<ID=multiallelic,Description="Site filtered because too many alt alleles pass tumor LOD">
+##FILTER=<ID=orientation_bias,Description="Orientation bias (in one of the specified artifact mode(s) or complement) seen in one or more samples.">
+##FILTER=<ID=panel_of_normals,Description="Blacklisted site in panel of normals">
+##FILTER=<ID=read_position,Description="median distance of alt variants from end of reads">
+##FILTER=<ID=str_contraction,Description="Site filtered due to contraction of short tandem repeat region">
+##FILTER=<ID=strand_artifact,Description="Evidence for alt allele comes from one read direction only">
+##FILTER=<ID=t_lod,Description="Tumor does not meet likelihood threshold">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele fractions of alternate alleles in the tumor">
+##FORMAT=<ID=ALT_F1R2,Number=1,Type=Integer,Description="Count of reads in F1R2 pair orientation supporting the alternate allele">
+##FORMAT=<ID=ALT_F2R1,Number=1,Type=Integer,Description="Count of reads in F2R1 pair orientation supporting the alternate allele">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=FOXOG,Number=1,Type=Float,Description="Fraction of alt reads indicating OxoG error">
+##FORMAT=<ID=FT,Number=.,Type=String,Description="Genotype-level filter">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=MBQ,Number=A,Type=Float,Description="median base quality">
+##FORMAT=<ID=MCL,Number=A,Type=Float,Description="number of soft- and hard- clipped bases">
+##FORMAT=<ID=MFRL,Number=A,Type=Float,Description="median fragment length">
+##FORMAT=<ID=MMQ,Number=A,Type=Float,Description="median mapping quality">
+##FORMAT=<ID=MPOS,Number=A,Type=Float,Description="median distance from end of read">
+##FORMAT=<ID=OBAM,Number=A,Type=String,Description="Whether the variant can be one of the given REF/ALT artifact modes.">
+##FORMAT=<ID=OBAMRC,Number=A,Type=String,Description="Whether the variant can be one of the given REF/ALT artifact mode complements.">
+##FORMAT=<ID=OBF,Number=A,Type=Float,Description="Fraction of alt reads indicating orientation bias error (taking into account artifact mode complement).">
+##FORMAT=<ID=OBP,Number=A,Type=Float,Description="Orientation bias p value for the given REF/ALT artifact or its complement.">
+##FORMAT=<ID=OBQ,Number=A,Type=Float,Description="Measure (across entire bam file) of orientation bias for a given REF/ALT error.">
+##FORMAT=<ID=OBQRC,Number=A,Type=Float,Description="Measure (across entire bam file) of orientation bias for the complement of a given REF/ALT error.">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=REF_F1R2,Number=1,Type=Integer,Description="Count of reads in F1R2 pair orientation supporting the reference allele">
+##FORMAT=<ID=REF_F2R1,Number=1,Type=Integer,Description="Count of reads in F2R1 pair orientation supporting the reference allele">
+##FORMAT=<ID=SA_MAP_AF,Number=3,Type=Float,Description="MAP estimates of allele fraction given z">
+##FORMAT=<ID=SA_POST_PROB,Number=3,Type=Float,Description="posterior probabilities of the presence of strand artifact">
+##GATKCommandLine=<ID=FilterMutectCalls,CommandLine="FilterMutectCalls  --output SM-74P4M-vs-SM-74NEG-filtered.vcf --variant ob_filtered.vcf  --tumor_lod 5.3 --normal_artifact_lod 0.0 --max_germline_posterior 0.025 --maxAltAllelesThreshold 1 --maxMedianMappingQualityDifference 15 --maxMedianBaseQualityDifference 10 --maxMedianClippingDifference 1 --maxMedianFragmentLengthDifference 10000 --minMedianReadPosition 5 --maxEventsInHaplotype 2 --strandArtifactPosteriorProbability 0.99 --strandArtifactAlleleFraction 0.01 --dontTrimActiveRegions false --maxDiscARExtension 25 --maxGGAARExtension 300 --paddingAroundIndels 150 --paddingAroundSNPs 20 --kmerSize 10 --kmerSize 25 --dontIncreaseKmerSizesForCycles false --allowNonUniqueKmersInRef false --numPruningSamples 1 --recoverDanglingHeads false --doNotRecoverDanglingBranches false --minDanglingBranchLength 4 --consensus false --maxNumHaplotypesInPopulation 128 --errorCorrectKmers false --minPruning 2 --debugGraphTransformations false --kmerLengthForReadErrorCorrection 25 --minObservationsForKmerToBeSolid 20 --likelihoodCalculationEngine PairHMM --base_quality_score_threshold 18 --gcpHMM 10 --pair_hmm_implementation FASTEST_AVAILABLE --pcr_indel_model CONSERVATIVE --phredScaledGlobalReadMismappingRate 45 --nativePairHmmThreads 4 --useDoublePrecision false --debug false --useFilteredReadsForAnnotations false --emitRefConfidence NONE --bamWriterType CALLED_HAPLOTYPES --disableOptimizations false --justDetermineActiveRegions false --dontGenotype false --dontUseSoftClippedBases false --captureAssemblyFailureBAM false --errorCorrectReads false --doNotRunPhysicalPhasing false --min_base_quality_score 10 --useNewAFCalculator false --annotateNDA false --heterozygosity 0.001 --indel_heterozygosity 1.25E-4 --heterozygosity_stdev 0.01 --standard_min_confidence_threshold_for_calling 10.0 --max_alternate_alleles 6 --max_genotype_count 1024 --sample_ploidy 2 --genotyping_mode DISCOVERY --contamination_fraction_to_filter 0.0 --output_mode EMIT_VARIANTS_ONLY --allSitePLs false --interval_set_rule UNION --interval_padding 0 --interval_exclusion_padding 0 --readValidationStringency SILENT --secondsBetweenProgressUpdates 10.0 --disableSequenceDictionaryValidation false --createOutputBamIndex true --createOutputBamMD5 false --createOutputVariantIndex true --createOutputVariantMD5 false --lenient false --addOutputSAMProgramRecord true --addOutputVCFCommandLine true --cloudPrefetchBuffer 40 --cloudIndexPrefetchBuffer -1 --disableBamIndexCaching false --help false --version false --showHidden false --verbosity INFO --QUIET false --use_jdk_deflater false --use_jdk_inflater false --disableToolDefaultReadFilters false",Version=4.alpha.2-1187-g208dfe7-SNAPSHOT,Date="June 27, 2017 6:30:57 AM UTC">
+##GATKCommandLine=<ID=Mutect2,CommandLine="Mutect2  --tumorSampleName SM-74P4M --normalSampleName SM-74NEG --output SM-74P4M-vs-SM-74NEG.vcf --intervals /cromwell_root/broad-dsde-methods/lichtens/cromwell-executions-test-dl-oxoq-full/Mutect2/500cef79-9408-4e68-9159-f94deb9f53a3/call-SplitIntervals/glob-6f4bc12a708659d4f5f3eecd1cdffff7/0001-scattered.intervals --input /cromwell_root/broad-dsde-methods/testdata/crsp-public-bams/SM-74P4M.bam --input /cromwell_root/broad-dsde-methods/testdata/crsp-public-bams/SM-74NEG.bam --reference /cromwell_root/broad-dsde-methods/th/refs/Homo_sapiens_assembly19.fasta  --af_of_alleles_not_in_resource 0.001 --log_somatic_prior -6.0 --min_variants_in_pileup 2 --tumorStandardDeviationsThreshold 2 --minNormalVariantFraction 0.1 --tumor_lod_to_emit 3.0 --normal_lod 2.2 --power_constant_qscore 30 --annotation Coverage --annotation DepthPerAlleleBySample --annotation TandemRepeat --annotation OxoGReadCounts --annotation ClippedBases --annotation ReadPosition --annotation BaseQuality --annotation MappingQuality --annotation FragmentLength --annotation StrandArtifact --dontTrimActiveRegions false --maxDiscARExtension 25 --maxGGAARExtension 300 --paddingAroundIndels 150 --paddingAroundSNPs 20 --kmerSize 10 --kmerSize 25 --dontIncreaseKmerSizesForCycles false --allowNonUniqueKmersInRef false --numPruningSamples 1 --recoverDanglingHeads false --doNotRecoverDanglingBranches false --minDanglingBranchLength 4 --consensus false --maxNumHaplotypesInPopulation 128 --errorCorrectKmers false --minPruning 2 --debugGraphTransformations false --kmerLengthForReadErrorCorrection 25 --minObservationsForKmerToBeSolid 20 --likelihoodCalculationEngine PairHMM --base_quality_score_threshold 18 --gcpHMM 10 --pair_hmm_implementation FASTEST_AVAILABLE --pcr_indel_model CONSERVATIVE --phredScaledGlobalReadMismappingRate 45 --nativePairHmmThreads 4 --useDoublePrecision false --debug false --useFilteredReadsForAnnotations false --emitRefConfidence NONE --bamWriterType CALLED_HAPLOTYPES --disableOptimizations false --justDetermineActiveRegions false --dontGenotype false --dontUseSoftClippedBases false --captureAssemblyFailureBAM false --errorCorrectReads false --doNotRunPhysicalPhasing false --min_base_quality_score 10 --useNewAFCalculator false --annotateNDA false --heterozygosity 0.001 --indel_heterozygosity 1.25E-4 --heterozygosity_stdev 0.01 --standard_min_confidence_threshold_for_calling 10.0 --max_alternate_alleles 6 --max_genotype_count 1024 --sample_ploidy 2 --genotyping_mode DISCOVERY --contamination_fraction_to_filter 0.0 --output_mode EMIT_VARIANTS_ONLY --allSitePLs false --readShardSize 5000 --readShardPadding 100 --minAssemblyRegionSize 50 --maxAssemblyRegionSize 300 --assemblyRegionPadding 100 --maxReadsPerAlignmentStart 50 --activeProbabilityThreshold 0.002 --maxProbPropagationDistance 50 --interval_set_rule UNION --interval_padding 0 --interval_exclusion_padding 0 --readValidationStringency SILENT --secondsBetweenProgressUpdates 10.0 --disableSequenceDictionaryValidation false --createOutputBamIndex true --createOutputBamMD5 false --createOutputVariantIndex true --createOutputVariantMD5 false --lenient false --addOutputSAMProgramRecord true --addOutputVCFCommandLine true --cloudPrefetchBuffer 40 --cloudIndexPrefetchBuffer -1 --disableBamIndexCaching false --help false --version false --showHidden false --verbosity INFO --QUIET false --use_jdk_deflater false --use_jdk_inflater false --disableToolDefaultReadFilters false --minimumMappingQuality 20",Version=4.alpha.2-1187-g208dfe7-SNAPSHOT,Date="June 27, 2017 2:08:46 AM UTC">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##INFO=<ID=ECNT,Number=1,Type=String,Description="Number of events in this haplotype">
+##INFO=<ID=IN_PON,Number=0,Type=Flag,Description="site found in panel of normals">
+##INFO=<ID=NLOD,Number=A,Type=String,Description="Normal LOD score">
+##INFO=<ID=N_ART_LOD,Number=A,Type=Float,Description="log odds of artifact in normal with same allele fraction as tumor">
+##INFO=<ID=POP_AF,Number=A,Type=Float,Description="population allele frequencies of alt alleles">
+##INFO=<ID=P_GERMLINE,Number=A,Type=Float,Description="Posterior probability for alt allele to be germline variants">
+##INFO=<ID=RPA,Number=.,Type=Integer,Description="Number of times tandem repeat unit is repeated, for each allele (including reference)">
+##INFO=<ID=RU,Number=1,Type=String,Description="Tandem repeat unit (bases)">
+##INFO=<ID=STR,Number=0,Type=Flag,Description="Variant is a short tandem repeat">
+##INFO=<ID=TLOD,Number=A,Type=String,Description="Tumor LOD score">
+##Mutect Version=2.1-beta
+##command=FilterByOrientationBias  --output ob_filtered.vcf --preAdapterDetailFile /cromwell_root/broad-dsde-methods/lichtens/cromwell-executions-test-dl-oxoq-full/Mutect2/500cef79-9408-4e68-9159-f94deb9f53a3/call-CollectSequencingArtifactMetrics/gatk.pre_adapter_detail_metrics --artifactModes G/T --artifactModes C/T --variant /cromwell_root/broad-dsde-methods/lichtens/cromwell-executions-test-dl-oxoq-full/Mutect2/500cef79-9408-4e68-9159-f94deb9f53a3/call-MergeVCFs/SM-74P4M-vs-SM-74NEG.vcf  --interval_set_rule UNION --interval_padding 0 --interval_exclusion_padding 0 --readValidationStringency SILENT --secondsBetweenProgressUpdates 10.0 --disableSequenceDictionaryValidation false --createOutputBamIndex true --createOutputBamMD5 false --createOutputVariantIndex true --createOutputVariantMD5 false --lenient false --addOutputSAMProgramRecord true --addOutputVCFCommandLine true --cloudPrefetchBuffer 40 --cloudIndexPrefetchBuffer -1 --disableBamIndexCaching false --help false --version false --showHidden false --verbosity INFO --QUIET false --use_jdk_deflater false --use_jdk_inflater false --disableToolDefaultReadFilters false
+##contig=<ID=1,length=249250621,assembly=GRCh37>
+##contig=<ID=2,length=243199373,assembly=GRCh37>
+##contig=<ID=3,length=198022430,assembly=GRCh37>
+##contig=<ID=4,length=191154276,assembly=GRCh37>
+##contig=<ID=5,length=180915260,assembly=GRCh37>
+##contig=<ID=6,length=171115067,assembly=GRCh37>
+##contig=<ID=7,length=159138663,assembly=GRCh37>
+##contig=<ID=8,length=146364022,assembly=GRCh37>
+##contig=<ID=9,length=141213431,assembly=GRCh37>
+##contig=<ID=10,length=135534747,assembly=GRCh37>
+##contig=<ID=11,length=135006516,assembly=GRCh37>
+##contig=<ID=12,length=133851895,assembly=GRCh37>
+##contig=<ID=13,length=115169878,assembly=GRCh37>
+##contig=<ID=14,length=107349540,assembly=GRCh37>
+##contig=<ID=15,length=102531392,assembly=GRCh37>
+##contig=<ID=16,length=90354753,assembly=GRCh37>
+##contig=<ID=17,length=81195210,assembly=GRCh37>
+##contig=<ID=18,length=78077248,assembly=GRCh37>
+##contig=<ID=19,length=59128983,assembly=GRCh37>
+##contig=<ID=20,length=63025520,assembly=GRCh37>
+##contig=<ID=21,length=48129895,assembly=GRCh37>
+##contig=<ID=22,length=51304566,assembly=GRCh37>
+##contig=<ID=X,length=155270560,assembly=GRCh37>
+##contig=<ID=Y,length=59373566,assembly=GRCh37>
+##contig=<ID=MT,length=16569,assembly=GRCh37>
+##contig=<ID=GL000207.1,length=4262,assembly=GRCh37>
+##contig=<ID=GL000226.1,length=15008,assembly=GRCh37>
+##contig=<ID=GL000229.1,length=19913,assembly=GRCh37>
+##contig=<ID=GL000231.1,length=27386,assembly=GRCh37>
+##contig=<ID=GL000210.1,length=27682,assembly=GRCh37>
+##contig=<ID=GL000239.1,length=33824,assembly=GRCh37>
+##contig=<ID=GL000235.1,length=34474,assembly=GRCh37>
+##contig=<ID=GL000201.1,length=36148,assembly=GRCh37>
+##contig=<ID=GL000247.1,length=36422,assembly=GRCh37>
+##contig=<ID=GL000245.1,length=36651,assembly=GRCh37>
+##contig=<ID=GL000197.1,length=37175,assembly=GRCh37>
+##contig=<ID=GL000203.1,length=37498,assembly=GRCh37>
+##contig=<ID=GL000246.1,length=38154,assembly=GRCh37>
+##contig=<ID=GL000249.1,length=38502,assembly=GRCh37>
+##contig=<ID=GL000196.1,length=38914,assembly=GRCh37>
+##contig=<ID=GL000248.1,length=39786,assembly=GRCh37>
+##contig=<ID=GL000244.1,length=39929,assembly=GRCh37>
+##contig=<ID=GL000238.1,length=39939,assembly=GRCh37>
+##contig=<ID=GL000202.1,length=40103,assembly=GRCh37>
+##contig=<ID=GL000234.1,length=40531,assembly=GRCh37>
+##contig=<ID=GL000232.1,length=40652,assembly=GRCh37>
+##contig=<ID=GL000206.1,length=41001,assembly=GRCh37>
+##contig=<ID=GL000240.1,length=41933,assembly=GRCh37>
+##contig=<ID=GL000236.1,length=41934,assembly=GRCh37>
+##contig=<ID=GL000241.1,length=42152,assembly=GRCh37>
+##contig=<ID=GL000243.1,length=43341,assembly=GRCh37>
+##contig=<ID=GL000242.1,length=43523,assembly=GRCh37>
+##contig=<ID=GL000230.1,length=43691,assembly=GRCh37>
+##contig=<ID=GL000237.1,length=45867,assembly=GRCh37>
+##contig=<ID=GL000233.1,length=45941,assembly=GRCh37>
+##contig=<ID=GL000204.1,length=81310,assembly=GRCh37>
+##contig=<ID=GL000198.1,length=90085,assembly=GRCh37>
+##contig=<ID=GL000208.1,length=92689,assembly=GRCh37>
+##contig=<ID=GL000191.1,length=106433,assembly=GRCh37>
+##contig=<ID=GL000227.1,length=128374,assembly=GRCh37>
+##contig=<ID=GL000228.1,length=129120,assembly=GRCh37>
+##contig=<ID=GL000214.1,length=137718,assembly=GRCh37>
+##contig=<ID=GL000221.1,length=155397,assembly=GRCh37>
+##contig=<ID=GL000209.1,length=159169,assembly=GRCh37>
+##contig=<ID=GL000218.1,length=161147,assembly=GRCh37>
+##contig=<ID=GL000220.1,length=161802,assembly=GRCh37>
+##contig=<ID=GL000213.1,length=164239,assembly=GRCh37>
+##contig=<ID=GL000211.1,length=166566,assembly=GRCh37>
+##contig=<ID=GL000199.1,length=169874,assembly=GRCh37>
+##contig=<ID=GL000217.1,length=172149,assembly=GRCh37>
+##contig=<ID=GL000216.1,length=172294,assembly=GRCh37>
+##contig=<ID=GL000215.1,length=172545,assembly=GRCh37>
+##contig=<ID=GL000205.1,length=174588,assembly=GRCh37>
+##contig=<ID=GL000219.1,length=179198,assembly=GRCh37>
+##contig=<ID=GL000224.1,length=179693,assembly=GRCh37>
+##contig=<ID=GL000223.1,length=180455,assembly=GRCh37>
+##contig=<ID=GL000195.1,length=182896,assembly=GRCh37>
+##contig=<ID=GL000212.1,length=186858,assembly=GRCh37>
+##contig=<ID=GL000222.1,length=186861,assembly=GRCh37>
+##contig=<ID=GL000200.1,length=187035,assembly=GRCh37>
+##contig=<ID=GL000193.1,length=189789,assembly=GRCh37>
+##contig=<ID=GL000194.1,length=191469,assembly=GRCh37>
+##contig=<ID=GL000225.1,length=211173,assembly=GRCh37>
+##contig=<ID=GL000192.1,length=547496,assembly=GRCh37>
+##contig=<ID=NC_007605,length=171823,assembly=NC_007605.1>
+##normal_sample=SM-74NEG
+##orientation_bias_artifact_modes=<ID=C/T|G/T,Description="The artifact modes that were used for orientation bias artifact filtering for this VCF">
+##source=FilterMutectCalls
+##source=Mutect2
+##tumor_sample=SM-74P4M
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SM-74NEG	SM-74P4M
+11	1018406	.	A	T	.	artifact_in_normal;clipping;clustered_events	DP=956;ECNT=14;NLOD=142.16;N_ART_LOD=10.62;POP_AF=1.000e-03;P_GERMLINE=-1.389e+02;TLOD=14.27	GT:AD:AF:ALT_F1R2:ALT_F2R1:FOXOG:MBQ:MCL:MFRL:MMQ:MPOS:OBAM:OBAMRC:OBQ:OBQRC:PGT:PID:REF_F1R2:REF_F2R1:SA_MAP_AF:SA_POST_PROB	0/0:542,6:0.023:0:6:1.00:31,32:0,0:170,132:60,41:17,22:false:false:.:.:0|1:1018363_G_A:249:293	0/1:401,7:0.024:3:4:0.571:31,31:0,0:151,106:56,40:17,16:false:false:100.00:50.91:0|1:1018363_G_A:203:198:0.010,0.020,0.017:0.016,1.056e-03,0.983
+11	1018418	.	T	C	.	artifact_in_normal;clipping;clustered_events	DP=978;ECNT=14;NLOD=142.85;N_ART_LOD=12.47;POP_AF=1.000e-03;P_GERMLINE=-1.395e+02;TLOD=13.67	GT:AD:AF:ALT_F1R2:ALT_F2R1:FOXOG:MBQ:MCL:MFRL:MMQ:MPOS:OBAM:OBAMRC:OBQ:OBQRC:PGT:PID:REF_F1R2:REF_F2R1:SA_MAP_AF:SA_POST_PROB	0/0:552,7:0.013:2:5:0.286:32,33:0,0:170,165:53,40:22,31:false:false:.:.:0|1:1018400_G_A:253:299	0/1:411,8:0.020:3:5:0.375:33,33:0,0:150,164:51,35:21,26:false:false:64.70:100.00:0|1:1018400_G_A:205:206:0.020,0.010,0.019:1.280e-03,9.007e-03,0.990
+11	1018419	.	G	A,T	.	artifact_in_normal;clustered_events;multiallelic	DP=990;ECNT=14;NLOD=74.54,142.18;N_ART_LOD=42.42,12.77;POP_AF=1.000e-03,1.000e-03;P_GERMLINE=-7.123e+01,-1.389e+02;TLOD=47.80,13.95	GT:AD:AF:ALT_F1R2:ALT_F2R1:FOXOG:MBQ:MCL:MFRL:MMQ:MPOS:OBAM:OBAMRC:OBF:OBP:OBQ:OBQRC:REF_F1R2:REF_F2R1:SA_MAP_AF:SA_POST_PROB	0/0:525,28,7:0.067,0.016:15:13:0.536:32,30,32:0,0,0:173,132,165:53,42,40:22,24,32:false:false:.,.:.,.:.,.:.,.:240:285	0/1/2:384,29,8:0.086,0.021:16:13:0.552:33,31,33:0,0,0:152,118,164:53,39,35:21,30,27:false:true:0.448:1.776e-15:100.00:47.32:192:192:0.040,0.071,0.069:0.166,1.167e-03,0.833
+

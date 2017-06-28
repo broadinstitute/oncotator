@@ -285,7 +285,19 @@ class OnpCombinerTest(unittest.TestCase):
         annotator.initialize(spec)
         annotator.annotate()
 
-
+    @TestUtils.requiresDefaultDB()
+    def test_onp_combiner_snp_then_multiallelic(self):
+        """test that we can handle reading a SNP then multiallelic from a VCF without crashing"""
+        input_filename = 'testdata/vcf/infer_onp_fail_snp_then_multiallelic.vcf'
+        output_filename = 'out/testSNPThenMultiallelic.maf.annotated'
+        config = TestUtils.createUnitTestConfig()
+        default_db = config.get('DEFAULT', "dbDir")
+        spec = RunSpecificationFactory.create_run_spec("VCF","TCGAMAF", input_filename, output_filename,
+                                                       datasource_dir=default_db, is_skip_no_alts=True,
+                                                other_opts={OptionConstants.INFER_ONPS: True, OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS:True})
+        annotator = Annotator()
+        annotator.initialize(spec)
+        annotator.annotate()
 
     def test_mutation_combiner(self):
         """Test that attributes and annotations are set properly with combine mutations"""
@@ -328,7 +340,7 @@ class OnpCombinerTest(unittest.TestCase):
         mut1.createAnnotation("SampleName", "John Doe")
 
         mut2 = MutationDataFactory.default_create(chr=1,start=101, end=101, ref_allele="C", alt_allele="T")
-        mut2.createAnnotation("SampleName", "John Doe" )
+        mut2.createAnnotation("SampleName", "John Doe")
 
         mdf = MutationDataFactory()
         result = OnpQueue._combine_mutations([mut1, mut2], mdf)
