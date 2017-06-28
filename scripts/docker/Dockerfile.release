@@ -3,7 +3,7 @@ FROM python:2.7.9
 MAINTAINER oncotator
 
 # This can be overridden with ``--build-arg ONCOTATOR_VERSION=<desired_version_here>``
-ARG ONCOTATOR_VERSION=1.9.0.0
+ARG ONCOTATOR_VERSION=1.9.3.0
 
 # If you are overriding the version and wish to build against a git hash, then add ``--build-arg GITHUB_DIR=\ ``
 ARG GITHUB_DIR=tags/
