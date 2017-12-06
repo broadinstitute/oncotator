@@ -187,7 +187,7 @@ def parseOptions(program_version_message):
     parser.add_argument('--reannotate-tcga-maf-cols', action='store_true', help="Prefer new, annotated values to those specified by the input file.  Only useful when output is TCGA MAF and when --allow-overwriting is specified.  Automatically turned on with -i TCGAMAF")
     parser.add_argument('-w', '--allow-overwriting', action='store_true', help="Allow annotations to be overwritten (no DuplicateAnnotationException errors).  This should only be used in rare cases and user should know when that is.  Automatically turned on with -i TCGAMAF")
     parser.add_argument('--collapse-number-annotations', action='store_true', help='Advanced:  For TCGA MAF output, collapse a set of known numeric fields that may have been annotated with a pipe.  This can be useful for downstream tools that are expecting a single value.')
-
+    parser.add_argument('--longer-other-tx', action='store_true', help='Adds some select field(s) to the other_transcript field')
     # Process arguments
     args = parser.parse_args()
     
@@ -324,6 +324,7 @@ def determineOtherOptions(args):
     opts[OptionConstants.REANNOTATE_TCGA_MAF_COLS] = args.reannotate_tcga_maf_cols
     opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = args.allow_overwriting
     opts[OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS] = args.collapse_number_annotations
+    opts[OptionConstants.LONGER_OTHER_TX_FIELD] = args.longer_other_tx
     return opts
 
 

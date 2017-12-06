@@ -98,3 +98,11 @@ class TranscriptProvider(object):
     @abc.abstractmethod
     def get_custom_canonical_txs(self):
         return
+
+    @abc.abstractmethod
+    def set_longer_other_transcripts(self, tx_list):
+        return
+
+    @abc.abstractmethod
+    def get_longer_other_transcripts(self):
+        return

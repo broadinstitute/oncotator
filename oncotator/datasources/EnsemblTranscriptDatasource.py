@@ -114,6 +114,8 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         # Store a list of the custom canonical transcripts
         self._custom_canonical_txs = custom_canonical_txs or []
 
+        self._is_longer_other_transcripts = False
+
         # IMPORTANT: Any new attributes that can change the results of annotations and, therefore, should invalidate the
         #  cache, should be added to the list in get_hashcode.  There should be a way to do this dynamically, but that
         # has not been implemented yet.
@@ -221,7 +223,9 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
             final_annotation_dict['gencode_transcript_type'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_type'))
             final_annotation_dict['gencode_transcript_name'] = self._create_basic_annotation(self._retrieve_gencode_tag_value(chosen_tx, 'transcript_name'))
 
-            other_transcript_value = self._render_other_transcripts(txs, [txs.index(chosen_tx)], final_annotation_dict['variant_type'].value, mutation.ref_allele, mutation.alt_allele, mutation.start, mutation.end)
+            other_transcript_value = self._render_other_transcripts(txs, [txs.index(chosen_tx)], final_annotation_dict['variant_type'].value,
+                                                                    mutation.ref_allele, mutation.alt_allele, mutation.start,
+                                                                    mutation.end, is_longer_field=self._is_longer_other_transcripts)
             final_annotation_dict['other_transcripts'] = self._create_basic_annotation(other_transcript_value)
             # final_annotation_dict['gene_id'].value
 
@@ -489,7 +493,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
         return ((str(left_gene), str(left_dist)), (str(right_gene), str(right_dist)))
 
-    def _render_other_transcripts(self, txs, transcriptIndicesToSkip, variant_type, ref_allele, alt_allele, start, end):
+    def _render_other_transcripts(self, txs, transcriptIndicesToSkip, variant_type, ref_allele, alt_allele, start, end, is_longer_field=False):
         """
         Create a list of transcripts that are not being chosen.
 
@@ -501,6 +505,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
 
         txs -- a list of transcripts to render.
         transcriptIndicesToSkip -- a list of transcripts that are being used (i.e. not an "other transcript").  This will usually be the canonical or any transcript chosen by tx_mode.
+        is_longer_field -- generates a slightly longer other_transcripts field.  For now that just adds the transcript change field.
         """
         vcer = VariantClassifier()
         other_transcripts = list()
@@ -509,8 +514,11 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
                 vc = vcer.variant_classify(tx=ot, variant_type=variant_type, ref_allele=ref_allele, alt_allele=alt_allele, start=start, end=end)
                 if vc.get_vc() == VariantClassification.IGR:
                     continue
-                o = '_'.join([ot.get_gene(), ot.get_transcript_id(),
-                              vc.get_vc(), vcer.generate_protein_change_from_vc(vc)])
+                listToInclude = [ot.get_gene(), ot.get_transcript_id(),
+                              vc.get_vc(), vcer.generate_protein_change_from_vc(vc)]
+                if is_longer_field:
+                    listToInclude.append(vcer.generate_transcript_change_from_tx(ot, variant_type, vc, start, end, ref_allele, alt_allele))
+                o = '_'.join(listToInclude)
                 o = o.strip('_')
                 other_transcripts.append(o)
 
@@ -779,3 +787,14 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
         for attr in attrs_relevant_for_caching:
             hasher.update(attr)
         return Hasher.md5_hash(hasher.hexdigest())
+
+    def set_longer_other_transcripts(self, is_longer_other_transcripts):
+        """
+        Set to true if the other_transcripts annotation should be the longer version
+        :param is_longer_other_transcripts:
+        :return:
+        """
+        self._is_longer_other_transcripts = is_longer_other_transcripts
+
+    def get_longer_other_transcripts(self):
+        return self._is_longer_other_transcripts

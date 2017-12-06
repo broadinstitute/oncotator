@@ -57,3 +57,4 @@ class OptionConstants(object):
     REANNOTATE_TCGA_MAF_COLS = 'reannotate_tcga_maf_cols'
     ALLOW_ANNOTATION_OVERWRITING = 'allow_annotation_overwriting'
     COLLAPSE_NUMBER_ANNOTATIONS = 'collapse_number_fields'
+    LONGER_OTHER_TX_FIELD = 'longer_other_transcript_annotation'
