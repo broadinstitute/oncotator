@@ -86,7 +86,7 @@ class VariantClassifierTest(unittest.TestCase):
 
     def _test_variant_classification(self, alt, chr, end, gt_vc, ref, start, vt):
         tx = self._determine_test_transcript(chr, start, end, alt, ref, vt)
-
+        print(tx.get_transcript_id())
         vcer = VariantClassifier()
         variant_classification = vcer.variant_classify(tx, ref, alt, start, end, vt, dist=2)
         vc = variant_classification.get_vc()
@@ -161,6 +161,7 @@ class VariantClassifierTest(unittest.TestCase):
     @data_provider_decorator(change_testdata)
     def test_muc16_change_codon(self, gene, chr, start, end, gt_vc, vt, ref, alt, genome_change_gt, strand, transcript_change_gt, codon_change_gt, protein_change_gt):
         vc, tx = self._test_variant_classification(alt, chr, end, gt_vc, ref, start, vt)
+        print(tx)
         vcer = VariantClassifier()
         codon_change = vcer.generate_codon_change_from_vc(tx, int(start), int(end), vc)
         self.assertTrue(codon_change == codon_change_gt, "Codon change did not match gt (%s): (%s)" % (codon_change_gt, codon_change))
