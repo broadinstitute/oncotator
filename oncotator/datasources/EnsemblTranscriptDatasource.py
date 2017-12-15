@@ -514,11 +514,13 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
                 vc = vcer.variant_classify(tx=ot, variant_type=variant_type, ref_allele=ref_allele, alt_allele=alt_allele, start=start, end=end)
                 if vc.get_vc() == VariantClassification.IGR:
                     continue
-                listToInclude = [ot.get_gene(), ot.get_transcript_id(),
+                list_to_include = [ot.get_gene(), ot.get_transcript_id(),
                               vc.get_vc(), vcer.generate_protein_change_from_vc(vc)]
                 if is_longer_field:
-                    listToInclude.append(vcer.generate_transcript_change_from_tx(ot, variant_type, vc, start, end, ref_allele, alt_allele))
-                o = '_'.join(listToInclude)
+                    tx_change = vcer.generate_transcript_change_from_tx(ot, variant_type, vc, start, end, ref_allele, alt_allele)
+                    if tx_change is not None and tx_change != "" :
+                        list_to_include.append(tx_change)
+                o = '_'.join(list_to_include)
                 o = o.strip('_')
                 other_transcripts.append(o)
 
