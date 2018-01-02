@@ -48,7 +48,9 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import logging
+
 import vcf
+
 from oncotator.datasources.Datasource import Datasource
 
 
@@ -82,7 +84,7 @@ class dbSNP(Datasource):
 
         overlapping_vcf_records = []
         try:
-            overlapping_vcf_records = self.vcf_reader.fetch(chrom, start, end)
+            overlapping_vcf_records = self.vcf_reader.fetch(chrom, start - 1, end)
         except ValueError as ve:
             self.logger.debug("Exception when looking for vcf records.  Empty set of records being returned: " + repr(ve))
 

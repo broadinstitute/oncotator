@@ -48,7 +48,6 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 from TestUtils import TestUtils
 from oncotator.MutationDataFactory import MutationDataFactory
-from oncotator.utils.FieldMapCreator import FieldMapCreator
 from oncotator.utils.OptionConstants import OptionConstants
 from oncotator.utils.RunSpecificationFactory import RunSpecificationFactory
 from oncotator.utils.VariantClassification import VariantClassification
@@ -63,13 +62,10 @@ import unittest
 
 import logging 
 from oncotator.utils.ConfigUtils import ConfigUtils
-from oncotator.MutationData import MutationData
 from oncotator.Annotator import Annotator
 from oncotator.output.TcgaMafOutputRenderer import TcgaMafOutputRenderer
-from oncotator.utils.OncotatorCLIUtils import OncotatorCLIUtils
 import os
 from oncotator.utils.GenericTsvReader import GenericTsvReader
-from oncotator.DatasourceFactory import DatasourceFactory
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -173,6 +169,16 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         # Sanity checks to make sure that the generated maf file is not junk.
         self._validateTcgaMafContents(testOutputFilename)
+
+        tsv_reader = GenericTsvReader(testOutputFilename)
+
+        # We should see at least one entry with a dbSNP value
+        ctr = 0
+        for lineDict in tsv_reader:
+            if lineDict["dbSNP_RS"] != "":
+                ctr = ctr+1
+
+        self.assertTrue(ctr > 0, "No dbSNP entries seen.")
 
     @TestUtils.requiresDefaultDB()
     def testFullIndelOutput(self):
@@ -342,7 +348,6 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
         annotator = Annotator()
         other_opts = {'collapse_filter_cols': True}
 
-        from oncotator.utils.RunSpecification import RunSpecification
         run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
         annotator.initialize(run_spec)
         annotator.annotate()

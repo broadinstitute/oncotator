@@ -20,6 +20,10 @@ This is provided as a courtesy to the GATK dev team for a very specific evaluati
 
 No.  These must be added manually when running the docker image.  See docker docs for mounting volumes.
 
+### (Devs) What is a simple command to build the docker image?
+Assuming the version is 1.9.5.0 in the below example....
+``sudo docker build -t broadinstitute/oncotator:1.9.5.0 --build-arg ONCOTATOR_VERSION=1.9.5.0 -f Dockerfile.release . ``
+
 ### Other notes:
 - Oncotator is inside a venv on the docker image.
 - Oncotator devs must still manually push images to dockerhub. 
