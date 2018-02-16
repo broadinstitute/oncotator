@@ -183,11 +183,14 @@ def parseOptions(program_version_message):
     parser.add_argument('--prepend', dest="prepend", action='store_true', help="If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs")
     parser.add_argument('--infer-onps', dest="infer_onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical_tx_file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
-    parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF ouput option.")
+    parser.add_argument('--collapse-filter-cols', dest="collapse_filter_cols", action='store_true', help="Render FILTER columns from VCF input as single 'filter' column when using TCGAMAF output option.")
     parser.add_argument('--reannotate-tcga-maf-cols', action='store_true', help="Prefer new, annotated values to those specified by the input file.  Only useful when output is TCGA MAF and when --allow-overwriting is specified.  Automatically turned on with -i TCGAMAF")
     parser.add_argument('-w', '--allow-overwriting', action='store_true', help="Allow annotations to be overwritten (no DuplicateAnnotationException errors).  This should only be used in rare cases and user should know when that is.  Automatically turned on with -i TCGAMAF")
     parser.add_argument('--collapse-number-annotations', action='store_true', help='Advanced:  For TCGA MAF output, collapse a set of known numeric fields that may have been annotated with a pipe.  This can be useful for downstream tools that are expecting a single value.')
     parser.add_argument('--longer-other-tx', action='store_true', help='Adds some select field(s) to the other_transcript field')
+    parser.add_argument('--prune-filter-cols', dest="prune_filter_cols", action='store_true',
+                        help="Prune mutations from VCF input as based on 'filter' column when using TCGAMAF output option.")
+
     # Process arguments
     args = parser.parse_args()
     
@@ -218,8 +221,7 @@ def main(argv=None):  # IGNORE:C0111
         # Create a basic logger to a file
         loggingFormat = '%(asctime)s %(levelname)s [%(name)s:%(lineno)d] %(message)s'
         logging.basicConfig(filename=logFilename, level=logging.INFO, format=loggingFormat)
-        
-        
+
         # Add a console logger to the root logger, which means that all loggers generated will have the console dump.  
         #    Output on the console will be the same as what is in the log file. 
         ch = logging.StreamHandler()
@@ -259,7 +261,7 @@ def main(argv=None):  # IGNORE:C0111
         inputFilename = os.path.expanduser(args.input_file)
         outputFilename = os.path.expanduser(args.output_file)
 
-        other_opts=determineOtherOptions(args)
+        other_opts = determineOtherOptions(args)
 
         inputFormat = args.input_format.upper()
 
@@ -325,6 +327,7 @@ def determineOtherOptions(args):
     opts[OptionConstants.ALLOW_ANNOTATION_OVERWRITING] = args.allow_overwriting
     opts[OptionConstants.COLLAPSE_NUMBER_ANNOTATIONS] = args.collapse_number_annotations
     opts[OptionConstants.LONGER_OTHER_TX_FIELD] = args.longer_other_tx
+    opts[OptionConstants.PRUNE_BY_FILTER_COLS] = args.prune_filter_cols
     return opts
 
 

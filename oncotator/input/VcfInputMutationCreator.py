@@ -46,24 +46,23 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.6 Binding Effect; Headings. This Agreement shall be binding upon and inure to the benefit of the parties and their respective permitted successors and assigns. All headings are for convenience only and shall not affect the meaning of any provision of this Agreement.
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
-import re
 import logging
+import re
 import string
-import copy
 import traceback
 
 import vcf
 
-from oncotator.Metadata import Metadata
-from oncotator.MutationDataFactory import MutationDataFactory
-from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
-from oncotator.utils.OncotatorException import OncotatorException
-from oncotator.utils.TagConstants import TagConstants
 from InputMutationCreator import InputMutationCreator
-from oncotator.utils.MutUtils import MutUtils
 from oncotator.Annotation import Annotation
+from oncotator.Metadata import Metadata
 from oncotator.config_tables.ConfigTableCreatorFactory import ConfigTableCreatorFactory
+from oncotator.input.InputMutationCreator import InputMutationCreatorOptions
+from oncotator.utils.MutUtils import MutUtils
+from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.OptionConstants import OptionConstants
+from oncotator.utils.TagConstants import TagConstants
+
 
 class VcfInputMutationCreator(InputMutationCreator):
     """
@@ -100,7 +99,7 @@ class VcfInputMutationCreator(InputMutationCreator):
         if other_options is None:
             other_options = {}
         self.collapse_filter_fields = other_options.get(OptionConstants.COLLAPSE_FILTER_COLS, False)
-
+        self.prune_by_filter = other_options.get(OptionConstants.PRUNE_BY_FILTER_COLS, False)
         self._is_skipping_no_alts = other_options.get(InputMutationCreatorOptions.IS_SKIP_ALTS, False)
 
 
@@ -281,6 +280,8 @@ class VcfInputMutationCreator(InputMutationCreator):
         build = self.build
         is_tn_vcf_warning_delivered = False
         for record in self.vcf_reader:
+            if self.prune_by_filter and ((record.FILTER is not None) and (len(record.FILTER) > 0)):
+                continue
             for index in range(len(record.ALT)):
                 if len(record.samples) <= 0:
                     yield self._createMutation(record, index, build)

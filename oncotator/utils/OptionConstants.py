@@ -58,3 +58,4 @@ class OptionConstants(object):
     ALLOW_ANNOTATION_OVERWRITING = 'allow_annotation_overwriting'
     COLLAPSE_NUMBER_ANNOTATIONS = 'collapse_number_fields'
     LONGER_OTHER_TX_FIELD = 'longer_other_transcript_annotation'
+    PRUNE_BY_FILTER_COLS = 'prune_by_filter_cols'

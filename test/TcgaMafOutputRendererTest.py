@@ -339,23 +339,65 @@ class TcgaMafOutputRendererTest(unittest.TestCase):
 
         self.assertTrue(ctr == 24, str(ctr) + " mutations found, but should have been 24." )
 
-
     def test_proper_conversion_vcf_to_maf_with_collapse_filter_cols(self):
         """Test FILTER col is properly rendered when using the collapse-filter-cols option."""
 
         input_fname = 'testdata/vcf/example.vcf'
         output_fname = 'out/example.one_filter_col.maf.txt'
         annotator = Annotator()
-        other_opts = {'collapse_filter_cols': True}
+        other_opts = {OptionConstants.COLLAPSE_FILTER_COLS: True}
 
         run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
         annotator.initialize(run_spec)
         annotator.annotate()
 
         tsv_reader = GenericTsvReader(output_fname)
+        ctr = 0
         for line_dict in tsv_reader:
             self.assertIn('i_filter', line_dict)
             self.assertTrue(line_dict['i_filter'] in ['PASS', 'q10'])
+            ctr = ctr + 1
+        self.assertEquals(ctr, 27)
+
+    def test_proper_conversion_vcf_to_maf_with_prune_filtered_muts(self):
+        """Test FILTER col is used to prune from a TCGA MAF option."""
+
+        input_fname = 'testdata/vcf/example.vcf'
+        output_fname = 'out/example.one_filter_col.maf.txt'
+        annotator = Annotator()
+        other_opts = {OptionConstants.PRUNE_BY_FILTER_COLS: True, OptionConstants.COLLAPSE_FILTER_COLS: True}
+
+        run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
+        annotator.initialize(run_spec)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(output_fname)
+        ctr = 0
+        for i, line_dict in enumerate(tsv_reader):
+            self.assertIn('i_filter', line_dict)
+            self.assertTrue(line_dict['i_filter'] in ['PASS'])
+            ctr = ctr+1
+        self.assertEquals(ctr, 24)
+
+    def test_proper_conversion_vcf_to_maf_with_prune_filtered_muts_with_dots(self):
+        """Test FILTER col is used to prune from a TCGA MAF option.  Now with dots instead of PASS"""
+
+        input_fname = 'testdata/vcf/example.vcf'
+        output_fname = 'out/example.one_filter_col.maf.txt'
+        annotator = Annotator()
+        other_opts = {OptionConstants.PRUNE_BY_FILTER_COLS: True, OptionConstants.COLLAPSE_FILTER_COLS: True}
+
+        run_spec = RunSpecificationFactory.create_run_spec('VCF', 'TCGAMAF', input_fname, output_fname, other_opts=other_opts)
+        annotator.initialize(run_spec)
+        annotator.annotate()
+
+        tsv_reader = GenericTsvReader(output_fname)
+        ctr = 0
+        for i, line_dict in enumerate(tsv_reader):
+            self.assertIn('i_filter', line_dict)
+            self.assertTrue(line_dict['i_filter'] in ['PASS'])
+            ctr = ctr+1
+        self.assertEquals(ctr, 24)
 
     def test_validation_correction(self):
         """ Test that the validation allele fields are determined automatically when not specified by the user for invalid mutation.
