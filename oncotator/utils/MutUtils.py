@@ -47,13 +47,14 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 import logging
+
 from Bio import Seq
+
 from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
-from oncotator.utils.ConfigUtils import ConfigUtils
 from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
+from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.VariantClassification import VariantClassification
-
 
 """
 Created on Nov 13, 2012
@@ -464,3 +465,29 @@ class MutUtils(object):
             output_seq = output_seq[:-1]
     
         return output_seq
+
+    @staticmethod
+    def render_indel(ref_sequence, ref_sequence_start, mut):
+        """
+        This will ignore the ref_allele field in the mutation (mut).  Not even a warning will be emitted.
+        :param ref_sequence:
+        :param ref_sequence_start:
+        :param mut:
+        :return:
+        """
+        position = int(mut.start) - int(ref_sequence_start)
+        if position < -1:
+            raise OncotatorException("Attempted to render an indel that appeared before the reference.")
+        if position == -1 and mut['variant_type'] == VariantClassification.VT_DEL:
+            raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
+        if position > len(ref_sequence):
+            raise OncotatorException("Attempted to render an indel without enough bases in the reference.")
+
+        tmp = list(ref_sequence)
+        if mut['variant_type'] == VariantClassification.VT_INS:
+            position += 1
+            tmp.insert(position, mut.alt_allele)
+        elif mut['variant_type'] == VariantClassification.VT_DEL:
+            del tmp[position:(position + len(mut.ref_allele))]
+
+        return ''.join(tmp)

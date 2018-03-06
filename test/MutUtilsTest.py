@@ -49,11 +49,11 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import unittest
 
-from oncotator.MutationData import MutationData
-from oncotator.MutationDataFactory import MutationDataFactory
-from oncotator.utils.MutUtils import MutUtils
 from TestUtils import TestUtils
-import vcf
+from oncotator.MutationDataFactory import MutationDataFactory
+from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
+from oncotator.utils.MutUtils import MutUtils
+from test.TestUtils import data_provider_decorator
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -342,6 +342,26 @@ class MutUtilsTest(unittest.TestCase):
                                                           % (ref_allele, updated_ref_allele))
         self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
                                                           % (alt_allele, updated_alt_allele))
+
+    indels_for_render_test = lambda: (
+        ("AC", 200, MutationDataFactory.default_create("1", 200, 201, "-", "C", "hg19"), "ACC"),
+        ("AC", 200, MutationDataFactory.default_create("1", 201, 202, "-", "C", "hg19"), "ACC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 201, 201, "C", "-", "hg19"), "ACC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 202, 202, "C", "-", "hg19"), "ACC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 203, 203, "C", "-", "hg19"), "ACC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 202, 203, "CC", "-", "hg19"), "AC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 201, 202, "CC", "-", "hg19"), "AC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 201, 203, "CCC", "-", "hg19"), "A"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 200, 203, "ACCC", "-", "hg19"), ""),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "-", "hg19"), "C")
+    )
+
+    @data_provider_decorator(indels_for_render_test)
+    def test_render_indel(self, ref_sequence, ref_start, mut, gt_result):
+        """Test that we can render the indel for downstream matching synonymous mutations."""
+        mut['variant_type'] = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
+        self.assertEquals(MutUtils.render_indel(ref_sequence, ref_start, mut), gt_result)
+
 
 if __name__ == '__main__':
     unittest.main()

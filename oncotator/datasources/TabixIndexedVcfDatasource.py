@@ -49,12 +49,14 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 
 import copy
 import logging
+import operator
 import string
+
 import vcf
-from oncotator.utils.TagConstants import TagConstants
+
 from oncotator.datasources.Datasource import Datasource
 from oncotator.utils.MutUtils import MutUtils
-import operator
+from oncotator.utils.TagConstants import TagConstants
 
 
 class IndexedVcfDatasource(Datasource):
@@ -191,9 +193,10 @@ class IndexedVcfDatasource(Datasource):
                 ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
 
                 if self.match_mode == "exact":
-                    if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele \
-                        and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start) \
-                        and int(mut.end) == int(ds_mut.end):
+                    if (mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele
+                        and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start)
+                        and int(mut.end) == int(ds_mut.end)) \
+                            | (MutUtils.render_indel(record.REF, startPos, mut) == alt):
                         indices += [index]
                 else:  # cases whether the match mode isn't exact
                     if mut.chr == ds_mut.chr and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
