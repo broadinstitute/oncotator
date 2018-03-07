@@ -477,24 +477,29 @@ class MutUtils(object):
         :param mut:
         :return:
         """
+
         position = int(mut.start) - int(ref_sequence_start)
         if position < -1:
             #raise OncotatorException("Attempted to render a variant that appeared before the reference.")
-            return None
-        if position == -1 and mut['variant_type'] != VariantClassification.VT_INS:
-            # raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
             return None
         if position > len(ref_sequence):
             # raise OncotatorException("Attempted to render a variant without enough bases in the reference.")
             return None
 
+        # Determine the variant type from the mut dynamically.  Do not rely that it has already been annotated.
+        vt = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
+
+        if position == -1 and vt != VariantClassification.VT_INS:
+            # raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
+            return None
+
         tmp = list(ref_sequence)
-        if mut['variant_type'] == VariantClassification.VT_INS:
+        if vt == VariantClassification.VT_INS:
             position += 1
             tmp.insert(position, mut.alt_allele)
-        elif mut['variant_type'] == VariantClassification.VT_DEL:
+        elif vt == VariantClassification.VT_DEL:
             del tmp[position:(position + len(mut.ref_allele))]
-        elif TranscriptProviderUtils.is_xnp(mut['variant_type']):
+        elif TranscriptProviderUtils.is_xnp(vt):
             tmp = tmp[:position] + list(mut.alt_allele) + tmp[(position+len(mut.alt_allele)):]
 
         return ''.join(tmp)

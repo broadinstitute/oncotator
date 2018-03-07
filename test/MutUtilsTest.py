@@ -359,6 +359,8 @@ class MutUtilsTest(unittest.TestCase):
         ("ACCC", 200, MutationDataFactory.default_create("1", 201, 203, "CCC", "-", "hg19"), "A"),
         ("ACCC", 200, MutationDataFactory.default_create("1", 200, 203, "ACCC", "-", "hg19"), ""),
         ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "-", "hg19"), "C"),
+        ("GTC", 200, MutationDataFactory.default_create("1", 201, 202, "TC", "-", "hg19"), "G"),
+        ("AGTC", 200, MutationDataFactory.default_create("1", 201, 203, "GTC", "-", "hg19"), "A"),
 
         # xNP
         ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "TGG", "hg19"), "TGGC"),
