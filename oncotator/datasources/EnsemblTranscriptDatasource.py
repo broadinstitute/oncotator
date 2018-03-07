@@ -47,7 +47,9 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 import logging
+
 import shove
+
 from oncotator.Annotation import Annotation
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
@@ -523,7 +525,7 @@ class EnsemblTranscriptDatasource(TranscriptProvider, Datasource, SegmentDatasou
                 o = '_'.join(list_to_include)
                 o = o.strip('_')
                 other_transcripts.append(o)
-
+        sorted(other_transcripts)
         return '|'.join(other_transcripts)
 
     def retrieve_transcripts_by_gene(self, gene):
