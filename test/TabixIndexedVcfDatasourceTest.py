@@ -47,14 +47,15 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 7.7 Governing Law. This Agreement shall be construed, governed, interpreted and applied in accordance with the internal laws of the Commonwealth of Massachusetts, U.S.A., without regard to conflict of laws principles.
 """
 
-import unittest
 import logging
 import os
-from oncotator.DatasourceFactory import DatasourceFactory
-from oncotator.Annotation import Annotation
+import unittest
+
 from TestUtils import TestUtils
-from oncotator.utils.TagConstants import TagConstants
+from oncotator.Annotation import Annotation
+from oncotator.DatasourceFactory import DatasourceFactory
 from oncotator.utils.MutUtils import MutUtils
+from oncotator.utils.TagConstants import TagConstants
 
 TestUtils.setupLogging(__file__, __name__)
 
@@ -101,7 +102,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "A"
         alt_allele = "T"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -129,7 +130,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -160,7 +161,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCT"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -208,7 +209,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "C"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -242,7 +243,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "C"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -290,7 +291,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "AGTC"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -338,7 +339,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "A"
         alt_allele = "T"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -372,7 +373,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -395,7 +396,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -427,7 +428,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCTTA"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -475,7 +476,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "C"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -509,7 +510,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "C"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -551,7 +552,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "AGTC"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -593,7 +594,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "A"
         alt_allele = "T"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -627,7 +628,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -650,7 +651,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -681,7 +682,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "GTC"
         alt_allele = "GTCTTA"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -701,7 +702,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         cur_annotation = Annotation(value="False|False|False", datasourceName="ESP", dataType="String",
                                     description="HapMap2 membership", tags=[TagConstants.INFO, TagConstants.NOT_SPLIT],
                                     number=None)
-        self.assertTrue(m1_annotation.isEqual(cur_annotation), "Annotations do not match.")
+        self.assertEqual(m1_annotation, cur_annotation, "Annotations do not match.")
 
         m1_annotation = m1_annotated.getAnnotation("ESP_AA")
         cur_annotation = Annotation(value="T", datasourceName="ESP", dataType="String",
@@ -729,7 +730,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "C"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -763,7 +764,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "T"
         alt_allele = "C"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 
@@ -805,7 +806,7 @@ class TabixIndexedVcfDatasourceTest(unittest.TestCase):
         ref_allele = "AGTC"
         alt_allele = "A"
         build = "hg19"
-        m1 = MutUtils.initializeMutFromAttributes(chrom, start, end, ref_allele, alt_allele, build)
+        m1 = MutUtils.initialize_mut_from_attributes(chrom, start, end, ref_allele, alt_allele, build)
 
         m1_annotated = tabixIndexedVcfDatasource.annotate_mutation(m1)
 

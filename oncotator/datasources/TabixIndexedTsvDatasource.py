@@ -48,13 +48,15 @@ This Agreement is personal to LICENSEE and any rights or obligations assigned by
 """
 
 import logging
+import string
+
 import pysam
+
+from oncotator.MutationData import MutationData
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.datasources.Datasource import Datasource
-from oncotator.utils.TagConstants import TagConstants
-import string
 from oncotator.utils.MutUtils import MutUtils
-from oncotator.MutationData import MutationData
+from oncotator.utils.TagConstants import TagConstants
 
 
 class IndexedTsvDatasource(Datasource):
@@ -104,7 +106,7 @@ class IndexedTsvDatasource(Datasource):
                     # TODO: This looks risky to be calling the MutationData constructor directly
                     ds_mut = MutationData(chrom, startPos, endPos, ref, alt, build)
                 else:  # addresses tsv records where the input isn't a Mutation Annotation Format file
-                    ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+                    ds_mut = MutUtils.initialize_mut_from_attributes(chrom, startPos, endPos, ref, alt, build)
 
                 if mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele \
                     and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start) \

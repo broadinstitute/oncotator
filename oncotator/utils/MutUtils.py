@@ -83,66 +83,55 @@ class MutUtils(object):
         pass
 
     @staticmethod
-    def initializeMutFromAttributes(chr, start, end, ref_allele, alt_allele, build, mutation_data_factory=None):
+    def initialize_mut_from_attributes(chr, start, end, ref_allele, alt_allele, build, mutation_data_factory=None):
         mutation_data_factory = MutationDataFactory() if mutation_data_factory is None else mutation_data_factory
-        mut = mutation_data_factory.create(str(chr), str(start), str(end), ref_allele, alt_allele, str(build))
-        varType = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
 
-        if TranscriptProviderUtils.is_xnp(varType):  # Snps and other xNPs
-            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="")
-        if varType == VariantClassification.VT_DEL:  # deletion
-            preceding_bases, updated_ref_allele, updated_start, updated_end =\
-                MutUtils.retrievePrecedingBasesForDeletions(mut)
-            mut.ref_allele = updated_ref_allele
-            mut["ref_allele"] = updated_ref_allele
-            mut.alt_allele = "-"
-            mut["alt_allele"] = "-"
-            mut.start = updated_start
-            mut["start"] = updated_start
-            mut.end = updated_end
-            mut["end"] = updated_end
+        # This seems risky to get the variant type from arbitrary ref and alts (coming in from a VCF especially)
+        var_type = TranscriptProviderUtils.infer_variant_type(ref_allele, alt_allele)
+
+        if var_type == VariantClassification.VT_DEL:  # deletion
+            preceding_bases, updated_ref_allele, updated_start, updated_end = \
+                MutUtils.retrieve_preceding_bases_for_deletions(int(start), ref_allele, alt_allele)
+
+            mut = mutation_data_factory.create(str(chr), str(updated_start), str(updated_end), updated_ref_allele, "-", str(build))
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
-                                 annotationValue=preceding_bases)
-        elif varType == VariantClassification.VT_INS:  # insertion
+                                 annotationValue=preceding_bases, annotationSource="TEST")
+
+        elif var_type == VariantClassification.VT_INS:  # insertion
             preceding_bases, updated_alt_allele, updated_start, updated_end = \
-                MutUtils.retrievePrecedingBasesForInsertions(mut)
-            mut.ref_allele = "-"
-            mut["ref_allele"] = "-"
-            mut.alt_allele = updated_alt_allele
-            mut["alt_allele"] = updated_alt_allele
-            mut.start = updated_start
-            mut["start"] = updated_start
-            mut.end = updated_end
-            mut["end"] = updated_end
+                MutUtils.retrieve_preceding_bases_for_insertions(start, ref_allele, alt_allele)
+            mut = mutation_data_factory.create(str(chr), str(updated_start), str(updated_end), "-",
+                                               updated_alt_allele, str(build))
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME,
-                                 annotationValue=preceding_bases)
+                                 annotationValue=preceding_bases, annotationSource="TEST")
 
+        elif TranscriptProviderUtils.is_xnp(var_type):  # Snps and other xNPs
+            mut = mutation_data_factory.create(str(chr), str(start), str(end), ref_allele,
+                                               alt_allele, str(build))
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="", annotationSource="TEST")
+        else:
+            logging.getLogger(__name__).warn("Could not find a way to initialize_mut_from_attributes... Could be a complex indel.")
+            mut = mutation_data_factory.create(str(chr), str(start), str(end), ref_allele,
+                                               alt_allele, str(build))
+            mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="", annotationSource="TEST")
         return mut
 
     @staticmethod
-    def retrievePrecedingBasesForInsertions(m):
-        ref_allele = m.ref_allele
-        alt_allele = m.alt_allele
-        start = int(m.start)
-
+    def retrieve_preceding_bases_for_insertions(start, ref_allele, alt_allele):
+        i_start = int(start)
         preceding_bases = ref_allele
         updated_alt_allele = alt_allele[len(preceding_bases):]
-        updated_start = start + len(preceding_bases) - 1
-        updated_end = start + len(preceding_bases)
-
+        updated_start = i_start + len(preceding_bases) - 1
+        updated_end = i_start + len(preceding_bases)
         return preceding_bases, updated_alt_allele, updated_start, updated_end
 
     @staticmethod
-    def retrievePrecedingBasesForDeletions(m):
-        ref_allele = m.ref_allele
-        alt_allele = m.alt_allele
-        start = int(m.start)
-
+    def retrieve_preceding_bases_for_deletions(start, ref_allele, alt_allele):
+        i_start = int(start)
         preceding_bases = alt_allele
         updated_ref_allele = ref_allele[len(preceding_bases):]
-        updated_start = start + len(preceding_bases)
+        updated_start = i_start + len(preceding_bases)
         updated_end = updated_start + len(updated_ref_allele) - 1
-
         return preceding_bases, updated_ref_allele, updated_start, updated_end
 
     @staticmethod
@@ -490,6 +479,11 @@ class MutUtils(object):
         vt = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
 
         if position == -1 and vt != VariantClassification.VT_INS:
+            # raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
+            return None
+
+        # Check to see if we are deleting past where we have bases.
+        if (position + len(mut.ref_allele)) > len(ref_sequence) and vt == VariantClassification.VT_DEL:
             # raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
             return None
 

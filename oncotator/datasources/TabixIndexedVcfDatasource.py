@@ -190,7 +190,7 @@ class IndexedVcfDatasource(Datasource):
                 endPos = record.POS
                 ref = str(record.REF)
                 alt = str(record.ALT[index])
-                ds_mut = MutUtils.initializeMutFromAttributes(chrom, startPos, endPos, ref, alt, build)
+                ds_mut = MutUtils.initialize_mut_from_attributes(chrom, startPos, endPos, ref, alt, build)
 
                 if self.match_mode == "exact":
                     if (mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele

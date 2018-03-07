@@ -138,7 +138,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForDeletions(mut)
+            MutUtils.retrieve_preceding_bases_for_deletions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = updated_ref_allele
         mut.alt_allele = "-"
         mut.start = updated_start
@@ -158,7 +158,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForDeletions(mut)
+            MutUtils.retrieve_preceding_bases_for_deletions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = updated_ref_allele
         mut.alt_allele = "-"
         mut.start = updated_start
@@ -178,7 +178,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForDeletions(mut)
+            MutUtils.retrieve_preceding_bases_for_deletions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = updated_ref_allele
         mut.alt_allele = "-"
         mut.start = updated_start
@@ -200,7 +200,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForInsertions(mut)
+            MutUtils.retrieve_preceding_bases_for_insertions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = "-"
         mut.alt_allele = updated_alt_allele
         mut.start = updated_start
@@ -220,7 +220,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForInsertions(mut)
+            MutUtils.retrieve_preceding_bases_for_insertions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = "-"
         mut.alt_allele = updated_alt_allele
         mut.start = updated_start
@@ -235,13 +235,13 @@ class MutUtilsTest(unittest.TestCase):
     def testRetrievePrecedingBaseFromAnnotationForDeletions(self):
         chrom = "1"
         start = 1234568
-        end = 1234569  # incorrect, but doesn't matter for the purposed of testing
+        end = 1234568  # incorrect, but doesn't matter for the purposed of testing
         ref_allele = "GTC"
         alt_allele = "G"
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForDeletions(mut)
+            MutUtils.retrieve_preceding_bases_for_deletions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = updated_ref_allele
         mut.alt_allele = "-"
         mut.start = updated_start
@@ -262,7 +262,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForDeletions(mut)
+            MutUtils.retrieve_preceding_bases_for_deletions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = updated_ref_allele
         mut.alt_allele = "-"
         mut.start = updated_start
@@ -284,7 +284,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_ref_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForDeletions(mut)
+            MutUtils.retrieve_preceding_bases_for_deletions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = updated_ref_allele
         mut.alt_allele = "-"
         mut.start = updated_start
@@ -307,7 +307,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForInsertions(mut)
+            MutUtils.retrieve_preceding_bases_for_insertions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = "-"
         mut.alt_allele = updated_alt_allele
         mut.start = updated_start
@@ -329,7 +329,7 @@ class MutUtilsTest(unittest.TestCase):
         build = "19"
         mut = MutationDataFactory.default_create(chrom, start, end, ref_allele, alt_allele, build)
         preceding_bases, updated_alt_allele, updated_start, updated_end = \
-            MutUtils.retrievePrecedingBasesForInsertions(mut)
+            MutUtils.retrieve_preceding_bases_for_insertions(mut.start, mut.ref_allele, mut.alt_allele)
         mut.ref_allele = "-"
         mut.alt_allele = updated_alt_allele
         mut.start = updated_start
@@ -361,6 +361,7 @@ class MutUtilsTest(unittest.TestCase):
         ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "-", "hg19"), "C"),
         ("GTC", 200, MutationDataFactory.default_create("1", 201, 202, "TC", "-", "hg19"), "G"),
         ("AGTC", 200, MutationDataFactory.default_create("1", 201, 203, "GTC", "-", "hg19"), "A"),
+        ("AGTC", 200, MutationDataFactory.default_create("1", 202, 204, "GTC", "-", "hg19"), None),
 
         # xNP
         ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "TGG", "hg19"), "TGGC"),
@@ -376,6 +377,30 @@ class MutUtilsTest(unittest.TestCase):
         mut['variant_type'] = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
         self.assertEquals(MutUtils.render_variant(ref_sequence, ref_start, mut), gt_result)
 
+    deletions_for_preceding_base_test = lambda: (
+        # Tests where we have some arbitrary context (usually from a VCF).
+        # deletions
+        (200, "ACC", "AC", ("AC", "C", 202, 202)),
+        (200, "AAC", "AA", ("AA", "C", 202, 202)),
+    )
+
+    insertions_for_preceding_base_test = lambda: (
+        # Tests where we have some arbitrary context (usually from a VCF).
+        # insertions
+        (200, "AC", "ACC", ("AC", "C", 201, 202)),
+        (200, "AA", "AAC", ("AA", "C", 201, 202)),
+        (1234567, "GTC", "GTCTTA", ("GTC", "TTA", 1234569, 1234570))
+    )
+
+    @data_provider_decorator(deletions_for_preceding_base_test)
+    def test_retrieve_preceding_bases_for_deletions(self, start, ref_allele, alt_allele, gt_tuple):
+        # preceding_bases, updated_ref_allele, updated_start, updated_end
+        self.assertEqual(MutUtils.retrieve_preceding_bases_for_deletions(start, ref_allele, alt_allele), gt_tuple)
+
+    @data_provider_decorator(insertions_for_preceding_base_test)
+    def test_retrieve_preceding_bases_for_insertions(self, start, ref_allele, alt_allele, gt_tuple):
+        # preceding_bases, updated_alt_allele, updated_start, updated_end
+        self.assertEqual(MutUtils.retrieve_preceding_bases_for_insertions(start, ref_allele, alt_allele), gt_tuple)
 
 if __name__ == '__main__':
     unittest.main()
