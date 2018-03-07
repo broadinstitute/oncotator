@@ -457,9 +457,12 @@ class MutUtils(object):
     @staticmethod
     def render_variant(ref_sequence, ref_sequence_start, mut):
         """
-        This will ignore the ref_allele field in the mutation (mut).  Not even a warning will be emitted.
+        This will ignore the ref_allele field in the mutation (mut).  Not even a warning will be emitted if it looks
+         discordant.
 
         IMPORTANT: If this method cannot render the variant, it will return None, it will not throw an exception.
+
+        For xNPs and deletions, the ref_sequence must entirely overlap.
 
         :param ref_sequence:
         :param ref_sequence_start:
@@ -485,6 +488,10 @@ class MutUtils(object):
         # Check to see if we are deleting past where we have bases.
         if (position + len(mut.ref_allele)) > len(ref_sequence) and vt == VariantClassification.VT_DEL:
             # raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
+            return None
+
+        # Check to see if we have total overlap for xNPs.
+        if TranscriptProviderUtils.is_xnp(vt) and (position + len(mut.alt_allele)) > len(ref_sequence):
             return None
 
         tmp = list(ref_sequence)

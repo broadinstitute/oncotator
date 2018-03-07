@@ -368,7 +368,13 @@ class MutUtilsTest(unittest.TestCase):
         ("ACCC", 200, MutationDataFactory.default_create("1", 201, 203, "CCC", "TGG", "hg19"), "ATGG"),
         ("ACCC", 200, MutationDataFactory.default_create("1", 202, 203, "CC", "TG", "hg19"), "ACTG"),
         ("A", 200, MutationDataFactory.default_create("1", 200, 200, "A", "G", "hg19"), "G"),
-        ("AC", 200, MutationDataFactory.default_create("1", 200, 200, "AC", "CG", "hg19"), "CG")
+        ("AC", 200, MutationDataFactory.default_create("1", 200, 201, "AC", "CG", "hg19"), "CG"),
+
+        # These xNPs should never happen.  We will not allow it.  The alt does only partially overlaps or abuts --
+        #   otherwise we return None.
+        ("AC", 200, MutationDataFactory.default_create("1", 202, 203, "TA", "CG", "hg19"), None),
+        ("AC", 200, MutationDataFactory.default_create("1", 201, 202, "CT", "AG", "hg19"), None),
+        ("AC", 200, MutationDataFactory.default_create("1", 203, 204, "CT", "AG", "hg19"), None),
     )
 
     @data_provider_decorator(variants_for_render_test)
