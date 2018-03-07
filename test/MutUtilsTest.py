@@ -343,9 +343,14 @@ class MutUtilsTest(unittest.TestCase):
         self.assertTrue(updated_alt_allele == alt_allele, "Alt allele should be %s but was %s."
                                                           % (alt_allele, updated_alt_allele))
 
-    indels_for_render_test = lambda: (
+    variants_for_render_test = lambda: (
+        # Tests where we have some arbitrary context (usually from a VCF).
+        # insertions
         ("AC", 200, MutationDataFactory.default_create("1", 200, 201, "-", "C", "hg19"), "ACC"),
         ("AC", 200, MutationDataFactory.default_create("1", 201, 202, "-", "C", "hg19"), "ACC"),
+        ("A", 200, MutationDataFactory.default_create("1", 200, 201, "-", "C", "hg19"), "AC"),
+
+        # deletions
         ("ACCC", 200, MutationDataFactory.default_create("1", 201, 201, "C", "-", "hg19"), "ACC"),
         ("ACCC", 200, MutationDataFactory.default_create("1", 202, 202, "C", "-", "hg19"), "ACC"),
         ("ACCC", 200, MutationDataFactory.default_create("1", 203, 203, "C", "-", "hg19"), "ACC"),
@@ -353,14 +358,21 @@ class MutUtilsTest(unittest.TestCase):
         ("ACCC", 200, MutationDataFactory.default_create("1", 201, 202, "CC", "-", "hg19"), "AC"),
         ("ACCC", 200, MutationDataFactory.default_create("1", 201, 203, "CCC", "-", "hg19"), "A"),
         ("ACCC", 200, MutationDataFactory.default_create("1", 200, 203, "ACCC", "-", "hg19"), ""),
-        ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "-", "hg19"), "C")
+        ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "-", "hg19"), "C"),
+
+        # xNP
+        ("ACCC", 200, MutationDataFactory.default_create("1", 200, 202, "ACC", "TGG", "hg19"), "TGGC"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 201, 203, "CCC", "TGG", "hg19"), "ATGG"),
+        ("ACCC", 200, MutationDataFactory.default_create("1", 202, 203, "CC", "TG", "hg19"), "ACTG"),
+        ("A", 200, MutationDataFactory.default_create("1", 200, 200, "A", "G", "hg19"), "G"),
+        ("AC", 200, MutationDataFactory.default_create("1", 200, 200, "AC", "CG", "hg19"), "CG")
     )
 
-    @data_provider_decorator(indels_for_render_test)
-    def test_render_indel(self, ref_sequence, ref_start, mut, gt_result):
+    @data_provider_decorator(variants_for_render_test)
+    def test_render_variants(self, ref_sequence, ref_start, mut, gt_result):
         """Test that we can render the indel for downstream matching synonymous mutations."""
         mut['variant_type'] = TranscriptProviderUtils.infer_variant_type(mut.ref_allele, mut.alt_allele)
-        self.assertEquals(MutUtils.render_indel(ref_sequence, ref_start, mut), gt_result)
+        self.assertEquals(MutUtils.render_variant(ref_sequence, ref_start, mut), gt_result)
 
 
 if __name__ == '__main__':

@@ -53,7 +53,6 @@ from Bio import Seq
 from oncotator.MutationDataFactory import MutationDataFactory
 from oncotator.TranscriptProviderUtils import TranscriptProviderUtils
 from oncotator.utils.MissingRequiredAnnotationException import MissingRequiredAnnotationException
-from oncotator.utils.OncotatorException import OncotatorException
 from oncotator.utils.VariantClassification import VariantClassification
 
 """
@@ -467,9 +466,12 @@ class MutUtils(object):
         return output_seq
 
     @staticmethod
-    def render_indel(ref_sequence, ref_sequence_start, mut):
+    def render_variant(ref_sequence, ref_sequence_start, mut):
         """
         This will ignore the ref_allele field in the mutation (mut).  Not even a warning will be emitted.
+
+        IMPORTANT: If this method cannot render the variant, it will return None, it will not throw an exception.
+
         :param ref_sequence:
         :param ref_sequence_start:
         :param mut:
@@ -477,11 +479,14 @@ class MutUtils(object):
         """
         position = int(mut.start) - int(ref_sequence_start)
         if position < -1:
-            raise OncotatorException("Attempted to render an indel that appeared before the reference.")
-        if position == -1 and mut['variant_type'] == VariantClassification.VT_DEL:
-            raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
+            #raise OncotatorException("Attempted to render a variant that appeared before the reference.")
+            return None
+        if position == -1 and mut['variant_type'] != VariantClassification.VT_INS:
+            # raise OncotatorException("Attempted to render a deletion that appeared before the reference.")
+            return None
         if position > len(ref_sequence):
-            raise OncotatorException("Attempted to render an indel without enough bases in the reference.")
+            # raise OncotatorException("Attempted to render a variant without enough bases in the reference.")
+            return None
 
         tmp = list(ref_sequence)
         if mut['variant_type'] == VariantClassification.VT_INS:
@@ -489,5 +494,7 @@ class MutUtils(object):
             tmp.insert(position, mut.alt_allele)
         elif mut['variant_type'] == VariantClassification.VT_DEL:
             del tmp[position:(position + len(mut.ref_allele))]
+        elif TranscriptProviderUtils.is_xnp(mut['variant_type']):
+            tmp = tmp[:position] + list(mut.alt_allele) + tmp[(position+len(mut.alt_allele)):]
 
         return ''.join(tmp)

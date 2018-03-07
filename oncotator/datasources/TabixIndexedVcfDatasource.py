@@ -196,7 +196,7 @@ class IndexedVcfDatasource(Datasource):
                     if (mut.chr == ds_mut.chr and mut.ref_allele == ds_mut.ref_allele
                         and mut.alt_allele == ds_mut.alt_allele and int(mut.start) == int(ds_mut.start)
                         and int(mut.end) == int(ds_mut.end)) \
-                            | (MutUtils.render_indel(record.REF, startPos, mut) == alt):
+                            | (MutUtils.render_variant(record.REF, startPos, mut) == alt):
                         indices += [index]
                 else:  # cases whether the match mode isn't exact
                     if mut.chr == ds_mut.chr and int(mut.start) == int(ds_mut.start) and int(mut.end) == int(ds_mut.end):
