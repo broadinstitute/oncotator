@@ -96,8 +96,9 @@ Creating a Virtual Environment for Running Oncotator
 --------------------
 Follow these steps from the same directory as setup.py.  The first command will take several minutes::
 
-    bash scripts/create_oncotator_venv.sh <venv_location>
+    virtualenv -p python2 <venv_location>
     source <venv_location>/bin/activate
+    pip install numpy pyvcf
     python setup.py install
 
 Version Information
