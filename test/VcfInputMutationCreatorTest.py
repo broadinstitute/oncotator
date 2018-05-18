@@ -217,7 +217,7 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
                 requiredColumns = configFile.get("general", "requiredColumns")
                 optionalColumns = configFile.get("general", "optionalColumns")
                 if (k not in requiredColumns) and (k not in optionalColumns):
-                    self.assertTrue(k.startswith("i_"), "Internal column was not prepended with 'i_'")
+                    self.assertTrue(k.startswith("i_"), "Internal column (" + k + ") was not prepended with 'i_'")
 
             unknownKeys.sort()
             self.assertTrue(len(unknownKeys) == 0,
@@ -558,6 +558,44 @@ class VcfInputMutationCreatorTest(unittest.TestCase):
         for m in muts:
             ctr += 1
         self.assertTrue(ctr == 1, "There should only have been one mutation seen, instead saw: " + str(ctr))
+
+    def test_mnp_as_input(self):
+        """Render an input VCF that has DNPs and simply check that the end position is correct."""
+        inputFilename = os.path.join(*["testdata", "vcf", "test_mnp_input.vcf"])
+        opts = {InputMutationCreatorOptions.IS_SKIP_ALTS: True}
+        vcf_input = VcfInputMutationCreator(inputFilename, MutationDataFactory(allow_overwriting=True), other_options=opts)
+        muts = vcf_input.createMutations()
+        ctr = 0
+
+        # There is only one mutation that is a DNP
+        for m in muts:
+            ctr += 1
+            self.assertEquals(int(m.start), int(m.end)-1)
+        self.assertEqual(ctr, 1, "There should only have been one mutation seen, instead saw: " + str(ctr))
+
+    @TestUtils.requiresDefaultDB()
+    def test_tcga_maf_rendering_of_dnp(self):
+        """Render an input VCF that has one DNP and render a TCGA MAF."""
+        inputFilename = os.path.join(*["testdata", "vcf", "test_mnp_input.vcf"])
+        outputFilename = os.path.join("out", "test_mnp_input.maf.annotated")
+        opts = {InputMutationCreatorOptions.IS_SKIP_ALTS: True}
+        creator = VcfInputMutationCreator(inputFilename, other_options=opts)
+        creator.createMutations()
+        renderer = TcgaMafOutputRenderer(outputFilename)
+        annotator = Annotator()
+        annotator.setInputCreator(creator)
+        annotator.setOutputRenderer(renderer)
+        annotator.setManualAnnotations(self._createTCGAMAFOverridesForVCF())
+        datasources = self._createDatasourceCorpus()
+        for ds in datasources:
+            annotator.addDatasource(ds)
+        annotator.annotate()
+
+        tsvReader = GenericTsvReader(outputFilename)
+
+        # Only one DNP mutation
+        for row in tsvReader:
+            self.assertEqual(int(row["Start_position"]), int(row["End_position"]) - 1)
 
 if __name__ == "__main__":
     unittest.main()

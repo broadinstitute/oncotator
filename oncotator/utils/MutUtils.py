@@ -106,7 +106,11 @@ class MutUtils(object):
                                  annotationValue=preceding_bases, annotationSource="TEST")
 
         elif TranscriptProviderUtils.is_xnp(var_type):  # Snps and other xNPs
-            mut = mutation_data_factory.create(str(chr), str(start), str(end), ref_allele,
+
+            # Need to take into account that DNPs, etc have a different end point.
+            updated_end = end + len(alt_allele) - 1
+
+            mut = mutation_data_factory.create(str(chr), str(start), str(updated_end), ref_allele,
                                                alt_allele, str(build))
             mut.createAnnotation(annotationName=MutUtils.PRECEDING_BASES_ANNOTATION_NAME, annotationValue="", annotationSource="TEST")
         else:

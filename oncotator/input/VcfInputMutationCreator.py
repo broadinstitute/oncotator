@@ -341,6 +341,8 @@ class VcfInputMutationCreator(InputMutationCreator):
     def _createMutation(self, record, alt_index, build):
         chrom = MutUtils.convertChromosomeStringToMutationDataFormat(record.CHROM)
         startPos = int(record.POS)
+
+        # This endPos will be incorrect, but gets changed in the initialize_mut_from_attributes call
         endPos = int(record.POS)
         ref = record.REF.strip()
         ref = "" if ref == "." else ref
