@@ -4,6 +4,21 @@
   .. image:: https://coveralls.io/repos/broadinstitute/oncotator/badge.png?branch=issue_211_travis
     :target: https://coveralls.io/r/broadinstitute/oncotator?branch=issue_211_travis
 
+======================
+ONCOTATOR IS NO LONGER SUPPORTED OR MAINTAINED
+======================
+
+For Functional Annotations, please use Funcotator (a GATK tool):
+https://github.com/broadinstitute/gatk
+
+Funcotator Tutorial and Information:
+https://gatk.broadinstitute.org/hc/en-us/articles/360035889931-Funcotator-Information-and-Tutorial
+
+
+
+-----------------------------------
+
+
 
 ======================
 Oncotator
