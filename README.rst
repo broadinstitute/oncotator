@@ -5,14 +5,22 @@
     :target: https://coveralls.io/r/broadinstitute/oncotator?branch=issue_211_travis
 
 ======================
-ONCOTATOR IS NO LONGER SUPPORTED OR MAINTAINED
+Oncotator Is No Longer Supported or Maintained
 ======================
 
-For Functional Annotations, please use Funcotator (a GATK tool):
-https://github.com/broadinstitute/gatk
+Funcotator is a new Functional Annotation tool (the spiritual successor to Oncotator).  It is: 
+  * Better: many bugs have been fixed and edge cases have been improved.
+  * Faster: annotate more variants in less time
+  * Easier to use and deploy: a single jar with no tricky installation or dependencies, and a tool for fetching the datasources
 
-Funcotator Tutorial and Information:
+Funcotator is available as part of the GATK toolkit and works out of the box with both Mutect2 and HaplotypeCaller for somatic and germline annotation, respectively. 
+It also has a Featured Workspace on Terra.
+
+A Funcotator tutorial, as well as a full comparison of Funcotator and Oncotator and other helpful information can be found on the GATK website here:
 https://gatk.broadinstitute.org/hc/en-us/articles/360035889931-Funcotator-Information-and-Tutorial
+
+The github repository for GATK and Funcotator can be found here:
+https://github.com/broadinstitute/gatk
 
 
 
