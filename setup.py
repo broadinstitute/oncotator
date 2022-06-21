@@ -124,7 +124,7 @@ setup(
 
   # If create_oncotator_venv.sh changes, changes must go here as well...
   install_requires=['bcbio-gff==0.6.2', 'pyvcf == 0.6.8', 'pysam == 0.9.0', 'pandas==0.18.0', 'biopython==1.66',
-                    'numpy==1.11.0', 'cython==0.24', 'shove==0.6.6', 'sqlalchemy==1.0.12', 'nose==1.3.7',
+                    'numpy==1.22.0', 'cython==0.24', 'shove==0.6.6', 'sqlalchemy==1.0.12', 'nose==1.3.7',
                     'python-memcached==1.57', 'natsort==4.0.4', 'more-itertools==2.2', 'enum34==1.1.2'],
   
   # For future reference... how to specify required libraries.
